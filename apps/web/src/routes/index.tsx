@@ -81,9 +81,10 @@ function Landing() {
 					<br />
 					Own it.
 				</h1>
-				<p className="max-w-[46ch] text-lg text-felt-muted">
-					Spelling bee practice for 8–11 year olds. Load this week’s school list, and your speller hears each word, asks for the definition
-					or a sentence, and places the letters tile by tile, with feedback on every single letter.
+				<p className="max-w-[46ch] text-lg text-pretty text-felt-muted">
+					Spelling and math practice for 8–11 year olds. Load this week’s school list, and your child hears each word, asks for the
+					definition or a sentence, and places the letters tile by tile, with feedback on every letter. Math covers times tables, mental
+					math, fractions and word problems, with levels that adjust as they go.
 				</p>
 				<DemoRow />
 				<p className="text-sm text-felt-muted">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export type ViewportState = { height: number; top: number; keyboard: boolean };
 
@@ -46,6 +46,10 @@ export function useVisualViewport(): ViewportState {
 export function useElementWidth<T extends HTMLElement>() {
 	const ref = useRef<T>(null);
 	const [width, setWidth] = useState(0);
+	// Measure before the first paint, so tile rows never flash at a default size (and overflow) for a frame.
+	useLayoutEffect(() => {
+		if (ref.current) setWidth(ref.current.getBoundingClientRect().width);
+	}, []);
 	useEffect(() => {
 		if (!ref.current) return;
 		const ro = new ResizeObserver(([e]) => setWidth(e?.contentRect.width ?? 0));

@@ -10,8 +10,12 @@ import type { Phase } from "#/lib/round.ts";
  */
 export function fitTile(width: number, count: number, max = 88) {
 	const n = Math.max(count, 1);
-	const size = width ? Math.min(max, Math.floor(width / (n + 0.1 * (n - 1)))) : Math.min(max, 64);
-	return { size, gap: Math.max(3, Math.round(size * 0.1)) };
+	const gapFor = (size: number) => Math.max(3, Math.round(size * 0.1));
+	if (!width) return { size: Math.min(max, 64), gap: gapFor(Math.min(max, 64)) };
+	let size = Math.min(max, Math.floor(width / (n + 0.1 * (n - 1))));
+	// The gap is rounded (and has a 3px floor), so step down until the whole row really fits.
+	while (size > 1 && n * size + (n - 1) * gapFor(size) > width) size--;
+	return { size, gap: gapFor(size) };
 }
 
 type Cell = { key: string; letter?: string; law?: Law; empty?: boolean; active?: boolean };

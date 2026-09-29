@@ -19,7 +19,7 @@ export default defineConfig({
 			manifest: {
 				name: "Jade Learning",
 				short_name: "Jade",
-				description: "Spelling bee practice: hear it, spell it, master it.",
+				description: "Spelling bee and math practice for 8–11 year olds.",
 				theme_color: "#0e4f43",
 				background_color: "#0e4f43",
 				display: "standalone",
