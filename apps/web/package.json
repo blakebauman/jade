@@ -18,17 +18,16 @@
 		"cf-typegen": "wrangler types --strict-vars=false"
 	},
 	"dependencies": {
-		"@jade/api": "workspace:*",
-		"@jade/core": "workspace:*",
-		"@jade/ui": "workspace:*",
 		"@fontsource-variable/fredoka": "catalog:",
 		"@fontsource-variable/lexend": "catalog:",
 		"@fontsource/andika": "catalog:",
 		"@fontsource/atkinson-hyperlegible": "catalog:",
+		"@jade/api": "workspace:*",
+		"@jade/core": "workspace:*",
+		"@jade/ui": "workspace:*",
 		"@tanstack/react-query": "catalog:",
 		"@tanstack/react-router": "catalog:",
 		"better-auth": "catalog:",
-		"canvas-confetti": "catalog:",
 		"dexie": "catalog:",
 		"hono": "catalog:",
 		"lucide-react": "catalog:",
@@ -47,7 +46,6 @@
 		"@tanstack/router-plugin": "catalog:",
 		"@testing-library/dom": "catalog:",
 		"@testing-library/react": "catalog:",
-		"@types/canvas-confetti": "catalog:",
 		"@types/node": "catalog:",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
@@ -58,7 +56,7 @@
 		"vite": "catalog:",
 		"vite-plugin-pwa": "catalog:",
 		"vitest": "catalog:",
-		"wrangler": "catalog:",
-		"workbox-window": "catalog:"
+		"workbox-window": "catalog:",
+		"wrangler": "catalog:"
 	}
 }

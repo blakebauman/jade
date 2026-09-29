@@ -52,6 +52,8 @@
 	--animate-tile-drop: tile-drop 240ms var(--ease-out-expo) both;
 	--animate-tile-flip: tile-flip 420ms var(--ease-out-expo) both;
 	--animate-tile-nudge: tile-nudge 360ms var(--ease-out-expo);
+	/* A heavier drop with a small settle: star tiles on a round worth celebrating. */
+	--animate-tile-land: tile-land 420ms var(--ease-out-expo) both;
 
 	@keyframes tile-drop {
 		0% { transform: translateY(-18px) scale(1.06); }
@@ -61,6 +63,11 @@
 		0% { transform: perspective(500px) rotateX(0deg); }
 		45% { transform: perspective(500px) rotateX(88deg); }
 		100% { transform: perspective(500px) rotateX(0deg); }
+	}
+	@keyframes tile-land {
+		0% { transform: translateY(-56px) scale(1.14); }
+		68% { transform: translateY(2px) scale(0.98); }
+		100% { transform: translateY(0) scale(1); }
 	}
 	@keyframes tile-nudge {
 		0%, 100% { transform: translateX(0); }

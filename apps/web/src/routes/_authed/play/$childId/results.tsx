@@ -2,9 +2,8 @@ import { gradeAttempt, starsForRound, starsForWord } from "@jade/core";
 import { type Law, Pips, Square, Tile, WordTiles } from "@jade/ui/components/tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
-import confetti from "canvas-confetti";
 import { CloudOff, RotateCcw, Star, Volume2 } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { BadgeIcon } from "#/components/BadgeIcon.tsx";
 import { useChild } from "#/lib/child.ts";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
@@ -48,6 +47,20 @@ function AttemptTiles({ target, typed, size = 22 }: { target: string; typed: str
 	);
 }
 
+/** When the perfect-round flip cascade starts (after all three stars have landed), and the gap between tiles. */
+const FLIP_AT = 3 * 140 + 420 + 120;
+const FLIP_STEP = 110;
+
+/**
+ * Star tile motion: an ordinary drop for one star, a heavier landing for two or three, and on a perfect round a flip
+ * cascade after landing. The flip has no fill, so it only takes over transform while it runs.
+ */
+function starMotion(i: number, stars: number, perfect: boolean): CSSProperties {
+	const land = `${stars >= 2 ? "tile-land 420ms" : "tile-drop 240ms"} var(--ease-out-expo) ${i * 140}ms both`;
+	if (!perfect) return { animation: land };
+	return { animation: `${land}, tile-flip 420ms var(--ease-out-expo) ${FLIP_AT + (i - 1) * FLIP_STEP}ms` };
+}
+
 function Results() {
 	const child = useChild();
 	const navigate = useNavigate();
@@ -70,16 +83,16 @@ function Results() {
 		return isMath ? "Every miss is something you’re learning." : "Every miss is a word you’re learning.";
 	}, [correct, perfect, round.attempts.length, isMath]);
 
+	// The celebration is the board's own motion: star tiles land (2+ stars); on a perfect round they then flip
+	// left to right and come up marigold, the colour of right. `lit` counts tiles whose edge has turned.
+	const reduced = useMemo(prefersReducedMotion, []);
+	const [lit, setLit] = useState(perfect && reduced ? 3 : 0);
 	useEffect(() => {
-		if (stars >= 2 && !prefersReducedMotion()) {
-			void confetti({
-				particleCount: perfect ? 160 : 90,
-				spread: 75,
-				origin: { y: 0.3 },
-				colors: ["#f1c98a", "#f2b632", "#f9e0b3", "#e3f3ec"],
-			});
-		}
-	}, [stars, perfect]);
+		if (!perfect || reduced) return;
+		// Each edge turns at the flip's midpoint (45% of 420ms), when the tile is edge-on.
+		const timers = [0, 1, 2].map((i) => setTimeout(() => setLit(i + 1), FLIP_AT + i * FLIP_STEP + 190));
+		return () => timers.forEach(clearTimeout);
+	}, [perfect, reduced]);
 
 	function practiceMissed() {
 		// A Bee round over just the missed words (keeping the list's own sentences when there is a list).
@@ -96,7 +109,7 @@ function Results() {
 				<div className="flex gap-3" role="img" aria-label={`${stars} of 3 stars`}>
 					{[1, 2, 3].map((i) =>
 						i <= stars ? (
-							<Tile key={i} size={72} grain={i} className="animate-tile-drop" style={{ animationDelay: `${i * 140}ms` }} aria-hidden>
+							<Tile key={i} size={72} grain={i} law={i <= lit ? "right" : undefined} style={starMotion(i, stars, perfect)} aria-hidden>
 								<Star className="size-9 fill-ink-soft text-ink-soft" aria-hidden strokeWidth={1.5} />
 							</Tile>
 						) : (

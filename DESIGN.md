@@ -292,6 +292,8 @@ The parent header puts the Brand (four tiles "jade" plus "learning" in Lichen) o
 - **tile-drop** (240ms, ease-out-expo `cubic-bezier(0.16, 1, 0.3, 1)`; from -18px at 1.06 scale to rest): typed tiles, revealed tiles, stars and badges. Staggers are 70 to 140ms for decorative rows.
 - **tile-flip** (420ms, a rotateX to 88 degrees and back): on Check, judged tiles flip in a left-to-right cascade at 55ms per tile, revealing edge colour. The cascade replays each Check through the tile key.
 - **tile-nudge** (360ms, -5px then +4px): the whole row on retry.
+- **tile-land** (420ms, from -56px at 1.14 scale with a small settle): star tiles on a results screen with two or three stars.
+- **Perfect round:** after the stars land, they flip left to right (110ms apart) and each comes up with a marigold edge at the flip's midpoint. This is the celebration; there is no confetti or particle effect.
 - **Reveal:** the correct spelling drops in one tile per spoken letter.
 - **Reduced motion:** a global rule forces animation and transition durations to 1ms with one iteration, and the reveal shows the whole word at once (`prefersReducedMotion()`).
 
@@ -307,7 +309,7 @@ The parent header puts the Brand (four tiles "jade" plus "learning" in Lichen) o
 - **Do** keep every tap target at least 44px: text keys are 48px or more, and square icon-only keys are 44 to 48px.
 - **Do** set `autocorrect="off"`, `autocapitalize="none"` and `spellcheck={false}` on any field that takes a spelling.
 - **Do** render tile letters in `--font-tile` so the child's chosen face applies.
-- **Do** keep motion to tile-drop, tile-flip and tile-nudge on ease-out-expo, and check each new animation under `prefers-reduced-motion`.
+- **Do** keep motion to tile-drop, tile-land, tile-flip and tile-nudge on ease-out-expo, and check each new animation under `prefers-reduced-motion`.
 
 ### Don't:
 - **Don't** use marigold for a generic primary, "start" or "continue" action. Marigold means right.
