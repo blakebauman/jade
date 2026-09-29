@@ -1,8 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
-import { stubVoice, stubWords } from "./helpers.ts";
+import { openLanding, stubVoice, stubWords } from "./helpers.ts";
 
 async function setup(page: Page) {
-	await page.goto("/");
+	await openLanding(page);
 	const h = { Origin: new URL(page.url()).origin };
 	await page.request.post("/api/auth/sign-up/email", {
 		headers: h,

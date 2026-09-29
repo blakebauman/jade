@@ -1,8 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
-import { stubVoice, stubWords } from "./helpers.ts";
+import { openLanding, stubVoice, stubWords } from "./helpers.ts";
 
 async function setup(page: Page) {
-	await page.goto("/");
+	await openLanding(page);
 	const h = { Origin: new URL(page.url()).origin };
 	await page.request.post("/api/auth/sign-up/email", {
 		headers: h,
@@ -91,7 +91,7 @@ test("math results show the wrong first answer of a problem fixed on the second 
 test("a perfect round lands the stars, then lights them marigold", async ({ page }) => {
 	const spoken = await stubVoice(page);
 	await stubWords(page);
-	await page.goto("/");
+	await openLanding(page);
 	const h = { Origin: new URL(page.url()).origin };
 	await page.request.post("/api/auth/sign-up/email", {
 		headers: h,

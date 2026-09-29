@@ -1,10 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
-import { stubVoice, stubWords } from "./helpers.ts";
+import { openLanding, stubVoice, stubWords } from "./helpers.ts";
 
 const PASSWORD = "spelling-bee-1";
 
 async function signUp(page: Page) {
-	await page.goto("/");
+	await openLanding(page);
 	const h = { Origin: new URL(page.url()).origin };
 	const email = `so-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@example.com`;
 	await page.request.post("/api/auth/sign-up/email", { headers: h, data: { email, password: PASSWORD, name: "P" } });

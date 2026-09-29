@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { openLanding } from "./helpers.ts";
 
 test("cold start with no connection; offline sign-out is refused", async ({ page, context }) => {
 	test.setTimeout(90_000);
-	await page.goto("/");
+	await openLanding(page);
 	// Better Auth trusts the dev origin (5190); cookies on localhost aren't port-scoped, so the session carries over.
 	const h = { Origin: "http://localhost:5190" };
 	const signUp = await page.request.post("/api/auth/sign-up/email", {

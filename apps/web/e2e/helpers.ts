@@ -49,3 +49,13 @@ export async function stubWords(page: Page) {
 		});
 	});
 }
+
+/**
+ * Open the sign-in page and wait until it has settled (its session check has run). Tests then sign up with
+ * page.request; on a slow runner, a still-pending session check would otherwise see the new cookie and redirect
+ * to /profiles in the middle of the test's next navigation.
+ */
+export async function openLanding(page: Page) {
+	await page.goto("/");
+	await page.getByRole("heading", { name: "Hear it. Spell it. Solve it." }).waitFor();
+}

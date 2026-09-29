@@ -1,9 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
-import { stubVoice, stubWords } from "./helpers.ts";
+import { openLanding, stubVoice, stubWords } from "./helpers.ts";
 
 /** Parent, speller and a one-word list created through the API (the browser context shares the cookie). */
 async function setup(page: Page, word: string, name: string) {
-	await page.goto("/");
+	await openLanding(page);
 	const origin = new URL(page.url()).origin;
 	const h = { Origin: origin };
 	await page.request.post("/api/auth/sign-up/email", {

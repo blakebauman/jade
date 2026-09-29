@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { stubVoice, stubWords } from "./helpers.ts";
+import { openLanding, stubVoice, stubWords } from "./helpers.ts";
 
 /**
  * Playwright has no iOS on-screen keyboard, so this fakes what Safari does: the visual viewport shrinks to the
@@ -29,7 +29,7 @@ test("answer tiles and Check stay above the iPad keyboard", async ({ page }, inf
 	await stubVoice(page);
 	await stubWords(page);
 
-	await page.goto("/");
+	await openLanding(page);
 	const h = { Origin: new URL(page.url()).origin };
 	await page.request.post("/api/auth/sign-up/email", {
 		headers: h,
