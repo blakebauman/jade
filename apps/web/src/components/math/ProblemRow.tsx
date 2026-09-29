@@ -27,11 +27,26 @@ function OpMark({ v, size }: { v: string; size: number }) {
 	);
 }
 
-function NumberTiles({ v, size, law }: { v: string; size: number; law?: Law }) {
+/**
+ * Digits as tiles. `motion` matches the spelling row: typed tiles drop in, judged tiles flip in a left-to-right cascade
+ * (the key includes the law so the flip replays on each check), and a revealed answer drops in one tile per beat.
+ */
+export function NumberTiles({ v, size, law, motion }: { v: string; size: number; law?: Law; motion?: "drop" | "flip" | "reveal" }) {
 	return (
 		<span className="flex shrink-0" style={{ gap: Math.max(2, size * 0.06) }}>
 			{[...v].map((c, i) => (
-				<Tile key={`${c}-${i}`} letter={c} size={size} law={law} grain={(i + c.charCodeAt(0)) % 4} aria-hidden />
+				<Tile
+					key={`${c}-${i}-${law ?? ""}`}
+					letter={c}
+					size={size}
+					law={law}
+					grain={(i + c.charCodeAt(0)) % 4}
+					className={motion === "flip" ? "animate-tile-flip" : motion ? "animate-tile-drop" : undefined}
+					style={
+						motion === "flip" ? { animationDelay: `${i * 55}ms` } : motion === "reveal" ? { animationDelay: `${i * 140}ms` } : undefined
+					}
+					aria-hidden
+				/>
 			))}
 		</span>
 	);
@@ -40,10 +55,10 @@ function NumberTiles({ v, size, law }: { v: string; size: number; law?: Law }) {
 /** Answer slot: typed characters as tiles plus a caret square while answering, so it's clear where the answer grows. */
 function AnswerSlot({ typed, size, law }: { typed: string; size: number; law?: Law }) {
 	if (!typed) return <Square size={size} active />;
-	if (law) return <NumberTiles v={typed} size={size} law={law} />;
+	if (law) return <NumberTiles v={typed} size={size} law={law} motion="flip" />;
 	return (
 		<span className="flex shrink-0 items-center" style={{ gap: Math.max(2, size * 0.06) }}>
-			<NumberTiles v={typed} size={size} />
+			<NumberTiles v={typed} size={size} motion="drop" />
 			<Square size={size * 0.5} active />
 		</span>
 	);
@@ -117,7 +132,8 @@ export function ProblemRow({ problem, typed, law }: { problem: Problem; typed: s
 						{t.t === "op" && <OpMark v={t.v} size={size} />}
 						{t.t === "frac" && <FracStack n={t.n} d={t.d} size={size} typed={typed} law={t.n === "?" ? law : undefined} />}
 						{t.t === "blank" && <AnswerSlot typed={typed} size={size} law={law} />}
-						{t.t === "choice" && (typed ? <NumberTiles v={typed} size={size} law={law} /> : <Square size={size} active />)}
+						{t.t === "choice" &&
+							(typed ? <NumberTiles v={typed} size={size} law={law} motion={law ? "flip" : "drop"} /> : <Square size={size} active />)}
 					</Fragment>
 				))}
 			</div>

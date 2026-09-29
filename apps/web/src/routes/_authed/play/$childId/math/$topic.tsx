@@ -8,7 +8,7 @@ import { ArrowRight, Volume2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { Keypad } from "#/components/math/Keypad.tsx";
-import { ProblemRow, tokensText } from "#/components/math/ProblemRow.tsx";
+import { NumberTiles, ProblemRow, tokensText } from "#/components/math/ProblemRow.tsx";
 import { Visual } from "#/components/math/Visual.tsx";
 import { useChild } from "#/lib/child.ts";
 import { dayKey, useVisualViewport } from "#/lib/hooks.ts";
@@ -238,15 +238,27 @@ function MathRound() {
 						<button type="button" className="key !min-h-16 !px-10 !text-2xl" data-variant="go" onClick={begin}>
 							<Volume2 className="size-7" aria-hidden /> Start
 						</button>
+						<p className="hidden text-sm text-felt-muted md:block">
+							Keys: <kbd className="rounded bg-felt-deep px-1.5">0–9</kbd> answer · <kbd className="rounded bg-felt-deep px-1.5">↑</kbd>{" "}
+							read again · <kbd className="rounded bg-felt-deep px-1.5">Enter</kbd> check
+						</p>
 					</div>
 				</section>
 			) : (
 				<section className={`flex flex-1 flex-col items-center gap-6 pb-8 ${keyboard ? "" : "justify-center"}`}>
 					<div className="flex w-full flex-col items-center gap-4">
-						<button type="button" onClick={say} className="tile !rounded-full" style={{ width: 64, height: 64 }} aria-label="Read it again">
+						<button
+							type="button"
+							onClick={say}
+							className="tile !rounded-full transition-transform active:translate-y-0.5"
+							style={{ width: 64, height: 64 }}
+							aria-label="Read it again"
+						>
 							<Volume2 className="size-7" aria-hidden strokeWidth={2.2} />
 						</button>
-						{problem.text && <p className="plaque !block max-w-[52ch] px-5 py-3 text-center text-lg leading-relaxed">{problem.text}</p>}
+						{problem.text && (
+							<p className="plaque !block max-w-[52ch] px-5 py-3 text-center text-lg leading-relaxed text-pretty">{problem.text}</p>
+						)}
 						<div className="flex w-full items-center justify-center py-2">
 							<ProblemRow problem={problem} typed={s.typed} law={law} />
 						</div>
@@ -262,10 +274,13 @@ function MathRound() {
 
 					{s.phase === "reveal" && (
 						<div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-3xl bg-felt-deep/60 p-5">
-							<p className="font-display text-2xl">
-								The answer is <span className="plaque !inline-flex px-3 py-0.5">{answerText(problem.answer)}</span>
-							</p>
-							<p className="text-center text-lg">{problem.explain}</p>
+							<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
+								<p className="font-display text-2xl">
+									The answer is<span className="sr-only"> {answerText(problem.answer)}</span>
+								</p>
+								<NumberTiles v={answerText(problem.answer)} size={48} law="right" motion="reveal" />
+							</div>
+							<p className="text-center text-lg text-balance">{problem.explain}</p>
 							{problem.visual && <Visual visual={problem.visual} />}
 						</div>
 					)}

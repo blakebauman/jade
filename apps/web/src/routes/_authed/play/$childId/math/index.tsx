@@ -3,7 +3,7 @@ import { KidTile } from "@jade/ui/components/kid-tile";
 import { Pips, Tile } from "@jade/ui/components/tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Divide, Percent, Play, RotateCcw, Sigma, X as Times } from "lucide-react";
+import { BookOpenText, Brain, ChartPie, Play, RotateCcw, X as Times } from "lucide-react";
 import { useChild } from "#/lib/child.ts";
 import { progressQuery } from "#/lib/queries.ts";
 import { speaker } from "#/lib/speaker.ts";
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authed/play/$childId/math/")({
 	component: MathHome,
 });
 
-const TOPIC_ICON: Record<MathTopic, typeof Times> = { facts: Times, mental: Sigma, fractions: Percent, problems: Divide };
+const TOPIC_ICON: Record<MathTopic, typeof Times> = { facts: Times, mental: Brain, fractions: ChartPie, problems: BookOpenText };
 const TOPIC_HINT: Record<MathTopic, string> = {
 	facts: "Times tables and division facts",
 	mental: "Add, subtract, multiply in your head",

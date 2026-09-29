@@ -27,7 +27,7 @@ function SubjectTile({ to, word, note }: { to: "/play/$childId/spelling" | "/pla
 			to={to}
 			params={{ childId: child.id }}
 			onClick={() => speaker.unlock()}
-			className="rack group flex min-h-44 flex-col justify-between gap-6 !p-6 transition-transform hover:-translate-y-1 md:!p-8"
+			className="rack flex min-h-44 flex-col justify-between gap-6 !p-6 transition-[filter,transform] hover:brightness-105 active:translate-y-px md:!p-8"
 		>
 			<span className="flex flex-wrap gap-1.5" aria-hidden>
 				{[...word].map((c, i) => (

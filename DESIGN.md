@@ -254,7 +254,7 @@ One class, `.key`, with variants set by `data-variant`. The hierarchy follows wh
 - **Go (`data-variant="go"`):** the chalk felt face with deep felt text and a chalk bevel. It is the one primary non-check action per view: Review, Bee, Save list, Next word, Practice missed, Create.
 - **Tile (`data-variant="tile"`):** grained maple. Only for things the speller handles: Slowly, the bee questions (Definition, Sentence, Origin) and results' hear-word.
 - **Check (`data-variant="check"`):** a marigold-tinted maple face with a marigold-deep bevel, at the right end of the answer row. The label becomes screen-reader-only below sm and while the keyboard is up.
-- **Hover / Active / Disabled:** hover sets brightness to 1.08. Active translates 1px (maple keys sink 0.12em and thin their bevel). Disabled drops to 0.45 opacity with a not-allowed cursor. Focus uses the global chalk ring (3px, offset 3px).
+- **Hover / Active / Disabled:** hover sets brightness to 1.08. Active translates 1px (maple keys sink 0.12em and thin their bevel). Disabled drops to 0.45 opacity with a not-allowed cursor. A disabled Check is the exception: it sits as an empty recess in the felt (square shadow, Lichen label) instead of a faded marigold, which reads olive. Focus uses the global chalk ring (3px, offset 3px).
 - **Selected (`data-pressed="true"`):** pressed into the felt, with a felt-deep face and an inset shadow. Use it for segmented choices (sign-in or sign-up, list import tabs) and the active parent nav item (alongside `aria-current="page"`).
 
 ### Tile
@@ -278,6 +278,7 @@ The play row. It holds typed tiles, then squares (every remaining square when th
 ### Plaque, Rack, Patch
 - **Plaque:** a small maple object (0.7rem radius, grain 3) for badges, streak and star stats, and the spoken definition or sentence. Badges and stats are never flat fills.
 - **Rack:** the walnut shelf tiles stand on. It holds the bee questions and the results scoreboard of missed words.
+- **Maple fill (`.maple`):** grain and gradient for maple shapes that aren't tiles, such as fraction-bar pieces and array counters in math explanations.
 - **Patch:** a calm raised-felt panel for parent screens (felt-raised at 70%, 1.25rem radius, a 1px top light). It is a slightly raised patch of board, not a card.
 
 ### Inputs / Fields

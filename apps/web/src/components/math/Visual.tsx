@@ -12,7 +12,7 @@ export function Visual({ visual }: { visual: V }) {
 				aria-label={`${visual.rows} rows of ${visual.cols}`}
 			>
 				{Array.from({ length: visual.rows * visual.cols }, (_, i) => (
-					<span key={i} className="rounded-full bg-maple" style={{ width: cell, height: cell }} />
+					<span key={i} className="maple rounded-full" style={{ width: cell, height: cell }} />
 				))}
 			</div>
 		);
@@ -28,7 +28,7 @@ export function Visual({ visual }: { visual: V }) {
 						aria-label={`${b.n} out of ${b.d} parts`}
 					>
 						{Array.from({ length: b.d }, (_, j) => (
-							<span key={j} className={`flex-1 border-r border-felt-deep last:border-r-0 ${j < b.n ? "bg-maple" : "bg-felt-deep/60"}`} />
+							<span key={j} className={`flex-1 border-r border-felt-deep last:border-r-0 ${j < b.n ? "maple" : "bg-felt-deep/60"}`} />
 						))}
 					</div>
 					<span className="w-14 text-right font-display text-lg tabular-nums">
