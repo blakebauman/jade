@@ -132,7 +132,7 @@ Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any
 
 ## Deploy
 
-Production: **https://jade-learning.bauman.workers.dev**. It was first deployed 2026-09-28 with D1 `jade-learning`, R2 `jade-learning-audio` and the `BETTER_AUTH_SECRET` secret set.
+Production: **https://jade.bauman.workers.dev** (Worker `jade`). It was first deployed 2026-09-28 as `jade-learning` and renamed to `jade` the same day, with D1 `jade-learning`, R2 `jade-learning-audio` and the `BETTER_AUTH_SECRET` secret set.
 
 ```bash
 pnpm db:migrate:remote   # after adding a migration
