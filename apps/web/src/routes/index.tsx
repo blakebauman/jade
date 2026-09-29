@@ -79,7 +79,7 @@ function Landing() {
 				<h1 className="text-5xl leading-[1.05] font-semibold md:text-6xl">
 					Hear it. Spell it.
 					<br />
-					Own it.
+					Solve it.
 				</h1>
 				<p className="max-w-[46ch] text-lg text-pretty text-felt-muted">
 					Spelling and math practice for 8–11 year olds. Load this week’s school list, and your child hears each word, asks for the

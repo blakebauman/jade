@@ -16,7 +16,7 @@ test("signing out forgets the family on this device", async ({ page }) => {
 	});
 	expect(await page.evaluate(() => localStorage.getItem("jade.user"))).not.toBeNull();
 	await page.getByRole("button", { name: "Sign out" }).click();
-	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Own it." })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Solve it." })).toBeVisible();
 	const left = await page.evaluate(async () => ({ user: localStorage.getItem("jade.user"), caches: await caches.keys() }));
 	expect(left.user).toBeNull();
 	expect(left.caches).not.toContain("jade-data");
