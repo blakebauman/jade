@@ -87,9 +87,9 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 	await expect(page.getByRole("button", { name: `Hear ${second}` })).toBeVisible();
 	await page.screenshot({ path: `test-results/${info.project.name}-results.png`, fullPage: true });
 
-	// Review now offers the missed word.
+	// Done returns to the spelling home, where review now offers the missed word.
 	await page.getByRole("link", { name: "Done" }).click();
-	await expect(page.getByText("1 word to review")).toBeVisible();
+	await expect(page.getByRole("heading", { name: "1 word wants another go" })).toBeVisible();
 	await page.screenshot({ path: `test-results/${info.project.name}-home.png`, fullPage: true });
 
 	// Parent progress view: trouble word with its pips.

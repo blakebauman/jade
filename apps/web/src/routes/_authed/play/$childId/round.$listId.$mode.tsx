@@ -186,6 +186,7 @@ function RoundScreen() {
 			summary,
 			newBadges: [...r.newBadges, ...(summary?.newBadges ?? [])],
 			queued: summary === null,
+			firstTries: r.firstTries,
 		});
 		void qc.invalidateQueries({ queryKey: ["progress", child.id] });
 		navigate({ to: "/play/$childId/results", params: { childId: child.id }, replace: true });

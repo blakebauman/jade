@@ -45,6 +45,11 @@ export type FinishedRound = {
 	/** Badges earned along the way (each saved answer can earn one), plus any from finishing. */
 	newBadges: BadgeView[];
 	queued: boolean;
+	/**
+	 * First answers for items that took two tries, by attempt `clientId`. Device-only: the attempt itself records
+	 * the final answer, so without this the results would show the right answer as the "first try".
+	 */
+	firstTries?: Record<string, string>;
 };
 
 type RoundState = {
@@ -63,6 +68,8 @@ type RoundState = {
 	revealed: number;
 	current: WordState;
 	attempts: AttemptInput[];
+	/** First answers of words that took two tries, by attempt `clientId` (see FinishedRound.firstTries). */
+	firstTries: Record<string, string>;
 	startedAt: number;
 	/** The server has the session row (sent once, on the first tap). */
 	serverStarted: boolean;
@@ -129,6 +136,7 @@ export const useRound = create<RoundState>()(
 			revealed: 0,
 			current: freshWord(),
 			attempts: [],
+			firstTries: {},
 			startedAt: 0,
 			serverStarted: false,
 			finished: true,
@@ -154,6 +162,7 @@ export const useRound = create<RoundState>()(
 					revealed: 0,
 					current: freshWord(),
 					attempts: [],
+					firstTries: {},
 					startedAt: Date.now(),
 				}),
 
@@ -186,11 +195,12 @@ export const useRound = create<RoundState>()(
 				const maxTries = s.mode === "learn" ? 1 : 2;
 				const phase: Phase = grade.correct ? "correct" : tries >= maxTries ? "reveal" : "retry";
 				const done = phase === "correct" || phase === "reveal";
+				const clientId = crypto.randomUUID();
 				const attempts = done
 					? [
 							...s.attempts,
 							{
-								clientId: crypto.randomUUID(),
+								clientId,
 								word: normalizeWord(target.word),
 								typed: grade.correct ? s.typed : (current.firstTyped ?? s.typed),
 								correct: grade.correct,
@@ -201,7 +211,8 @@ export const useRound = create<RoundState>()(
 							},
 						]
 					: s.attempts;
-				set({ grade, phase, current, attempts });
+				const firstTries = done && tries > 1 && current.firstTyped ? { ...s.firstTries, [clientId]: current.firstTyped } : s.firstTries;
+				set({ grade, phase, current, attempts, firstTries });
 				return grade;
 			},
 
@@ -251,6 +262,7 @@ export const useRound = create<RoundState>()(
 				words: s.words,
 				index: s.index,
 				attempts: s.attempts,
+				firstTries: s.firstTries,
 				startedAt: s.startedAt,
 				serverStarted: s.serverStarted,
 				finished: s.finished,

@@ -136,19 +136,26 @@ function Results() {
 			{isMath && mathMissed.length > 0 && (
 				<section className="mt-14 space-y-5">
 					<h2 className="text-2xl font-semibold">Worth another look</h2>
-					<ul className="rack space-y-4 !px-5 !pt-5 !pb-7 md:!px-7">
-						{mathMissed.map((it, i) => (
-							<li key={`${it.key}-${i}`} className="space-y-1.5 border-b border-maple-lo/40 pb-4 text-ink last:border-0 last:pb-0">
-								<p className="font-display text-xl">
-									{it.prompt.replace(" ?", "")} <span className="plaque !inline-flex px-2.5 py-0.5">{it.answer}</span>
-								</p>
-								<p className="text-sm">
-									{it.correct ? "Right on the second try. First try:" : "You answered:"}{" "}
-									<span className="font-semibold underline decoration-coral decoration-[3px] underline-offset-4">{it.typed}</span>
-								</p>
-								<p className="text-sm">{it.explain}</p>
-							</li>
-						))}
+					<ul className="rack space-y-5 !px-5 !pt-5 !pb-7 md:!px-7">
+						{mathMissed.map((it, i) => {
+							const story = it.key.startsWith("m:wp:");
+							return (
+								<li key={`${it.key}-${i}`} className="space-y-2.5 border-b border-maple-lo/40 pb-5 text-ink last:border-0 last:pb-0">
+									{/* The problem with its answer in marigold tiles, as the round revealed it. */}
+									<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+										<p className={story ? "max-w-prose text-pretty" : "font-display text-xl"}>{it.prompt.replace(/\s*\?$/, "")}</p>
+										<WordTiles word={it.answer} size={34} laws={[...it.answer].map(() => "right")} />
+									</div>
+									{it.typed && (
+										<p className="flex flex-wrap items-center gap-2 text-sm">
+											{it.correct ? "Second try. First try was:" : "You answered:"}
+											<WordTiles word={it.typed} size={22} laws={[...it.typed].map(() => "wrong")} />
+										</p>
+									)}
+									<p className="max-w-prose text-sm text-pretty">{it.explain}</p>
+								</li>
+							);
+						})}
 					</ul>
 				</section>
 			)}
@@ -176,10 +183,12 @@ function Results() {
 										<WordTiles word={a.word} size={34} laws={[...a.word].map(() => "right")} />
 										{progress && <Pips box={progress.boxes[a.word] ?? 1} className="rounded-full bg-felt-deep/80 px-2 py-1.5" />}
 									</div>
-									<p className="flex flex-wrap items-center gap-2 text-sm text-ink">
-										{a.correct ? "Second try. First try was:" : "You wrote:"}
-										<AttemptTiles target={a.word} typed={a.typed} />
-									</p>
+									{(a.correct ? round.firstTries?.[a.clientId] : a.typed) !== undefined && (
+										<p className="flex flex-wrap items-center gap-2 text-sm text-ink">
+											{a.correct ? "Second try. First try was:" : "You wrote:"}
+											<AttemptTiles target={a.word} typed={a.correct ? round.firstTries![a.clientId]! : a.typed} />
+										</p>
+									)}
 								</div>
 							</li>
 						))}
@@ -204,7 +213,7 @@ function Results() {
 						{missed.length === 1 ? "Practice this word now" : `Practice these ${missed.length} now`}
 					</button>
 				)}
-				<Link to={isMath ? "/play/$childId/math" : "/play/$childId"} params={{ childId: child.id }} className="key">
+				<Link to={isMath ? "/play/$childId/math" : "/play/$childId/spelling"} params={{ childId: child.id }} className="key">
 					Done
 				</Link>
 			</div>

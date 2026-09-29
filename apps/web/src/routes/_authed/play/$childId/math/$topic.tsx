@@ -115,7 +115,8 @@ function MathRound() {
 				key: p.key,
 				prompt: p.text ?? tokensText(p.prompt),
 				answer: answerText(p.answer),
-				typed: a.typed,
+				// The first, wrong answer: for a second-try fix the attempt holds the final one, so take it from firstTries.
+				typed: a.correct ? (r.firstTries[a.clientId] ?? "") : a.typed,
 				correct: a.correct,
 				firstTry: a.correct && a.tries === 1,
 				explain: p.explain,

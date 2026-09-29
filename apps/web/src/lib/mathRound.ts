@@ -30,6 +30,8 @@ type MathRoundState = {
 	result: CheckResult | null;
 	current: Current;
 	attempts: AttemptInput[];
+	/** First answers of problems that took two tries, by attempt `clientId`. */
+	firstTries: Record<string, string>;
 	startedAt: number;
 	serverStarted: boolean;
 	finished: boolean;
@@ -61,6 +63,7 @@ export const useMathRound = create<MathRoundState>()(
 			result: null,
 			current: fresh(),
 			attempts: [],
+			firstTries: {},
 			startedAt: 0,
 			serverStarted: false,
 			finished: true,
@@ -78,6 +81,7 @@ export const useMathRound = create<MathRoundState>()(
 					result: null,
 					current: fresh(),
 					attempts: [],
+					firstTries: {},
 					startedAt: Date.now(),
 					serverStarted: false,
 					finished: false,
@@ -133,11 +137,12 @@ export const useMathRound = create<MathRoundState>()(
 				const current = { ...s.current, tries, firstTyped: s.current.firstTyped ?? s.typed };
 				const phase: MathPhase = result.correct ? "correct" : tries >= 2 ? "reveal" : "retry";
 				const done = phase === "correct" || phase === "reveal";
+				const clientId = crypto.randomUUID();
 				const attempts = done
 					? [
 							...s.attempts,
 							{
-								clientId: crypto.randomUUID(),
+								clientId,
 								word: p.key,
 								typed: result.correct ? s.typed : (current.firstTyped ?? s.typed),
 								correct: result.correct,
@@ -150,7 +155,8 @@ export const useMathRound = create<MathRoundState>()(
 							},
 						]
 					: s.attempts;
-				set({ result, phase, current, attempts, typed: phase === "retry" ? "" : s.typed });
+				const firstTries = done && tries > 1 && current.firstTyped ? { ...s.firstTries, [clientId]: current.firstTyped } : s.firstTries;
+				set({ result, phase, current, attempts, firstTries, typed: phase === "retry" ? "" : s.typed });
 				return result;
 			},
 
@@ -174,6 +180,7 @@ export const useMathRound = create<MathRoundState>()(
 				problems: s.problems,
 				index: s.index,
 				attempts: s.attempts,
+				firstTries: s.firstTries,
 				startedAt: s.startedAt,
 				serverStarted: s.serverStarted,
 				finished: s.finished,
