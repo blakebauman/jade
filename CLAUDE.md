@@ -22,6 +22,7 @@ pnpm dev                 # Apply local D1 migrations, then Vite + Worker on http
                          # `wrangler login` is required and usage is billed (fractions of a cent).
 pnpm test                # All unit tests: core (vitest), api (vitest-pool-workers + miniflare D1/R2), web (jsdom)
 pnpm test:e2e            # Playwright: laptop (Chromium), iPad Pro 11 (WebKit), iPhone 15. Starts `pnpm dev` if needed.
+pnpm test:e2e:offline    # Opening the app offline, against a production build (vite preview on 4173, Chromium)
 pnpm --filter @jade/api test -- -t "tts"   # One API test by name
 pnpm typecheck           # tsc across packages
 pnpm check               # Biome format + lint (write)
