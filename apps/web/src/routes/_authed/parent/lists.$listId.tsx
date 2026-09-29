@@ -7,6 +7,7 @@ import { type ChangeEvent, useEffect, useId, useState } from "react";
 import { api, type ListWord, type WordList } from "#/lib/api.ts";
 import { preparePhoto, wordsFromFile } from "#/lib/import.ts";
 import { listQuery } from "#/lib/queries.ts";
+import { warmList } from "#/lib/warm.ts";
 
 export const Route = createFileRoute("/_authed/parent/lists/$listId")({ component: ListEditor });
 
@@ -53,8 +54,8 @@ function ListEditor() {
 				await api<WordList>(`/api/lists/${listId}`, { method: "PATCH", json: { name: body.name, grade } });
 				list = await api<WordList>(`/api/lists/${listId}/words`, { method: "PUT", json: { words } });
 			}
-			// Warm definitions and sentences so the first round has them ready; failures here are harmless.
-			void api("/api/words/batch", { method: "POST", json: { words: list.words.slice(0, 100).map((w) => w.word) } }).catch(() => {});
+			// Fetch definitions/sentences and pre-generate the voice clips so the first round plays instantly.
+			void warmList(list.words);
 			return list;
 		},
 		onSuccess: (list) => {

@@ -4,6 +4,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { api, type WordList } from "#/lib/api.ts";
 import { listsQuery, packsQuery } from "#/lib/queries.ts";
+import { warmList } from "#/lib/warm.ts";
 
 export const Route = createFileRoute("/_authed/parent/")({
 	loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(listsQuery), context.queryClient.ensureQueryData(packsQuery)]),
@@ -20,6 +21,7 @@ function Lists() {
 	const addPack = useMutation({
 		mutationFn: (id: string) => api<WordList>(`/api/lists/packs/${id}`, { method: "POST" }),
 		onSuccess: (list) => {
+			void warmList(list.words);
 			qc.invalidateQueries({ queryKey: ["lists"] });
 			navigate({ to: "/parent/lists/$listId", params: { listId: list.id } });
 		},

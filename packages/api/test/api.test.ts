@@ -202,6 +202,29 @@ describe("tts", () => {
 		);
 	});
 
+	it("pre-generates clips for every speller's voice, skipping ones already cached", async () => {
+		const cookie = await signUp();
+		await call("/api/children", { method: "POST", cookie, json: { name: "A", settings: { voice: "orion" } } });
+		await call("/api/children", { method: "POST", cookie, json: { name: "B", settings: { voice: "athena" } } });
+		const { ai, calls } = fakeAi({ "@cf/deepgram/aura-2-en": () => mp3Stream() });
+		const items = [
+			{ text: "separate", kind: "word" },
+			{ text: "Please keep the toys separate.", kind: "sentence" },
+		];
+		const first = await (await call("/api/tts/warm", { method: "POST", cookie, json: { items } }, ai)).json();
+		expect(first).toMatchObject({ generated: 4, cached: 0, failed: 0 });
+		expect(new Set(calls.map((c) => (c.input as { speaker: string }).speaker))).toEqual(new Set(["orion", "athena"]));
+
+		const again = await (await call("/api/tts/warm", { method: "POST", cookie, json: { items } }, ai)).json();
+		expect(again).toMatchObject({ generated: 0, cached: 4 });
+
+		// The round's own request (same text/kind/voice) now hits the cache without touching the model.
+		const res = await call("/api/tts?text=separate&kind=word&voice=orion", { cookie }, ai);
+		expect(res.headers.get("X-Audio-Cache")).toBe("hit");
+		await res.arrayBuffer();
+		expect(calls).toHaveLength(4);
+	});
+
 	it("returns 502 when the voice model fails so the client can fall back", async () => {
 		const cookie = await signUp();
 		const { ai } = fakeAi({
