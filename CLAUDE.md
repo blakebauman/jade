@@ -99,6 +99,7 @@ Secrets:
 - Everything is idempotent. Attempts are keyed by client id, and only newly inserted rows count (`recordAttempts` uses `insert … on conflict do nothing returning`), so replays and a finish that re-sends everything never double-count. Totals are incremented in SQL.
 - Writes go through an ordered op queue in IndexedDB (`lib/offline.ts`, Dexie `ops` table). Offline, they wait and flush in order on `online`. A 4xx other than 429 drops the op.
 - Learn mode records attempts but never moves Leitner boxes.
+- Offline mid-session: `_authed` keeps the last confirmed user when the session check can't reach the server, and round loaders use `roundProgress` (fresh, else cached progress), so a new round can still start. A cold start offline still needs the network.
 
 **SRS and streaks:**
 - SRS is driven by first-try correctness. A new word spelled right starts in box 2, due tomorrow; a miss goes to box 1, due now.

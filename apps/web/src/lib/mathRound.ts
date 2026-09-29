@@ -187,5 +187,5 @@ export function resumableMath(childId: string) {
 	const s = useMathRound.getState();
 	const left = s.problems.length - s.attempts.length;
 	if (s.finished || s.childId !== childId || left <= 0 || s.attempts.length === 0 || Date.now() - s.startedAt > 86_400_000) return null;
-	return { mode: s.mode, done: s.attempts.length, total: s.problems.length };
+	return { mode: s.mode, done: s.attempts.length, total: s.problems.length, startedAt: s.startedAt };
 }

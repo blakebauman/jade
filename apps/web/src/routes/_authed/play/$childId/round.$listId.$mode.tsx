@@ -13,7 +13,7 @@ import { useChild } from "#/lib/child.ts";
 import { describeMiss, firstFlagged } from "#/lib/feedback.ts";
 import { dayKey, prefersReducedMotion, useVisualViewport } from "#/lib/hooks.ts";
 import { finishSession, saveAttempts, startSession } from "#/lib/offline.ts";
-import { listQuery, progressQuery, wordQuery } from "#/lib/queries.ts";
+import { listQuery, progressQuery, roundProgress, wordQuery } from "#/lib/queries.ts";
 import { type RoundWord, useRound } from "#/lib/round.ts";
 import { speaker } from "#/lib/speaker.ts";
 
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authed/play/$childId/round/$listId/$mode
 		const only = deps.only ? new Set(deps.only.split(",")) : null;
 		if (params.listId === "review") {
 			if (only) return { words: [...only].map((word) => ({ word })) as RoundWord[], name: "Practice" };
-			const progress = await context.queryClient.fetchQuery(progressQuery(params.childId));
+			const progress = await roundProgress(context.queryClient, params.childId);
 			return { words: progress.reviewDue.map((word) => ({ word })) as RoundWord[], name: "Review" };
 		}
 		const list = await context.queryClient.ensureQueryData(listQuery(params.listId));

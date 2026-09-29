@@ -50,6 +50,8 @@ function SubjectHub() {
 	const spellingDue = progress?.reviewDue.length ?? 0;
 	const factsDue = progress?.math.factsDue.length ?? 0;
 	const earned = progress?.badges.filter((b) => b.earned) ?? [];
+	// One primary key per view: the round touched most recently gets it.
+	const latest = !mathLeft || (spellingLeft && spellingLeft.startedAt >= mathLeft.startedAt) ? "spelling" : "math";
 
 	return (
 		<main className="mx-auto min-h-dvh max-w-5xl px-5 py-6 md:px-10">
@@ -78,54 +80,58 @@ function SubjectHub() {
 				)}
 			</header>
 
+			<h1 className="sr-only">{child.name}’s practice</h1>
+
 			{(spellingLeft || mathLeft) && (
-				<section className="mt-10 space-y-3" aria-label="Unfinished rounds">
-					{spellingLeft && (
-						<div className="flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
-							<div>
-								<h2 className="text-2xl font-semibold">Pick up where you left off</h2>
+				<section className="patch mt-10 p-6" aria-labelledby="resume-heading">
+					<h2 id="resume-heading" className="text-2xl font-semibold">
+						Pick up where you left off
+					</h2>
+					<ul className="mt-2 divide-y divide-felt-line/50">
+						{spellingLeft && (
+							<li className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 py-3">
 								<p className="text-felt-muted">
-									Spelling · {spellingLeft.name}: {spellingLeft.done} of {spellingLeft.total} words done
+									<span className="font-display text-lg font-medium text-felt-ink">Spelling</span> · {spellingLeft.name}:{" "}
+									{spellingLeft.done} of {spellingLeft.total} words done
 								</p>
-							</div>
-							<Link
-								to="/play/$childId/round/$listId/$mode"
-								params={{ childId: child.id, listId: spellingLeft.listId ?? "review", mode: spellingLeft.mode as SpellingMode }}
-								search={{ resume: true }}
-								onClick={() => speaker.unlock()}
-								className="key"
-								data-variant="go"
-							>
-								<Play className="size-5" aria-hidden /> Continue
-							</Link>
-						</div>
-					)}
-					{mathLeft && (
-						<div className="flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
-							<div>
-								<h2 className="text-2xl font-semibold">Pick up where you left off</h2>
+								<Link
+									to="/play/$childId/round/$listId/$mode"
+									params={{ childId: child.id, listId: spellingLeft.listId ?? "review", mode: spellingLeft.mode as SpellingMode }}
+									search={{ resume: true }}
+									onClick={() => speaker.unlock()}
+									className="key"
+									data-variant={latest === "spelling" ? "go" : undefined}
+									aria-label="Continue spelling"
+								>
+									<Play className="size-5" aria-hidden /> Continue
+								</Link>
+							</li>
+						)}
+						{mathLeft && (
+							<li className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 py-3">
 								<p className="text-felt-muted">
-									Math · {mathLeft.mode === "mathreview" ? "Facts review" : TOPIC_LABEL[mathLeft.mode]}: {mathLeft.done} of {mathLeft.total}{" "}
-									done
+									<span className="font-display text-lg font-medium text-felt-ink">Math</span> ·{" "}
+									{mathLeft.mode === "mathreview" ? "Facts review" : TOPIC_LABEL[mathLeft.mode]}: {mathLeft.done} of {mathLeft.total} done
 								</p>
-							</div>
-							<Link
-								to="/play/$childId/math/$topic"
-								params={{ childId: child.id, topic: mathLeft.mode }}
-								search={{ resume: true }}
-								onClick={() => speaker.unlock()}
-								className="key"
-								data-variant="go"
-							>
-								<Play className="size-5" aria-hidden /> Continue
-							</Link>
-						</div>
-					)}
+								<Link
+									to="/play/$childId/math/$topic"
+									params={{ childId: child.id, topic: mathLeft.mode }}
+									search={{ resume: true }}
+									onClick={() => speaker.unlock()}
+									className="key"
+									data-variant={latest === "math" ? "go" : undefined}
+									aria-label="Continue math"
+								>
+									<Play className="size-5" aria-hidden /> Continue
+								</Link>
+							</li>
+						)}
+					</ul>
 				</section>
 			)}
 
 			<section className="mt-12 space-y-5">
-				<h1 className="text-3xl font-semibold">What shall we practice?</h1>
+				<h2 className="text-3xl font-semibold">What shall we practice?</h2>
 				<div className="grid gap-6 md:grid-cols-2">
 					<SubjectTile
 						to="/play/$childId/spelling"

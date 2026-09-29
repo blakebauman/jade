@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { Pending } from "./components/Pending.tsx";
 import { flushPending } from "./lib/offline.ts";
 import { routeTree } from "./routeTree.gen.ts";
 
@@ -18,7 +19,13 @@ const queryClient = new QueryClient({
 	defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
 
-const router = createRouter({ routeTree, context: { queryClient }, defaultPreload: "intent", scrollRestoration: true });
+const router = createRouter({
+	routeTree,
+	context: { queryClient },
+	defaultPreload: "intent",
+	defaultPendingComponent: Pending,
+	scrollRestoration: true,
+});
 
 declare module "@tanstack/react-router" {
 	interface Register {

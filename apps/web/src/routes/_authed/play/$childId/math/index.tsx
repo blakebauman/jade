@@ -42,8 +42,10 @@ function MathHome() {
 				</Link>
 			</header>
 
+			<h1 className="sr-only">Math</h1>
+
 			{due.length > 0 && (
-				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
+				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 patch p-6">
 					<div className="flex items-center gap-5">
 						<div className="flex -space-x-2" aria-hidden>
 							{due.slice(0, 3).map((k, i) => (
@@ -77,29 +79,33 @@ function MathHome() {
 			)}
 
 			<section className="mt-12 space-y-5">
-				<h1 className="text-3xl font-semibold">Math: pick a topic</h1>
+				<h2 className="text-3xl font-semibold">Math: pick a topic</h2>
 				<ul className="space-y-3">
 					{topics.map((t) => {
 						const Icon = TOPIC_ICON[t];
 						const level = Math.min(...TOPIC_SKILLS[t].map((s) => levels[s] ?? 1));
 						return (
-							<li key={t} className="flex flex-wrap items-center justify-between gap-4 border-b border-felt-line/50 py-4">
-								<div className="flex items-center gap-4">
+							<li key={t} className="flex items-center justify-between gap-4 border-b border-felt-line/50 py-4">
+								<div className="flex min-w-0 items-center gap-4">
 									<Tile size={52} aria-hidden>
 										<Icon className="size-6" strokeWidth={2.4} />
 									</Tile>
-									<div>
-										<h2 className="font-display text-xl font-medium">{TOPIC_LABEL[t]}</h2>
-										<p className="flex items-center gap-2 text-sm text-felt-muted">
-											{TOPIC_HINT[t]} · <Pips box={level} /> <span className="sr-only">level {level} of 5</span>
-										</p>
+									<div className="min-w-0">
+										<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+											<h3 className="font-display text-xl font-medium">{TOPIC_LABEL[t]}</h3>
+											<span aria-hidden className="inline-flex">
+												<Pips box={level} />
+											</span>
+											<span className="sr-only">Level {level} of 5</span>
+										</div>
+										<p className="text-sm text-felt-muted">{TOPIC_HINT[t]}</p>
 									</div>
 								</div>
 								<Link
 									to="/play/$childId/math/$topic"
 									params={{ childId: child.id, topic: t }}
 									onClick={() => speaker.unlock()}
-									className="key min-w-[7rem]"
+									className="key shrink-0 sm:min-w-[7rem]"
 									data-variant="go"
 								>
 									<Play className="size-5" aria-hidden /> Play

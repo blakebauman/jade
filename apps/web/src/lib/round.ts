@@ -266,7 +266,7 @@ export function resumableRound(childId: string) {
 	const s = useRound.getState();
 	const left = s.words.length - s.attempts.length;
 	if (s.finished || s.childId !== childId || left <= 0 || s.attempts.length === 0 || Date.now() - s.startedAt > 86_400_000) return null;
-	return { listId: s.listId, mode: s.mode, name: s.name, done: s.attempts.length, total: s.words.length };
+	return { listId: s.listId, mode: s.mode, name: s.name, done: s.attempts.length, total: s.words.length, startedAt: s.startedAt };
 }
 
 export const wordStars = (a: AttemptInput) => starsForWord(a);

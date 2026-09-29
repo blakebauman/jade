@@ -14,7 +14,7 @@ import { useChild } from "#/lib/child.ts";
 import { dayKey, useVisualViewport } from "#/lib/hooks.ts";
 import { type MathMode, useMathRound } from "#/lib/mathRound.ts";
 import { finishSession, saveAttempts, startSession } from "#/lib/offline.ts";
-import { progressQuery } from "#/lib/queries.ts";
+import { roundProgress } from "#/lib/queries.ts";
 import { type MathResultItem, useRound } from "#/lib/round.ts";
 import { speaker } from "#/lib/speaker.ts";
 
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authed/play/$childId/math/$topic")({
 		stringify: (p) => p,
 	},
 	validateSearch: z.object({ resume: z.boolean().optional() }),
-	loader: ({ context, params }) => context.queryClient.fetchQuery(progressQuery(params.childId)),
+	loader: ({ context, params }) => roundProgress(context.queryClient, params.childId),
 	component: MathRound,
 });
 

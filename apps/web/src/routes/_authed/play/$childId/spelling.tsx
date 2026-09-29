@@ -65,8 +65,10 @@ function SpellingHome() {
 				)}
 			</header>
 
+			<h1 className="sr-only">Spelling</h1>
+
 			{unfinished && (
-				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
+				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 patch p-6">
 					<div>
 						<h2 className="text-2xl font-semibold">Pick up where you left off</h2>
 						<p className="text-felt-muted">
@@ -87,7 +89,7 @@ function SpellingHome() {
 			)}
 
 			{due > 0 && (
-				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
+				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 patch p-6">
 					<div className="flex items-center gap-5">
 						<div className="flex -space-x-2" aria-hidden>
 							{progress!.reviewDue.slice(0, 3).map((w, i) => (
@@ -114,7 +116,7 @@ function SpellingHome() {
 			)}
 
 			<section className="mt-12 space-y-5">
-				<h1 className="text-3xl font-semibold">Spelling: pick a list</h1>
+				<h2 className="text-3xl font-semibold">Spelling: pick a list</h2>
 				{lists.length === 0 ? (
 					<p className="text-felt-muted">No lists yet. Ask a grown-up to add this week’s words in the parent area.</p>
 				) : (
@@ -122,7 +124,7 @@ function SpellingHome() {
 						{lists.map((l) => (
 							<li key={l.id} className="flex flex-wrap items-center justify-between gap-4 border-b border-felt-line/50 py-4">
 								<div>
-									<h2 className="font-display text-xl font-medium">{l.name}</h2>
+									<h3 className="font-display text-xl font-medium">{l.name}</h3>
 									<p className="text-sm text-felt-muted">{l.wordCount} words</p>
 								</div>
 								<div className="flex flex-wrap gap-2">
