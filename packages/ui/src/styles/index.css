@@ -64,16 +64,21 @@
 		45% { transform: perspective(500px) rotateX(88deg); }
 		100% { transform: perspective(500px) rotateX(0deg); }
 	}
-	@keyframes tile-land {
-		0% { transform: translateY(-56px) scale(1.14); }
-		68% { transform: translateY(2px) scale(0.98); }
-		100% { transform: translateY(0) scale(1); }
-	}
 	@keyframes tile-nudge {
 		0%, 100% { transform: translateX(0); }
 		25% { transform: translateX(-5px); }
 		60% { transform: translateX(4px); }
 	}
+}
+
+/*
+ * Outside @theme on purpose: Tailwind only emits @theme keyframes that an animate-* class uses, and the results
+ * screen starts this one from an inline animation list (landing, then the perfect-round flip).
+ */
+@keyframes tile-land {
+	0% { transform: translateY(-56px) scale(1.14); }
+	68% { transform: translateY(2px) scale(0.98); }
+	100% { transform: translateY(0) scale(1); }
 }
 
 /* Per-child letter face (settings.font). */

@@ -87,3 +87,27 @@ test("math results show the wrong first answer of a problem fixed on the second 
 	// The fix shows the wrong first answer, not the right one.
 	await expect(page.getByRole("img", { name: wrong1, exact: true })).toBeVisible();
 });
+
+test("a perfect round lands the stars, then lights them marigold", async ({ page }) => {
+	const spoken = await stubVoice(page);
+	await stubWords(page);
+	await page.goto("/");
+	const h = { Origin: new URL(page.url()).origin };
+	await page.request.post("/api/auth/sign-up/email", {
+		headers: h,
+		data: { email: `pr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@example.com`, password: "spelling-bee-1", name: "P" },
+	});
+	const child = await (await page.request.post("/api/children", { headers: h, data: { name: "Maya" } })).json();
+	const list = await (await page.request.post("/api/lists", { headers: h, data: { name: "One", words: [{ word: "cat" }] } })).json();
+	await page.goto(`/play/${child.id}/round/${list.id}/bee`);
+	await page.getByRole("button", { name: "Start" }).click();
+	await expect.poll(() => spoken.length).toBeGreaterThan(0);
+	await page.getByLabel("Type the spelling").fill(spoken.at(-1)!);
+	await page.getByRole("button", { name: "Check" }).click();
+	await page.getByRole("button", { name: /Finish/ }).click();
+	await page.getByRole("img", { name: "3 of 3 stars" }).waitFor();
+	// The keyframes really exist (a missing @keyframes creates no animation at all).
+	const names = await page.evaluate(() => document.getAnimations().map((a) => (a as CSSAnimation).animationName));
+	expect(names).toContain("tile-land");
+	await expect(page.locator(".tile[data-law=right]")).toHaveCount(3);
+});
