@@ -302,3 +302,98 @@ describe("parent pin", () => {
 		expect(await (await call("/api/parent/verify-pin", { method: "POST", cookie, json: { pin: "2468" } })).json()).toEqual({ ok: true });
 	});
 });
+
+describe("math", () => {
+	async function mathSetup(mode: "facts" | "mental" = "facts") {
+		const cookie = await signUp();
+		const child = (await (await call("/api/children", { method: "POST", cookie, json: { name: "Max" } })).json()) as { id: string };
+		const id = crypto.randomUUID();
+		await call("/api/sessions", {
+			method: "POST",
+			cookie,
+			json: { id, childId: child.id, listId: null, subject: "math", mode, startedAt: Date.now() },
+		});
+		return { cookie, childId: child.id, sessionId: id };
+	}
+	const attempt = (word: string, correct: boolean, skill: string, level: number, ms = 2000) => ({
+		clientId: crypto.randomUUID(),
+		word,
+		typed: correct ? "ok" : "no",
+		correct,
+		tries: correct ? 1 : 2,
+		hintsUsed: 0,
+		replays: 0,
+		ms,
+		skill,
+		level,
+	});
+
+	it("tracks facts for review, keeps math out of spelling progress, and one-off problems make no progress rows", async () => {
+		const { cookie, childId, sessionId } = await mathSetup();
+		await call(`/api/sessions/${sessionId}/attempts`, {
+			method: "POST",
+			cookie,
+			json: {
+				attempts: [attempt("m:mul:7x8", false, "mul", 1), attempt("m:mul:3x4", true, "mul", 1), attempt("m:add:47+38", true, "addsub", 1)],
+				at: Date.now(),
+				day: "2026-09-28",
+			},
+		});
+		const p = (await (await call(`/api/children/${childId}/progress`, { cookie })).json()) as {
+			boxes: Record<string, number>;
+			reviewDue: string[];
+			stats: { totalStars: number };
+			math: { factBoxes: Record<string, number>; factsDue: string[]; trouble: { word: string }[] };
+		};
+		expect(p.boxes).toEqual({});
+		expect(p.reviewDue).toEqual([]);
+		expect(p.math.factBoxes).toEqual({ "m:mul:7x8": 1, "m:mul:3x4": 2 });
+		expect(p.math.factsDue).toEqual(["m:mul:7x8"]);
+		expect(p.math.trouble.map((t) => t.word)).toEqual(["m:mul:7x8"]);
+		// Rewards are shared across subjects.
+		expect(p.stats.totalStars).toBe(6);
+		const row = await env.DB.prepare("select skill, level from attempts where word = 'm:add:47+38'").first<{
+			skill: string;
+			level: number;
+		}>();
+		expect(row).toEqual({ skill: "addsub", level: 1 });
+	});
+
+	it("moves a skill's level up after a strong round and down after misses", async () => {
+		const { cookie, childId, sessionId } = await mathSetup();
+		const strong = Array.from({ length: 6 }, (_, i) => attempt(`m:mul:${i + 2}x7`, true, "mul", 1));
+		const res = (await (
+			await call(`/api/sessions/${sessionId}/finish`, {
+				method: "POST",
+				cookie,
+				json: { attempts: strong, finishedAt: Date.now(), day: "2026-09-28" },
+			})
+		).json()) as { levels: Record<string, number> };
+		expect(res.levels).toEqual({ mul: 2 });
+
+		const s2 = crypto.randomUUID();
+		await call("/api/sessions", {
+			method: "POST",
+			cookie,
+			json: { id: s2, childId, listId: null, subject: "math", mode: "facts", startedAt: Date.now() + 1 },
+		});
+		const weak = [attempt("m:mul:6x8", false, "mul", 2), attempt("m:mul:7x9", false, "mul", 2)];
+		const res2 = (await (
+			await call(`/api/sessions/${s2}/finish`, {
+				method: "POST",
+				cookie,
+				json: { attempts: weak, finishedAt: Date.now(), day: "2026-09-28" },
+			})
+		).json()) as { levels: Record<string, number> };
+		expect(res2.levels).toEqual({ mul: 1 });
+
+		const p = (await (await call(`/api/children/${childId}/progress`, { cookie })).json()) as { math: { levels: Record<string, number> } };
+		expect(p.math.levels).toEqual({ mul: 1 });
+	});
+
+	it("lets a parent set a level", async () => {
+		const { cookie, childId } = await mathSetup();
+		const res = await call(`/api/children/${childId}/math-level`, { method: "PUT", cookie, json: { skill: "fractions", level: 3 } });
+		expect(await res.json()).toEqual({ fractions: 3 });
+	});
+});

@@ -24,13 +24,24 @@ export function advanceStreak(prev: StreakState, today: string): StreakState {
 /** `icon` is a lucide icon name; the web app maps it to a component. */
 export type Badge = { id: string; label: string; icon: string };
 
-export const BADGES: (Badge & { earned: (s: { streak: number; totalStars: number; perfectRounds: number; words: number }) => boolean })[] =
-	[
-		{ id: "first-round", label: "First round!", icon: "sprout", earned: (s) => s.words > 0 },
-		{ id: "perfect", label: "Perfect round", icon: "sparkles", earned: (s) => s.perfectRounds >= 1 },
-		{ id: "streak-3", label: "3-day streak", icon: "flame", earned: (s) => s.streak >= 3 },
-		{ id: "streak-7", label: "Week of spelling", icon: "medal", earned: (s) => s.streak >= 7 },
-		{ id: "stars-50", label: "50 stars", icon: "star", earned: (s) => s.totalStars >= 50 },
-		{ id: "stars-250", label: "Star collector", icon: "trophy", earned: (s) => s.totalStars >= 250 },
-		{ id: "words-100", label: "100 words spelled", icon: "library", earned: (s) => s.words >= 100 },
-	];
+export type BadgeStats = {
+	streak: number;
+	totalStars: number;
+	perfectRounds: number;
+	words: number;
+	/** Math: times-table/division facts at Leitner box 4+, and the fractions skill level. */
+	factsMastered?: number;
+	fractionsLevel?: number;
+};
+
+export const BADGES: (Badge & { earned: (s: BadgeStats) => boolean })[] = [
+	{ id: "first-round", label: "First round!", icon: "sprout", earned: (s) => s.words > 0 },
+	{ id: "perfect", label: "Perfect round", icon: "sparkles", earned: (s) => s.perfectRounds >= 1 },
+	{ id: "streak-3", label: "3-day streak", icon: "flame", earned: (s) => s.streak >= 3 },
+	{ id: "streak-7", label: "Week of practice", icon: "medal", earned: (s) => s.streak >= 7 },
+	{ id: "stars-50", label: "50 stars", icon: "star", earned: (s) => s.totalStars >= 50 },
+	{ id: "stars-250", label: "Star collector", icon: "trophy", earned: (s) => s.totalStars >= 250 },
+	{ id: "words-100", label: "100 right answers", icon: "library", earned: (s) => s.words >= 100 },
+	{ id: "facts-30", label: "Times-table star", icon: "grid", earned: (s) => (s.factsMastered ?? 0) >= 30 },
+	{ id: "fractions-3", label: "Fraction friend", icon: "pie", earned: (s) => (s.fractionsLevel ?? 0) >= 3 },
+];

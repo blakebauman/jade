@@ -37,7 +37,21 @@ export type Progress = {
 	mastered: number;
 	boxes: Record<string, number>;
 	trouble: { word: string; misses: number; box: number }[];
+	math: {
+		levels: Partial<Record<string, number>>;
+		factsDue: string[];
+		factsMastered: number;
+		factBoxes: Record<string, number>;
+		trouble: { word: string; misses: number; box: number }[];
+	};
 	recent: { id: string; mode: Mode; listId: string | null; startedAt: string; correct: number; total: number; stars: number }[];
 };
-export type RoundSummary = { correct: number; total: number; stars: number; streak: number; newBadges: BadgeView[] };
+export type RoundSummary = {
+	correct: number;
+	total: number;
+	stars: number;
+	streak: number;
+	newBadges: BadgeView[];
+	levels?: Record<string, number>;
+};
 export type { WordInfo };

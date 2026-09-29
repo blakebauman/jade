@@ -1,4 +1,5 @@
 import { AVATARS, type ChildSettings, FONTS, VOICES } from "@jade/core";
+import { MATH_TOPICS, TOPIC_LABEL } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { Tile } from "@jade/ui/components/tile";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -110,6 +111,61 @@ function SettingsForm({ child }: { child: Child }) {
 				/>
 				<span className="text-sm">Show how many letters (easier; a real bee doesn’t)</span>
 			</label>
+			<MathSettings child={child} onChange={(math) => update.mutate({ math })} />
+		</div>
+	);
+}
+
+/** Which math topics and times tables this speller practices. Difficulty within them adapts on its own. */
+function MathSettings({ child, onChange }: { child: Child; onChange: (m: ChildSettings["math"]) => void }) {
+	const m = child.settings.math;
+	const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
+	return (
+		<div className="space-y-4 sm:col-span-2">
+			<fieldset className="space-y-2 border-0 p-0">
+				<legend className="text-sm font-medium">Math topics</legend>
+				<div className="flex flex-wrap gap-2">
+					{MATH_TOPICS.map((t) => (
+						<button
+							key={t}
+							type="button"
+							className="key text-base"
+							data-pressed={m.topics.includes(t)}
+							aria-pressed={m.topics.includes(t)}
+							// At least one topic stays on.
+							onClick={() => {
+								const topics = toggle(m.topics, t);
+								if (topics.length > 0) onChange({ ...m, topics });
+							}}
+						>
+							{TOPIC_LABEL[t]}
+						</button>
+					))}
+				</div>
+			</fieldset>
+			{m.topics.includes("facts") && (
+				<fieldset className="space-y-2 border-0 p-0">
+					<legend className="text-sm font-medium">Times tables</legend>
+					<div className="flex flex-wrap gap-1.5">
+						{Array.from({ length: 11 }, (_, i) => i + 2).map((n) => (
+							<button
+								key={n}
+								type="button"
+								className="key !min-h-11 !min-w-11 !px-0 text-base tabular-nums"
+								data-variant={m.tables.includes(n) ? "tile" : undefined}
+								aria-pressed={m.tables.includes(n)}
+								aria-label={`${n} times table`}
+								onClick={() => {
+									const tables = toggle(m.tables, n).sort((a, b) => a - b);
+									if (tables.length > 0) onChange({ ...m, tables });
+								}}
+							>
+								{n}
+							</button>
+						))}
+					</div>
+				</fieldset>
+			)}
 		</div>
 	);
 }

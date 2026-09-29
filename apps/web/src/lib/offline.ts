@@ -2,7 +2,14 @@ import type { AttemptInput, Mode } from "@jade/core";
 import Dexie, { type EntityTable } from "dexie";
 import { ApiError, api, type BadgeView, type RoundSummary } from "./api.ts";
 
-export type SessionStart = { id: string; childId: string; listId: string | null; mode: Mode; startedAt: number };
+export type SessionStart = {
+	id: string;
+	childId: string;
+	listId: string | null;
+	mode: Mode;
+	subject?: "spelling" | "math";
+	startedAt: number;
+};
 export type SessionFinish = { attempts: AttemptInput[]; finishedAt: number; day: string };
 export type AttemptsResult = { recorded: number; streak: number; newBadges: BadgeView[] };
 

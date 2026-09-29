@@ -8,6 +8,7 @@ import { useEffect, useMemo } from "react";
 import { BadgeIcon } from "#/components/BadgeIcon.tsx";
 import { useChild } from "#/lib/child.ts";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
+import type { MathMode } from "#/lib/mathRound.ts";
 import { progressQuery } from "#/lib/queries.ts";
 import { useRound } from "#/lib/round.ts";
 import { speaker } from "#/lib/speaker.ts";
@@ -57,14 +58,17 @@ function Results() {
 	const stars = round.summary?.stars ?? starsForRound(perWord);
 	const missed = round.attempts.filter((a) => !a.correct || a.tries > 1);
 	const perfect = round.attempts.length > 0 && perWord.every((s) => s === 3);
+	const isMath = round.subject === "math";
+	const unit = isMath ? "problems" : "words";
+	const mathMissed = (round.items ?? []).filter((it) => !it.firstTry);
 
 	const headline = useMemo(() => {
 		const pct = round.attempts.length ? correct / round.attempts.length : 0;
 		if (perfect) return "Perfect round!";
-		if (pct >= 0.8) return "Great spelling!";
+		if (pct >= 0.8) return isMath ? "Great math!" : "Great spelling!";
 		if (pct >= 0.5) return "Good work. Let’s polish a few.";
-		return "Every miss is a word you’re learning.";
-	}, [correct, perfect, round.attempts.length]);
+		return isMath ? "Every miss is something you’re learning." : "Every miss is a word you’re learning.";
+	}, [correct, perfect, round.attempts.length, isMath]);
 
 	useEffect(() => {
 		if (stars >= 2 && !prefersReducedMotion()) {
@@ -102,11 +106,11 @@ function Results() {
 				</div>
 				<h1 className="text-4xl font-semibold md:text-5xl">{headline}</h1>
 				<p className="font-display text-2xl tabular-nums">
-					{correct} of {round.attempts.length} spelled right
+					{correct} of {round.attempts.length} {isMath ? "right" : "spelled right"}
 				</p>
 				{round.planned > round.attempts.length && (
 					<p className="text-felt-muted">
-						Stopped after {round.attempts.length} of {round.planned} words. Everything you answered is saved.
+						Stopped after {round.attempts.length} of {round.planned} {unit}. Everything you answered is saved.
 					</p>
 				)}
 				{round.summary && round.summary.streak > 1 && (
@@ -129,7 +133,27 @@ function Results() {
 				</section>
 			)}
 
-			{missed.length > 0 && (
+			{isMath && mathMissed.length > 0 && (
+				<section className="mt-14 space-y-5">
+					<h2 className="text-2xl font-semibold">Worth another look</h2>
+					<ul className="rack space-y-4 !px-5 !pt-5 !pb-7 md:!px-7">
+						{mathMissed.map((it, i) => (
+							<li key={`${it.key}-${i}`} className="space-y-1.5 border-b border-maple-lo/40 pb-4 text-ink last:border-0 last:pb-0">
+								<p className="font-display text-xl">
+									{it.prompt.replace(" ?", "")} <span className="plaque !inline-flex px-2.5 py-0.5">{it.answer}</span>
+								</p>
+								<p className="text-sm">
+									{it.correct ? "Right on the second try. First try:" : "You answered:"}{" "}
+									<span className="font-semibold underline decoration-coral decoration-[3px] underline-offset-4">{it.typed}</span>
+								</p>
+								<p className="text-sm">{it.explain}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
+
+			{!isMath && missed.length > 0 && (
 				<section className="mt-14 space-y-5">
 					<h2 className="text-2xl font-semibold">Words to practice</h2>
 					<ul className="rack space-y-5 !px-5 !pt-5 !pb-7 md:!px-7">
@@ -164,13 +188,23 @@ function Results() {
 			)}
 
 			<div className="mt-12 flex flex-wrap justify-center gap-3">
-				{missed.length > 0 && (
+				{isMath && (
+					<Link
+						to="/play/$childId/math/$topic"
+						params={{ childId: child.id, topic: (round.mathMode ?? "facts") as MathMode }}
+						className="key"
+						data-variant="go"
+					>
+						<RotateCcw className="size-5" aria-hidden /> Play again
+					</Link>
+				)}
+				{!isMath && missed.length > 0 && (
 					<button type="button" className="key" data-variant="go" onClick={practiceMissed}>
 						<RotateCcw className="size-5" aria-hidden />{" "}
 						{missed.length === 1 ? "Practice this word now" : `Practice these ${missed.length} now`}
 					</button>
 				)}
-				<Link to="/play/$childId" params={{ childId: child.id }} className="key">
+				<Link to={isMath ? "/play/$childId/math" : "/play/$childId"} params={{ childId: child.id }} className="key">
 					Done
 				</Link>
 			</div>

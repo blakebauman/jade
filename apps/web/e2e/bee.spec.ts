@@ -39,6 +39,8 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 	await page.getByRole("link", { name: "Practice", exact: true }).click();
 	await page.screenshot({ path: `test-results/${info.project.name}-profiles.png` });
 	await page.getByRole("link", { name: "Jade" }).click();
+	// Subject hub → Spelling → Bee.
+	await page.getByRole("link", { name: /Spelling/ }).click();
 	await page.getByRole("link", { name: "Bee" }).click();
 	await page.getByRole("button", { name: "Start" }).click();
 
@@ -87,7 +89,7 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 
 	// Review now offers the missed word.
 	await page.getByRole("link", { name: "Done" }).click();
-	await expect(page.getByText(/1 word wants another go/)).toBeVisible();
+	await expect(page.getByText("1 word to review")).toBeVisible();
 	await page.screenshot({ path: `test-results/${info.project.name}-home.png`, fullPage: true });
 
 	// Parent progress view: trouble word with its pips.

@@ -11,11 +11,13 @@ import {
 	starsForRound,
 	starsForWord,
 } from "@jade/core";
+import { isTrackedFact } from "@jade/core/math";
 import { type Db, schema } from "@jade/db";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AppEnv } from "../env.ts";
+import { mathBadgeStats, updateSkillLevels } from "../lib/math.ts";
 import { ownedChild, ownedList } from "../lib/owned.ts";
 
 type Session = typeof schema.practiceSessions.$inferSelect;
@@ -35,6 +37,8 @@ function checkBadges(stats: {
 	totalStars: number;
 	perfectRounds: number;
 	wordsSpelled: number;
+	factsMastered?: number;
+	fractionsLevel?: number;
 }) {
 	const had = new Set<string>(JSON.parse(stats.badgesJson || "[]"));
 	const fresh: BadgeOut[] = BADGES.filter(
@@ -45,6 +49,8 @@ function checkBadges(stats: {
 				totalStars: stats.totalStars,
 				perfectRounds: stats.perfectRounds,
 				words: stats.wordsSpelled,
+				factsMastered: stats.factsMastered,
+				fractionsLevel: stats.fractionsLevel,
 			}),
 	).map(({ id, label, icon }) => ({ id, label, icon }));
 	return { fresh, badgesJson: JSON.stringify([...had, ...fresh.map((b) => b.id)]) };
@@ -56,14 +62,16 @@ function checkBadges(stats: {
  * add stars and count toward the streak. This is what makes leaving mid-round safe.
  */
 async function recordAttempts(db: Db, s: Session, attempts: AttemptInput[], at: number, day: string) {
-	const scored = attempts.map((a) => ({ ...a, word: normalizeWord(a.word), stars: starsForWord(a) }));
+	const math = s.subject === "math";
+	// Math keys (`m:mul:7x8`) are identifiers, not words: never letter-normalize them.
+	const scored = attempts.map((a) => ({ ...a, word: math ? a.word : normalizeWord(a.word), stars: starsForWord(a) }));
 	const inserted = new Set<string>();
-	// 10 columns per row; keep each insert under D1's 100-parameter limit.
-	for (let i = 0; i < scored.length; i += 9) {
+	// 12 columns per row; keep each insert under D1's 100-parameter limit.
+	for (let i = 0; i < scored.length; i += 8) {
 		const rows = await db
 			.insert(schema.attempts)
 			.values(
-				scored.slice(i, i + 9).map((a) => ({
+				scored.slice(i, i + 8).map((a) => ({
 					clientId: a.clientId,
 					sessionId: s.id,
 					word: a.word,
@@ -74,6 +82,8 @@ async function recordAttempts(db: Db, s: Session, attempts: AttemptInput[], at: 
 					replays: a.replays,
 					ms: a.ms,
 					stars: a.stars,
+					skill: a.skill ?? null,
+					level: a.level ?? null,
 				})),
 			)
 			.onConflictDoNothing()
@@ -84,15 +94,17 @@ async function recordAttempts(db: Db, s: Session, attempts: AttemptInput[], at: 
 	const before = await db.query.childStats.findFirst({ where: eq(schema.childStats.childId, s.childId) });
 	if (fresh.length === 0) return { recorded: 0, streak: before?.currentStreak ?? 0, newBadges: [] as BadgeOut[] };
 
-	// Learn mode is study, not a test: it doesn't move words between Leitner boxes.
+	// Leitner review: spelling words (except Learn mode, which is study, not a test) and repeatable math facts.
+	// One-off generated math problems never get progress rows.
 	const progressWrites = [];
-	if (s.mode !== "learn") {
-		const words = [...new Set(fresh.map((a) => a.word))];
+	const tracked = fresh.filter((a) => (math ? isTrackedFact(a.word) : s.mode !== "learn"));
+	if (tracked.length > 0) {
+		const words = [...new Set(tracked.map((a) => a.word))];
 		const existing = await db.query.wordProgress.findMany({
 			where: and(eq(schema.wordProgress.childId, s.childId), inArray(schema.wordProgress.word, words)),
 		});
 		const byWord = new Map(existing.map((p) => [p.word, p]));
-		for (const a of fresh) {
+		for (const a of tracked) {
 			const prev = byWord.get(a.word);
 			// First-try correctness drives SRS; a word only right on the retry still needs practice.
 			const firstTry = a.correct && a.tries === 1;
@@ -157,7 +169,14 @@ export const sessionRoutes = new Hono<AppEnv>()
 		if (input.listId) await ownedList(c.var.db, c.var.userId, input.listId);
 		await c.var.db
 			.insert(schema.practiceSessions)
-			.values({ id: input.id, childId: input.childId, listId: input.listId, mode: input.mode, startedAt: new Date(input.startedAt) })
+			.values({
+				id: input.id,
+				childId: input.childId,
+				listId: input.listId,
+				subject: input.subject,
+				mode: input.mode,
+				startedAt: new Date(input.startedAt),
+			})
 			.onConflictDoNothing();
 		return c.json({ id: input.id }, 201);
 	})
@@ -195,6 +214,10 @@ export const sessionRoutes = new Hono<AppEnv>()
 		const stars = starsForRound(all.map((a) => a.stars));
 		const perfect = all.length > 0 && all.every((a) => a.stars === 3);
 
+		// Math: move each practiced skill's adaptive level from its recent answers, then check the math badges.
+		const levels = s.subject === "math" ? await updateSkillLevels(db, s.childId, all) : null;
+		const mathStats = s.subject === "math" ? await mathBadgeStats(db, s.childId) : {};
+
 		const stats = await db.query.childStats.findFirst({ where: eq(schema.childStats.childId, s.childId) });
 		const perfectRounds = (stats?.perfectRounds ?? 0) + (perfect ? 1 : 0);
 		const { fresh, badgesJson } = checkBadges({
@@ -203,6 +226,7 @@ export const sessionRoutes = new Hono<AppEnv>()
 			totalStars: stats?.totalStars ?? 0,
 			perfectRounds,
 			wordsSpelled: stats?.wordsSpelled ?? 0,
+			...mathStats,
 		});
 		await db.batch([
 			db
@@ -215,5 +239,12 @@ export const sessionRoutes = new Hono<AppEnv>()
 				.onConflictDoUpdate({ target: schema.childStats.childId, set: { perfectRounds, badgesJson } }),
 		]);
 
-		return c.json({ correct, total: all.length, stars, streak: stats?.currentStreak ?? 0, newBadges: [...recorded.newBadges, ...fresh] });
+		return c.json({
+			correct,
+			total: all.length,
+			stars,
+			streak: stats?.currentStreak ?? 0,
+			newBadges: [...recorded.newBadges, ...fresh],
+			...(levels && { levels }),
+		});
 	});

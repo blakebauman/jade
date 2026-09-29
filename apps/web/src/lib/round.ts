@@ -17,7 +17,23 @@ export type Phase = "ready" | "spelling" | "retry" | "correct" | "reveal" | "stu
 
 type WordState = { tries: number; hintsUsed: number; replays: number; startedAt: number; firstTyped: string | null };
 
+/** One answered math problem, as shown on the results screen. */
+export type MathResultItem = {
+	key: string;
+	prompt: string;
+	answer: string;
+	typed: string;
+	correct: boolean;
+	firstTry: boolean;
+	explain: string;
+};
+
 export type FinishedRound = {
+	subject?: "spelling" | "math";
+	/** Math rounds: the problems as asked (attempt `word`s are problem keys, not displayable). */
+	items?: MathResultItem[];
+	/** Math rounds: the topic, for "practice again". */
+	mathMode?: string;
 	sessionId: string;
 	childId: string;
 	listId: string | null;
@@ -78,7 +94,7 @@ export const cleanTyped = (v: string) =>
 		.slice(0, 40);
 
 /** localStorage can throw (private mode, storage full, blocked site data); a round must still work without it. */
-const safeStorage: StateStorage = {
+export const safeStorage: StateStorage = {
 	getItem: (k) => {
 		try {
 			return localStorage.getItem(k);

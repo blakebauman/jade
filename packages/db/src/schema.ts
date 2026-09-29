@@ -143,7 +143,10 @@ export const practiceSessions = sqliteTable(
 			.notNull()
 			.references(() => children.id, { onDelete: "cascade" }),
 		listId: text("list_id").references(() => wordLists.id, { onDelete: "set null" }),
-		mode: text("mode", { enum: ["bee", "learn", "tiles", "review"] }).notNull(),
+		subject: text("subject", { enum: ["spelling", "math"] })
+			.notNull()
+			.default("spelling"),
+		mode: text("mode", { enum: ["bee", "learn", "tiles", "review", "facts", "mental", "fractions", "problems", "mathreview"] }).notNull(),
 		startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
 		finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
 		correct: integer("correct").notNull().default(0),
@@ -160,9 +163,13 @@ export const attempts = sqliteTable(
 		sessionId: text("session_id")
 			.notNull()
 			.references(() => practiceSessions.id, { onDelete: "cascade" }),
+		/** Spelling: the word. Math: the problem key (`m:mul:7x8`). */
 		word: text("word").notNull(),
 		typed: text("typed").notNull(),
 		correct: integer("correct", { mode: "boolean" }).notNull(),
+		/** Math only: the skill and level the problem was generated at. */
+		skill: text("skill"),
+		level: integer("level"),
 		tries: integer("tries").notNull(),
 		hintsUsed: integer("hints_used").notNull(),
 		replays: integer("replays").notNull(),
@@ -186,6 +193,20 @@ export const wordProgress = sqliteTable(
 		misses: integer("misses").notNull().default(0),
 	},
 	(t) => [primaryKey({ columns: [t.childId, t.word] }), index("progress_due_idx").on(t.childId, t.dueAt)],
+);
+
+/** Adaptive math level (1–5) per child and skill (`mul`, `div`, `addsub`, `mixed`, `fractions`, `decimals`, `problems`). */
+export const skillLevels = sqliteTable(
+	"skill_levels",
+	{
+		childId: text("child_id")
+			.notNull()
+			.references(() => children.id, { onDelete: "cascade" }),
+		skill: text("skill").notNull(),
+		level: integer("level").notNull().default(1),
+		updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().default(now),
+	},
+	(t) => [primaryKey({ columns: [t.childId, t.skill] })],
 );
 
 export const childStats = sqliteTable("child_stats", {

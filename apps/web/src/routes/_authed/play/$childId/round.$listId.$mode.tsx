@@ -1,4 +1,4 @@
-import { type Mode, modeSchema, splitSyllables } from "@jade/core";
+import { SPELLING_MODES, splitSyllables } from "@jade/core";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { Pips, Tile } from "@jade/ui/components/tile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +19,7 @@ import { speaker } from "#/lib/speaker.ts";
 
 export const Route = createFileRoute("/_authed/play/$childId/round/$listId/$mode")({
 	params: {
-		parse: (p) => ({ ...p, mode: modeSchema.parse(p.mode) }),
+		parse: (p) => ({ ...p, mode: z.enum(SPELLING_MODES).parse(p.mode) }),
 		stringify: (p) => p,
 	},
 	/**
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authed/play/$childId/round/$listId/$mode
 	component: RoundScreen,
 });
 
-const MODE_TITLE: Record<Mode, string> = { bee: "Bee", tiles: "Tiles", learn: "Learn", review: "Review" };
+const MODE_TITLE: Record<(typeof SPELLING_MODES)[number], string> = { bee: "Bee", tiles: "Tiles", learn: "Learn", review: "Review" };
 
 function RoundScreen() {
 	const { listId, mode } = Route.useParams();
@@ -267,7 +267,7 @@ function RoundScreen() {
 			<main className="grid min-h-dvh place-items-center p-6 text-center">
 				<div className="space-y-5">
 					<h1 className="text-3xl font-semibold">{listId === "review" ? "Nothing to review today" : "This list has no words yet"}</h1>
-					<Link to="/play/$childId" params={{ childId: child.id }} className="key" data-variant="go">
+					<Link to="/play/$childId/spelling" params={{ childId: child.id }} className="key" data-variant="go">
 						Back
 					</Link>
 				</div>
@@ -291,7 +291,7 @@ function RoundScreen() {
 			{/* Top rail */}
 			<header className={`flex items-center gap-3 md:gap-4 ${keyboard ? "py-2" : "py-4"}`}>
 				<Link
-					to="/play/$childId"
+					to="/play/$childId/spelling"
 					params={{ childId: child.id }}
 					className="key size-11 !p-0"
 					aria-label="Leave round"

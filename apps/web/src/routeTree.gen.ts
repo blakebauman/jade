@@ -21,6 +21,9 @@ import { Route as AuthedParentListsListIdRouteImport } from './routes/_authed/pa
 import { Route as AuthedParentProgressChildIdRouteImport } from './routes/_authed/parent/progress.$childId'
 import { Route as AuthedPlayChildIdIndexRouteImport } from './routes/_authed/play/$childId/index'
 import { Route as AuthedPlayChildIdResultsRouteImport } from './routes/_authed/play/$childId/results'
+import { Route as AuthedPlayChildIdSpellingRouteImport } from './routes/_authed/play/$childId/spelling'
+import { Route as AuthedPlayChildIdMathIndexRouteImport } from './routes/_authed/play/$childId/math/index'
+import { Route as AuthedPlayChildIdMathTopicRouteImport } from './routes/_authed/play/$childId/math/$topic'
 import { Route as AuthedPlayChildIdRoundListIdModeRouteImport } from './routes/_authed/play/$childId/round.$listId.$mode'
 
 const IndexRoute = IndexRouteImport.update({
@@ -84,6 +87,24 @@ const AuthedPlayChildIdResultsRoute =
     path: '/results',
     getParentRoute: () => AuthedPlayChildIdRoute,
   } as any)
+const AuthedPlayChildIdSpellingRoute =
+  AuthedPlayChildIdSpellingRouteImport.update({
+    id: '/spelling',
+    path: '/spelling',
+    getParentRoute: () => AuthedPlayChildIdRoute,
+  } as any)
+const AuthedPlayChildIdMathIndexRoute =
+  AuthedPlayChildIdMathIndexRouteImport.update({
+    id: '/math/',
+    path: '/math/',
+    getParentRoute: () => AuthedPlayChildIdRoute,
+  } as any)
+const AuthedPlayChildIdMathTopicRoute =
+  AuthedPlayChildIdMathTopicRouteImport.update({
+    id: '/math/$topic',
+    path: '/math/$topic',
+    getParentRoute: () => AuthedPlayChildIdRoute,
+  } as any)
 const AuthedPlayChildIdRoundListIdModeRoute =
   AuthedPlayChildIdRoundListIdModeRouteImport.update({
     id: '/round/$listId/$mode',
@@ -102,7 +123,10 @@ export interface FileRoutesByFullPath {
   '/parent/lists/$listId': typeof AuthedParentListsListIdRoute
   '/parent/progress/$childId': typeof AuthedParentProgressChildIdRoute
   '/play/$childId/results': typeof AuthedPlayChildIdResultsRoute
+  '/play/$childId/spelling': typeof AuthedPlayChildIdSpellingRoute
   '/play/$childId/': typeof AuthedPlayChildIdIndexRoute
+  '/play/$childId/math/$topic': typeof AuthedPlayChildIdMathTopicRoute
+  '/play/$childId/math/': typeof AuthedPlayChildIdMathIndexRoute
   '/play/$childId/round/$listId/$mode': typeof AuthedPlayChildIdRoundListIdModeRoute
 }
 export interface FileRoutesByTo {
@@ -114,7 +138,10 @@ export interface FileRoutesByTo {
   '/parent/lists/$listId': typeof AuthedParentListsListIdRoute
   '/parent/progress/$childId': typeof AuthedParentProgressChildIdRoute
   '/play/$childId/results': typeof AuthedPlayChildIdResultsRoute
+  '/play/$childId/spelling': typeof AuthedPlayChildIdSpellingRoute
   '/play/$childId': typeof AuthedPlayChildIdIndexRoute
+  '/play/$childId/math/$topic': typeof AuthedPlayChildIdMathTopicRoute
+  '/play/$childId/math': typeof AuthedPlayChildIdMathIndexRoute
   '/play/$childId/round/$listId/$mode': typeof AuthedPlayChildIdRoundListIdModeRoute
 }
 export interface FileRoutesById {
@@ -130,7 +157,10 @@ export interface FileRoutesById {
   '/_authed/parent/lists/$listId': typeof AuthedParentListsListIdRoute
   '/_authed/parent/progress/$childId': typeof AuthedParentProgressChildIdRoute
   '/_authed/play/$childId/results': typeof AuthedPlayChildIdResultsRoute
+  '/_authed/play/$childId/spelling': typeof AuthedPlayChildIdSpellingRoute
   '/_authed/play/$childId/': typeof AuthedPlayChildIdIndexRoute
+  '/_authed/play/$childId/math/$topic': typeof AuthedPlayChildIdMathTopicRoute
+  '/_authed/play/$childId/math/': typeof AuthedPlayChildIdMathIndexRoute
   '/_authed/play/$childId/round/$listId/$mode': typeof AuthedPlayChildIdRoundListIdModeRoute
 }
 export interface FileRouteTypes {
@@ -146,7 +176,10 @@ export interface FileRouteTypes {
     | '/parent/lists/$listId'
     | '/parent/progress/$childId'
     | '/play/$childId/results'
+    | '/play/$childId/spelling'
     | '/play/$childId/'
+    | '/play/$childId/math/$topic'
+    | '/play/$childId/math/'
     | '/play/$childId/round/$listId/$mode'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -158,7 +191,10 @@ export interface FileRouteTypes {
     | '/parent/lists/$listId'
     | '/parent/progress/$childId'
     | '/play/$childId/results'
+    | '/play/$childId/spelling'
     | '/play/$childId'
+    | '/play/$childId/math/$topic'
+    | '/play/$childId/math'
     | '/play/$childId/round/$listId/$mode'
   id:
     | '__root__'
@@ -173,7 +209,10 @@ export interface FileRouteTypes {
     | '/_authed/parent/lists/$listId'
     | '/_authed/parent/progress/$childId'
     | '/_authed/play/$childId/results'
+    | '/_authed/play/$childId/spelling'
     | '/_authed/play/$childId/'
+    | '/_authed/play/$childId/math/$topic'
+    | '/_authed/play/$childId/math/'
     | '/_authed/play/$childId/round/$listId/$mode'
   fileRoutesById: FileRoutesById
 }
@@ -268,6 +307,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedPlayChildIdResultsRouteImport
       parentRoute: typeof AuthedPlayChildIdRoute
     }
+    '/_authed/play/$childId/spelling': {
+      id: '/_authed/play/$childId/spelling'
+      path: '/spelling'
+      fullPath: '/play/$childId/spelling'
+      preLoaderRoute: typeof AuthedPlayChildIdSpellingRouteImport
+      parentRoute: typeof AuthedPlayChildIdRoute
+    }
+    '/_authed/play/$childId/math/': {
+      id: '/_authed/play/$childId/math/'
+      path: '/math'
+      fullPath: '/play/$childId/math/'
+      preLoaderRoute: typeof AuthedPlayChildIdMathIndexRouteImport
+      parentRoute: typeof AuthedPlayChildIdRoute
+    }
+    '/_authed/play/$childId/math/$topic': {
+      id: '/_authed/play/$childId/math/$topic'
+      path: '/math/$topic'
+      fullPath: '/play/$childId/math/$topic'
+      preLoaderRoute: typeof AuthedPlayChildIdMathTopicRouteImport
+      parentRoute: typeof AuthedPlayChildIdRoute
+    }
     '/_authed/play/$childId/round/$listId/$mode': {
       id: '/_authed/play/$childId/round/$listId/$mode'
       path: '/round/$listId/$mode'
@@ -300,13 +360,19 @@ const AuthedParentRouteWithChildren = AuthedParentRoute._addFileChildren(
 
 interface AuthedPlayChildIdRouteChildren {
   AuthedPlayChildIdResultsRoute: typeof AuthedPlayChildIdResultsRoute
+  AuthedPlayChildIdSpellingRoute: typeof AuthedPlayChildIdSpellingRoute
   AuthedPlayChildIdIndexRoute: typeof AuthedPlayChildIdIndexRoute
+  AuthedPlayChildIdMathTopicRoute: typeof AuthedPlayChildIdMathTopicRoute
+  AuthedPlayChildIdMathIndexRoute: typeof AuthedPlayChildIdMathIndexRoute
   AuthedPlayChildIdRoundListIdModeRoute: typeof AuthedPlayChildIdRoundListIdModeRoute
 }
 
 const AuthedPlayChildIdRouteChildren: AuthedPlayChildIdRouteChildren = {
   AuthedPlayChildIdResultsRoute: AuthedPlayChildIdResultsRoute,
+  AuthedPlayChildIdSpellingRoute: AuthedPlayChildIdSpellingRoute,
   AuthedPlayChildIdIndexRoute: AuthedPlayChildIdIndexRoute,
+  AuthedPlayChildIdMathTopicRoute: AuthedPlayChildIdMathTopicRoute,
+  AuthedPlayChildIdMathIndexRoute: AuthedPlayChildIdMathIndexRoute,
   AuthedPlayChildIdRoundListIdModeRoute: AuthedPlayChildIdRoundListIdModeRoute,
 }
 

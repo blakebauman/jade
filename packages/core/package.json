@@ -5,7 +5,8 @@
 	"type": "module",
 	"exports": {
 		".": "./src/index.ts",
-		"./packs": "./src/packs.ts"
+		"./packs": "./src/packs.ts",
+		"./math": "./src/math/index.ts"
 	},
 	"scripts": {
 		"lint": "biome check .",

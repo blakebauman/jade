@@ -1,33 +1,55 @@
+import type { SPELLING_MODES } from "@jade/core";
+import { TOPIC_LABEL } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { Tile } from "@jade/ui/components/tile";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Blocks, BookOpen, Ear, Flame, Play, RotateCcw, Star } from "lucide-react";
+import { Flame, Play, Star } from "lucide-react";
 import { BadgeIcon } from "#/components/BadgeIcon.tsx";
 import { useChild } from "#/lib/child.ts";
-import { listsQuery, progressQuery } from "#/lib/queries.ts";
+import { resumableMath } from "#/lib/mathRound.ts";
+import { progressQuery } from "#/lib/queries.ts";
 import { resumableRound } from "#/lib/round.ts";
 import { speaker } from "#/lib/speaker.ts";
 
 export const Route = createFileRoute("/_authed/play/$childId/")({
-	loader: ({ context, params }) =>
-		Promise.all([context.queryClient.ensureQueryData(listsQuery), context.queryClient.prefetchQuery(progressQuery(params.childId))]),
-	component: PlayHome,
+	loader: ({ context, params }) => context.queryClient.prefetchQuery(progressQuery(params.childId)),
+	component: SubjectHub,
 });
 
-const MODES = [
-	{ mode: "bee", label: "Bee", icon: Ear, hint: "Hear it, spell it" },
-	{ mode: "tiles", label: "Tiles", icon: Blocks, hint: "Build it from tiles" },
-	{ mode: "learn", label: "Learn", icon: BookOpen, hint: "Study, then spell" },
-] as const;
+type SpellingMode = (typeof SPELLING_MODES)[number];
 
-function PlayHome() {
+/** A subject as a big maple plaque: a word built from tiles, and what's waiting in it. */
+function SubjectTile({ to, word, note }: { to: "/play/$childId/spelling" | "/play/$childId/math"; word: string; note: string }) {
 	const child = useChild();
-	const { data: lists } = useSuspenseQuery(listsQuery);
+	return (
+		<Link
+			to={to}
+			params={{ childId: child.id }}
+			onClick={() => speaker.unlock()}
+			className="rack group flex min-h-44 flex-col justify-between gap-6 !p-6 transition-transform hover:-translate-y-1 md:!p-8"
+		>
+			<span className="flex flex-wrap gap-1.5" aria-hidden>
+				{[...word].map((c, i) => (
+					<Tile key={`${c}-${i}`} letter={c} size={48} grain={i % 4} />
+				))}
+			</span>
+			<span className="flex items-end justify-between gap-4">
+				<span className="font-display text-3xl font-semibold text-ink">{word === "spell" ? "Spelling" : "Math"}</span>
+				<span className="text-right text-sm font-medium text-ink">{note}</span>
+			</span>
+		</Link>
+	);
+}
+
+function SubjectHub() {
+	const child = useChild();
 	const { data: progress } = useQuery(progressQuery(child.id));
-	const due = progress?.reviewDue.length ?? 0;
+	const spellingLeft = resumableRound(child.id);
+	const mathLeft = resumableMath(child.id);
+	const spellingDue = progress?.reviewDue.length ?? 0;
+	const factsDue = progress?.math.factsDue.length ?? 0;
 	const earned = progress?.badges.filter((b) => b.earned) ?? [];
-	const unfinished = resumableRound(child.id);
 
 	return (
 		<main className="mx-auto min-h-dvh max-w-5xl px-5 py-6 md:px-10">
@@ -56,85 +78,66 @@ function PlayHome() {
 				)}
 			</header>
 
-			{unfinished && (
-				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
-					<div>
-						<h2 className="text-2xl font-semibold">Pick up where you left off</h2>
-						<p className="text-felt-muted">
-							{unfinished.name}: {unfinished.done} of {unfinished.total} words done
-						</p>
-					</div>
-					<Link
-						to="/play/$childId/round/$listId/$mode"
-						params={{ childId: child.id, listId: unfinished.listId ?? "review", mode: unfinished.mode }}
-						search={{ resume: true }}
-						onClick={() => speaker.unlock()}
-						className="key"
-						data-variant="go"
-					>
-						<Play className="size-5" aria-hidden /> Continue
-					</Link>
-				</section>
-			)}
-
-			{due > 0 && (
-				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
-					<div className="flex items-center gap-5">
-						<div className="flex -space-x-2" aria-hidden>
-							{progress!.reviewDue.slice(0, 3).map((w, i) => (
-								<Tile key={w} letter={w[0]} size={52} style={{ transform: `rotate(${(i - 1) * 7}deg)` }} />
-							))}
+			{(spellingLeft || mathLeft) && (
+				<section className="mt-10 space-y-3" aria-label="Unfinished rounds">
+					{spellingLeft && (
+						<div className="flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
+							<div>
+								<h2 className="text-2xl font-semibold">Pick up where you left off</h2>
+								<p className="text-felt-muted">
+									Spelling · {spellingLeft.name}: {spellingLeft.done} of {spellingLeft.total} words done
+								</p>
+							</div>
+							<Link
+								to="/play/$childId/round/$listId/$mode"
+								params={{ childId: child.id, listId: spellingLeft.listId ?? "review", mode: spellingLeft.mode as SpellingMode }}
+								search={{ resume: true }}
+								onClick={() => speaker.unlock()}
+								className="key"
+								data-variant="go"
+							>
+								<Play className="size-5" aria-hidden /> Continue
+							</Link>
 						</div>
-						<div>
-							<h2 className="text-2xl font-semibold">
-								{due} {due === 1 ? "word wants" : "words want"} another go
-							</h2>
-							<p className="text-felt-muted">Words you missed come back until they stick.</p>
+					)}
+					{mathLeft && (
+						<div className="flex flex-wrap items-center justify-between gap-5 rounded-3xl bg-felt-raised/70 p-6">
+							<div>
+								<h2 className="text-2xl font-semibold">Pick up where you left off</h2>
+								<p className="text-felt-muted">
+									Math · {mathLeft.mode === "mathreview" ? "Facts review" : TOPIC_LABEL[mathLeft.mode]}: {mathLeft.done} of {mathLeft.total}{" "}
+									done
+								</p>
+							</div>
+							<Link
+								to="/play/$childId/math/$topic"
+								params={{ childId: child.id, topic: mathLeft.mode }}
+								search={{ resume: true }}
+								onClick={() => speaker.unlock()}
+								className="key"
+								data-variant="go"
+							>
+								<Play className="size-5" aria-hidden /> Continue
+							</Link>
 						</div>
-					</div>
-					<Link
-						to="/play/$childId/round/$listId/$mode"
-						params={{ childId: child.id, listId: "review", mode: "review" }}
-						onClick={() => speaker.unlock()}
-						className="key"
-						data-variant="go"
-					>
-						<RotateCcw className="size-5" aria-hidden /> Review
-					</Link>
+					)}
 				</section>
 			)}
 
 			<section className="mt-12 space-y-5">
-				<h1 className="text-3xl font-semibold">Pick a list</h1>
-				{lists.length === 0 ? (
-					<p className="text-felt-muted">No lists yet. Ask a grown-up to add this week’s words in the parent area.</p>
-				) : (
-					<ul className="space-y-3">
-						{lists.map((l) => (
-							<li key={l.id} className="flex flex-wrap items-center justify-between gap-4 border-b border-felt-line/50 py-4">
-								<div>
-									<h2 className="font-display text-xl font-medium">{l.name}</h2>
-									<p className="text-sm text-felt-muted">{l.wordCount} words</p>
-								</div>
-								<div className="flex flex-wrap gap-2">
-									{MODES.map((m) => (
-										<Link
-											key={m.mode}
-											to="/play/$childId/round/$listId/$mode"
-											params={{ childId: child.id, listId: l.id, mode: m.mode }}
-											onClick={() => speaker.unlock()}
-											className="key min-w-[6.5rem]"
-											data-variant={m.mode === "bee" ? "go" : undefined}
-											title={m.hint}
-										>
-											<m.icon className="size-5" aria-hidden /> {m.label}
-										</Link>
-									))}
-								</div>
-							</li>
-						))}
-					</ul>
-				)}
+				<h1 className="text-3xl font-semibold">What shall we practice?</h1>
+				<div className="grid gap-6 md:grid-cols-2">
+					<SubjectTile
+						to="/play/$childId/spelling"
+						word="spell"
+						note={spellingDue > 0 ? `${spellingDue} ${spellingDue === 1 ? "word" : "words"} to review` : "Hear it, spell it"}
+					/>
+					<SubjectTile
+						to="/play/$childId/math"
+						word="math"
+						note={factsDue > 0 ? `${factsDue} ${factsDue === 1 ? "fact" : "facts"} to review` : "Facts, fractions, puzzles"}
+					/>
+				</div>
 			</section>
 
 			{earned.length > 0 && (

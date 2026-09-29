@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
+Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice.
+
 Jade Learning is a spelling bee practice app for 8–11 year olds.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
 - **The loop:** hear the word, ask for the definition, a sentence or the origin, then spell it tile by tile, with feedback on every letter.
@@ -77,6 +79,19 @@ Secrets:
 - The client downscales to ≤1600px JPEG, which also converts iPad HEIC.
 - The Worker runs `@cf/meta/llama-4-scout-17b-16e-instruct` over an `image_url` data URL.
 - It returns candidate words only; the photo is never stored, and the parent confirms before saving.
+
+**Math:**
+- The engine lives in `packages/core/src/math/` and is pure and seeded:
+  - `generate(skill, level, rng)` for the skills mul, div, addsub, mixed, fractions, decimals and problems, each at levels 1–5.
+  - `checkAnswer` accepts equivalent fractions and decimals; "simplify" tasks require the simplest form.
+  - `adaptLevel` moves up after 5 of 6 first-try and mostly-fluent answers, and down after 2 misses in the last 4.
+  - `buildMathRound` builds the round. Word problems are authored templates in `problems.ts`.
+- Attempts reuse the `attempts` table. `word` is the problem key (`m:mul:7x8`), and `skill` and `level` are set. Only repeatable facts (`m:mul:`, `m:div:`) get Leitner rows. Math keys are never passed through `normalizeWord`.
+- The `skill_levels` table holds the level per child and skill. It's updated on math finish (`lib/math.ts`), and parents can set it with `PUT /api/children/:id/math-level`.
+- `GET /api/children/:id/progress` keeps the spelling fields at the top level (excluding `m:` keys) and adds `math` (levels, factsDue, factBoxes, trouble).
+- The UI lives in `routes/_authed/play/$childId/math/`: the topic picker, and `$topic` for the round (`mathreview` = due facts).
+  - The on-screen `Keypad` is the only input. There is never a text field, so the iPad keyboard never opens.
+  - Persisted state lives in `lib/mathRound.ts` (`jade.mathround`).
 
 **Rounds (saved as they're played):**
 - The client owns the round in the `useRound` zustand store, persisted to localStorage (`jade.round`) so an interrupted round can be continued ("Pick up where you left off" on the play home, `?resume=true`).

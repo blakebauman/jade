@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const MODES = ["bee", "learn", "tiles", "review"] as const;
+export const SPELLING_MODES = ["bee", "learn", "tiles", "review"] as const;
+/** Math modes are the parent-facing topics, plus a review round of due facts. */
+export const MATH_MODES = ["facts", "mental", "fractions", "problems", "mathreview"] as const;
+export const MODES = [...SPELLING_MODES, ...MATH_MODES] as const;
+export const SUBJECTS = ["spelling", "math"] as const;
+export const subjectSchema = z.enum(SUBJECTS);
+export type Subject = z.infer<typeof subjectSchema>;
 export const modeSchema = z.enum(MODES);
 export type Mode = z.infer<typeof modeSchema>;
 
@@ -16,6 +22,16 @@ export const childSettingsSchema = z.object({
 	/** Show one empty square per letter in Bee mode. Off by default: a real bee gives no length hint. */
 	showLength: z.boolean().default(false),
 	highContrast: z.boolean().default(false),
+	math: z
+		.object({
+			topics: z
+				.array(z.enum(["facts", "mental", "fractions", "problems"]))
+				.min(1)
+				.default(["facts", "mental", "fractions", "problems"]),
+			/** Times tables to practice (2–12). */
+			tables: z.array(z.number().int().min(1).max(12)).min(1).default([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
+		})
+		.default({ topics: ["facts", "mental", "fractions", "problems"], tables: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }),
 });
 export type ChildSettings = z.infer<typeof childSettingsSchema>;
 export const DEFAULT_SETTINGS: ChildSettings = childSettingsSchema.parse({});
@@ -66,6 +82,7 @@ export const sessionStartSchema = z.object({
 	childId: z.string().min(1),
 	listId: z.string().min(1).nullable(),
 	mode: modeSchema,
+	subject: subjectSchema.default("spelling"),
 	/** Client-generated id so a session started offline can be created later without duplicates. */
 	id: z.string().min(8).max(64),
 	startedAt: z.number().int(),
@@ -73,7 +90,11 @@ export const sessionStartSchema = z.object({
 
 export const attemptSchema = z.object({
 	clientId: z.string().min(8).max(64),
-	word: z.string().min(1).max(40),
+	/** Spelling: the word. Math: the problem key, e.g. `m:mul:7x8`. */
+	word: z.string().min(1).max(80),
+	/** Math only: the skill and level the problem was generated at (drives adaptive levels). */
+	skill: z.string().max(20).optional(),
+	level: z.number().int().min(1).max(5).optional(),
 	typed: z.string().max(60),
 	correct: z.boolean(),
 	tries: z.number().int().min(1).max(5),
