@@ -31,8 +31,8 @@ test("stopping mid-round keeps the answers and shows results", async ({ page }) 
 	await page.getByRole("button", { name: "Start" }).click();
 	await spellSpoken(page, spoken);
 
-	page.once("dialog", (d) => d.accept());
 	await page.getByRole("link", { name: "Leave round" }).click();
+	await page.getByRole("button", { name: "Stop", exact: true }).click();
 	await expect(page.getByText("1 of 1 spelled right")).toBeVisible();
 	await expect(page.getByText("Stopped after 1 of 2 words")).toBeVisible();
 

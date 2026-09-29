@@ -98,13 +98,13 @@ function Landing() {
 			</section>
 
 			<section className="patch min-w-0 p-6 md:p-8">
-				<div className="mb-6 flex gap-2" role="tablist" aria-label="Account">
+				<fieldset className="mx-0 mb-6 flex gap-2 border-0 p-0">
+					<legend className="sr-only">Account</legend>
 					{(["signup", "signin"] as const).map((m) => (
 						<button
 							key={m}
 							type="button"
-							role="tab"
-							aria-selected={mode === m}
+							aria-pressed={mode === m}
 							className="key flex-1"
 							data-pressed={mode === m}
 							onClick={() => setMode(m)}
@@ -112,7 +112,7 @@ function Landing() {
 							{m === "signup" ? "New family" : "Sign in"}
 						</button>
 					))}
-				</div>
+				</fieldset>
 				<form className="space-y-4" onSubmit={onSubmit}>
 					{mode === "signup" && (
 						<label className="block space-y-1.5">

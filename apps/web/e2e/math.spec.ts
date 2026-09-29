@@ -66,8 +66,8 @@ test("times-tables round on the keypad: right, missed twice, stop, results", asy
 	await shot("reveal");
 
 	// Stop early: answers are saved, results show the miss with its explanation.
-	page.once("dialog", (d) => d.accept());
 	await page.getByRole("link", { name: "Leave round" }).click();
+	await page.getByRole("button", { name: "Stop", exact: true }).click();
 	await expect(page.getByText("1 of 2 right")).toBeVisible();
 	await expect(page.getByText("Stopped after 2 of 10 problems")).toBeVisible();
 	await expect(page.getByRole("heading", { name: "Worth another look" })).toBeVisible();

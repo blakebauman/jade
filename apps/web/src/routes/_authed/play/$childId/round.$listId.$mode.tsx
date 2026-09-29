@@ -6,6 +6,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, BookOpen, Check, Delete, Landmark, MessageSquareQuote, Snail, Volume2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
+import { Confirm } from "#/components/Confirm.tsx";
 import { AnswerRow, RevealRow } from "#/components/round/AnswerRow.tsx";
 import { buildBank, TileBank } from "#/components/round/TileBank.tsx";
 import type { WordInfo } from "#/lib/api.ts";
@@ -61,6 +62,8 @@ function RoundScreen() {
 	const [spoken, setSpoken] = useState<{ label: string; text: string } | null>(null);
 	const [used, setUsed] = useState<number[]>([]);
 	const [saving, setSaving] = useState(false);
+	/** "Stop here?" is showing; the round's keys wait until it's answered. */
+	const [askStop, setAskStop] = useState(false);
 
 	// Start a fresh round once per mount (or pick up the interrupted one). Words are shuffled so the order can't be memorized.
 	useEffect(() => {
@@ -193,6 +196,7 @@ function RoundScreen() {
 	}
 
 	function onKeyDown(e: globalThis.KeyboardEvent) {
+		if (askStop) return;
 		// Enter on a focused button already clicks it; handling it here too would check twice.
 		const t = e.target as HTMLElement | null;
 		if (e.key === "Enter" && t && (t.tagName === "BUTTON" || t.tagName === "A")) return;
@@ -300,8 +304,7 @@ function RoundScreen() {
 						// Answers are already saved; stopping just closes the round and shows results for what was done.
 						if (s.attempts.length === 0) return;
 						e.preventDefault();
-						const n = s.attempts.length;
-						if (confirm(`Stop here? Your ${n} ${n === 1 ? "answer is" : "answers are"} saved.`)) void closeRound();
+						setAskStop(true);
 					}}
 				>
 					<X className="size-5" aria-hidden />
@@ -332,6 +335,19 @@ function RoundScreen() {
 					<span className="text-felt-muted">/{s.words.length}</span>
 				</p>
 			</header>
+
+			{askStop && (
+				<Confirm
+					className="mb-4"
+					message="Stop here?"
+					note={`Your ${s.attempts.length} ${s.attempts.length === 1 ? "answer is" : "answers are"} saved, and you’ll see how you did.`}
+					cancelLabel="Keep going"
+					confirmLabel="Stop"
+					busy={saving}
+					onCancel={() => setAskStop(false)}
+					onConfirm={() => void closeRound()}
+				/>
+			)}
 
 			{s.phase === "ready" ? (
 				<section className="grid flex-1 place-items-center">

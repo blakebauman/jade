@@ -6,6 +6,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Volume2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { Confirm } from "#/components/Confirm.tsx";
 import { api, type Child } from "#/lib/api.ts";
 import { childrenQuery } from "#/lib/queries.ts";
 import { speaker } from "#/lib/speaker.ts";
@@ -182,6 +183,7 @@ function Kids() {
 	const qc = useQueryClient();
 	const [name, setName] = useState("");
 	const [avatar, setAvatar] = useState<string>("1");
+	const [removing, setRemoving] = useState<string | null>(null);
 	const create = useMutation({
 		mutationFn: (body: { name: string; avatar: string; grade: number | null }) =>
 			api<Child>("/api/children", { method: "POST", json: body }),
@@ -225,11 +227,21 @@ function Kids() {
 								<button
 									type="button"
 									className="min-h-11 px-2 text-sm text-felt-muted underline underline-offset-4 hover:text-felt-ink"
-									onClick={() => confirm(`Remove ${k.name} and all their practice history?`) && remove.mutate(k.id)}
+									onClick={() => setRemoving(k.id)}
 								>
 									Remove
 								</button>
 							</div>
+							{removing === k.id && (
+								<Confirm
+									message={`Remove ${k.name}?`}
+									note="All of their practice history goes too. This can’t be undone."
+									confirmLabel={`Remove ${k.name}`}
+									busy={remove.isPending}
+									onCancel={() => setRemoving(null)}
+									onConfirm={() => remove.mutate(k.id, { onSettled: () => setRemoving(null) })}
+								/>
+							)}
 							<SettingsForm child={k} />
 						</li>
 					))}

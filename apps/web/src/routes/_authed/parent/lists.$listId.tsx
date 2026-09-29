@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Camera, ClipboardPaste, FileUp, Trash2, X } from "lucide-react";
 import { type ChangeEvent, useEffect, useId, useState } from "react";
+import { Confirm } from "#/components/Confirm.tsx";
 import { api, type ListWord, type WordList } from "#/lib/api.ts";
 import { preparePhoto, wordsFromFile } from "#/lib/import.ts";
 import { listQuery } from "#/lib/queries.ts";
@@ -35,6 +36,7 @@ function ListEditor() {
 	const [notice, setNotice] = useState<string | null>(null);
 	const [ocrBusy, setOcrBusy] = useState(false);
 	const [openWord, setOpenWord] = useState<string | null>(null);
+	const [askDelete, setAskDelete] = useState(false);
 	const ids = { name: useId(), grade: useId(), paste: useId(), add: useId() };
 
 	useEffect(() => {
@@ -322,15 +324,20 @@ function ListEditor() {
 						{save.isPending ? "Saving…" : "Save list"}
 					</button>
 					{!isNew && (
-						<button
-							type="button"
-							className="key"
-							data-variant="felt"
-							disabled={remove.isPending}
-							onClick={() => confirm("Delete this list? Practice history stays.") && remove.mutate()}
-						>
+						<button type="button" className="key" data-variant="felt" disabled={remove.isPending} onClick={() => setAskDelete(true)}>
 							<Trash2 className="size-4" aria-hidden /> Delete
 						</button>
+					)}
+					{askDelete && (
+						<Confirm
+							className="basis-full"
+							message={`Delete “${name.trim() || "this list"}”?`}
+							note="Practice history stays."
+							confirmLabel="Delete list"
+							busy={remove.isPending}
+							onCancel={() => setAskDelete(false)}
+							onConfirm={() => remove.mutate()}
+						/>
 					)}
 					{save.error && (
 						<p role="alert" className="text-sm">

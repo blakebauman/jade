@@ -7,6 +7,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Volume2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
+import { Confirm } from "#/components/Confirm.tsx";
 import { Keypad } from "#/components/math/Keypad.tsx";
 import { NumberTiles, ProblemRow, tokensText } from "#/components/math/ProblemRow.tsx";
 import { Visual } from "#/components/math/Visual.tsx";
@@ -40,6 +41,8 @@ function MathRound() {
 	const { keyboard } = useVisualViewport();
 	const s = useMathRound();
 	const [saving, setSaving] = useState(false);
+	/** "Stop here?" is showing; the round's keys wait until it's answered. */
+	const [askStop, setAskStop] = useState(false);
 	const started = useRef(false);
 
 	// Build the round once per mount (or pick up the interrupted one).
@@ -149,7 +152,7 @@ function MathRound() {
 	// Laptop keyboards: digits, symbols, Backspace, Enter, and ↑ to hear it again.
 	const keyHandler = useRef<(e: KeyboardEvent) => void>(() => {});
 	keyHandler.current = (e: KeyboardEvent) => {
-		if (e.metaKey || e.ctrlKey || e.altKey) return;
+		if (askStop || e.metaKey || e.ctrlKey || e.altKey) return;
 		const t = e.target as HTMLElement | null;
 		if (e.key === "Enter" && t && (t.tagName === "BUTTON" || t.tagName === "A")) return;
 		const st = useMathRound.getState();
@@ -203,8 +206,7 @@ function MathRound() {
 					onClick={(e) => {
 						if (s.attempts.length === 0) return;
 						e.preventDefault();
-						const n = s.attempts.length;
-						if (confirm(`Stop here? Your ${n} ${n === 1 ? "answer is" : "answers are"} saved.`)) void closeRound();
+						setAskStop(true);
 					}}
 				>
 					<X className="size-5" aria-hidden />
@@ -228,6 +230,19 @@ function MathRound() {
 					<span className="text-felt-muted">/{s.problems.length}</span>
 				</p>
 			</header>
+
+			{askStop && (
+				<Confirm
+					className="mb-4"
+					message="Stop here?"
+					note={`Your ${s.attempts.length} ${s.attempts.length === 1 ? "answer is" : "answers are"} saved, and you’ll see how you did.`}
+					cancelLabel="Keep going"
+					confirmLabel="Stop"
+					busy={saving}
+					onCancel={() => setAskStop(false)}
+					onConfirm={() => void closeRound()}
+				/>
+			)}
 
 			{s.phase === "ready" ? (
 				<section className="grid flex-1 place-items-center">

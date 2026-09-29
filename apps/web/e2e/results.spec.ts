@@ -81,8 +81,8 @@ test("math results show the wrong first answer of a problem fixed on the second 
 		await tap(String(Number(a2) + 1));
 		await page.getByRole("button", { name: "Check" }).click();
 	}
-	page.once("dialog", (d) => d.accept());
 	await page.getByRole("link", { name: "Leave round" }).click();
+	await page.getByRole("button", { name: "Stop", exact: true }).click();
 	await expect(page.getByRole("heading", { name: "Worth another look" })).toBeVisible();
 	// The fix shows the wrong first answer, not the right one.
 	await expect(page.getByRole("img", { name: wrong1, exact: true })).toBeVisible();
