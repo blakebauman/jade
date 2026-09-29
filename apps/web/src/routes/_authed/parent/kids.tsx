@@ -91,7 +91,9 @@ function SettingsForm({ child }: { child: Child }) {
 				</select>
 			</label>
 			<label className="space-y-1.5">
-				<span className="text-sm font-medium">Speaking speed</span>
+				<span className="flex justify-between text-sm font-medium">
+					Speaking speed <span className="font-normal text-felt-muted tabular-nums">{s.rate.toFixed(2)}×</span>
+				</span>
 				<input
 					type="range"
 					min={0.7}
@@ -112,6 +114,11 @@ function SettingsForm({ child }: { child: Child }) {
 				<span className="text-sm">Show how many letters (easier; a real bee doesn’t)</span>
 			</label>
 			<MathSettings child={child} onChange={(math) => update.mutate({ math })} />
+			{update.isError && (
+				<p role="alert" className="text-sm sm:col-span-2">
+					That change didn’t save. Check the connection and try again.
+				</p>
+			)}
 		</div>
 	);
 }
@@ -152,7 +159,7 @@ function MathSettings({ child, onChange }: { child: Child; onChange: (m: ChildSe
 								key={n}
 								type="button"
 								className="key !min-h-11 !min-w-11 !px-0 text-base tabular-nums"
-								data-variant={m.tables.includes(n) ? "tile" : undefined}
+								data-pressed={m.tables.includes(n)}
 								aria-pressed={m.tables.includes(n)}
 								aria-label={`${n} times table`}
 								onClick={() => {
@@ -217,7 +224,7 @@ function Kids() {
 								</Link>
 								<button
 									type="button"
-									className="text-sm text-felt-muted underline underline-offset-4"
+									className="min-h-11 px-2 text-sm text-felt-muted underline underline-offset-4 hover:text-felt-ink"
 									onClick={() => confirm(`Remove ${k.name} and all their practice history?`) && remove.mutate(k.id)}
 								>
 									Remove

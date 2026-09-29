@@ -55,8 +55,11 @@ function ProgressPage() {
 			</dl>
 
 			<div className="grid gap-12 lg:grid-cols-2">
-				<section className="space-y-4">
-					<h2 className="text-2xl font-semibold">Trouble words</h2>
+				<section className="space-y-4" aria-labelledby="spelling-heading">
+					<h2 id="spelling-heading" className="text-2xl font-semibold">
+						Spelling
+					</h2>
+					<h3 className="text-lg font-semibold">Trouble words</h3>
 					{p.trouble.length === 0 ? (
 						<p className="text-felt-muted">No misses yet. Words that get missed show up here with how often.</p>
 					) : (
@@ -154,8 +157,14 @@ const SKILL_LABEL: Record<string, string> = {
 const factLabel = (key: string) =>
 	key
 		.replace(/^m:(mul|div):/, "")
-		.replace("x", " × ")
-		.replace("/", " ÷ ");
+		.replace("x", "×")
+		.replace("/", "÷");
+
+/** Grid ramp in chalk, the same colour as filled mastery pips: recessed felt when unpracticed, brighter per box. */
+const gridShade = (box: number) =>
+	box === 0
+		? "color-mix(in oklab, var(--color-felt-deep) 80%, black)"
+		: `color-mix(in oklab, var(--color-felt-ink) ${12 + box * 17}%, var(--color-felt-raised))`;
 
 /** Math: adaptive level per skill (parents can nudge it), the times-table grid, and facts that keep slipping. */
 function MathProgress({ childId, math }: { childId: string; math: Progress["math"] }) {
@@ -205,7 +214,15 @@ function MathProgress({ childId, math }: { childId: string; math: Progress["math
 				<div className="space-y-3">
 					<h3 className="text-lg font-semibold">Times-table grid</h3>
 					<p className="text-sm text-felt-muted">
-						Brighter squares are facts mastered. {math.factsMastered} {math.factsMastered === 1 ? "fact" : "facts"} at 4+ pips.
+						Brighter squares are closer to mastered. {math.factsMastered} {math.factsMastered === 1 ? "fact" : "facts"} at 4+ pips.
+					</p>
+					<p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-felt-muted" aria-hidden>
+						{[0, 1, 2, 3, 4, 5].map((b) => (
+							<span key={b} className="inline-flex items-center gap-1.5">
+								<span className="block size-3.5 rounded-[3px]" style={{ background: gridShade(b) }} />
+								{b === 0 ? "Not yet" : b}
+							</span>
+						))}
 					</p>
 					<table className="border-separate border-spacing-[3px] text-xs tabular-nums">
 						<thead>
@@ -229,9 +246,11 @@ function MathProgress({ childId, math }: { childId: string; math: Progress["math
 										return (
 											<td key={c} className="p-0">
 												<span
-													className={`block size-6 rounded-[4px] ${b === 0 ? "bg-felt-deep/70" : "bg-maple"}`}
-													style={b === 0 ? undefined : { opacity: 0.25 + b * 0.15 }}
-													title={`${r + 1} × ${c + 1}: ${b === 0 ? "not practiced" : `${b} of 5`}`}
+													className="block size-6 rounded-[4px]"
+													style={{ background: gridShade(b), boxShadow: b === 0 ? "inset 0 0.15em 0.4em rgb(0 0 0 / 0.4)" : undefined }}
+													role="img"
+													aria-label={`${r + 1} × ${c + 1}: ${b === 0 ? "not practiced yet" : `mastery ${b} of 5`}`}
+													title={`${r + 1} × ${c + 1}: ${b === 0 ? "not practiced yet" : `mastery ${b} of 5`}`}
 												/>
 											</td>
 										);
@@ -241,13 +260,16 @@ function MathProgress({ childId, math }: { childId: string; math: Progress["math
 						</tbody>
 					</table>
 					{math.trouble.length > 0 && (
-						<p className="text-sm">
-							<span className="text-felt-muted">Tricky facts: </span>
-							{math.trouble
-								.slice(0, 8)
-								.map((t) => factLabel(t.word))
-								.join(", ")}
-						</p>
+						<div className="space-y-2 pt-2">
+							<h4 className="text-sm font-semibold">Tricky facts</h4>
+							<ul className="flex flex-wrap gap-x-4 gap-y-2">
+								{math.trouble.slice(0, 8).map((t) => (
+									<li key={t.word}>
+										<WordTiles word={factLabel(t.word)} size={24} />
+									</li>
+								))}
+							</ul>
+						</div>
 					)}
 				</div>
 			</div>

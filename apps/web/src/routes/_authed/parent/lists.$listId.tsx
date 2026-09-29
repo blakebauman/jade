@@ -145,13 +145,13 @@ function ListEditor() {
 				</div>
 
 				<div className="patch space-y-4 p-5">
-					<div className="flex flex-wrap gap-2" role="tablist" aria-label="Add words from">
+					<fieldset className="mx-0 flex flex-wrap gap-2 border-0 p-0">
+						<legend className="sr-only">Add words from</legend>
 						{tabs.map((t) => (
 							<button
 								key={t.id}
 								type="button"
-								role="tab"
-								aria-selected={tab === t.id}
+								aria-pressed={tab === t.id}
 								className="key text-base"
 								data-pressed={tab === t.id}
 								onClick={() => setTab(t.id)}
@@ -159,7 +159,7 @@ function ListEditor() {
 								<t.icon className="size-4" aria-hidden /> {t.label}
 							</button>
 						))}
-					</div>
+					</fieldset>
 
 					{tab === "paste" && (
 						<div className="space-y-3">
@@ -196,7 +196,7 @@ function ListEditor() {
 								<code className="text-felt-ink">sentence</code> and <code className="text-felt-ink">definition</code> columns), or any text
 								file of words.
 							</p>
-							<label className="key cursor-pointer text-base">
+							<label className="key cursor-pointer text-base has-[input:focus-visible]:outline-3 has-[input:focus-visible]:outline-offset-3 has-[input:focus-visible]:outline-felt-ink">
 								<FileUp className="size-4" aria-hidden /> Choose file
 								<input type="file" accept=".csv,.txt,text/csv,text/plain" className="sr-only" onChange={onFile} />
 							</label>
@@ -205,7 +205,10 @@ function ListEditor() {
 					{tab === "photo" && (
 						<div className="space-y-3 text-sm text-felt-muted">
 							<p>Take a clear, flat photo of the school list. We read the words, you check them. The photo is not stored.</p>
-							<label className="key cursor-pointer text-base" aria-disabled={ocrBusy}>
+							<label
+								className="key cursor-pointer text-base has-[input:focus-visible]:outline-3 has-[input:focus-visible]:outline-offset-3 has-[input:focus-visible]:outline-felt-ink"
+								aria-disabled={ocrBusy}
+							>
 								<Camera className="size-4" aria-hidden /> {ocrBusy ? "Reading…" : "Take or choose photo"}
 								<input type="file" accept="image/*" capture="environment" className="sr-only" disabled={ocrBusy} onChange={onPhoto} />
 							</label>
@@ -225,7 +228,11 @@ function ListEditor() {
 						Words <span className="text-felt-muted tabular-nums">({words.length})</span>
 					</h2>
 					{words.length > 0 && (
-						<button type="button" className="text-sm text-felt-muted underline underline-offset-4" onClick={() => setWords([])}>
+						<button
+							type="button"
+							className="min-h-11 px-2 text-sm text-felt-muted underline underline-offset-4 hover:text-felt-ink"
+							onClick={() => setWords([])}
+						>
 							Clear all
 						</button>
 					)}
@@ -277,7 +284,7 @@ function ListEditor() {
 									</button>
 									<button
 										type="button"
-										className="grid size-10 place-items-center rounded-lg text-felt-muted hover:bg-felt-deep hover:text-felt-ink"
+										className="grid size-11 place-items-center rounded-lg text-felt-muted hover:bg-felt-deep hover:text-felt-ink"
 										aria-label={`Remove ${w.word}`}
 										onClick={() => setWords(words.filter((x) => x.word !== w.word))}
 									>

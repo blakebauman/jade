@@ -35,7 +35,7 @@ function Settings() {
 					on this device can still sign out.
 				</p>
 				<form onSubmit={submit} className="flex flex-wrap items-end gap-3">
-					<label className="space-y-1.5">
+					<label className="flex flex-col gap-1.5">
 						<span className="text-sm font-medium">{parent?.hasPin ? "New PIN" : "Choose a PIN"}</span>
 						<input
 							className="field w-40 text-center text-2xl tracking-[0.4em]"
