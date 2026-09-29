@@ -105,7 +105,7 @@ Secrets:
   - The service worker's `jade-data` cache (NetworkFirst) holds children, lists, list words, progress, `/api/parent` and word info. The spelling home prefetches every list's words.
   - Round loaders use `roundProgress` (fresh, else cached).
   - Sign-out forgets the device (user, `jade-data`, query cache) only after the server confirms it; offline it says it couldn't.
-  - `pnpm test:e2e:offline` checks all this against a production build on port 4173 (`vite preview` skips `.dev.vars`).
+  - `pnpm test:e2e:offline` checks all this against a production build on port 4173. The build copies `.dev.vars` into `dist/jade/`, so the preview trusts `BETTER_AUTH_URL` from it (5190).
 
 **SRS and streaks:**
 - SRS is driven by first-try correctness. A new word spelled right starts in box 2, due tomorrow; a miss goes to box 1, due now.

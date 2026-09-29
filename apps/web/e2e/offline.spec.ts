@@ -48,9 +48,23 @@ test("cold start with no connection; offline sign-out is refused", async ({ page
 	await offlinePage.goto(`/play/${child.id}/round/${list.id}/bee`);
 	await expect(offlinePage.getByRole("button", { name: "Start" })).toBeVisible({ timeout: 10_000 });
 
-	// Signing out needs the server: offline it says so and keeps everything.
+	// The math answer above is still queued, so signing out warns first. Even "Sign out anyway" needs the server:
+	// offline it says it couldn't, and the practice and the remembered family both stay.
 	await offlinePage.goto("/parent/settings");
 	await offlinePage.getByRole("button", { name: "Sign out" }).click();
-	await expect(offlinePage.getByRole("alert")).toHaveText(/Couldn’t sign out/);
+	await expect(offlinePage.getByRole("heading", { name: /hasn’t been saved yet/ })).toBeVisible();
+	await offlinePage.getByRole("button", { name: "Sign out anyway" }).click();
+	await expect(offlinePage.getByRole("alert").filter({ hasText: "Couldn’t sign out" })).toBeVisible();
 	expect(await offlinePage.evaluate(() => localStorage.getItem("jade.user"))).not.toBeNull();
+	const queued = await offlinePage.evaluate(
+		() =>
+			new Promise<number>((resolve) => {
+				const req = indexedDB.open("jade");
+				req.onsuccess = () => {
+					const c = req.result.transaction("ops").objectStore("ops").count();
+					c.onsuccess = () => resolve(c.result);
+				};
+			}),
+	);
+	expect(queued).toBeGreaterThan(0);
 });

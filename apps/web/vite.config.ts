@@ -12,7 +12,9 @@ export default defineConfig({
 		tanstackRouter({ target: "react", autoCodeSplitting: true }),
 		react(),
 		tailwindcss(),
-		cloudflare(),
+		// JADE_LOCAL_ONLY=1 (CI e2e) turns off remote bindings, so the dev server starts without Cloudflare credentials.
+		// Workers AI then isn't reachable; e2e stubs speech and word info in the browser, and the client falls back.
+		cloudflare({ remoteBindings: process.env.JADE_LOCAL_ONLY !== "1" }),
 		VitePWA({
 			registerType: "autoUpdate",
 			includeAssets: ["favicon.svg", "apple-touch-icon.png"],

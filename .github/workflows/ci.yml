@@ -26,7 +26,39 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
       # Unit + API tests. API tests run in workerd via vitest-pool-workers with local D1/R2 and a stubbed AI
-      # binding, so no Cloudflare credentials are needed. Playwright e2e is local-only (`pnpm test:e2e`): the
-      # dev server calls Workers AI remotely.
+      # binding, so no Cloudflare credentials are needed.
       - name: Test
         run: pnpm test
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Remote bindings off: the dev server starts without Cloudflare credentials. Workers AI is unreachable, and
+      # the tests stub speech and word info in the browser, so nothing is billed.
+      JADE_LOCAL_ONLY: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Throwaway dev vars (no real secrets)
+        run: printf 'BETTER_AUTH_SECRET=ci-only-not-a-secret-%s\nBETTER_AUTH_URL=http://localhost:5190\n' "${{ github.run_id }}" > apps/web/.dev.vars
+      - name: Local D1 migrations
+        run: pnpm db:migrate:local
+      - name: Playwright browsers
+        run: pnpm --filter @jade/web exec playwright install --with-deps chromium webkit
+      - name: e2e (laptop Chromium, iPad and iPhone WebKit)
+        run: pnpm test:e2e
+      - name: e2e offline (production build, service worker)
+        run: pnpm test:e2e:offline
+      - name: Upload traces and screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright
+          path: apps/web/test-results
+          retention-days: 7

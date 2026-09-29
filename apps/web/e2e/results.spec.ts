@@ -85,7 +85,7 @@ test("math results show the wrong first answer of a problem fixed on the second 
 	await page.getByRole("button", { name: "Stop", exact: true }).click();
 	await expect(page.getByRole("heading", { name: "Worth another look" })).toBeVisible();
 	// The fix shows the wrong first answer, not the right one.
-	await expect(page.getByRole("img", { name: wrong1, exact: true })).toBeVisible();
+	await expect(page.locator("p", { hasText: "Second try. First try was:" }).getByRole("img", { name: wrong1, exact: true })).toBeVisible();
 });
 
 test("a perfect round lands the stars, then lights them marigold", async ({ page }) => {
