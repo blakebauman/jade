@@ -99,7 +99,12 @@ Secrets:
 - Everything is idempotent. Attempts are keyed by client id, and only newly inserted rows count (`recordAttempts` uses `insert … on conflict do nothing returning`), so replays and a finish that re-sends everything never double-count. Totals are incremented in SQL.
 - Writes go through an ordered op queue in IndexedDB (`lib/offline.ts`, Dexie `ops` table). Offline, they wait and flush in order on `online`. A 4xx other than 429 drops the op.
 - Learn mode records attempts but never moves Leitner boxes.
-- Offline mid-session: `_authed` keeps the last confirmed user when the session check can't reach the server, and round loaders use `roundProgress` (fresh, else cached progress), so a new round can still start. A cold start offline still needs the network.
+- Offline, including opening the installed app with no connection:
+  - `lib/device.ts` remembers the last confirmed user in localStorage (`jade.user`). `_authed` and `/` use it when the session check can't reach the server; a 401/403 always wins.
+  - The service worker's `jade-data` cache (NetworkFirst) holds children, lists, list words, progress, `/api/parent` and word info. The spelling home prefetches every list's words.
+  - Round loaders use `roundProgress` (fresh, else cached).
+  - Sign-out forgets the device (user, `jade-data`, query cache) only after the server confirms it; offline it says it couldn't.
+  - `pnpm test:e2e:offline` checks all this against a production build on port 4173 (`vite preview` skips `.dev.vars`).
 
 **SRS and streaks:**
 - SRS is driven by first-try correctness. A new word spelled right starts in box 2, due tomorrow; a miss goes to box 1, due now.

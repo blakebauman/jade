@@ -1,32 +1,34 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { authClient } from "#/lib/auth.ts";
+import { forgetDevice, rememberedUser, rememberUser } from "#/lib/device.ts";
 
 type User = NonNullable<Awaited<ReturnType<typeof authClient.getSession>>["data"]>["user"];
 
 /**
- * The last confirmed user in this app session. If the network drops mid-practice, moving between screens keeps working
- * on it instead of failing the session check (answers wait in the offline queue). A server that says "no session"
- * always wins.
+ * The last confirmed user is kept on the device. If the server can't be reached (offline, or opening the installed app
+ * with no connection), the app carries on as that user; answers wait in the offline queue. A server that says
+ * "no session" always wins.
  */
-let lastUser: User | null = null;
+const knownUser = () => rememberedUser<User>();
 
 export const Route = createFileRoute("/_authed")({
 	beforeLoad: async ({ location }) => {
-		if (lastUser && !navigator.onLine) return { user: lastUser };
+		if (knownUser() && !navigator.onLine) return { user: knownUser()! };
 		let res: Awaited<ReturnType<typeof authClient.getSession>>;
 		try {
 			res = await authClient.getSession();
 		} catch (err) {
-			if (lastUser) return { user: lastUser };
+			if (knownUser()) return { user: knownUser()! };
 			throw err;
 		}
 		if (res.data) {
-			lastUser = res.data.user;
-			return { user: lastUser };
+			rememberUser(res.data.user);
+			return { user: res.data.user };
 		}
-		// No answer from the server (offline, 5xx) is not the same as "signed out".
-		if (res.error && lastUser && (res.error.status === 0 || res.error.status >= 500)) return { user: lastUser };
-		lastUser = null;
+		// An error without a "you're not signed in" answer (offline, 5xx) isn't a sign-out.
+		const status = res.error?.status;
+		if (res.error && knownUser() && status !== 401 && status !== 403) return { user: knownUser()! };
+		void forgetDevice();
 		throw redirect({ to: "/", search: { next: location.href } });
 	},
 	component: Outlet,

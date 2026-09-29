@@ -5,13 +5,23 @@ import { z } from "zod";
 import { Brand } from "#/components/Brand.tsx";
 import { fitTile } from "#/components/round/AnswerRow.tsx";
 import { authClient, signIn, signUp } from "#/lib/auth.ts";
+import { rememberedUser } from "#/lib/device.ts";
 import { useElementWidth } from "#/lib/hooks.ts";
 
 export const Route = createFileRoute("/")({
 	validateSearch: z.object({ next: z.string().optional() }),
 	beforeLoad: async ({ search }) => {
-		const { data } = await authClient.getSession();
-		if (data) throw redirect({ to: search.next ?? "/profiles" });
+		const to = search.next ?? "/profiles";
+		// The installed app opens here; with no connection, a family already signed in on this device goes straight in.
+		if (!navigator.onLine && rememberedUser()) throw redirect({ to });
+		let data: unknown;
+		try {
+			({ data } = await authClient.getSession());
+		} catch (err) {
+			if (rememberedUser()) throw redirect({ to });
+			throw err;
+		}
+		if (data) throw redirect({ to });
 	},
 	component: Landing,
 });

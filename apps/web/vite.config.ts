@@ -47,8 +47,15 @@ export default defineConfig({
 						},
 					},
 					{
-						urlPattern: ({ url }) =>
-							url.pathname.startsWith("/api/words/") || /^\/api\/lists(\/|$)/.test(url.pathname) || url.pathname === "/api/children",
+						// The family's data, last copy kept so the app opens and rounds start offline (progress feeds levels
+						// and review; /api/parent keeps the PIN gate up). Cleared on sign-out: keep the name in step with DATA_CACHE
+						// in src/lib/device.ts.
+						urlPattern: ({ url, request }) =>
+							request.method === "GET" &&
+							(url.pathname.startsWith("/api/words/") ||
+								/^\/api\/lists(\/|$)/.test(url.pathname) ||
+								/^\/api\/children(\/[^/]+\/progress)?$/.test(url.pathname) ||
+								url.pathname === "/api/parent"),
 						handler: "NetworkFirst",
 						options: { cacheName: "jade-data", networkTimeoutSeconds: 4, cacheableResponse: { statuses: [200] } },
 					},

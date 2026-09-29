@@ -12,6 +12,7 @@
 		"lint": "biome check .",
 		"test": "vitest run",
 		"test:e2e": "playwright test",
+		"test:e2e:offline": "playwright test --config playwright.offline.config.ts",
 		"typecheck": "tsc --noEmit",
 		"deploy": "pnpm build && wrangler deploy",
 		"cf-typegen": "wrangler types --strict-vars=false"

@@ -17,6 +17,7 @@
 		"lint": "turbo run lint",
 		"test": "turbo run test",
 		"test:e2e": "pnpm --filter @jade/web test:e2e",
+		"test:e2e:offline": "pnpm --filter @jade/web test:e2e:offline",
 		"typecheck": "turbo run typecheck",
 		"deploy": "turbo run deploy",
 		"format": "biome format --write .",

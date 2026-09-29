@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Brand } from "#/components/Brand.tsx";
 import { api } from "#/lib/api.ts";
 import { signOut } from "#/lib/auth.ts";
+import { forgetDevice } from "#/lib/device.ts";
 import { parentQuery } from "#/lib/queries.ts";
 
 export const Route = createFileRoute("/_authed/parent")({ component: ParentLayout });
@@ -74,6 +75,8 @@ function ParentLayout() {
 	const { data: parent } = useQuery(parentQuery);
 	const [unlocked, setUnlocked] = useState(isUnlocked);
 	const navigate = useNavigate();
+	const qc = useQueryClient();
+	const [signOutFailed, setSignOutFailed] = useState(false);
 	if (parent?.hasPin && !unlocked) return <PinGate onUnlock={() => setUnlocked(true)} />;
 	return (
 		<div className="mx-auto min-h-dvh max-w-6xl px-5 pb-16 md:px-10">
@@ -103,7 +106,13 @@ function ParentLayout() {
 						data-variant="felt"
 						aria-label="Sign out"
 						onClick={async () => {
-							await signOut();
+							setSignOutFailed(false);
+							const res = await signOut().catch(() => null);
+							// Signing out needs the server; if it didn't happen, keep everything as it was and say so.
+							if (!res || res.error) return setSignOutFailed(true);
+							// Nothing about this family stays on a shared device.
+							await forgetDevice();
+							qc.clear();
 							navigate({ to: "/" });
 						}}
 					>
@@ -111,6 +120,11 @@ function ParentLayout() {
 					</button>
 				</nav>
 			</header>
+			{signOutFailed && (
+				<p role="alert" className="-mt-2 mb-6 text-right text-sm">
+					Couldn’t sign out. Check the connection and try again.
+				</p>
+			)}
 			<Outlet />
 		</div>
 	);

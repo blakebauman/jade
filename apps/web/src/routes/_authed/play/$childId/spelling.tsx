@@ -6,7 +6,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Blocks, BookOpen, Ear, Flame, Play, RotateCcw, Star } from "lucide-react";
 import { BadgeIcon } from "#/components/BadgeIcon.tsx";
 import { useChild } from "#/lib/child.ts";
-import { listsQuery, progressQuery } from "#/lib/queries.ts";
+import { listQuery, listsQuery, progressQuery } from "#/lib/queries.ts";
 import { resumableRound } from "#/lib/round.ts";
 
 type SpellingMode = (typeof SPELLING_MODES)[number];
@@ -14,8 +14,14 @@ type SpellingMode = (typeof SPELLING_MODES)[number];
 import { speaker } from "#/lib/speaker.ts";
 
 export const Route = createFileRoute("/_authed/play/$childId/spelling")({
-	loader: ({ context, params }) =>
-		Promise.all([context.queryClient.ensureQueryData(listsQuery), context.queryClient.prefetchQuery(progressQuery(params.childId))]),
+	loader: async ({ context, params }) => {
+		const [lists] = await Promise.all([
+			context.queryClient.ensureQueryData(listsQuery),
+			context.queryClient.prefetchQuery(progressQuery(params.childId)),
+		]);
+		// Fetch each list's words now (cached by the service worker too), so any list can start later with no connection.
+		for (const l of lists) void context.queryClient.prefetchQuery(listQuery(l.id));
+	},
 	component: SpellingHome,
 });
 
