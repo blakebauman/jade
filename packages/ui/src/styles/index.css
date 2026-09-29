@@ -1,0 +1,291 @@
+/*
+ * Jade Learning: letter tiles on a jade board.
+ * Colour laws (one meaning each, everywhere):
+ *   marigold = right · coral = wrong letter · sky = missing letter · stone = extra letter
+ * Letter ink stays dark on every tile; feedback colour lives on tile edges and underlines only.
+ */
+@import "tw-animate-css";
+
+@theme {
+	/* Board */
+	--color-felt: #0e4f43;
+	--color-felt-deep: #093a31;
+	--color-felt-raised: #135c4e;
+	--color-felt-line: #1a6a5a;
+	--color-felt-ink: #e3f3ec;
+	--color-felt-muted: #a3d0c0;
+
+	/* Tiles */
+	--color-maple: #f1c98a;
+	--color-maple-hi: #f9e0b3;
+	--color-maple-lo: #c9965a;
+	--color-maple-deep: #a87842;
+	--color-ink: #23180f;
+	--color-ink-soft: #5a4630;
+
+	/* Laws */
+	--color-marigold: #f2b632;
+	--color-marigold-deep: #b9820f;
+	--color-coral: #e5553b;
+	--color-coral-deep: #a8331e;
+	--color-sky: #5aa9e6;
+	--color-sky-deep: #2a74ad;
+	--color-stone: #9a9186;
+	--color-stone-deep: #6b645b;
+
+	--font-display: "Fredoka Variable", "Fredoka", ui-rounded, system-ui, sans-serif;
+	--font-body: "Lexend Variable", "Lexend", system-ui, sans-serif;
+	--font-tile: var(--tile-face, "Fredoka Variable"), ui-rounded, system-ui, sans-serif;
+
+	/* Proportional so a 22px list tile and an 88px play tile read as the same object. */
+	--radius-tile: 18%;
+
+	/* Authored SVG textures (feTurbulence), no raster assets: maple grain in four variants and jade felt nap. */
+	--tex-grain-0: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0125 0.3125' numOctaves='3' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
+	--tex-grain-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
+	--tex-grain-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.00625 0.35625' numOctaves='3' seed='37' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
+	--tex-grain-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0125 0.4' numOctaves='3' seed='51' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
+	--tex-felt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='f' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.02  0 0 0 0 0.12  0 0 0 0 0.09  0 0 0 0.42 -0.12'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23f)'/%3E%3C/svg%3E");
+	--tex-felt-mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Cfilter id='m' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0078125' numOctaves='3' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85  0 0 0 0 1  0 0 0 0 0.93  0 0 0 0.07 -0.02'/%3E%3C/filter%3E%3Crect width='512' height='512' filter='url(%23m)'/%3E%3C/svg%3E");
+	--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+	--animate-tile-drop: tile-drop 240ms var(--ease-out-expo) both;
+	--animate-tile-flip: tile-flip 420ms var(--ease-out-expo) both;
+	--animate-tile-nudge: tile-nudge 360ms var(--ease-out-expo);
+
+	@keyframes tile-drop {
+		0% { transform: translateY(-18px) scale(1.06); }
+		100% { transform: translateY(0) scale(1); }
+	}
+	@keyframes tile-flip {
+		0% { transform: perspective(500px) rotateX(0deg); }
+		45% { transform: perspective(500px) rotateX(88deg); }
+		100% { transform: perspective(500px) rotateX(0deg); }
+	}
+	@keyframes tile-nudge {
+		0%, 100% { transform: translateX(0); }
+		25% { transform: translateX(-5px); }
+		60% { transform: translateX(4px); }
+	}
+}
+
+/* Per-child letter face (settings.font). */
+[data-font="fredoka"] { --tile-face: "Fredoka Variable"; }
+[data-font="andika"] { --tile-face: "Andika"; }
+[data-font="lexend"] { --tile-face: "Lexend Variable"; }
+[data-font="atkinson"] { --tile-face: "Atkinson Hyperlegible"; }
+
+@layer base {
+	html {
+		background: var(--color-felt-deep);
+		color: var(--color-felt-ink);
+		font-family: var(--font-body);
+		-webkit-tap-highlight-color: transparent;
+		text-size-adjust: 100%;
+		scrollbar-color: var(--color-felt-line) var(--color-felt-deep);
+		accent-color: var(--color-felt-ink);
+		caret-color: var(--color-felt-ink);
+	}
+	body {
+		min-height: 100dvh;
+		/* Felt: fine isotropic nap + soft large-scale mottling over a lit-from-above field. */
+		background:
+			var(--tex-felt-mottle),
+			var(--tex-felt),
+			radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-felt) 100%, white 4%) 0%, var(--color-felt) 45%, var(--color-felt-deep) 100%);
+		background-size: 512px 512px, 128px 128px, auto;
+		background-attachment: fixed;
+		overscroll-behavior-y: none;
+	}
+	::selection {
+		background: var(--color-maple);
+		color: var(--color-ink);
+	}
+	:focus-visible {
+		outline: 3px solid var(--color-felt-ink);
+		outline-offset: 3px;
+		border-radius: 0.7rem;
+	}
+	h1, h2, h3 {
+		font-family: var(--font-display);
+		text-wrap: balance;
+		letter-spacing: -0.01em;
+	}
+	button { cursor: pointer; }
+	button:disabled { cursor: not-allowed; }
+	input, textarea { font: inherit; }
+}
+
+@layer components {
+	/* The maple tile: grained face, lit top edge, a pressed bevel on the lower edge, soft drop shadow onto felt. */
+	.tile {
+		--grain: var(--tex-grain-0);
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		border-radius: var(--radius-tile);
+		background:
+			var(--grain),
+			linear-gradient(172deg, var(--color-maple-hi) 0%, var(--color-maple) 52%, color-mix(in oklab, var(--color-maple) 86%, var(--color-maple-lo)) 100%);
+		background-size: 320px 320px, auto;
+		color: var(--color-ink);
+		font-family: var(--font-tile);
+		font-weight: 600;
+		/* Debossed ink: light catches the lower lip of the cut, shadow sits in its upper lip. */
+		text-shadow:
+			0 1px 0 rgb(255 240 212 / 0.75),
+			0 -1px 0 rgb(95 58 22 / 0.3);
+		box-shadow:
+			inset 0 -0.3em 0 var(--tile-edge, var(--color-maple-lo)),
+			inset 0 1px 0 rgb(255 255 255 / 0.6),
+			inset 0 0 0 1px rgb(120 78 34 / 0.12),
+			0 0.35em 0.7em -0.1em rgb(3 25 20 / 0.55);
+		transition: box-shadow 160ms var(--ease-out-expo), transform 160ms var(--ease-out-expo);
+		user-select: none;
+	}
+	.tile[data-grain="1"] { --grain: var(--tex-grain-1); }
+	.tile[data-grain="2"] { --grain: var(--tex-grain-2); }
+	.tile[data-grain="3"] { --grain: var(--tex-grain-3); }
+	.tile[data-law="right"] { --tile-edge: var(--color-marigold); }
+	.tile[data-law="wrong"] { --tile-edge: var(--color-coral); }
+	.tile[data-law="missing"] { --tile-edge: var(--color-sky); }
+	.tile[data-law="extra"] { --tile-edge: var(--color-stone); }
+
+	/* A maple plaque: badges, stars and stats are small wooden objects too, never flat fills. */
+	.plaque {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		border-radius: 0.7rem;
+		color: var(--color-ink);
+		background:
+			var(--tex-grain-3),
+			linear-gradient(172deg, var(--color-maple-hi), var(--color-maple));
+		background-size: 320px 320px, auto;
+		text-shadow: 0 1px 0 rgb(255 240 212 / 0.7);
+		box-shadow:
+			inset 0 -0.2em 0 var(--color-maple-lo),
+			inset 0 1px 0 rgb(255 255 255 / 0.55),
+			0 0.3em 0.6em -0.2em rgb(3 25 20 / 0.55);
+	}
+
+	/* The wooden rack tiles stand on (bee questions, results scoreboard). */
+	.rack {
+		position: relative;
+		padding: 0.5rem 0.75rem 0.9rem;
+		border-radius: 0.9rem;
+		background:
+			var(--tex-grain-2),
+			linear-gradient(180deg, color-mix(in oklab, var(--color-maple-deep) 45%, var(--color-maple-lo)) 0%, color-mix(in oklab, var(--color-maple-deep) 80%, var(--color-maple-lo)) 100%);
+		background-size: 320px 320px, auto;
+		box-shadow:
+			inset 0 1px 0 rgb(255 230 190 / 0.35),
+			inset 0 -0.35rem 0 rgb(80 48 18 / 0.45),
+			0 0.4rem 0.9rem -0.2rem rgb(3 25 20 / 0.6);
+	}
+
+	/* A square on the board waiting for a tile. */
+	.square {
+		border-radius: var(--radius-tile);
+		background: color-mix(in oklab, var(--color-felt-deep) 80%, black);
+		box-shadow: inset 0 0.2em 0.5em rgb(0 0 0 / 0.45), inset 0 -1px 0 rgb(255 255 255 / 0.06);
+	}
+
+	/*
+	 * Buttons. Only things the speller handles as tiles are maple (data-variant="tile"; Check is "check",
+	 * marigold because it asks "is this right?"). Every other action is a felt button, and the primary
+	 * non-check action ("go") is chalk-light felt, never marigold: marigold means right.
+	 */
+	.key {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		min-height: 3rem;
+		padding-inline: 1.1rem;
+		border-radius: 0.85rem;
+		font-family: var(--font-display);
+		font-weight: 600;
+		font-size: 1.05rem;
+		color: var(--color-felt-ink);
+		background: var(--color-felt-raised);
+		box-shadow:
+			inset 0 1px 0 rgb(255 255 255 / 0.08),
+			inset 0 0 0 1px rgb(255 255 255 / 0.05),
+			0 0.25em 0.5em -0.2em rgb(3 25 20 / 0.6);
+		transition: transform 120ms var(--ease-out-expo), box-shadow 120ms var(--ease-out-expo), filter 120ms, background-color 120ms;
+	}
+	.key:hover:not(:disabled) { filter: brightness(1.08); }
+	.key:active:not(:disabled) { transform: translateY(1px); }
+	.key:disabled { opacity: 0.45; }
+	.key[data-variant="go"] {
+		color: var(--color-felt-deep);
+		background: var(--color-felt-ink);
+		box-shadow: inset 0 -0.18em 0 color-mix(in oklab, var(--color-felt-ink) 70%, var(--color-felt)), 0 0.3em 0.6em -0.2em rgb(3 25 20 / 0.6);
+	}
+	.key[data-variant="tile"],
+	.key[data-variant="check"] {
+		color: var(--color-ink);
+		background:
+			var(--tex-grain-1),
+			linear-gradient(172deg, var(--color-maple-hi), var(--color-maple));
+		background-size: 320px 320px, auto;
+		box-shadow:
+			inset 0 -0.22em 0 var(--key-edge, var(--color-maple-lo)),
+			inset 0 1px 0 rgb(255 255 255 / 0.55),
+			0 0.3em 0.6em -0.15em rgb(3 25 20 / 0.55);
+	}
+	.key[data-variant="check"] {
+		background:
+			var(--tex-grain-1),
+			linear-gradient(172deg, color-mix(in oklab, var(--color-marigold) 60%, white), var(--color-marigold));
+		background-size: 320px 320px, auto;
+		--key-edge: var(--color-marigold-deep);
+	}
+	.key[data-variant="tile"]:active:not(:disabled),
+	.key[data-variant="check"]:active:not(:disabled) {
+		transform: translateY(0.12em);
+		box-shadow: inset 0 -0.08em 0 var(--key-edge, var(--color-maple-lo)), 0 0.1em 0.3em -0.1em rgb(3 25 20 / 0.55);
+	}
+	.key[data-pressed="true"] {
+		background: var(--color-felt-deep);
+		box-shadow: inset 0 0.15em 0.4em rgb(0 0 0 / 0.4);
+	}
+
+	/* A calm felt panel for parent screens: a slightly raised patch of board, not a card. */
+	.patch {
+		background: color-mix(in oklab, var(--color-felt-raised) 70%, transparent);
+		border-radius: 1.25rem;
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 0 rgb(0 0 0 / 0.25);
+	}
+
+	.field {
+		width: 100%;
+		min-height: 3rem;
+		padding: 0.7rem 0.95rem;
+		border-radius: 0.8rem;
+		background: color-mix(in oklab, var(--color-felt-deep) 85%, black);
+		color: var(--color-felt-ink);
+		box-shadow: inset 0 0.15em 0.4em rgb(0 0 0 / 0.4);
+		border: 1px solid var(--color-felt-line);
+	}
+	.field::placeholder { color: color-mix(in oklab, var(--color-felt-muted) 85%, var(--color-felt-deep)); }
+	.field:focus-visible { outline-offset: 1px; }
+	select.field {
+		appearance: none;
+		padding-right: 2.5rem;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23a3d0c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 0.9rem center;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after {
+		animation-duration: 1ms !important;
+		animation-iteration-count: 1 !important;
+		/* No staggered waits in the start pose: everything lands at once. */
+		animation-delay: 0ms !important;
+		transition-duration: 1ms !important;
+	}
+}

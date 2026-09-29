@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Jade Learning</title>
+  <!-- Jade Learning mark: a maple letter tile "j" on jade felt. Authored SVG, no external source. -->
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#f9e0b3"/>
+      <stop offset="0.6" stop-color="#f1c98a"/>
+      <stop offset="1" stop-color="#e5b777"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0e4f43"/>
+  <rect x="84" y="96" width="344" height="344" rx="64" fill="#093a31" opacity="0.55"/>
+  <rect x="84" y="76" width="344" height="344" rx="64" fill="url(#face)"/>
+  <rect x="84" y="384" width="344" height="36" rx="18" fill="#c9965a"/>
+  <path d="M84 384h344v-8c0 26-22 44-48 44H132c-26 0-48-18-48-44z" fill="#c9965a"/>
+  <text x="256" y="330" text-anchor="middle" font-family="Fredoka, ui-rounded, 'Arial Rounded MT Bold', sans-serif" font-weight="600" font-size="250" fill="#23180f">j</text>
+</svg>

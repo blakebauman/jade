@@ -1,0 +1,445 @@
+{
+	"schemaVersion": 2,
+	"generatedAt": "2026-09-29T02:48:35.659Z",
+	"title": "Design System: Jade Learning",
+	"extensions": {
+		"colorMeta": {
+			"felt": {
+				"role": "primary",
+				"displayName": "Jade Felt",
+				"canonical": "#0e4f43",
+				"oklch": "oklch(38.5% 0.066 177.0)",
+				"tonalRamp": ["#000f0b", "#002b24", "#074b3f", "#2e6a5d", "#538d7f", "#77b3a4", "#9cd9ca", "#c0feee"]
+			},
+			"felt-deep": {
+				"role": "primary",
+				"displayName": "Deep Felt",
+				"canonical": "#093a31",
+				"oklch": "oklch(31.4% 0.053 177.3)",
+				"tonalRamp": ["#000f0b", "#012b24", "#1b493f", "#3b685d", "#5d8b80", "#81b0a4", "#a7d6ca", "#cafbee"]
+			},
+			"felt-raised": {
+				"role": "primary",
+				"displayName": "Raised Felt",
+				"canonical": "#135c4e",
+				"oklch": "oklch(42.8% 0.073 176.5)",
+				"tonalRamp": ["#000f0b", "#002b23", "#084b3f", "#266b5c", "#4c8f7f", "#71b4a3", "#97dbc9", "#bdfeed"]
+			},
+			"felt-line": {
+				"role": "primary",
+				"displayName": "Felt Seam",
+				"canonical": "#1a6a5a",
+				"oklch": "oklch(47.3% 0.079 176.1)",
+				"tonalRamp": ["#000f0b", "#012b23", "#034b3e", "#1d6c5c", "#46907e", "#6bb5a3", "#91dcc9", "#bcffed"]
+			},
+			"maple": {
+				"role": "secondary",
+				"displayName": "Maple",
+				"canonical": "#f1c98a",
+				"oklch": "oklch(85.6% 0.092 78.4)",
+				"tonalRamp": ["#120900", "#322001", "#553a03", "#7a5612", "#9e793b", "#c49e60", "#ecc485", "#ffeccf"]
+			},
+			"maple-hi": {
+				"role": "secondary",
+				"displayName": "Maple Highlight",
+				"canonical": "#f9e0b3",
+				"oklch": "oklch(91.6% 0.065 82.2)",
+				"tonalRamp": ["#120a00", "#312101", "#513c11", "#705a31", "#947d53", "#b9a176", "#e0c79b", "#ffeccb"]
+			},
+			"maple-lo": {
+				"role": "secondary",
+				"displayName": "Maple Bevel",
+				"canonical": "#c9965a",
+				"oklch": "oklch(70.9% 0.099 69.6)",
+				"tonalRamp": ["#140800", "#351e00", "#5a3700", "#81520e", "#a67538", "#cd995d", "#f4bf83", "#ffebd6"]
+			},
+			"maple-deep": {
+				"role": "secondary",
+				"displayName": "Rack Walnut",
+				"canonical": "#a87842",
+				"oklch": "oklch(61.0% 0.093 67.8)",
+				"tonalRamp": ["#140800", "#351e01", "#5b3603", "#805219", "#a5753f", "#cb9a63", "#f3bf88", "#ffebd6"]
+			},
+			"marigold": {
+				"role": "tertiary",
+				"displayName": "Marigold (right)",
+				"canonical": "#f2b632",
+				"oklch": "oklch(81.1% 0.153 82.1)",
+				"tonalRamp": ["#120a00", "#302101", "#533b02", "#785706", "#a37812", "#d19a0f", "#fcbf3f", "#ffeccc"]
+			},
+			"marigold-deep": {
+				"role": "tertiary",
+				"displayName": "Marigold Deep",
+				"canonical": "#b9820f",
+				"oklch": "oklch(64.5% 0.131 78.0)",
+				"tonalRamp": ["#120900", "#322002", "#553a04", "#7b5609", "#a87502", "#d19934", "#f9bf5f", "#ffeccf"]
+			},
+			"coral": {
+				"role": "tertiary",
+				"displayName": "Coral (wrong letter)",
+				"canonical": "#e5553b",
+				"oklch": "oklch(63.8% 0.184 32.4)",
+				"tonalRamp": ["#1d0100", "#470901", "#771403", "#aa2207", "#d8482f", "#ff745a", "#fdb7a8", "#ffe9e4"]
+			},
+			"sky": {
+				"role": "tertiary",
+				"displayName": "Sky (missing letter)",
+				"canonical": "#5aa9e6",
+				"oklch": "oklch(71.0% 0.119 243.9)",
+				"tonalRamp": ["#000c19", "#002640", "#06436a", "#0e6398", "#3687c2", "#5dace9", "#9cd1fd", "#e1f1ff"]
+			},
+			"stone": {
+				"role": "tertiary",
+				"displayName": "Stone (extra letter)",
+				"canonical": "#9a9186",
+				"oklch": "oklch(66.1% 0.019 73.0)",
+				"tonalRamp": ["#100a04", "#2a231a", "#463e35", "#645c52", "#877f74", "#aca398", "#d2c9bd", "#f7ede1"]
+			},
+			"felt-ink": {
+				"role": "neutral",
+				"displayName": "Chalk",
+				"canonical": "#e3f3ec",
+				"oklch": "oklch(95.0% 0.019 167.9)",
+				"tonalRamp": ["#040e0a", "#1b2722", "#36433e", "#54615b", "#76847e", "#9aa9a2", "#bfcfc8", "#e3f3ec"]
+			},
+			"felt-muted": {
+				"role": "neutral",
+				"displayName": "Lichen",
+				"canonical": "#a3d0c0",
+				"oklch": "oklch(82.1% 0.052 171.2)",
+				"tonalRamp": ["#000f09", "#012c21", "#1f493c", "#3d675a", "#608b7c", "#84b0a0", "#a9d6c6", "#ccfbea"]
+			},
+			"ink": {
+				"role": "neutral",
+				"displayName": "Walnut Ink",
+				"canonical": "#23180f",
+				"oklch": "oklch(22.0% 0.024 60.4)",
+				"tonalRamp": ["#130903", "#2d2118", "#4a3d33", "#685b50", "#8b7d72", "#b0a196", "#d7c7bb", "#fbebdf"]
+			},
+			"ink-soft": {
+				"role": "neutral",
+				"displayName": "Soft Ink",
+				"canonical": "#5a4630",
+				"oklch": "oklch(40.9% 0.044 68.8)",
+				"tonalRamp": ["#140800", "#32200a", "#4f3c26", "#6e5943", "#927c64", "#b7a088", "#dec6ad", "#ffebd6"]
+			}
+		},
+		"typographyMeta": {
+			"display": {
+				"displayName": "Display (Fredoka)",
+				"purpose": "Page and state headlines; balanced wrap."
+			},
+			"headline": {
+				"displayName": "Headline",
+				"purpose": "Section heads."
+			},
+			"title": {
+				"displayName": "Title",
+				"purpose": "List and speller names, result line."
+			},
+			"body": {
+				"displayName": "Body (Lexend)",
+				"purpose": "Definitions, sentences, helper and parent copy."
+			},
+			"label": {
+				"displayName": "Key Label",
+				"purpose": "All .key labels."
+			},
+			"tile": {
+				"displayName": "Tile Face",
+				"purpose": "Tile letters via --font-tile; per-child data-font: fredoka (default), andika, lexend, atkinson.",
+				"faces": {
+					"fredoka": "Fredoka Variable",
+					"andika": "Andika",
+					"lexend": "Lexend Variable",
+					"atkinson": "Atkinson Hyperlegible"
+				}
+			}
+		},
+		"shadows": [
+			{
+				"name": "tile",
+				"value": "inset 0 -0.3em 0 var(--tile-edge, var(--color-maple-lo)), inset 0 1px 0 rgb(255 255 255 / 0.6), inset 0 0 0 1px rgb(120 78 34 / 0.12), 0 0.35em 0.7em -0.1em rgb(3 25 20 / 0.55)",
+				"purpose": "Every letter tile; the bevel carries the law colour."
+			},
+			{
+				"name": "key-maple",
+				"value": "inset 0 -0.22em 0 var(--key-edge, var(--color-maple-lo)), inset 0 1px 0 rgb(255 255 255 / 0.55), 0 0.3em 0.6em -0.15em rgb(3 25 20 / 0.55)",
+				"purpose": "Tile and Check keys at rest."
+			},
+			{
+				"name": "key-maple-active",
+				"value": "inset 0 -0.08em 0 var(--key-edge, var(--color-maple-lo)), 0 0.1em 0.3em -0.1em rgb(3 25 20 / 0.55)",
+				"purpose": "Maple key pressed (with translateY 0.12em)."
+			},
+			{
+				"name": "plaque",
+				"value": "inset 0 -0.2em 0 var(--color-maple-lo), inset 0 1px 0 rgb(255 255 255 / 0.55), 0 0.3em 0.6em -0.2em rgb(3 25 20 / 0.55)",
+				"purpose": "Badges, stats, spoken-answer strip."
+			},
+			{
+				"name": "rack",
+				"value": "inset 0 1px 0 rgb(255 230 190 / 0.35), inset 0 -0.35rem 0 rgb(80 48 18 / 0.45), 0 0.4rem 0.9rem -0.2rem rgb(3 25 20 / 0.6)",
+				"purpose": "Walnut shelf under bee questions and the results scoreboard."
+			},
+			{
+				"name": "key-felt",
+				"value": "inset 0 1px 0 rgb(255 255 255 / 0.08), inset 0 0 0 1px rgb(255 255 255 / 0.05), 0 0.25em 0.5em -0.2em rgb(3 25 20 / 0.6)",
+				"purpose": "Default felt key."
+			},
+			{
+				"name": "key-go",
+				"value": "inset 0 -0.18em 0 color-mix(in oklab, var(--color-felt-ink) 70%, var(--color-felt)), 0 0.3em 0.6em -0.2em rgb(3 25 20 / 0.6)",
+				"purpose": "Chalk primary key."
+			},
+			{
+				"name": "recessed-square",
+				"value": "inset 0 0.2em 0.5em rgb(0 0 0 / 0.45), inset 0 -1px 0 rgb(255 255 255 / 0.06)",
+				"purpose": "Empty board square."
+			},
+			{
+				"name": "recessed-missing",
+				"value": "inset 0 -0.3em 0 var(--color-sky), inset 0 0.2em 0.5em rgb(0 0 0 / 0.45)",
+				"purpose": "Missing-letter square (sky underline)."
+			},
+			{
+				"name": "recessed-field",
+				"value": "inset 0 0.15em 0.4em rgb(0 0 0 / 0.4)",
+				"purpose": "Fields and data-pressed keys."
+			},
+			{
+				"name": "patch",
+				"value": "inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 0 rgb(0 0 0 / 0.25)",
+				"purpose": "Parent felt panel."
+			}
+		],
+		"motion": [
+			{
+				"name": "ease-out-expo",
+				"value": "cubic-bezier(0.16, 1, 0.3, 1)",
+				"purpose": "The only easing: settles, flips, key presses."
+			},
+			{
+				"name": "tile-drop",
+				"value": "tile-drop 240ms var(--ease-out-expo) both; translateY(-18px) scale(1.06) -> rest",
+				"purpose": "Typed tiles, reveal tiles, stars, badges. Decorative staggers 70–140ms."
+			},
+			{
+				"name": "tile-flip",
+				"value": "tile-flip 420ms var(--ease-out-expo) both; perspective(500px) rotateX 0 -> 88deg -> 0",
+				"purpose": "Check cascade, left to right, 55ms per tile; replays per check via key nonce."
+			},
+			{
+				"name": "tile-nudge",
+				"value": "tile-nudge 360ms var(--ease-out-expo); translateX 0 -> -5px -> 4px -> 0",
+				"purpose": "Whole answer row on retry."
+			},
+			{
+				"name": "key-press",
+				"value": "transform/box-shadow 120ms var(--ease-out-expo), filter 120ms",
+				"purpose": "Key hover brightness 1.08 and press."
+			},
+			{
+				"name": "tile-state",
+				"value": "box-shadow/transform 160ms var(--ease-out-expo)",
+				"purpose": "Tile edge changes."
+			},
+			{
+				"name": "reduced-motion",
+				"value": "@media (prefers-reduced-motion: reduce) { animation-duration: 1ms; animation-iteration-count: 1; transition-duration: 1ms } + reveal shows whole word at once",
+				"purpose": "All motion collapsed."
+			}
+		],
+		"breakpoints": [
+			{
+				"name": "sm",
+				"value": "640px"
+			},
+			{
+				"name": "md",
+				"value": "768px"
+			},
+			{
+				"name": "lg",
+				"value": "1024px"
+			},
+			{
+				"name": "keyboard-up",
+				"value": "visualViewport.height < 0.78 * innerHeight (sets --vvh)"
+			}
+		],
+		"textures": [
+			{
+				"name": "tex-grain-0..3",
+				"value": "feTurbulence fractalNoise, baseFrequency ~0.006–0.019 x 0.28–0.4, numOctaves 3, seeds 11/23/37/51, 320px tile",
+				"purpose": "Maple grain; one of four per tile via data-grain."
+			},
+			{
+				"name": "tex-felt",
+				"value": "feTurbulence fractalNoise baseFrequency 1.25, numOctaves 2, seed 7, drawn at 128px",
+				"purpose": "Fine felt nap."
+			},
+			{
+				"name": "tex-felt-mottle",
+				"value": "feTurbulence fractalNoise baseFrequency 0.0078, numOctaves 3, seed 5, 512px",
+				"purpose": "Soft large-scale felt mottling."
+			}
+		],
+		"ipad": {
+			"viewportMeta": "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
+			"vvh": "--vvh on <html> from visualViewport; round main min-height var(--vvh, 100dvh), height var(--vvh) while keyboard is up",
+			"minTarget": "44px (icon keys size-11); text keys min-height 3rem",
+			"spellingInput": "autocorrect=off autocapitalize=none spellcheck=false autocomplete=off, 16px font, enterkeyhint=done"
+		}
+	},
+	"components": [
+		{
+			"name": "Felt Key",
+			"kind": "button",
+			"refersTo": "key-felt",
+			"description": "Default action key for everything the speller does not handle: nav, Done, Add, exit.",
+			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-felt\">Done</button></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-felt{color:#e3f3ec;background:#135c4e;box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 0 0 1px rgb(255 255 255/.05),0 .25em .5em -.2em rgb(3 25 20/.6);}"
+		},
+		{
+			"name": "Go Key",
+			"kind": "button",
+			"refersTo": "key-go",
+			"description": "Chalk felt; the one primary non-check action per view (Review, Next word, Save list). Never marigold.",
+			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-go\">Next word</button></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-go{color:#093a31;background:#e3f3ec;box-shadow:inset 0 -.18em 0 #afcdc2,0 .3em .6em -.2em rgb(3 25 20/.6)}"
+		},
+		{
+			"name": "Tile Key",
+			"kind": "button",
+			"refersTo": "key-tile",
+			"description": "Grained maple key for things the speller handles: Slowly, Definition, Sentence, Origin, hear-word.",
+			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-maple\">Definition</button></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-maple{color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3,#f1c98a);background-size:320px 320px,auto;box-shadow:inset 0 -.22em 0 #c9965a,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.15em rgb(3 25 20/.55)}.ds-maple:hover{filter:brightness(1.08)}.ds-maple:active{transform:translateY(.12em);box-shadow:inset 0 -.08em 0 #c9965a,0 .1em .3em -.1em rgb(3 25 20/.55)}"
+		},
+		{
+			"name": "Check Key",
+			"kind": "button",
+			"refersTo": "key-check",
+			"description": "Marigold-tinted maple at the right end of the answer row; marigold because it asks 'is this right?'.",
+			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-check\">Check</button></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-check{min-height:3.5rem;padding-inline:1.25rem;font-size:1.25rem;color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,color-mix(in oklab,#f2b632 60%,white),#f2b632);background-size:320px 320px,auto;box-shadow:inset 0 -.22em 0 #b9820f,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.15em rgb(3 25 20/.55)}.ds-check:active{transform:translateY(.12em);box-shadow:inset 0 -.08em 0 #b9820f,0 .1em .3em -.1em rgb(3 25 20/.55)}"
+		},
+		{
+			"name": "Pressed Key (selected)",
+			"kind": "chip",
+			"refersTo": "key-pressed",
+			"description": "data-pressed=\"true\": a felt key pressed into the board for segmented choices and the active nav item.",
+			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-felt ds-pressed\" aria-pressed=\"true\">Paste</button> <button class=\"ds-key ds-felt\">CSV or text file</button></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-felt{color:#e3f3ec;background:#135c4e;box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 0 0 1px rgb(255 255 255/.05),0 .25em .5em -.2em rgb(3 25 20/.6);}.ds-pressed{background:#093a31;box-shadow:inset 0 .15em .4em rgb(0 0 0/.4)}"
+		},
+		{
+			"name": "Letter Tiles with Laws",
+			"kind": "custom",
+			"refersTo": "tile",
+			"description": "Maple tiles; law colour lives on the lower bevel and a corner mark, letter ink stays dark. Right, wrong (X), missing (sky square), extra (minus).",
+			"html": "<div class=\"ds-board ds-row\"><span class=\"ds-tile ds-right\">b</span><span class=\"ds-tile ds-wrong\">a<i class=\"ds-mark\" style=\"background:#e5553b\">×</i></span><span class=\"ds-square ds-missing\"></span><span class=\"ds-tile\">i</span><span class=\"ds-tile ds-extra\">e<i class=\"ds-mark\" style=\"background:#9a9186\">−</i></span><span class=\"ds-square ds-active\"></span></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-row{display:flex;gap:7px}.ds-tile{position:relative;display:inline-grid;place-items:center;width:64px;height:64px;font-size:36px;line-height:1;border-radius:18%;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3 0%,#f1c98a 52%,color-mix(in oklab,#f1c98a 86%,#c9965a) 100%);background-size:320px 320px,auto;text-shadow:0 1px 0 rgb(255 240 212/.75),0 -1px 0 rgb(95 58 22/.3);box-shadow:inset 0 -.3em 0 var(--edge,#c9965a),inset 0 1px 0 rgb(255 255 255/.6),inset 0 0 0 1px rgb(120 78 34/.12),0 .35em .7em -.1em rgb(3 25 20/.55)}.ds-right{--edge:#f2b632}.ds-wrong{--edge:#e5553b}.ds-extra{--edge:#9a9186}.ds-mark{position:absolute;top:-6%;right:-6%;width:16px;height:16px;border-radius:50%;border:1px solid #fff;color:#fff;font:700 12px/14px system-ui;text-align:center;font-style:normal;text-shadow:none}.ds-square{display:inline-block;width:64px;height:64px;border-radius:18%;background:color-mix(in oklab,#093a31 80%,black);box-shadow:inset 0 .2em .5em rgb(0 0 0/.45),inset 0 -1px 0 rgb(255 255 255/.06)}.ds-missing{box-shadow:inset 0 -.3em 0 #5aa9e6,inset 0 .2em .5em rgb(0 0 0/.45)}.ds-active{outline:2px solid rgb(227 243 236/.7);outline-offset:2px}"
+		},
+		{
+			"name": "Rack with Plaque",
+			"kind": "card",
+			"refersTo": "rack",
+			"description": "Walnut rack holding bee-question tile keys; a maple plaque carries the spoken answer below.",
+			"html": "<div class=\"ds-board\"><div class=\"ds-rack\"><button class=\"ds-key ds-maple\">Definition</button><button class=\"ds-key ds-maple\">Sentence</button></div><p class=\"ds-plaque\"><b>Definition:</b> a word your speller is practicing</p></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;display:grid;gap:14px;justify-items:center}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-maple{color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3,#f1c98a);background-size:320px 320px,auto;box-shadow:inset 0 -.22em 0 #c9965a,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.15em rgb(3 25 20/.55)}.ds-rack{display:flex;gap:.5rem;padding:.5rem .75rem .9rem;border-radius:.9rem;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(180deg,color-mix(in oklab,#a87842 70%,#c9965a) 0%,#a87842 100%);background-size:320px 320px,auto;box-shadow:inset 0 1px 0 rgb(255 230 190/.35),inset 0 -.35rem 0 rgb(80 48 18/.45),0 .4rem .9rem -.2rem rgb(3 25 20/.6)}.ds-plaque{margin:0;padding:.6rem 1rem;border-radius:.7rem;color:#2a1c10;font-family:'Lexend Variable','Lexend',system-ui,sans-serif;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3,#f1c98a);background-size:320px 320px,auto;text-shadow:0 1px 0 rgb(255 240 212/.7);box-shadow:inset 0 -.2em 0 #c9965a,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.2em rgb(3 25 20/.55)}"
+		},
+		{
+			"name": "Field in a Patch",
+			"kind": "input",
+			"refersTo": "field",
+			"description": "Recessed felt field inside a raised felt patch (parent screens).",
+			"html": "<div class=\"ds-board\"><label class=\"ds-patch\"><span>List name</span><input class=\"ds-field\" placeholder=\"Week 6\"></label></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-patch{display:grid;gap:.5rem;padding:1.25rem;border-radius:1.25rem;color:#e3f3ec;font:500 .875rem 'Lexend Variable','Lexend',system-ui,sans-serif;background:color-mix(in oklab,#135c4e 70%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255/.05),0 1px 0 rgb(0 0 0/.25)}.ds-field{min-height:3rem;padding:.7rem .95rem;border-radius:.8rem;border:1px solid #1a6a5a;color:#e3f3ec;font:400 1rem 'Lexend Variable','Lexend',system-ui,sans-serif;background:color-mix(in oklab,#093a31 85%,black);box-shadow:inset 0 .15em .4em rgb(0 0 0/.4)}.ds-field::placeholder{color:color-mix(in oklab,#a3d0c0 85%,#093a31)}.ds-field:focus-visible{outline:3px solid #e3f3ec;outline-offset:1px}"
+		},
+		{
+			"name": "Pips",
+			"kind": "custom",
+			"refersTo": "pip",
+			"description": "Five-dot mastery ramp (Leitner box 1–5), identical in play, results and parent progress.",
+			"html": "<div class=\"ds-board\"><span class=\"ds-pips\" role=\"img\" aria-label=\"Mastery 2 of 5\"><i class=\"on\"></i><i class=\"on\"></i><i></i><i></i><i></i></span></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-pips{display:inline-flex;gap:3px}.ds-pips i{width:9px;height:9px;border-radius:9999px;box-shadow:inset 0 0 0 1.5px #a3d0c0}.ds-pips i.on{background:#e3f3ec;box-shadow:none}"
+		}
+	],
+	"narrative": {
+		"northStar": "The Tile Board",
+		"overview": "Every letter is a physical maple tile placed on a jade felt board, so a spelling is an object you can check piece by piece. The felt owns the whole viewport on every route, from sign-in to the round. Everything the speller handles is carved from maple: letter tiles, the Say-it disc, bee-question keys, plaques and racks. Every other surface is a patch of the same felt, sometimes raised and sometimes pressed in.\n\nThe palette is two materials (jade felt and maple) plus four law colours. Each law colour carries exactly one meaning, and it appears only on tile edges, underlines and corner marks. Letter ink stays dark on every tile. Density stays low during a round, where the word is the only subject. Parent screens use the same board at lower intensity, with felt patches, felt keys and small tile racks for words.\n\nDepth is physical rather than decorative. Tiles have a lit top edge, a pressed lower bevel and a soft drop onto the felt. Squares are recessed. Textures are authored SVG turbulence (feTurbulence) with no raster assets: four maple-grain variants, plus felt nap and mottle. Motion is short and physical: tiles settle, flip and nudge. Nothing floats or fades.",
+		"keyCharacteristics": [
+			"Jade felt ground on every route, lit from above with nap and mottle textures.",
+			"Maple is reserved for things the speller handles; everything else is felt.",
+			"Four law colours with one meaning each, shown only on edges, underlines and corner marks.",
+			"Radius is proportional (18%), so a 14px progress tile and an 88px play tile read as the same object.",
+			"Rounded Fredoka for display and tiles, Lexend for reading, and a per-child tile face.",
+			"Short physical motion (drop, flip cascade, nudge), all collapsed under reduced motion."
+		],
+		"rules": [
+			{
+				"name": "The One Law Rule",
+				"body": "Each law colour means one thing everywhere: marigold is right, coral is a wrong letter, sky is a missing letter, stone is an extra letter. Test: if you can't finish the sentence \"this colour here means ___\" with that colour's law, the colour is wrong.",
+				"section": "colors"
+			},
+			{
+				"name": "The Edge-Only Rule",
+				"body": "Feedback colour lives on tile edges (the `--tile-edge` bevel), underlines and the corner mark. It never goes on the letter or the tile face. Letter ink stays dark on every tile.",
+				"section": "colors"
+			},
+			{
+				"name": "The Marigold Is Earned Rule",
+				"body": "Marigold never marks a generic primary action. The primary non-check action is chalk felt (`go`). On retry, correct letters lose their marigold, so marigold only confirms a finished word.",
+				"section": "colors"
+			},
+			{
+				"name": "The Mark Beside Colour Rule",
+				"body": "Every non-right law also carries a corner mark (X, plus or minus on a white-stroked disc) and an aria-label such as \"b, wrong letter\". Colour is never the only signal. Right carries no mark and is confirmed by the result line.",
+				"section": "colors"
+			},
+			{
+				"name": "The Child's Face Rule",
+				"body": "Tile letters take their face from `data-font` on the play subtree (`fredoka`, `andika`, `lexend`, `atkinson`). Every tile uses `--font-tile`, never a hard-coded family, so a child's chosen face reaches every tile in the round. All four faces are bundled locally through @fontsource.",
+				"section": "typography"
+			},
+			{
+				"name": "The Lowercase Word Rule",
+				"body": "Words are shown as the speller types them, usually lowercase. Don't uppercase or letter-space tile letters or key labels. The only tracking in the build is on PIN fields.",
+				"section": "typography"
+			},
+			{
+				"name": "The Grain-Not-Flat Rule",
+				"body": "Every maple surface stacks a grain texture over a 172deg highlight gradient. Tiles pick one of four grain variants (`data-grain` 0 to 3, derived from the letter or index), so neighbours rarely match. A flat maple fill is a defect.",
+				"section": "elevation"
+			},
+			{
+				"name": "The Felt Is Lit Rule",
+				"body": "The body stacks felt mottle (512px), felt nap (128px) and a radial gradient lit from the top centre, fixed to the viewport. New surfaces sit on this field; they don't paint their own opaque backgrounds.",
+				"section": "elevation"
+			}
+		],
+		"dos": [
+			"**Do** put feedback colour only on `--tile-edge`, underlines and corner marks. Test: with the law colours desaturated, every judged tile still shows an X, plus or minus mark, and its aria-label names the law.",
+			"**Do** use maple (`data-variant=\"tile\"` or `\"check\"`) only for things the speller handles. Test: if a key isn't part of listening to, asking about or checking the word, it's felt.",
+			"**Do** use exactly one `go` key per view for the primary non-check action, in chalk felt.",
+			"**Do** mark selection with `data-pressed=\"true\"` (plus `aria-current` for nav), never with a colour change.",
+			"**Do** size answer tiles through `fitTile` so tile edge and gap scale together (gap = 10% of the edge). Test: a 15-letter word at 375px fits on one line.",
+			"**Do** size round screens to `var(--vvh, 100dvh)` and collapse the rail while the keyboard is up. Test: on iPad with the on-screen keyboard up, the Say-it disc, the answer row and Check are all visible.",
+			"**Do** keep every tap target at least 44px: text keys are 48px or more, and square icon-only keys are 44 to 48px.",
+			"**Do** set `autocorrect=\"off\"`, `autocapitalize=\"none\"` and `spellcheck={false}` on any field that takes a spelling.",
+			"**Do** render tile letters in `--font-tile` so the child's chosen face applies.",
+			"**Do** keep motion to tile-drop, tile-flip and tile-nudge on ease-out-expo, and check each new animation under `prefers-reduced-motion`."
+		],
+		"donts": [
+			"**Don't** use marigold for a generic primary, \"start\" or \"continue\" action. Marigold means right.",
+			"**Don't** use coral, sky or stone for anything except wrong, missing and extra letters: no coral error banners, sky links or stone disabled states.",
+			"**Don't** tint a tile face or colour a letter's ink to show feedback.",
+			"**Don't** fill maple flat or use raster wood. Every maple surface carries a grain texture over the 172deg gradient.",
+			"**Don't** put white cards, flat panels or opaque page backgrounds over the felt. Parent panels are `patch`.",
+			"**Don't** let the answer row wrap onto two lines.",
+			"**Don't** add floaty fades, long easings or looping motion.",
+			"**Don't** use condensed or pixel faces, or uppercase tile letters."
+		]
+	}
+}

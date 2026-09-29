@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint (Biome)
+        run: pnpm check:ci
+      - name: Typecheck
+        run: pnpm typecheck
+      # Unit + API tests. API tests run in workerd via vitest-pool-workers with local D1/R2 and a stubbed AI
+      # binding, so no Cloudflare credentials are needed. Playwright e2e is local-only (`pnpm test:e2e`): the
+      # dev server calls Workers AI remotely.
+      - name: Test
+        run: pnpm test

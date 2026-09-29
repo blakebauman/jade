@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "@jade/ui/styles";
+
+@source "../../../packages/ui/src";

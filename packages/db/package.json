@@ -1,0 +1,24 @@
+{
+	"name": "@jade/db",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./schema": "./src/schema.ts"
+	},
+	"scripts": {
+		"db:generate": "drizzle-kit generate",
+		"lint": "biome check .",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"drizzle-orm": "catalog:"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "catalog:",
+		"@jade/tsconfig": "workspace:*",
+		"drizzle-kit": "catalog:",
+		"typescript": "catalog:"
+	}
+}

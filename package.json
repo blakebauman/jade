@@ -1,0 +1,43 @@
+{
+	"name": "jade-learning",
+	"version": "0.0.0",
+	"private": true,
+	"license": "MIT",
+	"description": "Spelling bee practice for kids, on Cloudflare Workers.",
+	"packageManager": "pnpm@10.11.0",
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"build": "turbo run build",
+		"dev": "pnpm db:migrate:local && pnpm --filter @jade/web dev",
+		"db:generate": "pnpm --filter @jade/db db:generate",
+		"db:migrate:local": "pnpm --filter @jade/web exec wrangler d1 migrations apply DB --local",
+		"db:migrate:remote": "pnpm --filter @jade/web exec wrangler d1 migrations apply DB --remote",
+		"lint": "turbo run lint",
+		"test": "turbo run test",
+		"test:e2e": "pnpm --filter @jade/web test:e2e",
+		"typecheck": "turbo run typecheck",
+		"deploy": "turbo run deploy",
+		"format": "biome format --write .",
+		"check": "biome check --write .",
+		"check:ci": "biome ci .",
+		"prepare": "lefthook install"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "catalog:",
+		"lefthook": "catalog:",
+		"turbo": "catalog:",
+		"typescript": "catalog:"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild",
+			"workerd",
+			"lightningcss",
+			"lefthook",
+			"@biomejs/biome",
+			"sharp"
+		]
+	}
+}

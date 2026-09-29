@@ -1,0 +1,63 @@
+{
+	"name": "@jade/web",
+	"private": true,
+	"type": "module",
+	"imports": {
+		"#/*": "./src/*"
+	},
+	"scripts": {
+		"dev": "vite dev --port 5190",
+		"build": "vite build",
+		"preview": "pnpm build && vite preview",
+		"lint": "biome check .",
+		"test": "vitest run",
+		"test:e2e": "playwright test",
+		"typecheck": "tsc --noEmit",
+		"deploy": "pnpm build && wrangler deploy",
+		"cf-typegen": "wrangler types --strict-vars=false"
+	},
+	"dependencies": {
+		"@jade/api": "workspace:*",
+		"@jade/core": "workspace:*",
+		"@jade/ui": "workspace:*",
+		"@fontsource-variable/fredoka": "catalog:",
+		"@fontsource-variable/lexend": "catalog:",
+		"@fontsource/andika": "catalog:",
+		"@fontsource/atkinson-hyperlegible": "catalog:",
+		"@tanstack/react-query": "catalog:",
+		"@tanstack/react-router": "catalog:",
+		"better-auth": "catalog:",
+		"canvas-confetti": "catalog:",
+		"dexie": "catalog:",
+		"hono": "catalog:",
+		"lucide-react": "catalog:",
+		"motion": "catalog:",
+		"react": "catalog:",
+		"react-dom": "catalog:",
+		"zod": "catalog:",
+		"zustand": "catalog:"
+	},
+	"devDependencies": {
+		"@cloudflare/vite-plugin": "catalog:",
+		"@cloudflare/workers-types": "catalog:",
+		"@jade/tsconfig": "workspace:*",
+		"@playwright/test": "catalog:",
+		"@tailwindcss/vite": "catalog:",
+		"@tanstack/router-plugin": "catalog:",
+		"@testing-library/dom": "catalog:",
+		"@testing-library/react": "catalog:",
+		"@types/canvas-confetti": "catalog:",
+		"@types/node": "catalog:",
+		"@types/react": "catalog:",
+		"@types/react-dom": "catalog:",
+		"@vitejs/plugin-react": "catalog:",
+		"jsdom": "catalog:",
+		"tailwindcss": "catalog:",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vite-plugin-pwa": "catalog:",
+		"vitest": "catalog:",
+		"wrangler": "catalog:",
+		"workbox-window": "catalog:"
+	}
+}

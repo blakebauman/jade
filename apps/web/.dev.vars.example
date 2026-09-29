@@ -1,0 +1,4 @@
+BETTER_AUTH_SECRET=replace-with-32+-random-chars
+# Optional: Merriam-Webster Elementary Dictionary key (free, non-commercial) from dictionaryapi.com
+# MW_KEY=
+BETTER_AUTH_URL=http://localhost:5190

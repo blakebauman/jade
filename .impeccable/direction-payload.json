@@ -1,0 +1,142 @@
+{
+	"title": "Choose Jade Learning's visual world",
+	"question": "The roll assigned Letter Tiles on the Board. Keep it, take an alternate, or re-roll.",
+	"options": [
+		{
+			"id": "assigned",
+			"label": "Letter Tiles on the Board",
+			"kicker": "THE ROLL",
+			"lineage": "wooden letter-tile board games on the kitchen table",
+			"thesis": "Every letter is a physical tile the speller places, so a spelling becomes an object you can check piece by piece.",
+			"palette": ["#0e4f43", "#f1c98a", "#23180f", "#f2b632", "#e5553b", "#5aa9e6"],
+			"materials": [
+				"maple letter tiles with a pressed-ink letter and soft bevel",
+				"deep jade felt game board",
+				"coloured premium squares as the only colour fields"
+			],
+			"viewport": "Laptop or iPad: jade board fills the screen; a big round Say-it button and a rack of bee questions (Definition, Sentence, Origin) sit above a row of empty tile squares; typing drops maple tiles into the squares; Check is a marigold key-tile.",
+			"risk": "Tiles must stay a spelling tool, not a board-game costume; if the board decorates instead of grading, it reads as a theme.",
+			"raised": [
+				{
+					"from": "challenger-splitflap",
+					"raise": "The correct spelling reveals tile by tile in a cascade, one letter per beat, synced to the voice spelling it aloud."
+				},
+				{
+					"from": "challenger-cloudedge",
+					"raise": "Feedback colour lives on tile edges and underlines only; the letter ink stays dark on every tile so words stay readable."
+				},
+				{
+					"from": "challenger-gravityrain",
+					"raise": "Each colour is one law everywhere: marigold means right, coral means wrong letter, sky means missing, stone means extra. No colour means anything else."
+				},
+				{
+					"from": "challenger-atlas",
+					"raise": "Mastery is a fixed five-step ramp of pips on every word tile (the Leitner box), identical on the play screen, results, and the parent view."
+				},
+				{
+					"from": "challenger-monochrome",
+					"raise": "Every feedback line points at the exact tile it is about (“ie, not ei” under those two tiles); no generic “Oops”."
+				}
+			]
+		},
+		{
+			"id": "model-pick",
+			"label": "Spelling Bee Stage",
+			"kicker": "IMPECCABLE’S PICK",
+			"lineage": "the school auditorium bee: curtain, mic stand, contestant placard",
+			"thesis": "Each round is a turn at the microphone: the speller steps into the spotlight, asks the pronouncer, and spells.",
+			"palette": ["#5b1022", "#f7e7c6", "#141019", "#f2c14e", "#3c7dd9"],
+			"materials": ["velvet curtain field", "hard spotlight circle", "numbered contestant placard", "brass mic stand"],
+			"viewport": "Dark stage with a spotlight on the word slot, the speller's placard bottom-left, pronouncer questions as cue cards.",
+			"risk": "The most literal reading of the brief and a common landing spot; dark stage can feel high-pressure for a nervous speller."
+		},
+		{
+			"id": "challenger-splitflap",
+			"label": "Split-flap Concourse",
+			"verdict": "competitive",
+			"lineage": "rail station split-flap departure boards",
+			"thesis": "Each word is a row of flap cells that clack into place, letter by letter.",
+			"palette": ["#111111", "#f5f5f0", "#9aa0a6", "#f5a623", "#b3261e"],
+			"materials": ["matte black flaps", "white painted characters", "brushed steel frame", "amber row lamp"],
+			"viewport": "A single departure-board row as the answer field; the list below as upcoming 'departures'.",
+			"case": "Holds product clarity (fixed character cells, cascading reveal) but 8–11 spellers rarely know the object.",
+			"risk": "Condensed caps flatten letter shapes kids learn in lowercase; can feel cold."
+		},
+		{
+			"id": "challenger-arcade",
+			"label": "Arcade Pixel Glow",
+			"verdict": "competitive",
+			"lineage": "pixel-art arcade cabinets and handheld games",
+			"thesis": "Spelling as a level: every word a room, every letter a sprite.",
+			"palette": ["#0b0b12", "#ffffff", "#ffd23f", "#3be8b0", "#ee4266"],
+			"materials": ["fat pixels", "scanlines", "phosphor bloom"],
+			"viewport": "Pixel HUD with score top edge; the word slot is a tile row in the playfield.",
+			"case": "Holds audience identification (kids live in games) but pixel type hurts exactly the letterforms being learned.",
+			"risk": "Legibility of letters, the core content, degrades."
+		},
+		{
+			"id": "challenger-cloudedge",
+			"label": "Iridescent Cloud Edge",
+			"verdict": "declined",
+			"lineage": "cloud iridescence",
+			"thesis": "Quiet white field with spectral colour only at the edges.",
+			"palette": ["#ffffff", "#5b6770", "#9ee6cf", "#f4a7b9", "#a78bfa"],
+			"materials": ["white margins", "hairline spectra"],
+			"viewport": "Achromatic page, feedback as thin coloured fringes.",
+			"case": "Loses both axes: kids don't identify, and pastel fringes weaken feedback.",
+			"kept": "Colour confined to edges so text stays achromatic and legible.",
+			"risk": "Too faint for feedback."
+		},
+		{
+			"id": "challenger-gravityrain",
+			"label": "Gravity-rain Garden",
+			"verdict": "declined",
+			"lineage": "surreal impossible gardens",
+			"thesis": "Colour-coded rain obeys its cloud's gravity.",
+			"palette": ["#51605a", "#3a7bd5", "#d64545", "#111111"],
+			"materials": ["dusk garden", "coloured rain"],
+			"viewport": "A garden where letters fall to their slots.",
+			"case": "Loses both: whimsy obscures a spelling task.",
+			"kept": "One colour, one law, applied without exception.",
+			"risk": "Distracts from the word."
+		},
+		{
+			"id": "challenger-atlas",
+			"label": "Star Atlas",
+			"verdict": "declined",
+			"lineage": "celestial charts",
+			"thesis": "Magnitude as fixed dot sizes.",
+			"palette": ["#0c1b3a", "#f4f4f4", "#ff4d3d"],
+			"materials": ["navy chart", "chalk stars"],
+			"viewport": "Words as stars sized by mastery.",
+			"case": "Loses both: abstract for the task.",
+			"kept": "A fixed ramp that always encodes the same thing.",
+			"risk": "Abstract."
+		},
+		{
+			"id": "challenger-monochrome",
+			"label": "Monochrome Product Canon",
+			"verdict": "declined",
+			"lineage": "neutral software marketing",
+			"thesis": "Every claim paired with the detail that proves it.",
+			"palette": ["#fafafa", "#111111", "#2563eb"],
+			"materials": ["neutral scale", "screenshots"],
+			"viewport": "Claim-and-proof pairs.",
+			"case": "Loses both: adult and marketing-shaped.",
+			"kept": "Every statement paired with its proof.",
+			"risk": "Cold for kids."
+		}
+	],
+	"reroll": { "registers": ["safer", "bolder"] },
+	"buildPath": { "value": "code" },
+	"canon": true,
+	"canonCard": {
+		"label": "The category standard",
+		"thesis": "A bright, friendly learning app: white cards, rounded buttons, a cheerful primary colour and a mascot.",
+		"palette": ["#ffffff", "#1f2937", "#58cc02", "#1cb0f6"],
+		"materials": ["rounded white cards", "chunky 3D buttons", "mascot illustration"],
+		"viewport": "Centered card with the word prompt, big green Check button, progress bar on top.",
+		"risk": "Indistinguishable from every kids' learning app by design."
+	},
+	"steer": true
+}

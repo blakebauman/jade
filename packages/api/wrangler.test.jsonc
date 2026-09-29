@@ -1,0 +1,10 @@
+// Test-only config: local D1 + R2 emulated by miniflare. AI is stubbed per test (see test/helpers.ts),
+// so nothing here talks to Cloudflare.
+{
+	"name": "jade-api-test",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-08-22",
+	"compatibility_flags": ["nodejs_compat"],
+	"d1_databases": [{ "binding": "DB", "database_name": "jade-test", "database_id": "00000000-0000-0000-0000-000000000000" }],
+	"r2_buckets": [{ "binding": "AUDIO", "bucket_name": "jade-audio-test" }]
+}

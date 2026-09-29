@@ -1,0 +1,31 @@
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "jade-learning",
+	"main": "./src/worker.ts",
+	"compatibility_date": "2026-08-22",
+	"compatibility_flags": ["nodejs_compat"],
+	// SPA assets are served by the asset layer; only the API and /health wake the Worker.
+	"assets": {
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*", "/health"]
+	},
+	"observability": { "enabled": true },
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "jade-learning",
+			// Created with `wrangler d1 create jade-learning` (2026-09-28).
+			"database_id": "b2e97606-f398-475b-bf8f-5624091087a4",
+			"migrations_dir": "../../packages/db/migrations"
+		}
+	],
+	"r2_buckets": [{ "binding": "AUDIO", "bucket_name": "jade-learning-audio" }],
+	// Workers AI always runs remotely (even in `pnpm dev`), billed per use; `remote: true` makes that explicit.
+	"ai": { "binding": "AI", "remote": true },
+	"ratelimits": [{ "name": "RATE_LIMIT", "namespace_id": "4201", "simple": { "limit": 60, "period": 60 } }],
+	"vars": {
+		// Production origin. `pnpm dev` overrides it with BETTER_AUTH_URL in .dev.vars.
+		"BETTER_AUTH_URL": "https://jade-learning.bauman.workers.dev"
+	}
+	// Secrets: BETTER_AUTH_SECRET (required), MW_KEY (optional). Locally they live in .dev.vars.
+}
