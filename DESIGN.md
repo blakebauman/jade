@@ -212,13 +212,17 @@ Two materials and four laws: deep jade felt for the ground, warm maple for handl
 
 The board is a single centred column. The round uses max-width 64rem (`max-w-5xl`), the parent area 72rem, and results 56rem. Inline padding is 1rem to 1.25rem, rising to 2rem to 2.5rem at md (768px).
 
-The round is laid out top to bottom: a thin top rail (exit key, KidTile, mode and list label, a row of 14px progress tiles, and an n/N counter); then the Say-it disc and a Slowly key; then the bee-question rack; then the spoken-answer plaque; then the answer row with the Check or Next key at its right end; then the pips and status line. Vertical rhythm is gap-7 at rest.
+**Spelling round.** The round is laid out top to bottom: a thin top rail (exit key, KidTile, mode and list label, a row of 14px progress tiles, and an n/N counter); then the Say-it disc and a Slowly key; then the bee-question rack; then the spoken-answer plaque; then the answer row with the Check or Next key at its right end; then the pips and status line. Vertical rhythm is gap-7 at rest.
 
-**AnswerRow fit.** The answer row never wraps. `fitTile(width, count, max)` picks the tile edge as `floor(width / (n + 0.1(n - 1)))`, capped at 88px (80px for the reveal row, 72px for the tile bank), and sets the gap to 10% of the edge (at least 3px). The row is sized for the longer of the target word and what's on it, so tiles don't jump in size while the speller types. Long words get smaller tiles, never two lines.
+**Math round.** The same rail (exit key, KidTile, "Math · topic" label, progress tiles, n/N counter), then a smaller 64px Say-it disc labelled "Read it again" (the problem is already on screen), then a word problem's story on a plaque (max 52ch) when there is one, then the problem row, then the feedback line, then the keypad (max 24rem wide) or a Next / Finish key (3.5rem). The column is centred at rest with gap-6. There is no keyboard lock: math never opens the on-screen keyboard, so the screen only needs `100dvh`.
+
+**Subject hub.** The child's KidTile and name, the streak-and-stars plaque, then one "Pick up where you left off" patch with a row per unfinished subject, then two subject racks side by side from md (one column below). Each rack spells its subject in 48px tiles ("spell", "math") with the subject name and what's waiting in it ("3 words to review").
+
+**Row fit.** Tile rows never wrap: the answer row, the problem row, the reveal row, the landing demo row. `fitTile(width, count, max)` picks the tile edge as `floor(width / (n + 0.1(n - 1)))`, capped at 88px (84px for the problem row, 80px for the reveal row, 72px for the tile bank), sets the gap to 10% of the edge (at least 3px), then steps the edge down until the tiles plus rounded gaps really fit. Width is measured before the first paint, so a row never flashes at a default size. The row is sized for the longer of the target word and what's on it, so tiles don't jump in size while the speller types. Long words get smaller tiles, never two lines.
 
 **iPad keyboard handling.** `useVisualViewport` writes the visual-viewport height to `--vvh` on `<html>` and flags the keyboard as up when that height is below 78% of `innerHeight`. The round main uses `min-height: var(--vvh, 100dvh)` and locks to `--vvh` while the keyboard is up. In that state the rail drops the KidTile and label, the Say-it disc shrinks to 60% (120px to 72px), the spoken-answer plaque hides, the Slowly and Check labels go screen-reader-only, and the column justifies to the top. The viewport meta sets `interactive-widget=resizes-content` and `viewport-fit=cover`.
 
-**Targets.** Every key is at least 3rem (48px) tall. Icon-only keys are square: 44px (`size-11`) for the round exit and 48px for results' hear-word key. Check and Next are 3.5rem, and Start is 4rem.
+**Targets.** Every key is at least 3rem (48px) tall; math keypad keys are 3.5rem. Icon-only keys are square: 44px (`size-11`) for the round exit and 48px for results' hear-word key. Check and Next are 3.5rem, and Start is 4rem.
 
 **Input.** A transparent full-size `<input>` overlays the answer row. It sets `autocorrect="off"`, `autocapitalize="none"`, `spellcheck=false` and `autocomplete="off"`, with 16px text (so iOS doesn't zoom), `enterkeyhint="done"` and a transparent caret. The parent word entry field sets the same autocorrect trio.
 
@@ -288,6 +292,21 @@ The play row. It holds typed tiles, then squares (every remaining square when th
 ### Navigation
 The parent header puts the Brand (four tiles "jade" plus "learning" in Lichen) on the left. On the right are felt keys: Lists, Spellers and Settings, with the active item `data-pressed`, then Practice and an icon-only sign-out. It wraps on narrow widths.
 
+### Keypad
+The only math input: real buttons, never a text field, so the iPad keyboard never opens. A 3-column grid (0.5rem gap, max 24rem) of maple tile keys 7–9 / 4–6 / 1–3, then 0 and a felt delete key. A fraction bar or decimal point key appears beside 0 only when the problem needs it; otherwise 0 spans two columns. Comparison problems swap the digits for a row of `<` `=` `>` maple keys with a felt Clear key. A full-width Check key sits below; it's an empty recess until there's something to check. Keys are 3.5rem tall (3rem in the compact variant) at 1.5rem type. A laptop keyboard types into it too (digits, `/ . < = >`, Backspace, Enter, ↑ to hear it again).
+
+### ProblemRow
+The problem laid out on the board, sized by `fitTile` from its total characters (capped at 84px). **The Chalk Operator Rule:** only numbers and the answer are tiles, because only they are handled; operators (+ − × ÷ = < >) are chalk marks drawn on the felt in Fredoka 600 at 0.6 of the tile edge (0.38 for "of"), 0.62 of the edge wide. Each digit is its own maple tile (6% gap). A fraction stacks its numerator tiles over a 4px chalk bar over its denominator tiles, at 72% of the row's tile size. The answer slot is an active square; typed digits drop in with a half-size caret square after them; after Check the answer tiles take their law (right or wrong) and flip in the usual cascade. The row is one `role="img"` whose label reads the problem aloud ("7 times 8 equals blank").
+
+### Math explanation
+A second miss opens a recessed felt well (felt-deep at 60%, 1.5rem radius): "The answer is" beside the answer in marigold tiles dropping in one per beat, the working in body type (balanced wrap), and a picture when one helps. **Dot array:** grained maple discs 8–18px on a felt-deep panel, rows × columns, for facts up to 10 × 10. **Fraction bars:** 28px bars with a Lichen ring, split into equal parts, the counted parts grained maple and the rest recessed felt, each labelled n/d in tabular figures. Results repeat the same language on the rack under "Worth another look": the problem, its answer in marigold tiles, the first wrong answer in coral-edged tiles.
+
+### Confirm
+The in-place "are you sure?" that replaces the browser's confirm box: a patch (1rem padding) that appears where the action was (under the round's rail, inside the kid's row, beside Save and Delete). A Fredoka 1.125rem question, an optional Lichen note, then two felt keys: the safe choice first ("Keep going", "Cancel") and focused, the action second. Escape backs out, and a round's own keys pause while it's open. It is an `alertdialog`, not a modal: nothing behind it is blocked or dimmed.
+
+### Pending board
+When a screen's data takes longer than about a second, the board shows three 40px maple tiles dropping in (120ms apart) beside an active square, over "Setting up the board…" in Lichen. One drop, no looping spinner.
+
 ### Motion
 - **tile-drop** (240ms, ease-out-expo `cubic-bezier(0.16, 1, 0.3, 1)`; from -18px at 1.06 scale to rest): typed tiles, revealed tiles, stars and badges. Staggers are 70 to 140ms for decorative rows.
 - **tile-flip** (420ms, a rotateX to 88 degrees and back): on Check, judged tiles flip in a left-to-right cascade at 55ms per tile, revealing edge colour. The cascade replays each Check through the tile key.
@@ -310,6 +329,9 @@ The parent header puts the Brand (four tiles "jade" plus "learning" in Lichen) o
 - **Do** set `autocorrect="off"`, `autocapitalize="none"` and `spellcheck={false}` on any field that takes a spelling.
 - **Do** render tile letters in `--font-tile` so the child's chosen face applies.
 - **Do** keep motion to tile-drop, tile-land, tile-flip and tile-nudge on ease-out-expo, and check each new animation under `prefers-reduced-motion`.
+- **Do** take math answers on the keypad only. Test: a math round has no `input` or `textarea` anywhere.
+- **Do** draw operators as chalk marks on the felt; only numbers and answers are tiles.
+- **Do** ask "are you sure?" in place with Confirm, with the safe choice first and focused.
 
 ### Don't:
 - **Don't** use marigold for a generic primary, "start" or "continue" action. Marigold means right.
@@ -320,3 +342,5 @@ The parent header puts the Brand (four tiles "jade" plus "learning" in Lichen) o
 - **Don't** let the answer row wrap onto two lines.
 - **Don't** add floaty fades, long easings or looping motion.
 - **Don't** use condensed or pixel faces, or uppercase tile letters.
+- **Don't** use the browser's `confirm()` or a modal for a yes/no; they belong to no part of the board.
+- **Don't** add particle effects (confetti, sparkles). Celebration is the star tiles landing and, on a perfect round, flipping to marigold.

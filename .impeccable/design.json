@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 2,
-	"generatedAt": "2026-09-29T02:48:35.659Z",
+	"generatedAt": "2026-09-29T13:26:25.000Z",
 	"title": "Design System: Jade Learning",
 	"extensions": {
 		"colorMeta": {
@@ -235,6 +235,11 @@
 				"purpose": "Whole answer row on retry."
 			},
 			{
+				"name": "tile-land",
+				"value": "tile-land 420ms var(--ease-out-expo) both; translateY(-56px) scale(1.14) -> 2px 0.98 -> rest",
+				"purpose": "Star tiles on a results screen with two or three stars; on a perfect round they then flip left to right (110ms apart) and come up marigold."
+			},
+			{
 				"name": "key-press",
 				"value": "transform/box-shadow 120ms var(--ease-out-expo), filter 120ms",
 				"purpose": "Key hover brightness 1.08 and press."
@@ -364,6 +369,22 @@
 			"description": "Five-dot mastery ramp (Leitner box 1–5), identical in play, results and parent progress.",
 			"html": "<div class=\"ds-board\"><span class=\"ds-pips\" role=\"img\" aria-label=\"Mastery 2 of 5\"><i class=\"on\"></i><i class=\"on\"></i><i></i><i></i><i></i></span></div>",
 			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-pips{display:inline-flex;gap:3px}.ds-pips i{width:9px;height:9px;border-radius:9999px;box-shadow:inset 0 0 0 1.5px #a3d0c0}.ds-pips i.on{background:#e3f3ec;box-shadow:none}"
+		},
+		{
+			"name": "Math Keypad",
+			"kind": "custom",
+			"refersTo": "key-tile",
+			"description": "The only math input: maple digit keys in a 3-column grid, a felt delete key, and Check below as an empty recess until there is an answer.",
+			"html": "<div class=\"ds-board\"><div class=\"ds-pad\"><button class=\"ds-key ds-maple ds-big\">7</button><button class=\"ds-key ds-maple ds-big\">8</button><button class=\"ds-key ds-maple ds-big\">9</button><button class=\"ds-key ds-maple ds-big\">4</button><button class=\"ds-key ds-maple ds-big\">5</button><button class=\"ds-key ds-maple ds-big\">6</button><button class=\"ds-key ds-maple ds-big\">1</button><button class=\"ds-key ds-maple ds-big\">2</button><button class=\"ds-key ds-maple ds-big\">3</button><button class=\"ds-key ds-maple ds-big ds-wide\">0</button><button class=\"ds-key ds-felt ds-big\" aria-label=\"Delete\">⌫</button><button class=\"ds-key ds-recess ds-big ds-full\" disabled>Check</button></div></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-maple{color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3,#f1c98a);background-size:320px 320px,auto;box-shadow:inset 0 -.22em 0 #c9965a,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.15em rgb(3 25 20/.55)}.ds-felt{color:#e3f3ec;background:#135c4e;box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 0 0 1px rgb(255 255 255/.05),0 .25em .5em -.2em rgb(3 25 20/.6)}.ds-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;max-width:24rem}.ds-big{min-height:3.5rem;font-size:1.5rem}.ds-wide{grid-column:1/span 2}.ds-full{grid-column:1/-1}.ds-recess{color:#a3d0c0;background:color-mix(in oklab,#093a31 80%,black);box-shadow:inset 0 .2em .5em rgb(0 0 0/.45),inset 0 -1px 0 rgb(255 255 255/.06);cursor:not-allowed}"
+		},
+		{
+			"name": "Confirm (in place)",
+			"kind": "custom",
+			"refersTo": "patch",
+			"description": "The in-place \"are you sure?\" that replaces the browser confirm box: a patch where the action was, safe choice first and focused, Escape backs out.",
+			"html": "<div class=\"ds-board\"><div class=\"ds-confirm\" role=\"alertdialog\" aria-label=\"Stop here?\"><div><p class=\"ds-q\">Stop here?</p><p class=\"ds-note\">Your 3 answers are saved, and you’ll see how you did.</p></div><div class=\"ds-acts\"><button class=\"ds-key ds-felt\">Keep going</button><button class=\"ds-key ds-felt\">Stop</button></div></div></div>",
+			"css": ".ds-board{background:#0e4f43;padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-felt{color:#e3f3ec;background:#135c4e;box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 0 0 1px rgb(255 255 255/.05),0 .25em .5em -.2em rgb(3 25 20/.6)}.ds-confirm{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1.25rem;padding:1rem;border-radius:1.25rem;background:color-mix(in oklab,#135c4e 70%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255/.05),0 1px 0 rgb(0 0 0/.25);color:#e3f3ec}.ds-q{margin:0;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.125rem}.ds-note{margin:.125rem 0 0;font-family:'Lexend Variable','Lexend',system-ui,sans-serif;font-size:.875rem;color:#a3d0c0}.ds-acts{display:flex;gap:.5rem;flex-wrap:wrap}"
 		}
 	],
 	"narrative": {
@@ -417,6 +438,11 @@
 				"name": "The Felt Is Lit Rule",
 				"body": "The body stacks felt mottle (512px), felt nap (128px) and a radial gradient lit from the top centre, fixed to the viewport. New surfaces sit on this field; they don't paint their own opaque backgrounds.",
 				"section": "elevation"
+			},
+			{
+				"name": "The Chalk Operator Rule",
+				"body": "Only numbers and the answer are tiles, because only they are handled; operators (+ − × ÷ = < >) are chalk marks drawn on the felt in Fredoka 600 at 0.6 of the tile edge (0.38 for \"of\"), 0.62 of the edge wide.",
+				"section": "components"
 			}
 		],
 		"dos": [
@@ -429,7 +455,10 @@
 			"**Do** keep every tap target at least 44px: text keys are 48px or more, and square icon-only keys are 44 to 48px.",
 			"**Do** set `autocorrect=\"off\"`, `autocapitalize=\"none\"` and `spellcheck={false}` on any field that takes a spelling.",
 			"**Do** render tile letters in `--font-tile` so the child's chosen face applies.",
-			"**Do** keep motion to tile-drop, tile-flip and tile-nudge on ease-out-expo, and check each new animation under `prefers-reduced-motion`."
+			"**Do** keep motion to tile-drop, tile-land, tile-flip and tile-nudge on ease-out-expo, and check each new animation under `prefers-reduced-motion`.",
+			"**Do** take math answers on the keypad only. Test: a math round has no `input` or `textarea` anywhere.",
+			"**Do** draw operators as chalk marks on the felt; only numbers and answers are tiles.",
+			"**Do** ask \"are you sure?\" in place with Confirm, with the safe choice first and focused."
 		],
 		"donts": [
 			"**Don't** use marigold for a generic primary, \"start\" or \"continue\" action. Marigold means right.",
@@ -439,7 +468,9 @@
 			"**Don't** put white cards, flat panels or opaque page backgrounds over the felt. Parent panels are `patch`.",
 			"**Don't** let the answer row wrap onto two lines.",
 			"**Don't** add floaty fades, long easings or looping motion.",
-			"**Don't** use condensed or pixel faces, or uppercase tile letters."
+			"**Don't** use condensed or pixel faces, or uppercase tile letters.",
+			"**Don't** use the browser's `confirm()` or a modal for a yes/no; they belong to no part of the board.",
+			"**Don't** add particle effects (confetti, sparkles). Celebration is the star tiles landing and, on a perfect round, flipping to marigold."
 		]
 	}
 }
