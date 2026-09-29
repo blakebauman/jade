@@ -123,7 +123,7 @@ function SettingsForm({ child }: { child: Child }) {
 	);
 }
 
-/** Which math topics and times tables this speller practices. Difficulty within them adapts on its own. */
+/** Which math topics and times tables this child practices. Difficulty within them adapts on its own. */
 function MathSettings({ child, onChange }: { child: Child; onChange: (m: ChildSettings["math"]) => void }) {
 	const m = child.settings.math;
 	const toggle = <T,>(xs: T[], x: T) => (xs.includes(x) ? xs.filter((y) => y !== x) : [...xs, x]);
@@ -204,7 +204,7 @@ function Kids() {
 	return (
 		<div className="grid gap-12 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
 			<section className="space-y-6">
-				<h1 className="text-4xl font-semibold">Spellers</h1>
+				<h1 className="text-4xl font-semibold">Kids</h1>
 				{kids.length === 0 && (
 					<p className="text-felt-muted">Add each child who will practice. They’ll pick their tile on the “Who’s practicing?” screen.</p>
 				)}
@@ -237,7 +237,7 @@ function Kids() {
 			</section>
 			<section>
 				<form onSubmit={onCreate} className="patch space-y-5 p-6 lg:sticky lg:top-6">
-					<h2 className="text-2xl font-semibold">Add a speller</h2>
+					<h2 className="text-2xl font-semibold">Add a child</h2>
 					<label className="block space-y-1.5">
 						<span className="text-sm font-medium">First name</span>
 						<input className="field" required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} />
@@ -255,7 +255,7 @@ function Kids() {
 					</label>
 					<AvatarPicker value={avatar} onChange={setAvatar} name={name} />
 					<button type="submit" className="key w-full" data-variant="go" disabled={!name.trim() || create.isPending}>
-						Add speller
+						Add child
 					</button>
 					{create.error && <p role="alert">{create.error.message}</p>}
 				</form>

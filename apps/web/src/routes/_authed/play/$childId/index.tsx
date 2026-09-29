@@ -56,7 +56,7 @@ function SubjectHub() {
 	return (
 		<main className="mx-auto min-h-dvh max-w-5xl px-5 py-6 md:px-10">
 			<header className="flex items-center justify-between gap-4">
-				<Link to="/profiles" className="flex items-center gap-3 rounded-xl" aria-label="Switch speller">
+				<Link to="/profiles" className="flex items-center gap-3 rounded-xl" aria-label="Change who’s practicing">
 					<KidTile name={child.name} avatar={child.avatar} size={48} />
 					<span className="font-display text-2xl font-medium">{child.name}</span>
 				</Link>

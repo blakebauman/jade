@@ -31,8 +31,8 @@ function Settings() {
 			<section className="space-y-4">
 				<h2 className="text-2xl font-semibold">Parent PIN</h2>
 				<p className="text-felt-muted">
-					On a shared laptop or iPad, a 4-digit PIN keeps spellers out of list editing. It’s a speed bump, not a password. Anyone signed in
-					on this device can still sign out.
+					On a shared laptop or iPad, a 4-digit PIN keeps kids out of list editing. It’s a speed bump, not a password. Anyone signed in on
+					this device can still sign out.
 				</p>
 				<form onSubmit={submit} className="flex flex-wrap items-end gap-3">
 					<label className="flex flex-col gap-1.5">

@@ -25,9 +25,9 @@ function Profiles() {
 				<h1 className="text-center text-4xl font-semibold md:text-5xl">Who’s practicing?</h1>
 				{kids.length === 0 ? (
 					<div className="mx-auto max-w-sm space-y-5 text-center">
-						<p className="text-felt-muted">No spellers yet. A parent adds each child and their word lists first.</p>
+						<p className="text-felt-muted">No kids yet. A parent adds each child and their word lists first.</p>
 						<Link to="/parent/kids" className="key" data-variant="go">
-							Add a speller
+							Add a child
 						</Link>
 					</div>
 				) : (

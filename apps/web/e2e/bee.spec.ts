@@ -18,10 +18,10 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 	await page.getByRole("button", { name: "Create family account" }).click();
 	await expect(page.getByRole("heading", { name: "Word lists" })).toBeVisible();
 
-	// Adds a speller.
-	await page.getByRole("link", { name: "Spellers" }).click();
+	// Adds a child.
+	await page.getByRole("link", { name: "Kids" }).click();
 	await page.getByLabel("First name").fill("Jade");
-	await page.getByRole("button", { name: "Add speller" }).click();
+	await page.getByRole("button", { name: "Add child" }).click();
 	await expect(page.getByRole("heading", { name: "Jade", level: 2 })).toBeVisible();
 
 	// Pastes a list.

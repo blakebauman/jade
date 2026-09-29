@@ -66,7 +66,7 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
 
 const NAV = [
 	{ to: "/parent", label: "Lists" },
-	{ to: "/parent/kids", label: "Spellers" },
+	{ to: "/parent/kids", label: "Kids" },
 	{ to: "/parent/settings", label: "Settings" },
 ] as const;
 
