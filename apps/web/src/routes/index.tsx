@@ -7,6 +7,7 @@ import { fitTile } from "#/components/round/AnswerRow.tsx";
 import { authClient, signIn, signUp } from "#/lib/auth.ts";
 import { rememberedUser } from "#/lib/device.ts";
 import { useElementWidth } from "#/lib/hooks.ts";
+import { flushPending } from "#/lib/offline.ts";
 
 export const Route = createFileRoute("/")({
 	validateSearch: z.object({ next: z.string().optional() }),
@@ -69,6 +70,8 @@ function Landing() {
 				: await signIn.email({ email, password });
 		setBusy(false);
 		if (res.error) return setError(res.error.message ?? "That didn’t work. Check your email and password.");
+		// Practice queued while the session had lapsed can upload now.
+		void flushPending();
 		navigate({ to: next ?? (mode === "signup" ? "/parent" : "/profiles") });
 	}
 

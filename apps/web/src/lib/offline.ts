@@ -53,8 +53,12 @@ function send(op: Op): Promise<unknown> {
 	}
 }
 
-/** 4xx means the server understood and refused (e.g. child deleted); retrying won't help, so drop it. */
-const permanent = (err: unknown) => err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 429;
+/**
+ * 4xx means the server understood and refused (e.g. child deleted); retrying won't help, so drop it. Except 401: the
+ * session has lapsed, and the answers are still good once the parent signs in again (see flush after sign-in).
+ */
+const permanent = (err: unknown) =>
+	err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 401 && err.status !== 429;
 
 const results = new Map<string, unknown>();
 let running: Promise<void> | null = null;
@@ -102,3 +106,11 @@ export const finishSession = (sessionId: string, finish: SessionFinish) =>
 	submit<RoundSummary>({ kind: "finish", sessionId, body: finish });
 
 export const pendingCount = () => db.ops.count();
+
+/** Rounds with practice not yet on the server. (A finish op re-sends every answer, so rounds are the honest unit.) */
+export async function pendingRounds(): Promise<number> {
+	return new Set((await db.ops.toArray()).map((op) => op.sessionId)).size;
+}
+
+/** Throw away every queued write. Only when a parent chose to sign out without them. */
+export const discardPending = () => db.ops.clear();

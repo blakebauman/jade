@@ -6,6 +6,7 @@ import { Brand } from "#/components/Brand.tsx";
 import { api } from "#/lib/api.ts";
 import { signOut } from "#/lib/auth.ts";
 import { forgetDevice } from "#/lib/device.ts";
+import { discardPending, flushPending, pendingRounds } from "#/lib/offline.ts";
 import { parentQuery } from "#/lib/queries.ts";
 
 export const Route = createFileRoute("/_authed/parent")({ component: ParentLayout });
@@ -76,7 +77,26 @@ function ParentLayout() {
 	const [unlocked, setUnlocked] = useState(isUnlocked);
 	const navigate = useNavigate();
 	const qc = useQueryClient();
-	const [signOutFailed, setSignOutFailed] = useState(false);
+	const [notice, setNotice] = useState<{ kind: "failed" } | { kind: "unsaved"; rounds: number } | null>(null);
+
+	/** Sign out, but never silently lose practice that hasn't reached the server yet. */
+	async function leave(discard: boolean) {
+		setNotice(null);
+		if (!discard) {
+			await flushPending().catch(() => {});
+			const rounds = await pendingRounds();
+			if (rounds > 0) return setNotice({ kind: "unsaved", rounds });
+		}
+		const res = await signOut().catch(() => null);
+		// Signing out needs the server; if it didn't happen, keep everything as it was and say so.
+		if (!res || res.error) return setNotice({ kind: "failed" });
+		// Nothing about this family stays on a shared device, including writes queued for their account.
+		await discardPending();
+		await forgetDevice();
+		qc.clear();
+		navigate({ to: "/" });
+	}
+
 	if (parent?.hasPin && !unlocked) return <PinGate onUnlock={() => setUnlocked(true)} />;
 	return (
 		<div className="mx-auto min-h-dvh max-w-6xl px-5 pb-16 md:px-10">
@@ -100,30 +120,35 @@ function ParentLayout() {
 					<Link to="/profiles" className="key">
 						Practice
 					</Link>
-					<button
-						type="button"
-						className="key"
-						data-variant="felt"
-						aria-label="Sign out"
-						onClick={async () => {
-							setSignOutFailed(false);
-							const res = await signOut().catch(() => null);
-							// Signing out needs the server; if it didn't happen, keep everything as it was and say so.
-							if (!res || res.error) return setSignOutFailed(true);
-							// Nothing about this family stays on a shared device.
-							await forgetDevice();
-							qc.clear();
-							navigate({ to: "/" });
-						}}
-					>
+					<button type="button" className="key" data-variant="felt" aria-label="Sign out" onClick={() => void leave(false)}>
 						<LogOut className="size-5" aria-hidden />
 					</button>
 				</nav>
 			</header>
-			{signOutFailed && (
+			{notice?.kind === "failed" && (
 				<p role="alert" className="-mt-2 mb-6 text-right text-sm">
 					Couldn’t sign out. Check the connection and try again.
 				</p>
+			)}
+			{notice?.kind === "unsaved" && (
+				<section className="patch mb-8 flex flex-wrap items-center justify-between gap-4 p-5" aria-labelledby="unsaved-heading">
+					<div className="max-w-prose space-y-1" role="alert">
+						<h2 id="unsaved-heading" className="text-xl font-semibold">
+							Practice from {notice.rounds} {notice.rounds === 1 ? "round hasn’t" : "rounds haven’t"} been saved yet
+						</h2>
+						<p className="text-sm text-felt-muted">
+							It uploads by itself once this device is online and signed in. Signing out now throws it away.
+						</p>
+					</div>
+					<div className="flex flex-wrap gap-2">
+						<button type="button" className="key" onClick={() => setNotice(null)}>
+							Stay signed in
+						</button>
+						<button type="button" className="key" onClick={() => void leave(true)}>
+							Sign out anyway
+						</button>
+					</div>
+				</section>
 			)}
 			<Outlet />
 		</div>
