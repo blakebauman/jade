@@ -1,4 +1,5 @@
 import type { TTS_KINDS, VOICES } from "@jade/core";
+import { stretch } from "./stretch.ts";
 
 type Kind = (typeof TTS_KINDS)[number];
 type Voice = (typeof VOICES)[number];
@@ -47,7 +48,17 @@ const REVERB_WET = 0.18;
 const REVERB_SECONDS = 0.9;
 const REVERB_PREDELAY = 0.015;
 
-type Fx = { ctx: AudioContext; master: GainNode };
+/** Decoded, speed-adjusted clips kept for instant replays ("hear it again"), by URL and rate. */
+const CLIP_CACHE = 24;
+
+/**
+ * Safari, and every browser on iPad and iPhone. There, the <audio> element routed through Web Audio loses about
+ * the first 0.2s of each clip, so clips are decoded and played as buffers instead.
+ */
+const appleWebKit = () => typeof navigator !== "undefined" && navigator.vendor.startsWith("Apple");
+
+/** `input` is where the voice enters: the <audio> element's source node, or each clip's buffer source on Apple WebKit. */
+type Fx = { ctx: AudioContext; input: GainNode; master: GainNode; buffers: boolean };
 
 export type SpeakOptions = { kind?: Kind; slow?: boolean; onBeat?: (index: number) => void; beats?: number };
 
@@ -63,8 +74,11 @@ export function ttsUrl(text: string, kind: Kind, voice: Voice) {
 class Speaker {
 	private audio: HTMLAudioElement | null = null;
 	private unlocked = false;
-	/** The Web Audio graph the <audio> element plays through; `false` once it's known to be unavailable (dry playback). */
+	/** The Web Audio graph the voice plays through; `false` once it's known to be unavailable (dry playback). */
 	private fxGraph: Fx | false | null = null;
+	/** The buffer source playing now (Apple WebKit), so stop() can end it. */
+	private source: AudioBufferSourceNode | null = null;
+	private clips = new Map<string, AudioBuffer>();
 	private token = 0;
 	voice: Voice = "luna";
 	rate = 0.95;
@@ -82,22 +96,26 @@ class Speaker {
 	}
 
 	/**
-	 * <audio> ─┬─ dry ─────────────────────────────┬─ master → speakers
-	 *          └─ pre-delay → room reverb → wet ───┘
-	 * Built once (an element can only have one source node), inside a tap so iOS lets the context run.
+	 * voice → input ─┬─ dry ─────────────────────────────┬─ master → speakers
+	 *                └─ pre-delay → room reverb → wet ───┘
+	 * The voice is the <audio> element (an element can only have one source node, so this is built once), or on
+	 * Apple WebKit a buffer source per clip. Built inside a tap so iOS lets the context run.
 	 * The reverb rings on after each clip ends; `master` cuts everything on stop().
-	 * Skipped on Apple WebKit (Safari, and every browser on iPad and iPhone): routed through Web Audio, the element
-	 * loses about the first 0.2s of each clip there, and a word without its start is worse than a word without reverb.
+	 * Nothing is scheduled against the element's clock: WebKit delivers its audio to the graph late.
 	 */
 	private fx(): Fx | null {
 		if (this.fxGraph !== null) return this.fxGraph || null;
 		this.fxGraph = false;
-		if (navigator.vendor.startsWith("Apple")) return null;
 		const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 		if (!Ctx) return null;
 		try {
+			const buffers = appleWebKit();
+			// Web Audio follows the iPad's silent mode unless the page's audio session says it's for playback.
+			const session = (navigator as { audioSession?: { type: string } }).audioSession;
+			if (buffers && session) session.type = "playback";
 			const ctx = new Ctx();
-			const source = ctx.createMediaElementSource(this.el());
+			const input = ctx.createGain();
+			if (!buffers) ctx.createMediaElementSource(this.el()).connect(input);
 			const master = ctx.createGain();
 			const predelay = ctx.createDelay(0.1);
 			predelay.delayTime.value = REVERB_PREDELAY;
@@ -105,10 +123,10 @@ class Speaker {
 			reverb.buffer = roomImpulse(ctx, REVERB_SECONDS, 3);
 			const wet = ctx.createGain();
 			wet.gain.value = REVERB_WET;
-			source.connect(master);
-			source.connect(predelay).connect(reverb).connect(wet).connect(master);
+			input.connect(master);
+			input.connect(predelay).connect(reverb).connect(wet).connect(master);
 			master.connect(ctx.destination);
-			this.fxGraph = { ctx, master };
+			this.fxGraph = { ctx, input, master, buffers };
 		} catch {
 			// Playback falls back to the element's own output.
 		}
@@ -150,6 +168,10 @@ class Speaker {
 	stop() {
 		this.token++;
 		this.audio?.pause();
+		try {
+			this.source?.stop();
+		} catch {}
+		this.source = null;
 		// Cut the reverb tail quickly (no click) so it never smears into the next clip.
 		if (this.fxGraph) this.fxGraph.master.gain.setTargetAtTime(0, this.fxGraph.ctx.currentTime, 0.01);
 		if ("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -183,7 +205,6 @@ class Speaker {
 	}
 
 	private async playAura(text: string, kind: Kind, rate: number, token: number, opts: SpeakOptions) {
-		const a = this.el();
 		const fx = this.resumeFx();
 		if (fx) {
 			await this.running(fx);
@@ -191,7 +212,66 @@ class Speaker {
 			const now = fx.ctx.currentTime;
 			fx.master.gain.cancelScheduledValues(now);
 			fx.master.gain.setValueAtTime(1, now);
+			if (fx.buffers) {
+				try {
+					return await this.playBuffer(fx, ttsUrl(text, kind, this.voice), rate, token, opts);
+				} catch {
+					// The element plays it dry instead (it isn't routed through the graph on Apple WebKit).
+					if (token !== this.token) return;
+				}
+			}
 		}
+		return this.playElement(text, kind, rate, token, opts);
+	}
+
+	/** Fetch, decode and speed-adjust a clip (cached), then play it through the graph. Resolves when it ends or is stopped. */
+	private async playBuffer(fx: Fx, url: string, rate: number, token: number, opts: SpeakOptions) {
+		if (fx.ctx.state !== "running") throw new Error("audio context not running");
+		const buffer = await this.clip(fx.ctx, url, rate);
+		if (token !== this.token) return;
+		const src = fx.ctx.createBufferSource();
+		src.buffer = buffer;
+		src.connect(fx.input);
+		this.source = src;
+		const timers: number[] = [];
+		if (opts.onBeat && opts.beats) {
+			// Spread beats across the clip, leaving a little lead-in and tail.
+			const step = (buffer.duration * 0.9) / opts.beats;
+			for (let i = 0; i < opts.beats; i++)
+				timers.push(window.setTimeout(() => token === this.token && opts.onBeat?.(i), (buffer.duration * 0.05 + i * step) * 1000));
+		}
+		await new Promise<void>((resolve) => {
+			src.onended = () => resolve();
+			src.start();
+		});
+		for (const t of timers) clearTimeout(t);
+		if (this.source === src) this.source = null;
+	}
+
+	private async clip(ctx: AudioContext, url: string, rate: number) {
+		const key = `${rate}|${url}`;
+		const hit = this.clips.get(key);
+		if (hit) {
+			this.clips.delete(key);
+			this.clips.set(key, hit);
+			return hit;
+		}
+		// The header marks a clip being played (not a prefetch) for the e2e tests; the service worker caches by URL alone.
+		const res = await fetch(url, { credentials: "same-origin", headers: { "X-Voice-Play": "1" }, signal: AbortSignal.timeout(12_000) });
+		if (!res.ok) throw new Error(`tts ${res.status}`);
+		const decoded = await ctx.decodeAudioData(await res.arrayBuffer());
+		const mono = decoded.getChannelData(0);
+		const samples = stretch(mono, rate, decoded.sampleRate);
+		const out = ctx.createBuffer(1, samples.length, decoded.sampleRate);
+		out.copyToChannel(samples as Float32Array<ArrayBuffer>, 0);
+		this.clips.set(key, out);
+		if (this.clips.size > CLIP_CACHE) this.clips.delete(this.clips.keys().next().value!);
+		return out;
+	}
+
+	/** Play through the shared <audio> element (through the graph where it's routed there, dry otherwise). */
+	private playElement(text: string, kind: Kind, rate: number, token: number, opts: SpeakOptions) {
+		const a = this.el();
 		return new Promise<void>((resolve, reject) => {
 			const timers: number[] = [];
 			const cleanup = () => {
