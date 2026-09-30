@@ -301,6 +301,16 @@ describe("parent pin", () => {
 		expect(await (await call("/api/parent/verify-pin", { method: "POST", cookie, json: { pin: "1111" } })).json()).toEqual({ ok: false });
 		expect(await (await call("/api/parent/verify-pin", { method: "POST", cookie, json: { pin: "2468" } })).json()).toEqual({ ok: true });
 	});
+
+	it("keeps how long the parent area may sit idle, and only offered choices", async () => {
+		const cookie = await signUp();
+		expect(await (await call("/api/parent", { cookie })).json()).toMatchObject({ pinRelockMinutes: 5 });
+		await call("/api/parent", { method: "PUT", cookie, json: { pin: "2468" } });
+		expect((await call("/api/parent", { method: "PUT", cookie, json: { pinRelockMinutes: 7 } })).status).toBe(400);
+		await call("/api/parent", { method: "PUT", cookie, json: { pinRelockMinutes: 15 } });
+		// Changing the timeout leaves the PIN alone.
+		expect(await (await call("/api/parent", { cookie })).json()).toMatchObject({ hasPin: true, pinRelockMinutes: 15 });
+	});
 });
 
 describe("math", () => {

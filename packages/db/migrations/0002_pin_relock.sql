@@ -1,0 +1,1 @@
+ALTER TABLE `parent_settings` ADD `pin_relock_minutes` integer;

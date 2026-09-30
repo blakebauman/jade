@@ -34,5 +34,5 @@ export const wordQuery = (word: string) =>
 	});
 export const parentQuery = queryOptions({
 	queryKey: ["parent"],
-	queryFn: () => api<{ hasPin: boolean; timeZone: string | null }>("/api/parent"),
+	queryFn: () => api<{ hasPin: boolean; pinRelockMinutes: number; timeZone: string | null }>("/api/parent"),
 });

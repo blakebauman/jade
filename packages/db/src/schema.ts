@@ -66,12 +66,16 @@ export const verification = sqliteTable("verification", {
 
 // ── App ──
 
-/** Per-parent settings. `pinHash` gates the parent area on a shared family device (optional). */
+/**
+ * Per-parent settings. `pinHash` gates the parent area on a shared family device (optional); `pinRelockMinutes` is how
+ * long it may sit idle before the PIN is asked for again (null = the default).
+ */
 export const parentSettings = sqliteTable("parent_settings", {
 	userId: text("user_id")
 		.primaryKey()
 		.references(() => user.id, { onDelete: "cascade" }),
 	pinHash: text("pin_hash"),
+	pinRelockMinutes: integer("pin_relock_minutes"),
 	timeZone: text("time_zone"),
 });
 

@@ -145,3 +145,8 @@ export type WordInfo = {
 	phonetic: string | null;
 	syllables: string[];
 };
+
+/** How long the unlocked parent area may sit idle before the PIN is asked for again, in minutes. */
+export const PIN_RELOCK_MINUTES = [1, 5, 15, 30] as const;
+export const DEFAULT_PIN_RELOCK_MINUTES = 5;
+export const pinRelockMinutesSchema = z.union(PIN_RELOCK_MINUTES.map((m) => z.literal(m)));

@@ -1,36 +1,42 @@
+import { DEFAULT_PIN_RELOCK_MINUTES } from "@jade/core";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { Brand } from "#/components/Brand.tsx";
-import { api } from "#/lib/api.ts";
+import { ApiError, api } from "#/lib/api.ts";
 import { signOut } from "#/lib/auth.ts";
 import { forgetDevice } from "#/lib/device.ts";
 import { discardPending, flushPending, pendingRounds } from "#/lib/offline.ts";
+import { isParentUnlocked, lockParent, unlockParent } from "#/lib/parentLock.ts";
 import { parentQuery } from "#/lib/queries.ts";
 
 export const Route = createFileRoute("/_authed/parent")({ component: ParentLayout });
 
-const UNLOCK_KEY = "jade.parent-unlocked";
-const isUnlocked = () => {
-	try {
-		return sessionStorage.getItem(UNLOCK_KEY) === "1";
-	} catch {
-		return false;
-	}
-};
+const PIN_ERRORS = {
+	wrong: "That PIN didn’t match.",
+	busy: "Too many tries. Wait a minute, then try again.",
+	offline: "Couldn’t check the PIN. Check the connection and try again.",
+} as const;
 
 function PinGate({ onUnlock }: { onUnlock: () => void }) {
-	const [error, setError] = useState(false);
+	const [error, setError] = useState<keyof typeof PIN_ERRORS | null>(null);
+	const [checking, setChecking] = useState(false);
 	async function submit(e: FormEvent<HTMLFormElement>) {
 		e.preventDefault();
-		const pin = String(new FormData(e.currentTarget).get("pin"));
-		const { ok } = await api<{ ok: boolean }>("/api/parent/verify-pin", { method: "POST", json: { pin } });
-		if (!ok) return setError(true);
+		const form = e.currentTarget;
+		const pin = String(new FormData(form).get("pin"));
+		setChecking(true);
 		try {
-			sessionStorage.setItem(UNLOCK_KEY, "1");
-		} catch {}
-		onUnlock();
+			const { ok } = await api<{ ok: boolean }>("/api/parent/verify-pin", { method: "POST", json: { pin } });
+			if (ok) return onUnlock();
+			setError("wrong");
+			form.reset();
+		} catch (err) {
+			setError(err instanceof ApiError && err.status === 429 ? "busy" : "offline");
+		} finally {
+			setChecking(false);
+		}
 	}
 	return (
 		<main className="grid min-h-dvh place-items-center p-6">
@@ -47,15 +53,15 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
 						// biome-ignore lint/a11y/noAutofocus: the PIN field is the only thing on this screen
 						autoFocus
 						className="field text-center text-3xl tracking-[0.5em]"
-						aria-invalid={error}
+						aria-invalid={error === "wrong"}
 					/>
 				</label>
 				{error && (
 					<p role="alert" className="text-sm">
-						That PIN didn’t match.
+						{PIN_ERRORS[error]}
 					</p>
 				)}
-				<button type="submit" className="key w-full" data-variant="go">
+				<button type="submit" className="key w-full" data-variant="go" disabled={checking}>
 					Unlock
 				</button>
 				<Link to="/profiles" className="block text-sm text-felt-muted underline underline-offset-4">
@@ -66,6 +72,44 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
 	);
 }
 
+/**
+ * Keeps an unlocked parent area unlocked while the parent is using it: any tap or key restarts the idle clock. It locks
+ * once the clock runs out (checked on a timer and whenever the tab comes back, since a sleeping iPad pauses timers) and
+ * whenever the parent area is left, e.g. for Practice.
+ */
+function useParentUnlock(user: string, idleMs: number) {
+	const [unlocked, setUnlocked] = useState(() => isParentUnlocked(user, idleMs));
+	// The first check can run before the parent's own idle time has loaded (it starts at the default); look again once it has.
+	useEffect(() => {
+		if (isParentUnlocked(user, idleMs)) setUnlocked(true);
+	}, [user, idleMs]);
+	useEffect(() => {
+		if (!unlocked) return;
+		unlockParent(user);
+		let last = 0;
+		const touch = () => {
+			// Throttled: one write every few seconds is plenty for a clock of a minute or more.
+			if (Date.now() - last < 5_000) return;
+			last = Date.now();
+			if (isParentUnlocked(user, idleMs)) unlockParent(user);
+		};
+		const check = () => {
+			if (!isParentUnlocked(user, idleMs)) setUnlocked(false);
+		};
+		const timer = setInterval(check, 15_000);
+		const events = ["pointerdown", "keydown"] as const;
+		for (const e of events) window.addEventListener(e, touch, { capture: true, passive: true });
+		document.addEventListener("visibilitychange", check);
+		return () => {
+			clearInterval(timer);
+			for (const e of events) window.removeEventListener(e, touch, { capture: true });
+			document.removeEventListener("visibilitychange", check);
+			lockParent();
+		};
+	}, [unlocked, user, idleMs]);
+	return [unlocked, useCallback(() => setUnlocked(true), [])] as const;
+}
+
 const NAV = [
 	{ to: "/parent", label: "Lists" },
 	{ to: "/parent/kids", label: "Kids" },
@@ -73,8 +117,13 @@ const NAV = [
 ] as const;
 
 function ParentLayout() {
-	const { data: parent } = useQuery(parentQuery);
-	const [unlocked, setUnlocked] = useState(isUnlocked);
+	const { user } = Route.useRouteContext();
+	const { data: parent, isPending } = useQuery(parentQuery);
+	const [unlocked, unlock] = useParentUnlock(user.id, (parent?.pinRelockMinutes ?? DEFAULT_PIN_RELOCK_MINUTES) * 60_000);
+	// With no PIN the area is open; count it as unlocked so a PIN set in Settings doesn't lock the parent out that moment.
+	useEffect(() => {
+		if (parent?.hasPin === false) unlock();
+	}, [parent?.hasPin, unlock]);
 	const navigate = useNavigate();
 	const qc = useQueryClient();
 	const [notice, setNotice] = useState<{ kind: "failed" } | { kind: "unsaved"; rounds: number } | null>(null);
@@ -97,7 +146,9 @@ function ParentLayout() {
 		navigate({ to: "/" });
 	}
 
-	if (parent?.hasPin && !unlocked) return <PinGate onUnlock={() => setUnlocked(true)} />;
+	// Fail closed: nothing shows until we know there's no PIN. If that can't be learned (offline, nothing cached), ask for it.
+	if (isPending) return null;
+	if (parent?.hasPin !== false && !unlocked) return <PinGate onUnlock={unlock} />;
 	return (
 		<div className="mx-auto min-h-dvh max-w-6xl px-5 pb-16 md:px-10">
 			<header className="flex flex-wrap items-center justify-between gap-4 py-6">

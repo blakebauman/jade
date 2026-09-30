@@ -1,3 +1,4 @@
+import { DEFAULT_PIN_RELOCK_MINUTES, PIN_RELOCK_MINUTES } from "@jade/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { type FormEvent, useState } from "react";
@@ -21,6 +22,11 @@ function Settings() {
 			setSaved(value ? "PIN saved. You’ll need it to open the parent area." : "PIN removed.");
 		},
 	});
+	const relock = useMutation({
+		mutationFn: (minutes: number) => api("/api/parent", { method: "PUT", json: { pinRelockMinutes: minutes } }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["parent"] }),
+	});
+	const minutes = relock.isPending ? relock.variables : (parent?.pinRelockMinutes ?? DEFAULT_PIN_RELOCK_MINUTES);
 	function submit(e: FormEvent) {
 		e.preventDefault();
 		save.mutate(pin);
@@ -31,8 +37,8 @@ function Settings() {
 			<section className="space-y-4">
 				<h2 className="text-2xl font-semibold">Parent PIN</h2>
 				<p className="text-felt-muted">
-					On a shared laptop or iPad, a 4-digit PIN keeps kids out of list editing. It’s a speed bump, not a password. Anyone signed in on
-					this device can still sign out.
+					On a shared laptop or iPad, a 4-digit PIN keeps kids out of list editing. It’s a speed bump, not a password. It’s asked for again
+					whenever you go back to Practice or sign out, and after this area has been left alone for a while.
 				</p>
 				<form onSubmit={submit} className="flex flex-wrap items-end gap-3">
 					<label className="flex flex-col gap-1.5">
@@ -57,6 +63,24 @@ function Settings() {
 					)}
 				</form>
 				{saved && <p role="status">{saved}</p>}
+				{parent?.hasPin && (
+					<label className="flex flex-col gap-1.5">
+						<span className="text-sm font-medium">Ask again after</span>
+						<select
+							className="field w-fit"
+							value={minutes}
+							disabled={relock.isPending}
+							onChange={(e) => relock.mutate(Number(e.target.value))}
+						>
+							{PIN_RELOCK_MINUTES.map((m) => (
+								<option key={m} value={m}>
+									{m === 1 ? "1 minute" : `${m} minutes`} without a tap
+								</option>
+							))}
+						</select>
+					</label>
+				)}
+				{relock.isError && <p role="alert">Couldn’t save that. Check the connection and try again.</p>}
 			</section>
 			<section className="space-y-2">
 				<h2 className="text-2xl font-semibold">Account</h2>

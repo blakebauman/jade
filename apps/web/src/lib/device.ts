@@ -1,8 +1,10 @@
 /**
  * What this device remembers about the signed-in family so the app can open with no connection: the last confirmed
  * user (here) and the API responses the service worker keeps in the `jade-data` cache (see vite.config.ts).
- * Signing out forgets both.
+ * Signing out forgets both, and locks the parent area.
  */
+import { lockParent } from "./parentLock.ts";
+
 const USER_KEY = "jade.user";
 /** Must match the `cacheName` of the data rule in vite.config.ts. */
 export const DATA_CACHE = "jade-data";
@@ -31,6 +33,7 @@ export function rememberedUser<T>(): T | null {
 
 export async function forgetDevice() {
 	memo = null;
+	lockParent();
 	try {
 		localStorage.removeItem(USER_KEY);
 	} catch {}
