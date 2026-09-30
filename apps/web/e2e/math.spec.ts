@@ -83,6 +83,26 @@ test("times-tables round on the keypad: right, missed twice, stop, results", asy
 	expect(progress.reviewDue).toEqual([]);
 });
 
+test("refreshing mid-round continues the same math round", async ({ page }) => {
+	await stubVoice(page);
+	const { childId } = await setup(page, "Rae");
+	await page.goto(`/play/${childId}/math/facts`);
+	await page.getByRole("button", { name: "Start" }).click();
+	await tapKeys(page, String(solveFact(await problemLabel(page))));
+	await page.getByRole("button", { name: "Check" }).click();
+	await expect(page.getByText("Spot on!")).toBeVisible();
+
+	await page.reload();
+	await page.getByRole("button", { name: "Start" }).click();
+	await expect(page.getByLabel("Problem 2 of 10")).toBeVisible();
+
+	// The round goes on from there: stopping now counts the answer given before the refresh.
+	await page.getByRole("link", { name: "Leave round" }).click();
+	await page.getByRole("button", { name: "Stop", exact: true }).click();
+	await expect(page.getByText("1 of 1 right")).toBeVisible();
+	await expect(page.getByText("Stopped after 1 of 10 problems")).toBeVisible();
+});
+
 test("fractions: simplify with the fraction key", async ({ page }) => {
 	await stubVoice(page);
 	const { childId, headers } = await setup(page, "Fia");
