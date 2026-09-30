@@ -7,7 +7,7 @@ import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { BadgeIcon } from "#/components/BadgeIcon.tsx";
 import { useChild } from "#/lib/child.ts";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
-import type { MathMode } from "#/lib/mathRound.ts";
+import { type MathMode, useMathRound } from "#/lib/mathRound.ts";
 import { progressQuery } from "#/lib/queries.ts";
 import { useRound } from "#/lib/round.ts";
 import { speaker } from "#/lib/speaker.ts";
@@ -74,6 +74,7 @@ function Results() {
 	const isMath = round.subject === "math";
 	const unit = isMath ? "problems" : "words";
 	const mathMissed = (round.items ?? []).filter((it) => !it.firstTry);
+	const mathRetry = mathMissed.flatMap((it) => (it.problem ? [it.problem] : []));
 
 	const headline = useMemo(() => {
 		const pct = round.attempts.length ? correct / round.attempts.length : 0;
@@ -93,6 +94,13 @@ function Results() {
 		const timers = [0, 1, 2].map((i) => setTimeout(() => setLit(i + 1), FLIP_AT + i * FLIP_STEP + 190));
 		return () => timers.forEach(clearTimeout);
 	}, [perfect, reduced]);
+
+	/** A math round of exactly the problems that needed another look, opened through the round's resume path. */
+	function practiceMissedMath() {
+		const topic = (round.mathMode ?? "facts") as MathMode;
+		useMathRound.getState().start({ childId: child.id, mode: topic, problems: mathRetry });
+		navigate({ to: "/play/$childId/math/$topic", params: { childId: child.id, topic }, search: { resume: true } });
+	}
 
 	function practiceMissed() {
 		// A Bee round over just the missed words (keeping the list's own sentences when there is a list).
@@ -210,14 +218,21 @@ function Results() {
 			)}
 
 			<div className="mt-12 flex flex-wrap justify-center gap-3">
+				{isMath && mathRetry.length > 0 && (
+					<button type="button" className="key" data-variant="go" onClick={practiceMissedMath}>
+						<RotateCcw className="size-5" aria-hidden />{" "}
+						{mathRetry.length === 1 ? "Practice this one now" : `Practice these ${mathRetry.length} now`}
+					</button>
+				)}
 				{isMath && (
 					<Link
 						to="/play/$childId/math/$topic"
 						params={{ childId: child.id, topic: (round.mathMode ?? "facts") as MathMode }}
 						className="key"
-						data-variant="go"
+						// One primary key per view: Practice leads when there's something to practice.
+						data-variant={mathRetry.length > 0 ? undefined : "go"}
 					>
-						<RotateCcw className="size-5" aria-hidden /> Play again
+						{mathRetry.length === 0 && <RotateCcw className="size-5" aria-hidden />} Play again
 					</Link>
 				)}
 				{!isMath && missed.length > 0 && (

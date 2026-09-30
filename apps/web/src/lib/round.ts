@@ -1,4 +1,5 @@
 import { type AttemptInput, type GradeResult, gradeAttempt, type Mode, normalizeWord, starsForWord } from "@jade/core";
+import type { Problem } from "@jade/core/math";
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import type { BadgeView, RoundSummary } from "./api.ts";
@@ -26,6 +27,8 @@ export type MathResultItem = {
 	correct: boolean;
 	firstTry: boolean;
 	explain: string;
+	/** The problem as asked, so results can offer it again ("Practice these now"). Missing on older saved rounds. */
+	problem?: Problem;
 };
 
 export type FinishedRound = {

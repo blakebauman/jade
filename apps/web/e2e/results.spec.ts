@@ -53,7 +53,7 @@ test("spelling results show the real first try of a word fixed on the second go"
 	await expect(page.getByRole("img", { name: `You wrote ${w2.slice(0, -1)}x` })).toBeVisible();
 });
 
-test("math results show the wrong first answer of a problem fixed on the second go", async ({ page }) => {
+test("math results show the real first answer, and practice exactly the problems that needed another look", async ({ page }) => {
 	await stubVoice(page);
 	const { id } = await setup(page);
 	await page.goto(`/play/${id}/math/facts`);
@@ -67,7 +67,8 @@ test("math results show the wrong first answer of a problem fixed on the second 
 		for (const k of s) await page.getByRole("button", { name: k, exact: true }).click();
 	};
 	// 1: wrong then right.
-	const a1 = solve(await label());
+	const l1 = await label();
+	const a1 = solve(l1);
 	const wrong1 = String(Number(a1) + 1);
 	await tap(wrong1);
 	await page.getByRole("button", { name: "Check" }).click();
@@ -76,7 +77,8 @@ test("math results show the wrong first answer of a problem fixed on the second 
 	await expect(page.getByText("Fixed it!")).toBeVisible();
 	await page.getByRole("button", { name: /Next/ }).click();
 	// 2: wrong twice.
-	const a2 = solve(await label());
+	const l2 = await label();
+	const a2 = solve(l2);
 	for (let i = 0; i < 2; i++) {
 		await tap(String(Number(a2) + 1));
 		await page.getByRole("button", { name: "Check" }).click();
@@ -86,6 +88,24 @@ test("math results show the wrong first answer of a problem fixed on the second 
 	await expect(page.getByRole("heading", { name: "Worth another look" })).toBeVisible();
 	// The fix shows the wrong first answer, not the right one.
 	await expect(page.locator("p", { hasText: "Second try. First try was:" }).getByRole("img", { name: wrong1, exact: true })).toBeVisible();
+
+	// Practice these now: a round of exactly those two problems, in order.
+	await page.getByRole("button", { name: "Practice these 2 now" }).click();
+	await expect(page.getByRole("heading", { name: "2 problems. Ready?" })).toBeVisible();
+	await page.getByRole("button", { name: "Start" }).click();
+	expect(await label()).toBe(l1);
+	await tap(a1);
+	await page.getByRole("button", { name: "Check" }).click();
+	await expect(page.getByText("Spot on!")).toBeVisible();
+	await page.getByRole("button", { name: /Next/ }).click();
+	expect(await label()).toBe(l2);
+	await tap(a2);
+	await page.getByRole("button", { name: "Check" }).click();
+	await page.getByRole("button", { name: /Finish/ }).click();
+	await expect(page.getByText("2 of 2 right")).toBeVisible();
+	// Nothing left to practice, so Play again is the primary key again.
+	await expect(page.getByRole("button", { name: /Practice these/ })).toHaveCount(0);
+	await expect(page.getByRole("link", { name: /Play again/ })).toHaveAttribute("data-variant", "go");
 });
 
 test("a perfect round lands the stars, then lights them marigold", async ({ page }) => {

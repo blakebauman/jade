@@ -123,6 +123,7 @@ function MathRound() {
 				correct: a.correct,
 				firstTry: a.correct && a.tries === 1,
 				explain: p.explain,
+				problem: p,
 			};
 		});
 		r.close();
