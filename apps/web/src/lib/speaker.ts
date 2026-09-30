@@ -28,6 +28,28 @@ function silentWav(): string {
 	return `data:audio/wav;base64,${btoa(bin)}`;
 }
 
+/**
+ * A small-room impulse response, built at runtime: stereo noise under a (1 - t)^decay envelope.
+ * Short on purpose, so letter names and consonants stay crisp under the reverb.
+ */
+function roomImpulse(ctx: BaseAudioContext, seconds: number, decay: number): AudioBuffer {
+	const length = Math.floor(ctx.sampleRate * seconds);
+	const ir = ctx.createBuffer(2, length, ctx.sampleRate);
+	for (let ch = 0; ch < 2; ch++) {
+		const data = ir.getChannelData(ch);
+		for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** decay;
+	}
+	return ir;
+}
+
+/** Reverb mix, room length, and the fade (seconds) that softens clips ending in a hard cut. */
+const REVERB_WET = 0.18;
+const REVERB_SECONDS = 0.9;
+const REVERB_PREDELAY = 0.015;
+const TAIL_FADE = 0.12;
+
+type Fx = { ctx: AudioContext; input: GainNode; master: GainNode };
+
 export type SpeakOptions = { kind?: Kind; slow?: boolean; onBeat?: (index: number) => void; beats?: number };
 
 export function ttsUrl(text: string, kind: Kind, voice: Voice) {
@@ -42,6 +64,8 @@ export function ttsUrl(text: string, kind: Kind, voice: Voice) {
 class Speaker {
 	private audio: HTMLAudioElement | null = null;
 	private unlocked = false;
+	/** The Web Audio graph the <audio> element plays through; `false` once it's known to be unavailable (dry playback). */
+	private fxGraph: Fx | false | null = null;
 	private token = 0;
 	voice: Voice = "luna";
 	rate = 0.95;
@@ -58,8 +82,49 @@ class Speaker {
 		return this.audio;
 	}
 
+	/**
+	 * <audio> → input ─┬─ dry ─────────────────────────────┬─ master → speakers
+	 *                  └─ pre-delay → room reverb → wet ───┘
+	 * Built once (an element can only have one source node), inside a tap so iOS lets the context run.
+	 * `input` fades each clip's end while the reverb rings on; `master` cuts everything on stop().
+	 */
+	private fx(): Fx | null {
+		if (this.fxGraph !== null) return this.fxGraph || null;
+		this.fxGraph = false;
+		const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+		if (!Ctx) return null;
+		try {
+			const ctx = new Ctx();
+			const source = ctx.createMediaElementSource(this.el());
+			const input = ctx.createGain();
+			const master = ctx.createGain();
+			const predelay = ctx.createDelay(0.1);
+			predelay.delayTime.value = REVERB_PREDELAY;
+			const reverb = ctx.createConvolver();
+			reverb.buffer = roomImpulse(ctx, REVERB_SECONDS, 3);
+			const wet = ctx.createGain();
+			wet.gain.value = REVERB_WET;
+			source.connect(input);
+			input.connect(master);
+			input.connect(predelay).connect(reverb).connect(wet).connect(master);
+			master.connect(ctx.destination);
+			this.fxGraph = { ctx, input, master };
+		} catch {
+			// Playback falls back to the element's own output.
+		}
+		return this.fxGraph || null;
+	}
+
+	/** iOS suspends the context after interruptions (calls, backgrounding); a suspended context plays silence. */
+	private resumeFx() {
+		const fx = this.fx();
+		if (fx && fx.ctx.state !== "running") void fx.ctx.resume().catch(() => {});
+		return fx;
+	}
+
 	/** Call from a tap/keypress handler before the first round. Safe to call repeatedly. */
 	unlock() {
+		this.resumeFx();
 		if (this.unlocked) return;
 		const a = this.el();
 		a.src = silentWav();
@@ -76,6 +141,8 @@ class Speaker {
 	stop() {
 		this.token++;
 		this.audio?.pause();
+		// Cut the reverb tail quickly (no click) so it never smears into the next clip.
+		if (this.fxGraph) this.fxGraph.master.gain.setTargetAtTime(0, this.fxGraph.ctx.currentTime, 0.01);
 		if ("speechSynthesis" in window) window.speechSynthesis.cancel();
 	}
 
@@ -108,10 +175,18 @@ class Speaker {
 
 	private playAura(text: string, kind: Kind, rate: number, token: number, opts: SpeakOptions) {
 		const a = this.el();
+		const fx = this.resumeFx();
+		if (fx) {
+			const now = fx.ctx.currentTime;
+			for (const g of [fx.input.gain, fx.master.gain]) {
+				g.cancelScheduledValues(now);
+				g.setValueAtTime(1, now);
+			}
+		}
 		return new Promise<void>((resolve, reject) => {
 			const timers: number[] = [];
 			const cleanup = () => {
-				a.onended = a.onerror = a.onloadedmetadata = null;
+				a.onended = a.onerror = a.onloadedmetadata = a.onplaying = null;
 				for (const t of timers) clearTimeout(t);
 			};
 			a.onerror = () => {
@@ -140,6 +215,16 @@ class Speaker {
 						timers.push(window.setTimeout(() => token === this.token && opts.onBeat?.(i), (span * 0.05 + i * step) * 1000));
 				};
 			}
+			if (fx)
+				a.onplaying = () => {
+					// Ease the voice out over its last moment; the reverb keeps ringing after, for a soft tail.
+					if (!Number.isFinite(a.duration)) return;
+					const remaining = (a.duration - a.currentTime) / rate;
+					// `playing` fires again after a stall; replace the earlier schedule rather than fading early.
+					fx.input.gain.cancelScheduledValues(fx.ctx.currentTime);
+					fx.input.gain.setValueAtTime(1, fx.ctx.currentTime);
+					fx.input.gain.setTargetAtTime(0, fx.ctx.currentTime + Math.max(0, remaining - TAIL_FADE), TAIL_FADE / 3);
+				};
 			a.src = ttsUrl(text, kind, this.voice);
 			a.playbackRate = rate;
 			a.play().catch((e) => {
