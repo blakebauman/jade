@@ -4,10 +4,11 @@ import { Pips, Tile } from "@jade/ui/components/tile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, BookOpen, Check, Delete, Landmark, MessageSquareQuote, Snail, Volume2, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { Confirm } from "#/components/Confirm.tsx";
 import { AnswerRow, RevealRow } from "#/components/round/AnswerRow.tsx";
+import { gapFromX } from "#/components/round/caret.ts";
 import { buildBank, TileBank } from "#/components/round/TileBank.tsx";
 import type { WordInfo } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
@@ -15,7 +16,7 @@ import { describeMiss, firstFlagged } from "#/lib/feedback.ts";
 import { dayKey, prefersReducedMotion, useVisualViewport } from "#/lib/hooks.ts";
 import { finishSession, saveAttempts, startSession } from "#/lib/offline.ts";
 import { listQuery, progressQuery, roundProgress, wordQuery } from "#/lib/queries.ts";
-import { type RoundWord, useRound } from "#/lib/round.ts";
+import { cleanTyped, type RoundWord, useRound } from "#/lib/round.ts";
 import { speaker } from "#/lib/speaker.ts";
 
 export const Route = createFileRoute("/_authed/play/$childId/round/$listId/$mode")({
@@ -105,10 +106,71 @@ function RoundScreen() {
 		[mode, word, s.index, s.words.length],
 	);
 
+	/**
+	 * Where the next letter goes. The native input does the editing; this mirrors its caret so the row can draw it,
+	 * and a tap on the row moves it to the nearest gap between tiles (like tapping into a word on an iPhone).
+	 */
+	const [caret, setCaret] = useState(s.typed.length);
+	const pendingCaret = useRef<number | null>(null);
+	const moveCaret = useCallback((at: number) => {
+		const el = inputRef.current;
+		// Only while focused: setting a selection must never be what pulls the iPad keyboard up.
+		if (el && document.activeElement === el) el.setSelectionRange(at, at);
+		setCaret(at);
+	}, []);
+	const syncCaret = () => {
+		const el = inputRef.current;
+		if (el?.selectionStart != null) setCaret(el.selectionStart);
+	};
+	// After an edit, put the caret back where the edit left it (a controlled value would jump it to the end). Any other
+	// change to the word (a new word, the retry reset, covering in Learn) puts it at the end.
+	useLayoutEffect(() => {
+		const at = pendingCaret.current ?? s.typed.length;
+		pendingCaret.current = null;
+		moveCaret(Math.min(at, s.typed.length));
+	}, [s.typed, moveCaret]);
+
+	function onType(e: React.ChangeEvent<HTMLInputElement>) {
+		const raw = e.target.value;
+		const clean = cleanTyped(raw);
+		const at = e.target.selectionStart ?? raw.length;
+		// Letters stripped by cleaning (spaces, digits) came before the caret, so it moves back by as many.
+		pendingCaret.current = Math.max(0, at - (raw.length - clean.length));
+		s.setTyped(raw);
+		// Nothing changed (a stripped key): the layout effect won't run, and React puts the old value back after this
+		// handler, which jumps the caret to the end. Restore it once React is done.
+		if (clean === s.typed) {
+			const back = Math.min(pendingCaret.current, clean.length);
+			pendingCaret.current = null;
+			queueMicrotask(() => moveCaret(back));
+		}
+	}
+
+	// Arrow keys, and iOS's press-and-drag caret, move the native caret without an edit.
+	useEffect(() => {
+		const onChange = () => {
+			const el = inputRef.current;
+			if (el && document.activeElement === el && el.selectionStart != null) setCaret(el.selectionStart);
+		};
+		document.addEventListener("selectionchange", onChange);
+		return () => document.removeEventListener("selectionchange", onChange);
+	}, []);
+
+	function placeCaret(e: React.MouseEvent<HTMLInputElement>) {
+		const tiles = e.currentTarget.parentElement?.querySelectorAll<HTMLElement>("[data-typed-index]") ?? [];
+		moveCaret(
+			gapFromX(
+				e.clientX,
+				[...tiles].map((t) => t.getBoundingClientRect()),
+			),
+		);
+	}
+
 	const focusInput = useCallback(() => {
 		// Don't pop the iPad keyboard in Tiles mode; the bank is the input there.
 		if (mode !== "tiles") inputRef.current?.focus({ preventScroll: true });
-	}, [mode]);
+		moveCaret(useRound.getState().typed.length);
+	}, [mode, moveCaret]);
 
 	const sayWord = useCallback(
 		(slow = false) => {
@@ -443,6 +505,7 @@ function RoundScreen() {
 								showLength={child.settings.showLength || mode === "learn"}
 								checkNonce={checkNonce}
 								onTileClick={mode === "tiles" ? unpickAt : undefined}
+								caret={mode === "tiles" ? undefined : caret}
 								note={
 									s.grade && notes.length > 0 && (s.phase === "retry" || s.phase === "reveal") && s.typed === s.grade.typed
 										? { index: firstFlagged(s.grade), text: notes[0]! }
@@ -483,7 +546,9 @@ function RoundScreen() {
 										<input
 											ref={inputRef}
 											value={s.typed}
-											onChange={(e) => s.setTyped(e.target.value)}
+											onChange={onType}
+											onClick={placeCaret}
+											onSelect={syncCaret}
 											disabled={!canType}
 											aria-label="Type the spelling"
 											className="absolute inset-0 h-full w-full cursor-text opacity-0"

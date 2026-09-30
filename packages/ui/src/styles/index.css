@@ -81,6 +81,12 @@
 	100% { transform: translateY(0) scale(1); }
 }
 
+/* Lit, then dim. With reduced motion the one 1ms run ends and the caret just stays lit. */
+@keyframes caret-blink {
+	0%, 55% { opacity: 1; }
+	55.01%, 100% { opacity: 0.2; }
+}
+
 /* Per-child letter face (settings.font). */
 [data-font="fredoka"] { --tile-face: "Fredoka Variable"; }
 [data-font="andika"] { --tile-face: "Andika"; }
@@ -210,6 +216,14 @@
 		border-radius: var(--radius-tile);
 		background: color-mix(in oklab, var(--color-felt-deep) 80%, black);
 		box-shadow: inset 0 0.2em 0.5em rgb(0 0 0 / 0.45), inset 0 -1px 0 rgb(255 255 255 / 0.06);
+	}
+
+	/* The caret between two tiles, once the speller taps back into a word. Chalk, like the active square's ring. */
+	.caret-bar {
+		transform: translateX(-50%);
+		border-radius: 999px;
+		background: var(--color-felt-ink);
+		animation: caret-blink 1.1s steps(1, end) infinite;
 	}
 
 	/*

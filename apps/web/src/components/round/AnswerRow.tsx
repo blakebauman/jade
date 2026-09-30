@@ -1,8 +1,9 @@
 import type { GradeResult } from "@jade/core";
 import { type Law, Square, Tile } from "@jade/ui/components/tile";
-import type { ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { useElementWidth } from "#/lib/hooks.ts";
 import type { Phase } from "#/lib/round.ts";
+import { rekey } from "./caret.ts";
 
 /**
  * Tile edge and gap that fit `count` tiles on one line in `width` (gap = 10% of the tile). A word never wraps:
@@ -26,7 +27,7 @@ function isJudged(phase: Phase, grade: GradeResult | null, typed: string) {
 }
 
 /** The visible row: typed tiles, then squares (all remaining when the length hint is on, else one caret square). */
-function cellsFor(typed: string, target: string, phase: Phase, grade: GradeResult | null, showLength: boolean): Cell[] {
+function cellsFor(typed: string, keys: string[], target: string, phase: Phase, grade: GradeResult | null, showLength: boolean): Cell[] {
 	if (grade && isJudged(phase, grade, typed)) {
 		// After a check, render the alignment: a missing letter is an empty sky-edged square where it belongs.
 		return grade.letters.map((m, i) => {
@@ -36,7 +37,7 @@ function cellsFor(typed: string, target: string, phase: Phase, grade: GradeResul
 			return { key: `t${i}`, letter: m.typed, law: phase === "retry" && law === "right" ? undefined : law };
 		});
 	}
-	const cells: Cell[] = [...typed].map((c, i) => ({ key: `t${i}`, letter: c }));
+	const cells: Cell[] = [...typed].map((c, i) => ({ key: keys[i] ?? `t${i}`, letter: c }));
 	const slots = showLength ? Math.max(target.length - typed.length, 0) : 1;
 	for (let i = 0; i < slots; i++) cells.push({ key: `s${typed.length + i}`, empty: true, active: i === 0 });
 	return cells;
@@ -50,6 +51,7 @@ export function AnswerRow({
 	showLength,
 	checkNonce,
 	onTileClick,
+	caret,
 	overlay,
 	trailing,
 	note,
@@ -62,6 +64,8 @@ export function AnswerRow({
 	/** Changes on every Check so the flip cascade replays. */
 	checkNonce: number;
 	onTileClick?: (index: number) => void;
+	/** Where the next letter goes. Before the end, a chalk bar sits in that gap instead of the ringed square. */
+	caret?: number;
 	overlay?: ReactNode;
 	/** The Check / Next key, at the right end of the row. */
 	trailing?: ReactNode;
@@ -69,11 +73,22 @@ export function AnswerRow({
 	note?: { index: number; text: string } | null;
 }) {
 	const [ref, width] = useElementWidth<HTMLDivElement>();
-	const cells = cellsFor(typed, target, phase, grade, showLength);
+	// Keys follow the letters, so a letter put in mid-word drops in where it goes and the rest stay still.
+	const keyed = useRef({ text: "", keys: [] as string[], n: 0 });
+	if (keyed.current.text !== typed) {
+		const k = keyed.current;
+		let n = k.n;
+		const keys = rekey(k.text, k.keys, typed, () => `t${++n}`);
+		keyed.current = { text: typed, keys, n };
+	}
+	const cells = cellsFor(typed, keyed.current.keys, target, phase, grade, showLength);
 	const judged = isJudged(phase, grade, typed);
+	const editing = !judged && (phase === "spelling" || phase === "retry");
+	const midCaret = editing && caret !== undefined && caret < typed.length ? caret : null;
 	// Size for the longer of the word and what's on the row, so tiles don't jump size while typing.
 	const { size, gap } = fitTile(width, Math.max(cells.length, showLength ? target.length : Math.max(target.length, 5)));
 	const rowWidth = cells.length * size + (cells.length - 1) * gap;
+	const rowLeft = width ? (width - rowWidth) / 2 : 0;
 	const noteLeft = note && width ? (width - rowWidth) / 2 + note.index * (size + gap) + size / 2 : 0;
 
 	return (
@@ -99,7 +114,7 @@ export function AnswerRow({
 									aria-label="missing letter"
 								/>
 							) : (
-								<Square key={c.key} size={size} active={c.active && (phase === "spelling" || phase === "retry")} />
+								<Square key={c.key} size={size} active={c.active && editing && midCaret === null} />
 							)
 						) : (
 							<Tile
@@ -110,11 +125,25 @@ export function AnswerRow({
 								grain={i % 4}
 								className={judged ? "animate-tile-flip" : "animate-tile-drop"}
 								style={judged ? { animationDelay: `${i * 55}ms` } : undefined}
+								data-typed-index={judged ? undefined : i}
 								onClick={onTileClick ? () => onTileClick(i) : undefined}
 							/>
 						),
 					)}
 				</div>
+				{midCaret !== null && (
+					<span
+						aria-hidden
+						data-caret={midCaret}
+						className="caret-bar pointer-events-none absolute"
+						style={{
+							left: rowLeft + midCaret * (size + gap) - gap / 2,
+							top: size * 0.1,
+							height: size * 0.8,
+							width: Math.max(3, Math.round(size * 0.06)),
+						}}
+					/>
+				)}
 				{note && (
 					<p
 						className="pointer-events-none absolute top-full mt-3 -translate-x-1/2 rounded-lg bg-felt-deep px-3 py-1.5 text-center text-sm whitespace-nowrap shadow-md md:text-base"

@@ -224,7 +224,7 @@ The board is a single centred column. The round uses max-width 64rem (`max-w-5xl
 
 **Targets.** Every key is at least 3rem (48px) tall; math keypad keys are 3.5rem. Icon-only keys are square: 44px (`size-11`) for the round exit and 48px for results' hear-word key. Check and Next are 3.5rem, and Start is 4rem.
 
-**Input.** A transparent full-size `<input>` overlays the answer row. It sets `autocorrect="off"`, `autocapitalize="none"`, `spellcheck=false` and `autocomplete="off"`, with 16px text (so iOS doesn't zoom), `enterkeyhint="done"` and a transparent caret. The parent word entry field sets the same autocorrect trio.
+**Input.** A transparent full-size `<input>` overlays the answer row. It sets `autocorrect="off"`, `autocapitalize="none"`, `spellcheck=false` and `autocomplete="off"`, with 16px text (so iOS doesn't zoom), `enterkeyhint="done"` and a transparent caret. A tap on the row moves the caret to the nearest gap between tiles, iPhone-style, so a missed letter can go in mid-word without backspacing. The native caret is kept in step with that gap (`gapFromX` in `components/round/caret.ts`). The parent word entry field sets the same autocorrect trio.
 
 Breakpoints are Tailwind defaults: sm 640px, md 768px, lg 1024px.
 
@@ -265,7 +265,7 @@ One class, `.key`, with variants set by `data-variant`. The hierarchy follows wh
 The maple letter tile. `size` is the edge in px, from 14 (progress rail) to 88 (answer row). The letter is 0.56 of the edge, and an optional point number sits bottom-right at 0.18. `law` sets `data-law`, which recolours the lower bevel and adds the corner mark (a disc at 24% of the edge, minimum 12px). A letter tile is `role="img"` and its label includes the law.
 
 ### Square
-An empty place on the board: recessed, deep felt, 18% radius. The active square (the next slot during spelling or retry) gets a 2px chalk ring at 70% opacity with a felt offset. A **missing-letter square** adds a sky underline (`inset 0 -0.3em 0 sky`) and the label "missing letter".
+An empty place on the board: recessed, deep felt, 18% radius. The active square (the next slot during spelling or retry) gets a 2px chalk ring at 70% opacity with a felt offset, but only while the caret is at the end of the word. A **missing-letter square** adds a sky underline (`inset 0 -0.3em 0 sky`) and the label "missing letter".
 
 ### Pips
 Five 9px mastery dots (Leitner box 1 to 5). Filled dots are chalk and empty dots are a 1.5px Lichen ring. The same ramp is used in play, results and parent progress. The label reads "Mastery n of 5" or "New word". On maple, pips sit on a felt-deep pill at 80% opacity.
@@ -277,7 +277,7 @@ A child's identity: their initial on a maple tile, with their chosen number as t
 A whole word as a small tile rack with a 3px gap, used in lists (about 22 to 30px) and results (34px). It takes optional per-letter laws. Results show the correct word in all-marigold beside the attempt, with coral, sky and stone marks.
 
 ### AnswerRow
-The play row. It holds typed tiles, then squares (every remaining square when the length hint is on, otherwise one caret square). After Check, the row shows the grade alignment, with missing letters as sky squares in place. A feedback note bubble (felt-deep, with an arrow) points at the first flagged cell. The trailing slot holds Check or Next. See Layout for the fit rule.
+The play row. It holds typed tiles, then squares (every remaining square when the length hint is on, otherwise one caret square). When the speller taps back into the word, a thin chalk **caret bar** (about 6% of the tile wide, 80% tall, blinking unless reduced motion is on) sits in that gap instead of the ring. Typed tiles are keyed by letter rather than by position, so a letter put in mid-word drops in where it goes and the rest stay still. After Check, the row shows the grade alignment, with missing letters as sky squares in place. A feedback note bubble (felt-deep, with an arrow) points at the first flagged cell. The trailing slot holds Check or Next. See Layout for the fit rule.
 
 ### Plaque, Rack, Patch
 - **Plaque:** a small maple object (0.7rem radius, grain 3) for badges, streak and star stats, and the spoken definition or sentence. Badges and stats are never flat fills.
