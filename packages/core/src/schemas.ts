@@ -12,7 +12,21 @@ export type Mode = z.infer<typeof modeSchema>;
 
 /** Tile/answer letter faces. Andika is SIL's literacy face (single-storey a and g). */
 export const FONTS = ["fredoka", "andika", "lexend", "atkinson"] as const;
-export const VOICES = ["luna", "asteria", "athena", "hera", "orion", "apollo"] as const;
+/** Aura-2 speakers offered to parents. Append only: children's saved settings name these. */
+export const VOICES = [
+	"luna",
+	"asteria",
+	"athena",
+	"hera",
+	"orion",
+	"apollo",
+	"cora",
+	"pandora",
+	"theia",
+	"amalthea",
+	"draco",
+	"hyperion",
+] as const;
 
 export const childSettingsSchema = z.object({
 	font: z.enum(FONTS).default("fredoka"),

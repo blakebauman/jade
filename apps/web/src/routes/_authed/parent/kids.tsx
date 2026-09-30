@@ -16,6 +16,22 @@ export const Route = createFileRoute("/_authed/parent/kids")({
 	component: Kids,
 });
 
+/** Accent and character, from Deepgram's Aura-2 voice notes. */
+const VOICE_INFO: Record<(typeof VOICES)[number], { group: "Women" | "Men"; label: string }> = {
+	luna: { group: "Women", label: "Luna · American, friendly" },
+	asteria: { group: "Women", label: "Asteria · American, clear" },
+	athena: { group: "Women", label: "Athena · American, calm" },
+	hera: { group: "Women", label: "Hera · American, warm" },
+	cora: { group: "Women", label: "Cora · American, storyteller" },
+	pandora: { group: "Women", label: "Pandora · British" },
+	theia: { group: "Women", label: "Theia · Australian" },
+	amalthea: { group: "Women", label: "Amalthea · Filipino" },
+	orion: { group: "Men", label: "Orion · American, calm" },
+	apollo: { group: "Men", label: "Apollo · American, casual" },
+	draco: { group: "Men", label: "Draco · British" },
+	hyperion: { group: "Men", label: "Hyperion · Australian" },
+};
+
 const FONT_LABEL: Record<(typeof FONTS)[number], string> = {
 	fredoka: "Rounded",
 	andika: "Andika (school print)",
@@ -61,10 +77,14 @@ function SettingsForm({ child }: { child: Child }) {
 				<span className="text-sm font-medium">Voice</span>
 				<div className="flex gap-2">
 					<select className="field" value={s.voice} onChange={(e) => update.mutate({ voice: e.target.value as ChildSettings["voice"] })}>
-						{VOICES.map((v) => (
-							<option key={v} value={v}>
-								{v[0]!.toUpperCase() + v.slice(1)}
-							</option>
+						{(["Women", "Men"] as const).map((g) => (
+							<optgroup key={g} label={g}>
+								{VOICES.filter((v) => VOICE_INFO[v].group === g).map((v) => (
+									<option key={v} value={v}>
+										{VOICE_INFO[v].label}
+									</option>
+								))}
+							</optgroup>
 						))}
 					</select>
 					<button
