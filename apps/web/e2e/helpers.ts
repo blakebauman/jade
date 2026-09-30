@@ -19,19 +19,12 @@ export function silentWav() {
 	return b;
 }
 
-/**
- * Records every word the app actually played: <audio> loads (WebKit reports them as "other", Chromium as "media"),
- * and on WebKit the fetches of clips played as Web Audio buffers, marked `X-Voice-Play`. Prefetches of the next
- * word are unmarked fetches and don't count. On WebKit, replaying a word already played this session isn't
- * fetched again (the decoded clip is kept), so it isn't recorded twice.
- */
+/** Records every word the app actually played (<audio> loads; prefetches of the next word are fetches. WebKit reports <audio> as "other", Chromium as "media"). */
 export async function stubVoice(page: Page) {
 	const spoken: string[] = [];
 	await page.route("**/api/tts?**", (route) => {
-		const req = route.request();
-		const u = new URL(req.url());
-		const played = req.resourceType() !== "fetch" || req.headers()["x-voice-play"] === "1";
-		if (u.searchParams.get("kind") === "word" && played) spoken.push(u.searchParams.get("text")!);
+		const u = new URL(route.request().url());
+		if (u.searchParams.get("kind") === "word" && route.request().resourceType() !== "fetch") spoken.push(u.searchParams.get("text")!);
 		return route.fulfill({ status: 200, contentType: "audio/wav", body: silentWav() });
 	});
 	return spoken;
