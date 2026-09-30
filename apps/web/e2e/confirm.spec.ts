@@ -52,13 +52,14 @@ test("stopping a round asks in place; Escape and Keep going back out", async ({ 
 test("removing a kid and deleting a list ask in place", async ({ page }) => {
 	const { listId } = await setup(page);
 	await page.goto("/parent/kids");
-	await page.getByRole("button", { name: "Remove" }).last().click();
+	await page.getByRole("button", { name: "Edit Theo" }).click();
+	await page.getByRole("button", { name: "Remove this child" }).click();
 	const ask = page.getByRole("alertdialog", { name: "Remove Theo?" });
 	await expect(ask).toBeVisible();
 	await shot(page, "remove-kid");
 	await page.getByRole("button", { name: "Cancel" }).click();
 	await expect(ask).toHaveCount(0);
-	await page.getByRole("button", { name: "Remove" }).last().click();
+	await page.getByRole("button", { name: "Remove this child" }).click();
 	await page.getByRole("button", { name: "Remove Theo" }).click();
 	await expect(page.getByRole("heading", { name: "Theo" })).toHaveCount(0);
 	await expect(page.getByRole("heading", { name: "Maya" })).toBeVisible();
@@ -69,6 +70,6 @@ test("removing a kid and deleting a list ask in place", async ({ page }) => {
 	await expect(page.getByRole("alertdialog", { name: "Delete “Two”?" })).toBeVisible();
 	await shot(page, "delete-list");
 	await page.getByRole("button", { name: "Delete list" }).click();
-	await expect(page.getByRole("heading", { name: "Word lists" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "This week" })).toBeVisible();
 	await expect(page.getByText("Two", { exact: true })).toHaveCount(0);
 });

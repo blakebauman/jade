@@ -18,7 +18,7 @@ const gate = (page: Page) => page.getByRole("heading", { name: "Parents only" })
 const settings = (page: Page) => page.getByRole("heading", { name: "Settings" });
 
 async function enterPin(page: Page, pin = PIN) {
-	await page.getByRole("textbox").fill(pin);
+	await page.getByLabel("Enter the 4-digit PIN").fill(pin);
 	await page.getByRole("button", { name: "Unlock" }).click();
 }
 
@@ -27,7 +27,7 @@ test("the parent area asks for the PIN, rejects a wrong one, and stays open acro
 	await page.goto("/parent/settings");
 	await expect(gate(page)).toBeVisible();
 	await enterPin(page, "1111");
-	await expect(page.getByRole("alert")).toHaveText("That PIN didn’t match.");
+	await expect(page.getByRole("alert")).toHaveText("That PIN didn’t match. Try again, or use your account password below.");
 	await expect(settings(page)).toHaveCount(0);
 	await enterPin(page);
 	await expect(settings(page)).toBeVisible();
@@ -82,6 +82,7 @@ test("the idle time is the parent's choice in Settings", async ({ page }) => {
 	await expect(choice).toHaveValue("5");
 	await choice.selectOption("1");
 	await expect(choice).toHaveValue("1");
+	await expect(page.getByText("Saved. The PIN is asked for again after 1 minute without a tap.")).toBeVisible();
 	await expect(choice).toBeEnabled();
 
 	await page.clock.fastForward("01:10");
@@ -99,4 +100,42 @@ test("a longer idle time holds across a reload", async ({ page }) => {
 	await page.reload();
 	await expect(settings(page)).toBeVisible();
 	await expect(page.getByLabel("Ask again after")).toHaveValue("30");
+});
+
+test("a forgotten PIN gives way to the account password, then a new PIN", async ({ page }) => {
+	await parentWithPin(page);
+	await page.goto("/parent");
+	await page.getByRole("button", { name: "Forgot the PIN?" }).click();
+	const password = page.getByLabel("Your account password");
+	await password.fill("not-it");
+	await page.getByRole("button", { name: "Unlock" }).click();
+	await expect(page.getByRole("alert")).toHaveText("That password didn’t match.");
+	await password.fill(PASSWORD);
+	await page.getByRole("button", { name: "Unlock" }).click();
+	await expect(settings(page)).toBeVisible();
+	await expect(page.getByText("You’re in. Choose a new PIN below, or remove it.")).toBeVisible();
+	await expect(page.getByLabel("New PIN")).toBeFocused();
+});
+
+test("the gate can sign out, so a family is never stuck on it", async ({ page }) => {
+	await parentWithPin(page);
+	await page.goto("/parent");
+	await expect(gate(page)).toBeVisible();
+	await page.getByRole("button", { name: "Sign out" }).click();
+	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Solve it." })).toBeVisible();
+});
+
+test("a new PIN has to be typed twice", async ({ page }) => {
+	await openLanding(page);
+	const h = { Origin: new URL(page.url()).origin };
+	const email = `pin2-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@example.com`;
+	await page.request.post("/api/auth/sign-up/email", { headers: h, data: { email, password: PASSWORD, name: "P" } });
+	await page.goto("/parent/settings");
+	await page.getByLabel("Choose a PIN").fill("1357");
+	await page.getByLabel("Type it again").fill("1358");
+	await expect(page.getByRole("alert")).toHaveText("Those two don’t match. Type the same 4 digits in both.");
+	await expect(page.getByRole("button", { name: "Save PIN" })).toBeDisabled();
+	await page.getByLabel("Type it again").fill("1357");
+	await page.getByRole("button", { name: "Save PIN" }).click();
+	await expect(page.getByText("PIN saved.", { exact: false })).toBeVisible();
 });

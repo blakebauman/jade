@@ -1,91 +1,182 @@
 import { DEFAULT_PIN_RELOCK_MINUTES, PIN_RELOCK_MINUTES } from "@jade/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useId, useState } from "react";
+import { Confirm } from "#/components/Confirm.tsx";
+import { Problem } from "#/components/Problem.tsx";
+import { SignOut } from "#/components/SignOut.tsx";
 import { api } from "#/lib/api.ts";
 import { useSession } from "#/lib/auth.ts";
 import { parentQuery } from "#/lib/queries.ts";
 
-export const Route = createFileRoute("/_authed/parent/settings")({ component: Settings });
+export const Route = createFileRoute("/_authed/parent/settings")({
+	// `newPin`: arrived from "Forgot the PIN?" on the gate, so lead with choosing a new one.
+	validateSearch: (search: Record<string, unknown>): { newPin?: boolean } => (search.newPin === true ? { newPin: true } : {}),
+	component: Settings,
+});
+
+const SAVE_FAILED = "Couldn’t save that. Check the connection and try again.";
+
+function PinField({
+	describedBy,
+	id,
+	label,
+	value,
+	onChange,
+	autoFocus,
+}: {
+	id: string;
+	label: string;
+	value: string;
+	onChange: (v: string) => void;
+	autoFocus?: boolean;
+	describedBy?: string;
+}) {
+	return (
+		<label htmlFor={id} className="flex flex-col gap-1.5">
+			<span className="text-sm font-medium">{label}</span>
+			<input
+				id={id}
+				type="password"
+				className="field w-40 text-center text-2xl tracking-[0.4em]"
+				inputMode="numeric"
+				pattern="\d{4}"
+				maxLength={4}
+				value={value}
+				onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
+				autoComplete="off"
+				aria-describedby={describedBy}
+				aria-invalid={!!describedBy || undefined}
+				// biome-ignore lint/a11y/noAutofocus: only after "Forgot the PIN?", where choosing a new one is the whole point
+				autoFocus={autoFocus}
+			/>
+		</label>
+	);
+}
 
 function Settings() {
+	const { newPin } = Route.useSearch();
 	const { data: parent } = useQuery(parentQuery);
 	const { data: session } = useSession();
 	const qc = useQueryClient();
+	const id = useId();
 	const [pin, setPin] = useState("");
+	const [again, setAgain] = useState("");
 	const [saved, setSaved] = useState<string | null>(null);
+	const [askRemove, setAskRemove] = useState(false);
 	const save = useMutation({
 		mutationFn: (value: string | null) => api("/api/parent", { method: "PUT", json: { pin: value } }),
+		onMutate: () => setSaved(null),
 		onSuccess: (_, value) => {
 			qc.invalidateQueries({ queryKey: ["parent"] });
 			setPin("");
-			setSaved(value ? "PIN saved. You’ll need it to open the parent area." : "PIN removed.");
+			setAgain("");
+			setSaved(value ? "PIN saved. You’ll need it to open the parent area." : "PIN removed. The parent area opens without one.");
 		},
 	});
 	const relock = useMutation({
 		mutationFn: (minutes: number) => api("/api/parent", { method: "PUT", json: { pinRelockMinutes: minutes } }),
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["parent"] }),
+		onMutate: () => setSaved(null),
+		onSuccess: (_, m) => {
+			// The parent area's idle clock reads this; update it now rather than when a refetch lands.
+			qc.setQueryData(parentQuery.queryKey, (old) => old && { ...old, pinRelockMinutes: m });
+			qc.invalidateQueries({ queryKey: ["parent"] });
+			setSaved(`Saved. The PIN is asked for again after ${m === 1 ? "1 minute" : `${m} minutes`} without a tap.`);
+		},
 	});
 	const minutes = relock.isPending ? relock.variables : (parent?.pinRelockMinutes ?? DEFAULT_PIN_RELOCK_MINUTES);
+	const mismatch = pin.length === 4 && again.length === 4 && pin !== again;
 	function submit(e: FormEvent) {
 		e.preventDefault();
-		save.mutate(pin);
+		if (pin.length === 4 && pin === again) save.mutate(pin);
 	}
 	return (
-		<div className="max-w-xl space-y-10">
+		<div className="space-y-10">
 			<h1 className="text-4xl font-semibold">Settings</h1>
-			<section className="space-y-4">
-				<h2 className="text-2xl font-semibold">Parent PIN</h2>
-				<p className="text-felt-muted">
-					On a shared laptop or iPad, a 4-digit PIN keeps kids out of list editing. It’s a speed bump, not a password. It’s asked for again
-					whenever you go back to Practice or sign out, and after this area has been left alone for a while.
-				</p>
-				<form onSubmit={submit} className="flex flex-wrap items-end gap-3">
-					<label className="flex flex-col gap-1.5">
-						<span className="text-sm font-medium">{parent?.hasPin ? "New PIN" : "Choose a PIN"}</span>
-						<input
-							className="field w-40 text-center text-2xl tracking-[0.4em]"
-							inputMode="numeric"
-							pattern="\d{4}"
-							maxLength={4}
-							value={pin}
-							onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-							autoComplete="off"
-						/>
-					</label>
-					<button type="submit" className="key" data-variant="go" disabled={pin.length !== 4 || save.isPending}>
-						Save PIN
-					</button>
-					{parent?.hasPin && (
-						<button type="button" className="key" data-variant="felt" onClick={() => save.mutate(null)}>
-							Remove PIN
-						</button>
+			<div className="grid grid-cols-1 items-start gap-x-12 gap-y-12 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+				<section className="max-w-xl space-y-4" aria-labelledby={`${id}-pin`}>
+					<h2 id={`${id}-pin`} className="text-2xl font-semibold">
+						Parent PIN
+					</h2>
+					{newPin && parent?.hasPin && (
+						<p role="status" className="patch p-4">
+							You’re in. Choose a new PIN below, or remove it.
+						</p>
 					)}
-				</form>
-				{saved && <p role="status">{saved}</p>}
-				{parent?.hasPin && (
-					<label className="flex flex-col gap-1.5">
-						<span className="text-sm font-medium">Ask again after</span>
-						<select
-							className="field w-fit"
-							value={minutes}
-							disabled={relock.isPending}
-							onChange={(e) => relock.mutate(Number(e.target.value))}
-						>
-							{PIN_RELOCK_MINUTES.map((m) => (
-								<option key={m} value={m}>
-									{m === 1 ? "1 minute" : `${m} minutes`} without a tap
-								</option>
-							))}
-						</select>
-					</label>
-				)}
-				{relock.isError && <p role="alert">Couldn’t save that. Check the connection and try again.</p>}
-			</section>
-			<section className="space-y-2">
-				<h2 className="text-2xl font-semibold">Account</h2>
-				<p className="text-felt-muted">Signed in as {session?.user.email}</p>
-			</section>
+					<p className="text-felt-muted">
+						{parent?.hasPin
+							? "Kids need the PIN to get in here. It’s asked for again when you go back to Practice, sign out, or leave this area alone for a while. Forgot it? Your account password always works instead."
+							: "On a shared laptop or iPad, a 4-digit PIN keeps kids out of list editing. It’s a speed bump, not a password, and your account password always opens the parent area if you forget it."}
+					</p>
+					<form onSubmit={submit} className="space-y-3">
+						<div className="flex flex-wrap items-end gap-3">
+							<PinField
+								id={`${id}-new`}
+								label={parent?.hasPin ? "New PIN" : "Choose a PIN"}
+								value={pin}
+								onChange={setPin}
+								autoFocus={newPin}
+							/>
+							<PinField
+								id={`${id}-again`}
+								label="Type it again"
+								value={again}
+								onChange={setAgain}
+								describedBy={mismatch ? `${id}-mismatch` : undefined}
+							/>
+							<button type="submit" className="key" data-variant="go" disabled={pin.length !== 4 || pin !== again || save.isPending}>
+								{save.isPending && save.variables ? "Saving…" : "Save PIN"}
+							</button>
+						</div>
+						{mismatch && <Problem id={`${id}-mismatch`}>Those two don’t match. Type the same 4 digits in both.</Problem>}
+					</form>
+					{/* Always mounted, so each confirmation is announced. */}
+					<p role="status">{saved}</p>
+					{save.isError && <Problem>{SAVE_FAILED}</Problem>}
+					{parent?.hasPin && (
+						<div className="flex flex-wrap items-end gap-3 pt-2">
+							<label className="flex flex-col gap-1.5">
+								<span className="text-sm font-medium">Ask again after</span>
+								<select
+									className="field w-fit"
+									value={minutes}
+									disabled={relock.isPending}
+									onChange={(e) => relock.mutate(Number(e.target.value))}
+								>
+									{PIN_RELOCK_MINUTES.map((m) => (
+										<option key={m} value={m}>
+											{m === 1 ? "1 minute" : `${m} minutes`} without a tap
+										</option>
+									))}
+								</select>
+							</label>
+							<button type="button" className="key" data-variant="felt" disabled={save.isPending} onClick={() => setAskRemove(true)}>
+								Remove PIN
+							</button>
+						</div>
+					)}
+					{askRemove && parent?.hasPin && (
+						<Confirm
+							message="Remove the PIN?"
+							note="Anyone using this device can then open the parent area."
+							confirmLabel="Remove PIN"
+							busy={save.isPending}
+							onCancel={() => setAskRemove(false)}
+							onConfirm={() => save.mutate(null, { onSettled: () => setAskRemove(false) })}
+						/>
+					)}
+					{relock.isError && <Problem>{SAVE_FAILED}</Problem>}
+				</section>
+				<section className="patch space-y-4 p-6" aria-labelledby={`${id}-account`}>
+					<h2 id={`${id}-account`} className="text-2xl font-semibold">
+						Account
+					</h2>
+					<p className="text-felt-muted">
+						Signed in as <span className="text-felt-ink">{session?.user.email}</span>
+					</p>
+					<SignOut />
+				</section>
+			</div>
 		</div>
 	);
 }

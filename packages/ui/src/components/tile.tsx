@@ -81,12 +81,12 @@ export function Square({ size = 72, className, active }: { size?: number; classN
 }
 
 /** Five mastery pips (Leitner box 1–5). Same ramp everywhere: play, results, parent view. */
-export function Pips({ box, className }: { box: number; className?: string }) {
+export function Pips({ box, className, label }: { box: number; className?: string; label?: string }) {
 	return (
 		<span
 			className={cn("inline-flex items-center gap-[3px]", className)}
 			role="img"
-			aria-label={box === 0 ? "New word" : `Mastery ${box} of 5`}
+			aria-label={label ?? (box === 0 ? "New word" : `Mastery ${box} of 5`)}
 		>
 			{[1, 2, 3, 4, 5].map((i) => (
 				<span key={i} className={cn("size-[9px] rounded-full", i <= box ? "bg-felt-ink" : "ring-[1.5px] ring-felt-muted ring-inset")} />
@@ -101,16 +101,27 @@ export function WordTiles({
 	size = 30,
 	laws,
 	className,
+	dropDelay,
 }: {
 	word: string;
 	size?: number;
 	laws?: (Law | undefined)[];
 	className?: string;
+	/** Drop the tiles onto the board one after another, starting after this many ms (collapsed under reduced motion). */
+	dropDelay?: number;
 }) {
 	return (
 		<span className={cn("inline-flex gap-[3px]", className)} role="img" aria-label={word}>
 			{[...word].map((c, i) => (
-				<Tile key={`${i}-${c}`} letter={c} size={size} law={laws?.[i]} grain={(i + c.charCodeAt(0)) % 4} aria-hidden />
+				<Tile
+					key={`${i}-${c}`}
+					letter={c}
+					size={size}
+					law={laws?.[i]}
+					grain={(i + c.charCodeAt(0)) % 4}
+					aria-hidden
+					{...(dropDelay !== undefined && { className: "animate-tile-drop", style: { animationDelay: `${dropDelay + i * 40}ms` } })}
+				/>
 			))}
 		</span>
 	);

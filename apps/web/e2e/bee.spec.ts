@@ -16,7 +16,7 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 	await page.getByLabel("Email").fill(email);
 	await page.getByLabel("Password").fill("spelling-bee-1");
 	await page.getByRole("button", { name: "Create family account" }).click();
-	await expect(page.getByRole("heading", { name: "Word lists" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "This week" })).toBeVisible();
 
 	// Adds a child.
 	await page.getByRole("link", { name: "Kids" }).click();
@@ -28,12 +28,15 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 	await page.getByRole("link", { name: "Lists" }).click();
 	await page.getByRole("link", { name: "New list" }).click();
 	await page.getByLabel("List name").fill("Week 6");
+	// Touch devices open on the photo tab.
+	await page.getByRole("button", { name: "Paste" }).click();
 	await page.getByPlaceholder("1. believe").fill(WORDS.map((w, i) => `${i + 1}. ${w}`).join("\n"));
 	await page.getByRole("button", { name: "Add these words" }).click();
 	await expect(page.getByText("Added 2 words.")).toBeVisible();
 	await page.screenshot({ path: `test-results/${info.project.name}-list-editor.png`, fullPage: true });
 	await page.getByRole("button", { name: "Save list" }).click();
 	await expect(page.getByRole("link", { name: /Week 6/ })).toBeVisible();
+	await expect(page.getByText("Jade can practice it now", { exact: false })).toBeVisible();
 
 	// Speller picks their tile and starts a Bee round.
 	await page.getByRole("link", { name: "Practice", exact: true }).click();

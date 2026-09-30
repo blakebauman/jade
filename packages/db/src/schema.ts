@@ -106,10 +106,26 @@ export const wordLists = sqliteTable(
 		name: text("name").notNull(),
 		grade: integer("grade"),
 		source: text("source", { enum: ["paste", "csv", "ocr", "pack"] }).notNull(),
+		/** Set when the parent moves the list to past lists: kids stop seeing it; its missed words still come back in Review. */
+		archivedAt: integer("archived_at", { mode: "timestamp_ms" }),
 		createdAt,
 		updatedAt,
 	},
 	(t) => [index("word_lists_owner_idx").on(t.ownerId)],
+);
+
+/** Which kids a list is for. No rows means every kid in the family, including kids added later. */
+export const listChildren = sqliteTable(
+	"list_children",
+	{
+		listId: text("list_id")
+			.notNull()
+			.references(() => wordLists.id, { onDelete: "cascade" }),
+		childId: text("child_id")
+			.notNull()
+			.references(() => children.id, { onDelete: "cascade" }),
+	},
+	(t) => [primaryKey({ columns: [t.listId, t.childId] }), index("list_children_child_idx").on(t.childId)],
 );
 
 export const listWords = sqliteTable(

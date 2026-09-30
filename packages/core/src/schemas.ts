@@ -60,6 +60,15 @@ export const childInputSchema = z.object({
 	settings: childSettingsSchema.partial().optional(),
 });
 export type ChildInput = z.infer<typeof childInputSchema>;
+/** A change to a child: only the fields sent. (`childInputSchema.partial()` would still fill in its defaults.) */
+export const childPatchSchema = z
+	.object({
+		name: z.string().trim().min(1).max(40),
+		avatar: z.enum(AVATARS),
+		grade: z.number().int().min(0).max(8).nullable(),
+		settings: childSettingsSchema.partial(),
+	})
+	.partial();
 
 export const wordSchema = z
 	.string()
@@ -80,8 +89,21 @@ export const listInputSchema = z.object({
 	grade: z.number().int().min(0).max(8).nullable().default(null),
 	source: z.enum(LIST_SOURCES).default("paste"),
 	words: z.array(listWordInputSchema).max(300).default([]),
+	/** The kids it's for; empty or missing means every kid in the family. */
+	childIds: z.array(z.string().max(64)).max(20).optional(),
 });
 export type ListInput = z.infer<typeof listInputSchema>;
+
+/** A change to a list's details (its words are replaced separately). Only the fields sent change. */
+export const listPatchSchema = z
+	.object({
+		name: z.string().trim().min(1).max(80),
+		grade: z.number().int().min(0).max(8).nullable(),
+		/** true moves it to past lists (kids stop seeing it); false brings it back. */
+		archived: z.boolean(),
+		childIds: z.array(z.string().max(64)).max(20),
+	})
+	.partial();
 
 export const replaceWordsSchema = z.object({ words: z.array(listWordInputSchema).max(300) });
 

@@ -1,8 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
-import { listInputSchema, normalizeWord, replaceWordsSchema } from "@jade/core";
+import { listInputSchema, listPatchSchema, normalizeWord, replaceWordsSchema } from "@jade/core";
 import { PACKS } from "@jade/core/packs";
 import { type Db, schema } from "@jade/db";
-import { asc, count, eq } from "drizzle-orm";
+import { and, asc, count, countDistinct, eq, gt, gte, inArray, isNotNull, lt, max } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { z } from "zod";
@@ -33,22 +33,47 @@ function insertWordsStatements(db: Db, rows: (typeof schema.listWords.$inferInse
 }
 
 async function listWithWords(db: Db, listId: string) {
-	const [list, words] = await Promise.all([
+	const [list, words, kids] = await Promise.all([
 		db.query.wordLists.findFirst({ where: eq(schema.wordLists.id, listId) }),
 		db.query.listWords.findMany({ where: eq(schema.listWords.listId, listId), orderBy: asc(schema.listWords.position) }),
+		db.query.listChildren.findMany({ where: eq(schema.listChildren.listId, listId) }),
 	]);
-	return { ...list!, words: words.map((w) => ({ word: w.word, sentence: w.customSentence, definition: w.customDefinition })) };
+	const { archivedAt, ...rest } = list!;
+	return {
+		...rest,
+		archived: archivedAt !== null,
+		childIds: kids.map((k) => k.childId),
+		words: words.map((w) => ({ word: w.word, sentence: w.customSentence, definition: w.customDefinition })),
+	};
+}
+
+/** Statements that set which kids a list is for, keeping only this parent's own kids. */
+async function listChildrenStatements(db: Db, ownerId: string, listId: string, childIds: string[]) {
+	const owned = childIds.length
+		? await db
+				.select({ id: schema.children.id })
+				.from(schema.children)
+				.where(and(eq(schema.children.parentId, ownerId), inArray(schema.children.id, childIds)))
+		: [];
+	return [
+		db.delete(schema.listChildren).where(eq(schema.listChildren.listId, listId)),
+		...(owned.length ? [db.insert(schema.listChildren).values(owned.map((k) => ({ listId, childId: k.id })))] : []),
+	] as const;
 }
 
 async function createList(db: Db, ownerId: string, input: z.infer<typeof listInputSchema>) {
 	const id = newId();
 	const rows = prepareWords(id, input.words);
+	const [, ...assign] = await listChildrenStatements(db, ownerId, id, input.childIds ?? []);
 	await db.batch([
 		db.insert(schema.wordLists).values({ id, ownerId, name: input.name, grade: input.grade, source: input.source }),
 		...insertWordsStatements(db, rows),
+		...assign,
 	]);
 	return listWithWords(db, id);
 }
+
+const PREVIEW_WORDS = 4;
 
 export const listRoutes = new Hono<AppEnv>()
 	.get("/", async (c) => {
@@ -59,6 +84,7 @@ export const listRoutes = new Hono<AppEnv>()
 				grade: schema.wordLists.grade,
 				source: schema.wordLists.source,
 				updatedAt: schema.wordLists.updatedAt,
+				archivedAt: schema.wordLists.archivedAt,
 				wordCount: count(schema.listWords.word),
 			})
 			.from(schema.wordLists)
@@ -66,7 +92,59 @@ export const listRoutes = new Hono<AppEnv>()
 			.where(eq(schema.wordLists.ownerId, c.var.userId))
 			.groupBy(schema.wordLists.id)
 			.orderBy(asc(schema.wordLists.createdAt));
-		return c.json(rows);
+		const family = eq(schema.children.parentId, c.var.userId);
+		const [firsts, played, mastered, assigned] = await Promise.all([
+			// The first few words of each list, so the parent recognises it by its words as well as its name.
+			c.var.db
+				.select({ listId: schema.listWords.listId, word: schema.listWords.word })
+				.from(schema.listWords)
+				.innerJoin(schema.wordLists, eq(schema.wordLists.id, schema.listWords.listId))
+				.where(and(eq(schema.wordLists.ownerId, c.var.userId), lt(schema.listWords.position, PREVIEW_WORDS)))
+				.orderBy(asc(schema.listWords.position)),
+			// When each of the family's kids last played a round of each list.
+			c.var.db
+				.select({
+					listId: schema.practiceSessions.listId,
+					childId: schema.practiceSessions.childId,
+					at: max(schema.practiceSessions.startedAt),
+				})
+				.from(schema.practiceSessions)
+				.innerJoin(schema.children, eq(schema.children.id, schema.practiceSessions.childId))
+				.where(and(family, isNotNull(schema.practiceSessions.listId), gt(schema.practiceSessions.total, 0)))
+				.groupBy(schema.practiceSessions.listId, schema.practiceSessions.childId),
+			// How many of each list's words each kid has mastered (4+ pips).
+			c.var.db
+				.select({ listId: schema.listWords.listId, childId: schema.wordProgress.childId, n: countDistinct(schema.listWords.word) })
+				.from(schema.listWords)
+				.innerJoin(schema.wordLists, eq(schema.wordLists.id, schema.listWords.listId))
+				.innerJoin(schema.wordProgress, eq(schema.wordProgress.word, schema.listWords.word))
+				.innerJoin(schema.children, eq(schema.children.id, schema.wordProgress.childId))
+				.where(and(eq(schema.wordLists.ownerId, c.var.userId), family, gte(schema.wordProgress.box, 4)))
+				.groupBy(schema.listWords.listId, schema.wordProgress.childId),
+			// Which kids each list is for (none: everyone).
+			c.var.db
+				.select({ listId: schema.listChildren.listId, childId: schema.listChildren.childId })
+				.from(schema.listChildren)
+				.innerJoin(schema.children, eq(schema.children.id, schema.listChildren.childId))
+				.where(family),
+		]);
+		return c.json(
+			rows.map(({ archivedAt, ...r }) => {
+				const kidIds = [...new Set([...played, ...mastered].filter((x) => x.listId === r.id).map((x) => x.childId))];
+				return {
+					...r,
+					archived: archivedAt !== null,
+					childIds: assigned.filter((a) => a.listId === r.id).map((a) => a.childId),
+					preview: firsts.filter((w) => w.listId === r.id).map((w) => w.word),
+					// Per kid, so "8 of 12 mastered" is one child's own progress, never a sibling's.
+					perChild: kidIds.map((childId) => ({
+						childId,
+						lastPlayedAt: played.find((p) => p.listId === r.id && p.childId === childId)?.at ?? null,
+						mastered: mastered.find((m) => m.listId === r.id && m.childId === childId)?.n ?? 0,
+					})),
+				};
+			}),
+		);
 	})
 	.get("/packs", (c) =>
 		c.json(PACKS.map((p) => ({ id: p.id, name: p.name, grade: p.grade, wordCount: p.words.length, preview: p.words.slice(0, 8) }))),
@@ -87,12 +165,22 @@ export const listRoutes = new Hono<AppEnv>()
 		const list = await ownedList(c.var.db, c.var.userId, c.req.param("id"));
 		return c.json(await listWithWords(c.var.db, list.id));
 	})
-	.patch("/:id", zValidator("json", listInputSchema.pick({ name: true, grade: true }).partial()), async (c) => {
+	.patch("/:id", zValidator("json", listPatchSchema), async (c) => {
 		const list = await ownedList(c.var.db, c.var.userId, c.req.param("id"));
-		await c.var.db
-			.update(schema.wordLists)
-			.set({ ...c.req.valid("json"), updatedAt: new Date() })
-			.where(eq(schema.wordLists.id, list.id));
+		const { archived, childIds, ...details } = c.req.valid("json");
+		const assign = childIds ? await listChildrenStatements(c.var.db, c.var.userId, list.id, childIds) : [];
+		await c.var.db.batch([
+			c.var.db
+				.update(schema.wordLists)
+				.set({
+					...details,
+					...(archived !== undefined && { archivedAt: archived ? new Date() : null }),
+					// Archiving isn't an edit: past lists keep their place in "newest first".
+					...(archived === undefined && { updatedAt: new Date() }),
+				})
+				.where(eq(schema.wordLists.id, list.id)),
+			...assign,
+		]);
 		return c.json(await listWithWords(c.var.db, list.id));
 	})
 	.put("/:id/words", zValidator("json", replaceWordsSchema), async (c) => {

@@ -5,6 +5,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Blocks, BookOpen, Ear, Flame, Play, RotateCcw, Star } from "lucide-react";
 import { BadgeIcon } from "#/components/BadgeIcon.tsx";
+import { listIsFor } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { listQuery, listsQuery, progressQuery } from "#/lib/queries.ts";
 import { resumableRound } from "#/lib/round.ts";
@@ -33,7 +34,9 @@ const MODES = [
 
 function SpellingHome() {
 	const child = useChild();
-	const { data: lists } = useSuspenseQuery(listsQuery);
+	const { data: allLists } = useSuspenseQuery(listsQuery);
+	// Only this week's lists meant for this speller; past lists' missed words still come back through Review.
+	const lists = allLists.filter((l) => listIsFor(l, child.id));
 	const { data: progress } = useQuery(progressQuery(child.id));
 	const due = progress?.reviewDue.length ?? 0;
 	const earned = progress?.badges.filter((b) => b.earned) ?? [];

@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { DEFAULT_PIN_RELOCK_MINUTES, pinRelockMinutesSchema } from "@jade/core";
 import { schema } from "@jade/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../env.ts";
@@ -52,4 +52,12 @@ export const parentRoutes = new Hono<AppEnv>()
 		const row = await c.var.db.query.parentSettings.findFirst({ where: eq(schema.parentSettings.userId, c.var.userId) });
 		if (!row?.pinHash) return c.json({ ok: true });
 		return c.json({ ok: await verifyPassword({ hash: row.pinHash, password: c.req.valid("json").pin }) });
+	})
+	/** The way back in when the PIN is forgotten: the account password opens the parent area, where a new PIN can be set. */
+	.post("/verify-password", rateLimit("pin"), zValidator("json", z.object({ password: z.string().max(200) })), async (c) => {
+		const account = await c.var.db.query.account.findFirst({
+			where: and(eq(schema.account.userId, c.var.userId), eq(schema.account.providerId, "credential")),
+		});
+		if (!account?.password) return c.json({ ok: false });
+		return c.json({ ok: await verifyPassword({ hash: account.password, password: c.req.valid("json").password }) });
 	});

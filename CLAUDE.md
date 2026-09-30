@@ -112,6 +112,12 @@ Secrets:
 - The unlock lives in sessionStorage (`jade.parent-unlocked`, `lib/parentLock.ts`) with the user id and the time of the last tap or key press.
 - It locks again when the parent area unmounts (going to Practice), on sign-out (`forgetDevice`), in a new tab, and after `pinRelockMinutes` idle. The parent picks 1, 5, 15 or 30 minutes (default 5) in Settings.
 - The gate fails closed: nothing shows until `/api/parent` answers, and if it can't be read the gate asks for the PIN.
+- It can never strand a family: "Forgot the PIN?" takes the account password (`POST /api/parent/verify-password`) and lands on Settings (`?newPin=true`) to choose a new one, and the gate has its own Sign out. Setting a PIN asks for it twice.
+
+**This week (parent lists):**
+- `word_lists.archived_at` marks a past list; `list_children` says which kids a list is for (no rows: everyone, including kids added later). `PATCH /api/lists/:id` takes `archived` and `childIds`; only the parent's own kids are ever attached.
+- `GET /api/lists` returns `archived`, `childIds` and `perChild` (each kid's last play and mastered count). The kids' Spelling screen filters with `listIsFor` (`lib/api.ts`), treating summaries cached before this change as current and for everyone.
+- Archiving never touches Review: review is per child from `word_progress`, not per list.
 
 **SRS and streaks:**
 - SRS is driven by first-try correctness. A new word spelled right starts in box 2, due tomorrow; a miss goes to box 1, due now.

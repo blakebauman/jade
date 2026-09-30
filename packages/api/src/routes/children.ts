@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { BADGES, buildReviewRound, childInputSchema, childSettingsSchema, DEFAULT_SETTINGS } from "@jade/core";
+import { BADGES, buildReviewRound, childInputSchema, childPatchSchema, childSettingsSchema, DEFAULT_SETTINGS } from "@jade/core";
 import { MATH_SKILLS } from "@jade/core/math";
 import { schema } from "@jade/db";
 import { and, desc, eq, gt } from "drizzle-orm";
@@ -40,7 +40,7 @@ export const childrenRoutes = new Hono<AppEnv>()
 		]);
 		return c.json(present((await ownedChild(c.var.db, c.var.userId, id))!), 201);
 	})
-	.patch("/:id", zValidator("json", childInputSchema.partial()), async (c) => {
+	.patch("/:id", zValidator("json", childPatchSchema), async (c) => {
 		const child = await ownedChild(c.var.db, c.var.userId, c.req.param("id"));
 		const input = c.req.valid("json");
 		const settings = input.settings ? childSettingsSchema.parse({ ...present(child).settings, ...input.settings }) : undefined;

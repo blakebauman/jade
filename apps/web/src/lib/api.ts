@@ -23,10 +23,50 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
 	return data as T;
 }
 
+/**
+ * What to tell a parent when a request fails: what didn't happen and what to try, never a status code or a raw server
+ * message. `what` completes "Couldn't …", e.g. "save the list".
+ */
+export function failure(err: unknown, what: string) {
+	if (err instanceof ApiError && err.status === 429) return `Couldn’t ${what}: too many tries in a row. Wait a minute, then try again.`;
+	if (err instanceof ApiError && (err.status === 401 || err.status === 403))
+		return `Couldn’t ${what}: you’ve been signed out. Sign in again.`;
+	if (err instanceof ApiError && err.status === 404) return `Couldn’t ${what}: it isn’t there any more. Go back and try again.`;
+	if (err instanceof ApiError && err.status < 500) return `Couldn’t ${what}: something in it wasn’t accepted. Check it and try again.`;
+	return `Couldn’t ${what}. Check the connection and try again.`;
+}
+
 export type Child = { id: string; name: string; avatar: string; grade: number | null; settings: ChildSettings };
-export type ListSummary = { id: string; name: string; grade: number | null; source: string; wordCount: number; updatedAt: string };
+export type ListSummary = {
+	id: string;
+	name: string;
+	grade: number | null;
+	source: string;
+	wordCount: number;
+	updatedAt: string;
+	preview: string[];
+	/** In past lists: kids no longer see it. */
+	archived: boolean;
+	/** The kids it's for; empty means every kid. */
+	childIds: string[];
+	/** Each kid who has played it: when they last did, and how many of its words they've mastered (4+ pips). */
+	perChild: { childId: string; lastPlayedAt: string | number | null; mastered: number }[];
+};
+
+/** Whether a kid sees a list on their Spelling screen: it's current, and it's for them (or for everyone). */
+export const listIsFor = (l: Partial<Pick<ListSummary, "archived" | "childIds">>, childId: string) =>
+	// A summary cached before lists could be archived or assigned has neither field: it's current and for everyone.
+	!l.archived && (!l.childIds?.length || l.childIds.includes(childId));
 export type ListWord = { word: string; sentence: string | null; definition: string | null };
-export type WordList = { id: string; name: string; grade: number | null; source: string; words: ListWord[] };
+export type WordList = {
+	id: string;
+	name: string;
+	grade: number | null;
+	source: string;
+	archived: boolean;
+	childIds: string[];
+	words: ListWord[];
+};
 export type Pack = { id: string; name: string; grade: number; wordCount: number; preview: string[] };
 export type BadgeView = { id: string; label: string; icon: string; earned?: boolean };
 export type Progress = {

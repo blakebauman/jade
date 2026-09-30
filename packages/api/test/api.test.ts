@@ -32,6 +32,45 @@ describe("children + lists", () => {
 		expect((await call(`/api/children/${child.id}/progress`, { cookie: b })).status).toBe(404);
 	});
 
+	it("changes only what a PATCH sends", async () => {
+		const cookie = await signUp();
+		const { id } = (await (
+			await call("/api/children", { method: "POST", cookie, json: { name: "Jade", avatar: "7", grade: 4 } })
+		).json()) as {
+			id: string;
+		};
+		const patch = async (json: unknown) => (await call(`/api/children/${id}`, { method: "PATCH", cookie, json })).json();
+		// A settings change leaves the tile number and grade alone.
+		expect(await patch({ settings: { rate: 1.1 } })).toMatchObject({ name: "Jade", avatar: "7", grade: 4, settings: { rate: 1.1 } });
+		expect(await patch({ name: "Jadey", grade: null })).toMatchObject({ name: "Jadey", avatar: "7", grade: null, settings: { rate: 1.1 } });
+	});
+
+	it("keeps lists for chosen kids, and moves them to past lists and back", async () => {
+		const cookie = await signUp();
+		const other = await signUp();
+		const kid = async (c: string, name: string) =>
+			((await (await call("/api/children", { method: "POST", cookie: c, json: { name } })).json()) as { id: string }).id;
+		const maya = await kid(cookie, "Maya");
+		await kid(cookie, "Theo");
+		const stranger = await kid(other, "Zed");
+		const created = (await (
+			await call("/api/lists", { method: "POST", cookie, json: { name: "W6", words: [{ word: "cat" }], childIds: [maya, stranger] } })
+		).json()) as { id: string; childIds: string[]; archived: boolean };
+		// Another family's child is never attached.
+		expect(created).toMatchObject({ childIds: [maya], archived: false });
+
+		const patch = async (json: unknown) =>
+			(await (await call(`/api/lists/${created.id}`, { method: "PATCH", cookie, json })).json()) as {
+				childIds: string[];
+				archived: boolean;
+			};
+		expect(await patch({ archived: true })).toMatchObject({ archived: true, childIds: [maya] });
+		const [summary] = (await (await call("/api/lists", { cookie })).json()) as { archived: boolean; childIds: string[] }[];
+		expect(summary).toMatchObject({ archived: true, childIds: [maya] });
+		// Back to "This week", now for everyone.
+		expect(await patch({ archived: false, childIds: [] })).toMatchObject({ archived: false, childIds: [] });
+	});
+
 	it("normalizes and de-duplicates list words, and copies packs", async () => {
 		const cookie = await signUp();
 		const res = await call("/api/lists", {
@@ -56,8 +95,15 @@ describe("children + lists", () => {
 
 		const pack = await call("/api/lists/packs/dolch-third", { method: "POST", cookie });
 		expect(pack.status).toBe(201);
-		const lists = (await (await call("/api/lists", { cookie })).json()) as { wordCount: number; source: string }[];
+		const lists = (await (await call("/api/lists", { cookie })).json()) as {
+			id: string;
+			wordCount: number;
+			source: string;
+			preview: string[];
+		}[];
 		expect(lists.find((l) => l.source === "pack")?.wordCount).toBe(41);
+		// Each list shows its first four words, in order.
+		expect(lists.find((l) => l.id === list.id)?.preview).toEqual(many.slice(0, 4).map((w) => w.word));
 	});
 });
 
@@ -102,6 +148,11 @@ describe("practice rounds", () => {
 		expect(progress.stats).toMatchObject({ totalStars: 3, wordsSpelled: 1, currentStreak: 1 });
 		expect(progress.reviewDue).toEqual(["friend"]);
 		expect(progress.trouble).toEqual([{ word: "friend", misses: 1, box: 1 }]);
+		// The parent's list shows it has been played; nothing is mastered after one round.
+		const [summary2] = (await (await call("/api/lists", { cookie })).json()) as {
+			perChild: { childId: string; lastPlayedAt: unknown; mastered: number }[];
+		}[];
+		expect(summary2?.perChild).toEqual([{ childId: child.id, lastPlayedAt: expect.anything(), mastered: 0 }]);
 	});
 
 	it("saves answers mid-round, ignores replays, and finishing doesn't double-count", async () => {
@@ -300,6 +351,14 @@ describe("parent pin", () => {
 		expect(await (await call("/api/parent", { cookie })).json()).toMatchObject({ hasPin: true });
 		expect(await (await call("/api/parent/verify-pin", { method: "POST", cookie, json: { pin: "1111" } })).json()).toEqual({ ok: false });
 		expect(await (await call("/api/parent/verify-pin", { method: "POST", cookie, json: { pin: "2468" } })).json()).toEqual({ ok: true });
+	});
+
+	it("opens with the account password when the PIN is forgotten", async () => {
+		const cookie = await signUp();
+		await call("/api/parent", { method: "PUT", cookie, json: { pin: "2468" } });
+		const verify = (password: string) => call("/api/parent/verify-password", { method: "POST", cookie, json: { password } });
+		expect(await (await verify("2468")).json()).toEqual({ ok: false });
+		expect(await (await verify("correct-horse-battery")).json()).toEqual({ ok: true });
 	});
 
 	it("keeps how long the parent area may sit idle, and only offered choices", async () => {

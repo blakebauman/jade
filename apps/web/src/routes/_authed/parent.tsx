@@ -1,73 +1,122 @@
 import { DEFAULT_PIN_RELOCK_MINUTES } from "@jade/core";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { LogOut } from "lucide-react";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { Brand } from "#/components/Brand.tsx";
+import { Pending } from "#/components/Pending.tsx";
+import { Problem } from "#/components/Problem.tsx";
+import { SignOut } from "#/components/SignOut.tsx";
 import { ApiError, api } from "#/lib/api.ts";
-import { signOut } from "#/lib/auth.ts";
-import { forgetDevice } from "#/lib/device.ts";
-import { discardPending, flushPending, pendingRounds } from "#/lib/offline.ts";
 import { isParentUnlocked, lockParent, unlockParent } from "#/lib/parentLock.ts";
 import { parentQuery } from "#/lib/queries.ts";
 
 export const Route = createFileRoute("/_authed/parent")({ component: ParentLayout });
 
 const PIN_ERRORS = {
-	wrong: "That PIN didn’t match.",
+	short: "The PIN is 4 digits.",
+	wrong: "That PIN didn’t match. Try again, or use your account password below.",
+	wrongPassword: "That password didn’t match.",
 	busy: "Too many tries. Wait a minute, then try again.",
-	offline: "Couldn’t check the PIN. Check the connection and try again.",
+	offline: "Couldn’t check that. Check the connection and try again.",
 } as const;
 
-function PinGate({ onUnlock }: { onUnlock: () => void }) {
+/**
+ * The PIN gate never strands anyone: a forgotten PIN gives way to the account password (then Settings, to choose a new
+ * PIN), and signing out works from here too.
+ */
+function PinGate({ onUnlock }: { onUnlock: (forgotPin: boolean) => void }) {
 	const [error, setError] = useState<keyof typeof PIN_ERRORS | null>(null);
 	const [checking, setChecking] = useState(false);
+	const [usePassword, setUsePassword] = useState(false);
+	const id = useId();
 	async function submit(e: FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		const form = e.currentTarget;
-		const pin = String(new FormData(form).get("pin"));
+		const value = String(new FormData(form).get("secret"));
+		// Checked here rather than by the browser, whose validation bubble belongs to no part of the board.
+		if (!usePassword && !/^\d{4}$/.test(value)) return setError("short");
+		if (!value) return;
 		setChecking(true);
 		try {
-			const { ok } = await api<{ ok: boolean }>("/api/parent/verify-pin", { method: "POST", json: { pin } });
-			if (ok) return onUnlock();
-			setError("wrong");
+			const { ok } = usePassword
+				? await api<{ ok: boolean }>("/api/parent/verify-password", { method: "POST", json: { password: value } })
+				: await api<{ ok: boolean }>("/api/parent/verify-pin", { method: "POST", json: { pin: value } });
+			if (ok) return onUnlock(usePassword);
+			setError(usePassword ? "wrongPassword" : "wrong");
 			form.reset();
+			form.querySelector("input")?.focus();
 		} catch (err) {
 			setError(err instanceof ApiError && err.status === 429 ? "busy" : "offline");
 		} finally {
 			setChecking(false);
 		}
 	}
+	function switchTo(password: boolean) {
+		setError(null);
+		setUsePassword(password);
+	}
 	return (
 		<main className="grid min-h-dvh place-items-center p-6">
-			<form onSubmit={submit} className="patch w-full max-w-xs space-y-4 p-6 text-center">
-				<h1 className="text-2xl font-semibold">Parents only</h1>
-				<label className="block space-y-2">
-					<span className="text-sm text-felt-muted">Enter the 4-digit PIN</span>
-					<input
-						name="pin"
-						inputMode="numeric"
-						pattern="\d{4}"
-						maxLength={4}
-						autoComplete="off"
-						// biome-ignore lint/a11y/noAutofocus: the PIN field is the only thing on this screen
-						autoFocus
-						className="field text-center text-3xl tracking-[0.5em]"
-						aria-invalid={error === "wrong"}
-					/>
-				</label>
-				{error && (
-					<p role="alert" className="text-sm">
-						{PIN_ERRORS[error]}
-					</p>
-				)}
-				<button type="submit" className="key w-full" data-variant="go" disabled={checking}>
-					Unlock
-				</button>
-				<Link to="/profiles" className="block text-sm text-felt-muted underline underline-offset-4">
-					Back to practice
-				</Link>
-			</form>
+			<div className="w-full max-w-xs space-y-6">
+				<form onSubmit={submit} noValidate className="patch space-y-4 p-6 text-center" key={String(usePassword)}>
+					<h1 className="text-2xl font-semibold">Parents only</h1>
+					<label className="block text-sm text-felt-muted" htmlFor={`${id}-secret`}>
+						{usePassword ? "Your account password" : "Enter the 4-digit PIN"}
+					</label>
+					{usePassword ? (
+						<input
+							id={`${id}-secret`}
+							name="secret"
+							type="password"
+							autoComplete="current-password"
+							required
+							// biome-ignore lint/a11y/noAutofocus: the password field is what this step is for
+							autoFocus
+							className="field"
+							aria-invalid={error === "wrongPassword"}
+							aria-describedby={error ? `${id}-error` : undefined}
+						/>
+					) : (
+						<input
+							id={`${id}-secret`}
+							name="secret"
+							type="password"
+							inputMode="numeric"
+							pattern="\d{4}"
+							maxLength={4}
+							required
+							autoComplete="off"
+							// biome-ignore lint/a11y/noAutofocus: the PIN field is the only thing on this screen
+							autoFocus
+							className="field text-center text-3xl tracking-[0.5em]"
+							aria-invalid={error === "wrong" || error === "short"}
+							aria-describedby={error ? `${id}-error` : undefined}
+						/>
+					)}
+					{error && (
+						<Problem id={`${id}-error`} className="text-left">
+							{PIN_ERRORS[error]}
+						</Problem>
+					)}
+					<button type="submit" className="key w-full" data-variant="go" disabled={checking}>
+						{checking ? "Checking…" : "Unlock"}
+					</button>
+					<button
+						type="button"
+						className="min-h-11 text-sm text-felt-muted underline underline-offset-4 hover:text-felt-ink"
+						onClick={() => switchTo(!usePassword)}
+					>
+						{usePassword ? "Use the PIN instead" : "Forgot the PIN?"}
+					</button>
+				</form>
+				<div className="flex flex-wrap items-start justify-center gap-3">
+					<Link to="/profiles" className="key" data-variant="felt">
+						<ArrowLeft className="size-5" aria-hidden /> Back to practice
+					</Link>
+					<SignOut className="flex flex-col items-center" />
+				</div>
+			</div>
 		</main>
 	);
 }
@@ -111,10 +160,20 @@ function useParentUnlock(user: string, idleMs: number) {
 }
 
 const NAV = [
-	{ to: "/parent", label: "Lists" },
-	{ to: "/parent/kids", label: "Kids" },
-	{ to: "/parent/settings", label: "Settings" },
+	{ to: "/parent", label: "Lists", match: (path: string) => path === "/parent" || path.startsWith("/parent/lists") },
+	{ to: "/parent/kids", label: "Kids", match: (path: string) => path.startsWith("/parent/kids") || path.startsWith("/parent/progress") },
+	{ to: "/parent/settings", label: "Settings", match: (path: string) => path.startsWith("/parent/settings") },
 ] as const;
+
+/** True once `ms` has passed, so a quick load shows nothing rather than a flash of the loading board. */
+function useAfter(ms: number) {
+	const [done, setDone] = useState(false);
+	useEffect(() => {
+		const t = setTimeout(() => setDone(true), ms);
+		return () => clearTimeout(t);
+	}, [ms]);
+	return done;
+}
 
 function ParentLayout() {
 	const { user } = Route.useRouteContext();
@@ -125,82 +184,50 @@ function ParentLayout() {
 		if (parent?.hasPin === false) unlock();
 	}, [parent?.hasPin, unlock]);
 	const navigate = useNavigate();
-	const qc = useQueryClient();
-	const [notice, setNotice] = useState<{ kind: "failed" } | { kind: "unsaved"; rounds: number } | null>(null);
-
-	/** Sign out, but never silently lose practice that hasn't reached the server yet. */
-	async function leave(discard: boolean) {
-		setNotice(null);
-		if (!discard) {
-			await flushPending().catch(() => {});
-			const rounds = await pendingRounds();
-			if (rounds > 0) return setNotice({ kind: "unsaved", rounds });
-		}
-		const res = await signOut().catch(() => null);
-		// Signing out needs the server; if it didn't happen, keep everything as it was and say so.
-		if (!res || res.error) return setNotice({ kind: "failed" });
-		// Nothing about this family stays on a shared device, including writes queued for their account.
-		await discardPending();
-		await forgetDevice();
-		qc.clear();
-		navigate({ to: "/" });
-	}
+	const path = useLocation({ select: (l) => l.pathname.replace(/\/$/, "") });
+	const slow = useAfter(600);
 
 	// Fail closed: nothing shows until we know there's no PIN. If that can't be learned (offline, nothing cached), ask for it.
-	if (isPending) return null;
-	if (parent?.hasPin !== false && !unlocked) return <PinGate onUnlock={unlock} />;
+	if (isPending) return slow ? <Pending /> : null;
+	if (parent?.hasPin !== false && !unlocked)
+		return (
+			<PinGate
+				onUnlock={(forgotPin) => {
+					unlock();
+					if (forgotPin) navigate({ to: "/parent/settings", search: { newPin: true } });
+				}}
+			/>
+		);
 	return (
 		<div className="mx-auto min-h-dvh max-w-6xl px-5 pb-16 md:px-10">
-			<header className="flex flex-wrap items-center justify-between gap-4 py-6">
-				<Link to="/profiles" aria-label="Back to practice">
-					<Brand size={28} />
-				</Link>
-				<nav className="flex flex-wrap items-center gap-2" aria-label="Parent">
-					{NAV.map((n) => (
-						<Link
-							key={n.to}
-							to={n.to}
-							activeOptions={{ exact: true }}
-							className="key"
-							data-variant="felt"
-							activeProps={{ "data-pressed": "true", "aria-current": "page" } as Record<string, string>}
-						>
-							{n.label}
-						</Link>
-					))}
-					<Link to="/profiles" className="key">
-						Practice
-					</Link>
-					<button type="button" className="key" data-variant="felt" aria-label="Sign out" onClick={() => void leave(false)}>
-						<LogOut className="size-5" aria-hidden />
-					</button>
+			<header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 py-5 md:py-6">
+				{/* The brand is a mark, not a second way to Practice: the Practice key is the one exit. */}
+				<Brand size={28} />
+				<nav
+					className="order-last grid w-full grid-cols-3 gap-2 sm:order-none sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center"
+					aria-label="Parent"
+				>
+					{NAV.map((n) => {
+						const current = n.match(path);
+						return (
+							<Link
+								key={n.to}
+								to={n.to}
+								className="key"
+								data-variant="felt"
+								data-pressed={current || undefined}
+								aria-current={current ? "page" : undefined}
+							>
+								{n.label}
+							</Link>
+						);
+					})}
 				</nav>
+				{/* The way out of the parent area, set apart from the section keys it could be mistaken for. */}
+				<Link to="/profiles" className="key sm:ml-3">
+					<ArrowLeft className="size-5" aria-hidden /> Practice
+				</Link>
 			</header>
-			{notice?.kind === "failed" && (
-				<p role="alert" className="-mt-2 mb-6 text-right text-sm">
-					Couldn’t sign out. Check the connection and try again.
-				</p>
-			)}
-			{notice?.kind === "unsaved" && (
-				<section className="patch mb-8 flex flex-wrap items-center justify-between gap-4 p-5" aria-labelledby="unsaved-heading">
-					<div className="max-w-prose space-y-1" role="alert">
-						<h2 id="unsaved-heading" className="text-xl font-semibold">
-							Practice from {notice.rounds} {notice.rounds === 1 ? "round hasn’t" : "rounds haven’t"} been saved yet
-						</h2>
-						<p className="text-sm text-felt-muted">
-							It uploads by itself once this device is online and signed in. Signing out now throws it away.
-						</p>
-					</div>
-					<div className="flex flex-wrap gap-2">
-						<button type="button" className="key" onClick={() => setNotice(null)}>
-							Stay signed in
-						</button>
-						<button type="button" className="key" onClick={() => void leave(true)}>
-							Sign out anyway
-						</button>
-					</div>
-				</section>
-			)}
 			<Outlet />
 		</div>
 	);

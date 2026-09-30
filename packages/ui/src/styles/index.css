@@ -7,6 +7,8 @@
 @import "tw-animate-css";
 
 @theme {
+	/* A surface pressed into the felt: fields, pressed keys, unpractised squares. */
+	--inset-shadow-recess: inset 0 0.15em 0.4em rgb(0 0 0 / 0.4);
 	/* Board */
 	--color-felt: #0e4f43;
 	--color-felt-deep: #093a31;
@@ -291,7 +293,12 @@
 	}
 	.key[data-pressed="true"] {
 		background: var(--color-felt-deep);
-		box-shadow: inset 0 0.15em 0.4em rgb(0 0 0 / 0.4);
+		box-shadow: var(--inset-shadow-recess);
+	}
+	/* A toggle that's on (a topic, a table, a list's kid, an import source) also gets a chalk bar under its label, so a row
+	   of "on" keys never reads as a row of disabled ones. Navigation keys stay plain pressed. */
+	.key[data-toggle][data-pressed="true"] {
+		box-shadow: inset 0 -0.2em 0 color-mix(in oklab, var(--color-felt-ink) 80%, transparent), var(--inset-shadow-recess);
 	}
 
 	/* A calm felt panel for parent screens: a slightly raised patch of board, not a card. */
@@ -308,7 +315,7 @@
 		border-radius: 0.8rem;
 		background: color-mix(in oklab, var(--color-felt-deep) 85%, black);
 		color: var(--color-felt-ink);
-		box-shadow: inset 0 0.15em 0.4em rgb(0 0 0 / 0.4);
+		box-shadow: var(--inset-shadow-recess);
 		border: 1px solid var(--color-felt-line);
 	}
 	.field::placeholder { color: color-mix(in oklab, var(--color-felt-muted) 85%, var(--color-felt-deep)); }

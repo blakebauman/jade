@@ -1,5 +1,8 @@
 import { type ReactNode, useEffect, useId, useRef } from "react";
 
+/** Open Confirms, newest last: Escape backs out of the newest one only. */
+const open: symbol[] = [];
+
 /**
  * An in-place "are you sure?" on the board, replacing the browser's confirm() box. It isn't a modal: it appears where
  * the action was, takes focus on the safe choice, and Escape backs out.
@@ -30,15 +33,20 @@ export function Confirm({
 	const onCancelRef = useRef(onCancel);
 	onCancelRef.current = onCancel;
 	useEffect(() => {
+		const me = Symbol();
+		open.push(me);
 		cancel.current?.focus();
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
+			if (e.key === "Escape" && open.at(-1) === me) {
 				e.preventDefault();
 				onCancelRef.current();
 			}
 		};
 		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
+		return () => {
+			window.removeEventListener("keydown", onKey);
+			open.splice(open.indexOf(me), 1);
+		};
 	}, []);
 	return (
 		<div

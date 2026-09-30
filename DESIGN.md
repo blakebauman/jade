@@ -197,7 +197,7 @@ Two materials and four laws: deep jade felt for the ground, warm maple for handl
 
 ### Hierarchy
 - **Display** (600, 2.25rem to 3rem at md, -0.01em, balanced wrap): page and state headlines such as "Good work. Let's polish a few." and "12 words. Ready?".
-- **Headline** (600, 1.875rem): section heads such as "Pick a list" and "Spellers".
+- **Headline** (600, 1.875rem): section heads such as "Pick a list" and "Kids".
 - **Title** (500 to 600, 1.25rem to 1.5rem): list names, speller names, "Words to practice", and the result line "Spot on!".
 - **Body** (Lexend 400, 1rem, text-lg for feedback lines, max 40 to 60ch): definitions, sentences, helper text. Secondary copy uses Lichen at text-sm.
 - **Label** (Fredoka 600, 1.05rem): all key labels. Counters use tabular numerals.
@@ -290,7 +290,15 @@ The play row. It holds typed tiles, then squares (every remaining square when th
 - **Focus:** the global chalk outline at a 1px offset.
 
 ### Navigation
-The parent header puts the Brand (four tiles "jade" plus "learning" in Lichen) on the left. On the right are felt keys: Lists, Spellers and Settings, with the active item `data-pressed`, then Practice and an icon-only sign-out. It wraps on narrow widths.
+The parent header puts the Brand (four tiles "jade" plus "learning" in Lichen) on the left. On the right are felt keys: Lists, Kids and Settings, with the current section `data-pressed` (list and progress pages count as Lists and Kids), then Practice. On a phone the three section keys drop to their own full-width row. Sign-out lives in Settings → Account and on the PIN gate, never beside Practice. Sub-pages open with a felt back key ("← Lists", "← Kids").
+
+Parent word racks (`WordRack`) fit their row: tiles shrink for a long word in a narrow row (a 14-letter bee word on a phone) down to 14–16px, so a rack never pushes the page sideways or its ✕ off-screen. Words read from a photo wear a dashed Lichen outline and a small "check" until the parent fixes or accepts them; they drop onto the rack one after another as they arrive.
+
+The parent landing page is **This week**: current lists as felt patches (a rack preview, then each kid it's for as a small KidTile with their own "played Tuesday · 8 of 12 mastered"), past lists folded under a key with "Use again", and grade packs folded under "Start from a grade pack". A list can be for everyone or for chosen kids; kids only see current lists meant for them.
+
+A toggle key that's on (`data-toggle` with `data-pressed`) carries a chalk bar under its label on top of the pressed recess, plus a check where the label has room, so a row of "on" keys never reads as disabled. Navigation keys stay plain pressed. The one way out of the parent area is the Practice key with a back arrow, set apart from the section keys.
+
+Errors in parent screens are a `Problem` note: a recessed felt-deep bubble with a lucide alert mark, never coral. Status text ("Saved", "Saving…") stays plain Lichen, so the two never look alike.
 
 ### Keypad
 The only math input: real buttons, never a text field, so the iPad keyboard never opens. A 3-column grid (0.5rem gap, max 24rem) of maple tile keys 7–9 / 4–6 / 1–3, then 0 and a felt delete key. A fraction bar or decimal point key appears beside 0 only when the problem needs it; otherwise 0 spans two columns. Comparison problems swap the digits for a row of `<` `=` `>` maple keys with a felt Clear key. A full-width Check key sits below; it's an empty recess until there's something to check. Keys are 3.5rem tall (3rem in the compact variant) at 1.5rem type. A laptop keyboard types into it too (digits, `/ . < = >`, Backspace, Enter, ↑ to hear it again).
