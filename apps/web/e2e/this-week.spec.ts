@@ -13,7 +13,7 @@ async function family(page: Page) {
 	return { h, maya, theo };
 }
 
-const spellingLists = (page: Page) => page.getByRole("heading", { name: "Spelling: pick a list" });
+const spellingLists = (page: Page) => page.getByRole("heading", { name: /^(Your lists|Spelling lists)$/ });
 
 test("a list can be for one kid, and moving it to past lists takes it off their Spelling screen", async ({ page }) => {
 	const { maya, theo } = await family(page);

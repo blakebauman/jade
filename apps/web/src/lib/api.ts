@@ -53,6 +53,17 @@ export type ListSummary = {
 	perChild: { childId: string; lastPlayedAt: string | number | null; mastered: number }[];
 };
 
+/**
+ * Lists newest first. Timestamps are whole seconds, so lists saved in the same second fall back to the API's own order
+ * (oldest created first): a later position there is newer.
+ */
+export function newestFirst<T extends Pick<ListSummary, "updatedAt">>(lists: T[]): T[] {
+	return lists
+		.map((l, i) => ({ l, i }))
+		.sort((a, b) => new Date(b.l.updatedAt).getTime() - new Date(a.l.updatedAt).getTime() || b.i - a.i)
+		.map((x) => x.l);
+}
+
 /** Whether a kid sees a list on their Spelling screen: it's current, and it's for them (or for everyone). */
 export const listIsFor = (l: Partial<Pick<ListSummary, "archived" | "childIds">>, childId: string) =>
 	// A summary cached before lists could be archived or assigned has neither field: it's current and for everyone.

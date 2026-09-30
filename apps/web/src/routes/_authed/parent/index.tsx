@@ -6,7 +6,7 @@ import { Archive, Check, ChevronDown, ChevronRight, Plus, RotateCcw } from "luci
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { Problem } from "#/components/Problem.tsx";
 import { WordRack } from "#/components/WordRack.tsx";
-import { api, type Child, failure, type ListSummary, type Pack, type WordList } from "#/lib/api.ts";
+import { api, type Child, failure, type ListSummary, newestFirst, type Pack, type WordList } from "#/lib/api.ts";
 import { childrenQuery, listsQuery, packsQuery } from "#/lib/queries.ts";
 import { warmList } from "#/lib/warm.ts";
 
@@ -55,8 +55,6 @@ function byKidGrades(packs: Pack[], grades: number[]) {
 	return [...packs].sort((a, b) => distance(a) - distance(b) || a.grade - b.grade);
 }
 
-const newest = (a: ListSummary, b: ListSummary) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-
 function Lists() {
 	const search = Route.useSearch();
 	const { data: lists } = useSuspenseQuery(listsQuery);
@@ -74,8 +72,8 @@ function Lists() {
 	/** What just happened, for the one status line that's always on the page (so screen readers hear each change). */
 	const [status, setStatus] = useState<ReactNode>(null);
 
-	const current = lists.filter((l) => !l.archived).sort(newest);
-	const past = lists.filter((l) => l.archived).sort(newest);
+	const current = newestFirst(lists.filter((l) => !l.archived));
+	const past = newestFirst(lists.filter((l) => l.archived));
 	const [showPast, setShowPast] = useState(false);
 	const [showPacks, setShowPacks] = useState(lists.length === 0);
 	const justSaved = lists.find((l) => l.id === saved);

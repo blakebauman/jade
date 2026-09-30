@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { listInputSchema, listPatchSchema, normalizeWord, replaceWordsSchema } from "@jade/core";
 import { PACKS } from "@jade/core/packs";
 import { type Db, schema } from "@jade/db";
-import { and, asc, count, countDistinct, eq, gt, gte, inArray, isNotNull, lt, max } from "drizzle-orm";
+import { and, asc, count, countDistinct, eq, gt, gte, inArray, isNotNull, lt, max, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { z } from "zod";
@@ -91,7 +91,8 @@ export const listRoutes = new Hono<AppEnv>()
 			.leftJoin(schema.listWords, eq(schema.listWords.listId, schema.wordLists.id))
 			.where(eq(schema.wordLists.ownerId, c.var.userId))
 			.groupBy(schema.wordLists.id)
-			.orderBy(asc(schema.wordLists.createdAt));
+			// Timestamps are whole seconds; insertion order (rowid) settles lists made in the same second.
+			.orderBy(asc(schema.wordLists.createdAt), asc(sql`${schema.wordLists}.rowid`));
 		const family = eq(schema.children.parentId, c.var.userId);
 		const [firsts, played, mastered, assigned] = await Promise.all([
 			// The first few words of each list, so the parent recognises it by its words as well as its name.

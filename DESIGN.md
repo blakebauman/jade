@@ -298,6 +298,8 @@ The parent landing page is **This week**: current lists as felt patches (a rack 
 
 A toggle key that's on (`data-toggle` with `data-pressed`) carries a chalk bar under its label on top of the pressed recess, plus a check where the label has room, so a row of "on" keys never reads as disabled. Navigation keys stay plain pressed. The one way out of the parent area is the Practice key with a back arrow, set apart from the section keys.
 
+The kids' Spelling home has exactly one chalk `go` key, chosen for the kid: carry on an unfinished round, else review due words, else the newest list's suggested way. Each list is a felt patch with its first words standing on a walnut rack, this kid's mastered count, one suggested way (Learn while the words are new, Tiles while they settle, Bee once a third are sure) and the other two beside "or". The three ways are explained once, in words, above the lists; hints never live only in a tooltip. Starting a new round while one is unfinished asks in place first.
+
 Errors in parent screens are a `Problem` note: a recessed felt-deep bubble with a lucide alert mark, never coral. Status text ("Saved", "Saving…") stays plain Lichen, so the two never look alike.
 
 ### Keypad
