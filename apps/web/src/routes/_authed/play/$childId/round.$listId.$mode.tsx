@@ -66,7 +66,10 @@ function RoundScreen() {
 	const [askStop, setAskStop] = useState(false);
 
 	// Start a fresh round once per mount (or pick up the interrupted one). Words are shuffled so the order can't be memorized.
+	const started = useRef(false);
 	useEffect(() => {
+		if (started.current) return;
+		started.current = true;
 		const r = useRound.getState();
 		const roundListId = listId === "review" ? null : listId;
 		if (resume && !r.finished && r.childId === child.id && r.listId === roundListId && r.mode === mode && r.words.length > 0) {
@@ -74,9 +77,11 @@ function RoundScreen() {
 		} else {
 			const shuffled = [...listWords].sort(() => Math.random() - 0.5);
 			r.start({ childId: child.id, listId: roundListId, mode, name: listName, words: shuffled });
+			// A reload now continues this round instead of starting over.
+			navigate({ to: ".", search: (prev) => ({ ...prev, resume: true }), replace: true });
 		}
-		return () => speaker.stop();
-	}, [child.id, listId, mode, listWords, listName, resume]);
+	}, [child.id, listId, mode, listWords, listName, resume, navigate]);
+	useEffect(() => () => speaker.stop(), []);
 	const name = s.name || listName;
 
 	const current = s.words[s.index];

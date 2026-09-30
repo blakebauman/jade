@@ -62,7 +62,9 @@ function MathRound() {
 			seeded(Date.now() % 2_147_483_647),
 		);
 		r.start({ childId: child.id, mode: topic, problems });
-	}, [child.id, child.settings.math, progress.math.levels, progress.math.factsDue, resume, topic]);
+		// A reload now continues this round instead of starting over.
+		navigate({ to: ".", search: (prev) => ({ ...prev, resume: true }), replace: true });
+	}, [child.id, child.settings.math, progress.math.levels, progress.math.factsDue, resume, topic, navigate]);
 	useEffect(() => () => speaker.stop(), []);
 
 	const problem = s.problems[s.index];

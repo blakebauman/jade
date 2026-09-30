@@ -69,6 +69,21 @@ test("closing the app mid-round: progress is saved and the round can be continue
 	expect(progress.recent[0]).toMatchObject({ correct: 2, total: 2 });
 });
 
+test("refreshing mid-round continues the same round", async ({ page }) => {
+	const spoken = await stubVoice(page);
+	await stubWords(page);
+	const { childId, listId } = await setup(page);
+	await page.goto(`/play/${childId}/round/${listId}/bee`);
+	await page.getByRole("button", { name: "Start" }).click();
+	await spellSpoken(page, spoken);
+	const first = spoken.at(-1)!;
+
+	await page.reload();
+	await page.getByRole("button", { name: "Start" }).click();
+	await expect(page.getByText("2/2")).toBeVisible();
+	await expect.poll(() => spoken.at(-1)).not.toBe(first);
+});
+
 test("answers given offline sync when the connection returns", async ({ page, context }) => {
 	const spoken = await stubVoice(page);
 	await stubWords(page);
