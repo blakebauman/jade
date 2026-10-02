@@ -24,3 +24,6 @@ test-results
 .impeccable/questions/
 apps/web/.impeccable/questions/
 apps/web/.impeccable/review/
+
+# Local game-pipeline notes, generated-model job logs (signed download links) and captures
+artifacts/

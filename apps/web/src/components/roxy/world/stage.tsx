@@ -5,6 +5,7 @@ import { CanvasTexture, type Group, type Mesh, RepeatWrapping, SRGBColorSpace, V
 import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { PetModel, RoxyModel } from "../three/RoxyModel.tsx";
 import { type DriveInput, stepFree, toWorld } from "./drive.ts";
+import { TownLights } from "./light.tsx";
 import { Pace, useContextLoss, useWake } from "./pace.tsx";
 import { type Block, findPath, type Grid, makeGrid, nearestFree } from "./path.ts";
 
@@ -34,7 +35,20 @@ type View = { turn: number; yaw: number; drag: { id: number; x: number; moved: b
  * The canvas for one place: camera, light and whatever the place puts in it. With `orbit`, dragging sideways turns
  * the view up to 30° either way (the home has no front walls, so it stays put); a drag never counts as a tap.
  */
-export function WorldCanvas({ area, label, orbit = false, children }: { area: Area; label: string; orbit?: boolean; children: ReactNode }) {
+export function WorldCanvas({
+	area,
+	label,
+	orbit = false,
+	town = false,
+	children,
+}: {
+	area: Area;
+	label: string;
+	orbit?: boolean;
+	/** A town place: the town's sun and soft shadows (`TownLights`) instead of the home's plain room light. */
+	town?: boolean;
+	children: ReactNode;
+}) {
 	const focus = useRef(centre(area));
 	const view = useRef<View>({ turn: 0, yaw, drag: null, idleAt: 0 });
 	const dragged = useRef(false);
@@ -79,6 +93,7 @@ export function WorldCanvas({ area, label, orbit = false, children }: { area: Ar
 			<Canvas
 				orthographic
 				flat
+				shadows={town ? "percentage" : false}
 				frameloop="demand"
 				onCreated={onCreated}
 				dpr={[1, 2]}
@@ -91,8 +106,15 @@ export function WorldCanvas({ area, label, orbit = false, children }: { area: Ar
 					<Focus.Provider value={focus}>
 						<ViewContext.Provider value={view}>
 							<CameraRig area={area} />
-							<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
-							<directionalLight position={[12, 16, 10]} intensity={1.2} />
+							{import.meta.env.DEV && <Diagnostics />}
+							{town ? (
+								<TownLights area={area} />
+							) : (
+								<>
+									<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
+									<directionalLight position={[12, 16, 10]} intensity={1.2} />
+								</>
+							)}
 							{children}
 						</ViewContext.Provider>
 					</Focus.Provider>
@@ -100,6 +122,40 @@ export function WorldCanvas({ area, label, orbit = false, children }: { area: Ar
 			</Canvas>
 		</div>
 	);
+}
+
+/**
+ * Dev only: what the last frame cost, on `window.__THREE_GAME_DIAGNOSTICS__` for the canvas inspector. Read in the
+ * frame loop, so it holds the frame before (three.js resets its counts at the start of each render).
+ */
+function Diagnostics() {
+	useFrame(({ gl, scene }) => {
+		const { render, memory, programs } = gl.info;
+		// What's drawn: visible meshes, and those that also go into the shadow pass.
+		let meshes = 0;
+		let casters = 0;
+		let instanced = 0;
+		scene.traverseVisible((o) => {
+			const m = o as Mesh;
+			if (!m.isMesh) return;
+			meshes++;
+			if (m.castShadow) casters++;
+			if ((m as { isInstancedMesh?: boolean }).isInstancedMesh) instanced++;
+		});
+		(window as { __THREE_GAME_DIAGNOSTICS__?: unknown }).__THREE_GAME_DIAGNOSTICS__ = {
+			renderer: {
+				calls: render.calls,
+				triangles: render.triangles,
+				geometries: memory.geometries,
+				textures: memory.textures,
+				programs: programs?.length ?? 0,
+			},
+			scene: { meshes, casters, instanced },
+			dpr: gl.getPixelRatio(),
+			shadows: gl.shadowMap.enabled,
+		};
+	});
+	return null;
 }
 
 const ViewContext = createContext<RefObject<View> | null>(null);
@@ -200,7 +256,7 @@ export const RIGHT = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
 /** A soft round shadow on the ground under something, squashed with `s` for long things. */
 export function Shadow({ r, s, ref }: { r: number; s?: [number, number, number]; ref?: Ref<Mesh> }) {
 	return (
-		<mesh ref={ref} position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={s}>
+		<mesh ref={ref} position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={s} userData={{ noShadow: true }}>
 			<circleGeometry args={[r, 24]} />
 			<meshBasicMaterial color="#2b1d14" transparent opacity={0.18} />
 		</mesh>
@@ -376,13 +432,14 @@ export function Walkers({
 
 	return (
 		<>
-			<group ref={roxy} position={first.roxy}>
+			{/* Roxy and the pet are dozens of small parts each: their soft contact shadow grounds them, without drawing them all again for the sun. */}
+			<group ref={roxy} position={first.roxy} userData={{ noCast: true }}>
 				<Shadow r={0.45} ref={shadow} />
 				<group ref={roxyTurn} rotation={[0, yaw, 0]}>
 					<RoxyModel look={look} walking={walking} />
 				</group>
 			</group>
-			<group ref={petRef} position={first.pet}>
+			<group ref={petRef} position={first.pet} userData={{ noCast: true }}>
 				{look.slots.pet && (
 					<>
 						<Shadow r={0.32} />
