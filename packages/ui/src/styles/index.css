@@ -130,6 +130,9 @@
 		radial-gradient(55% 48% at 18% 0%, rgb(255 184 110 / 0.2) 0%, rgb(255 184 110 / 0.07) 45%, transparent 75%),
 		radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-page) 100%, white 4%) 0%, var(--color-page) 45%, var(--color-page-deep) 100%);
 	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23a3d0c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+	/* Behind a game scene: Night is a jade dusk over the town. (Not "sky": sky is a law colour.) */
+	--scene-top: #1b4250;
+	--scene-ground: #2c4a3e;
 }
 :root[data-theme="day"] {
 	color-scheme: light;
@@ -152,6 +155,8 @@
 		linear-gradient(118deg, transparent 28%, rgb(255 255 255 / 0.32) 40%, transparent 56%),
 		radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-page) 100%, white 30%) 0%, var(--color-page) 50%, color-mix(in oklab, var(--color-page) 70%, var(--color-page-deep)) 100%);
 	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23335c4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+	--scene-top: #cfe9f4;
+	--scene-ground: #f4ead8;
 }
 
 @layer base {
@@ -364,6 +369,111 @@
 		box-shadow: inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 1px 0 var(--tone-recess);
 	}
 
+	/*
+	 * Game screens only: the chrome floats over a live 3D scene in the corners, so it's frosted glass of the page
+	 * rather than the page itself. Never on album pages, where nothing floats.
+	 */
+	.scene-backdrop { background: linear-gradient(to bottom, var(--scene-top), var(--scene-ground)); }
+	.glass {
+		background: color-mix(in oklab, var(--color-page-raised) 72%, transparent);
+		-webkit-backdrop-filter: blur(14px);
+		backdrop-filter: blur(14px);
+		box-shadow: inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 0.4em 1.2em -0.4em var(--tone-drop);
+	}
+	/* A round icon key on the glass. 48px: the icon-key target. Its name is its aria-label, shown as a tooltip. */
+	.orb {
+		display: inline-grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		flex: none;
+		border-radius: 999px;
+		color: var(--color-page-ink);
+		transition: transform 160ms var(--ease-out-expo), background-color 160ms;
+	}
+	@media (hover: hover) { .orb:hover:not(:disabled) { transform: translateY(-1px); background-color: color-mix(in oklab, var(--color-page-raised) 92%, transparent); } }
+	.orb:focus-visible { outline: 2px solid var(--color-page-ink); outline-offset: 5px; }
+	.orb[aria-pressed="true"] {
+		background: var(--color-page-deep);
+		box-shadow: var(--inset-shadow-recess);
+	}
+	.orb > svg { width: 1.25rem; height: 1.25rem; }
+	/* A pill of glass: the stars, the status line, the prompt, the action row. */
+	.glass-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-height: 3rem;
+		padding: 0.5rem 1.1rem;
+		border-radius: 999px;
+	}
+	/* The small uppercase line over a game screen's title. */
+	.eyebrow {
+		font-family: var(--font-body);
+		font-size: 0.65rem;
+		font-weight: 550;
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: var(--color-page-muted);
+	}
+	.kbd {
+		display: inline-grid;
+		place-items: center;
+		min-width: 1.35rem;
+		height: 1.35rem;
+		padding-inline: 0.3rem;
+		border-radius: 0.3rem;
+		font: 600 0.65rem/1 var(--font-body);
+		box-shadow: inset 0 0 0 1px var(--tone-key-line), inset 0 -1px 0 var(--tone-recess);
+		background: color-mix(in oklab, var(--color-page-raised) 50%, transparent);
+	}
+	/* Touch: a stick to walk with and a key to hop. */
+	.joystick {
+		--stick-x: 0px;
+		--stick-y: 0px;
+		position: relative;
+		width: 7rem;
+		height: 7rem;
+		border-radius: 999px;
+		touch-action: none;
+		user-select: none;
+		-webkit-user-select: none;
+	}
+	.joystick-knob {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 999px;
+		background: color-mix(in oklab, var(--color-roxy) 70%, var(--color-page-ink));
+		box-shadow: 0 0.2em 0.6em var(--tone-drop);
+		transform: translate(calc(-50% + var(--stick-x)), calc(-50% + var(--stick-y)));
+		transition: transform 140ms ease-out;
+	}
+	.joystick[data-held="true"] .joystick-knob { transition: none; }
+	.hop {
+		display: grid;
+		place-items: center;
+		width: 4.75rem;
+		height: 4.75rem;
+		border-radius: 999px;
+		font: 600 0.7rem var(--font-display);
+		touch-action: none;
+		user-select: none;
+		-webkit-user-select: none;
+	}
+	.hop[data-held="true"] { transform: scale(0.96); }
+	/* Waiting for the 3D: a soft berry Roxy-drop breathing. Reduced motion holds it still (the global rule). */
+	.breathe {
+		width: 2rem;
+		height: 2.4rem;
+		border-radius: 48% 48% 35% 35%;
+		transform-origin: bottom;
+		background: radial-gradient(at 30% 20%, color-mix(in oklab, var(--color-roxy) 35%, white), var(--color-roxy) 55%, color-mix(in oklab, var(--color-roxy) 75%, black));
+		animation: breathe 1.6s ease-in-out infinite;
+	}
+
 	.field {
 		width: 100%;
 		min-height: 3rem;
@@ -489,6 +599,11 @@
 			background: repeating-linear-gradient(90deg, transparent 0 6px, var(--color-vinyl) 6px 16px, transparent 16px 22px);
 		}
 	}
+}
+
+@keyframes breathe {
+	0%, 100% { transform: scale(1.05, 0.93); }
+	50% { transform: scale(0.96, 1.04); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -220,6 +220,26 @@ test("go to town, find something hidden in the park, and it's counted", async ({
 
 	// The pet shop's sign leads to choosing a pet.
 	await page.getByRole("link", { name: /^Pet shop/ }).click();
+	// The scene comes first: the panel opens on request (or when Roxy uses the sign).
+	await page.getByRole("button", { name: "Show what’s here" }).click();
 	await page.getByRole("link", { name: "Choose a pet" }).click();
 	await expect(page.getByRole("tab", { name: "Pets" })).toHaveAttribute("aria-selected", "true");
+});
+
+test("Go to… hops between places without going back through Town", async ({ page }) => {
+	const { ids } = await setup(page);
+	await page.goto(`/play/${ids[0]}/games/roxy/place/park`);
+	await expect(page.getByRole("heading", { name: "The park" })).toBeVisible();
+	await page.getByRole("button", { name: "Go to…" }).click();
+	const menu = page.getByRole("dialog", { name: "Where to?" });
+	await expect(menu.getByRole("link", { name: "The park" })).toHaveAttribute("aria-current", "page");
+	await expect(menu.getByText("· here")).toBeVisible();
+	await menu.getByRole("link", { name: "Pet shop" }).click();
+	await expect(page.getByRole("heading", { name: "Pet shop" })).toBeVisible();
+	await expect(menu).toBeHidden();
+	// Walking keys don't scroll the page or break anything; the place is still there.
+	await page.keyboard.down("ArrowUp");
+	await page.waitForTimeout(300);
+	await page.keyboard.up("ArrowUp");
+	await expect(page.getByText("0 of 5 found")).toBeVisible();
 });

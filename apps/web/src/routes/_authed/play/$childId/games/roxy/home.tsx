@@ -17,7 +17,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Footprints, Lock, Paintbrush, RotateCw, Star, Trash2 } from "lucide-react";
 import { Component, lazy, type ReactNode, Suspense, useId, useState } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
-import { GameScreen } from "#/components/roxy/GameScreen.tsx";
+import { Destinations } from "#/components/roxy/Destinations.tsx";
+import { GameLoading } from "#/components/roxy/GameLoading.tsx";
+import { GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
+import { TouchControls } from "#/components/roxy/TouchControls.tsx";
+import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { ApiError } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { useOnline } from "#/lib/hooks.ts";
@@ -181,17 +185,21 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 
 	const palette = FURNITURE.filter((f) => !(f.holiday && off.has(f.holiday)));
 	const rooms = [...new Set(palette.map((f) => f.room))];
+	// Walking with the keys or the stick is for playing; decorating keeps the keys for the panel.
+	const drive = useDrive(mode === "play");
 
 	return (
 		<GameScreen
 			panelLabel="Decorating panel"
+			panelKey="home"
 			scene={
 				<NoWebGL>
-					<Suspense fallback={<p className="grid size-full place-items-center text-page-muted">Opening the door…</p>}>
+					<Suspense fallback={<GameLoading label="Opening the door…" />}>
 						<HomeScene
 							home={home}
 							look={look}
 							walkTo={walkTo}
+							drive={drive}
 							selected={mode === "decorate" ? selected : null}
 							label={`Roxy’s home: ${home.items.length} things in the room`}
 							onFloor={(spot) => {
@@ -226,46 +234,69 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 					</Suspense>
 				</NoWebGL>
 			}
-			start={
+			back={
+				<Link
+					to="/play/$childId/games/roxy"
+					params={{ childId }}
+					className="orb glass"
+					aria-label="Back to the studio"
+					title="Back to the studio"
+				>
+					<ArrowLeft aria-hidden />
+				</Link>
+			}
+			eyebrow="Roxy’s world"
+			title={
 				<>
-					<Link to="/play/$childId/games/roxy" params={{ childId }} className="key" data-variant="felt">
-						<ArrowLeft className="size-5" aria-hidden /> <span className="max-md:sr-only">Studio</span>
-					</Link>
-					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold max-md:sr-only">Roxy’s home</h1>
+					Roxy’s <span>home</span>
 				</>
 			}
-			end={
+			orbs={
 				<>
-					<p className="foil gap-1.5 px-3.5 py-1.5" title="Stars to spend">
+					<p className="glass glass-pill" title="Stars to spend">
 						<Star className="size-5 fill-current" aria-hidden />
 						<span className="font-display text-xl font-semibold tabular-nums">{data.balance}</span>
 						<span className="sr-only">stars to spend</span>
 					</p>
-					<fieldset aria-label="What to do" className="flex gap-2">
+					<fieldset aria-label="What to do" className="glass flex gap-1 rounded-full p-1">
 						<button
 							type="button"
-							className="key"
+							className="orb !size-11"
 							aria-pressed={mode === "play"}
-							data-pressed={mode === "play"}
+							aria-label="Play"
+							title="Play"
 							onClick={() => setMode("play")}
 						>
-							<Footprints className="size-5" aria-hidden /> Play
+							<Footprints aria-hidden />
 						</button>
 						<button
 							type="button"
-							className="key"
+							className="orb !size-11"
 							aria-pressed={mode === "decorate"}
-							data-pressed={mode === "decorate"}
+							aria-label="Decorate"
+							title="Decorate"
 							onClick={() => setMode("decorate")}
 						>
-							<Paintbrush className="size-5" aria-hidden /> Decorate
+							<Paintbrush aria-hidden />
 						</button>
 					</fieldset>
+					<Destinations childId={childId} here="home" />
 				</>
 			}
-			actions={
-				<div className="patch max-w-md px-4 py-2 text-center">
-					<p role="status" className="mt-3 text-page-muted">
+			status={<GameStatus>{mode === "play" ? `${home.items.length} things in the room` : "Decorating"}</GameStatus>}
+			hints={
+				mode === "play" && (
+					<>
+						<Hint keys={["W", "A", "S", "D"]}>walk</Hint>
+						<Hint keys={["Space"]}>hop</Hint>
+						<Hint keys={["Click"]}>walk there</Hint>
+					</>
+				)
+			}
+			touch={mode === "play" && <TouchControls drive={drive} />}
+			prompt={
+				<div className="glass max-w-md rounded-[1.25rem] px-4 py-2 text-center">
+					<p role="status" className="text-sm">
 						{message ??
 							(mode === "play"
 								? "Tap the floor and Roxy walks there."

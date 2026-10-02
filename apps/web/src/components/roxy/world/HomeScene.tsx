@@ -1,6 +1,7 @@
 import { FURNITURE_BY_ID, footprint, type Home, hex, type Look, type Placed, ROOM } from "@jade/core/roxy";
 import type { ThreeEvent } from "@react-three/fiber";
-import { useEffect, useMemo } from "react";
+import { type RefObject, useEffect, useMemo } from "react";
+import type { DriveInput } from "./drive.ts";
 import { FurnitureMesh, Toon } from "./Furniture.tsx";
 import type { Block } from "./path.ts";
 import { canvasTexture, type Spot, tint, Walkers, WorldCanvas } from "./stage.tsx";
@@ -21,6 +22,8 @@ type Props = {
 	onFurniture: (uid: string) => void;
 	/** Where Roxy should walk to. */
 	walkTo: Spot | null;
+	/** Walks Roxy directly (keys or the touch stick), while playing. */
+	drive?: RefObject<DriveInput>;
 	label: string;
 };
 
@@ -32,7 +35,7 @@ export function HomeScene(props: Props) {
 			{props.home.items.map((p) => (
 				<PlacedThing key={p.uid} placed={p} selected={p.uid === props.selected} onPick={props.onFurniture} />
 			))}
-			<Walkers look={props.look} walkTo={props.walkTo} area={ROOM} blocks={blocks} />
+			<Walkers look={props.look} walkTo={props.walkTo} area={ROOM} blocks={blocks} drive={props.drive} />
 		</WorldCanvas>
 	);
 }
