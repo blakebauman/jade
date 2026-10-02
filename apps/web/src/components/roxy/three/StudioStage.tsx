@@ -66,7 +66,7 @@ function Aim() {
 	useEffect(() => {
 		// Narrow screens (a phone held upright) step back so Roxy and her pet both fit.
 		const aspect = size.width / size.height;
-		camera.position.set(0, 1.75, aspect < 0.8 ? 12 : 9);
+		camera.position.set(0, 1.7, aspect < 0.8 ? 11.5 : 7.8);
 		camera.lookAt(0, 1.4, 0);
 	}, [camera, size]);
 	return null;
@@ -97,7 +97,7 @@ const BACKDROP_Z = -4;
 /** The look's stage art as a painted backdrop, filling the view like a photo (cropped, never stretched). */
 function Backdrop({ look }: { look: Look }) {
 	const key = look.slots.background?.item ?? "none";
-	// biome-ignore lint/correctness/useExhaustiveDependencies: only the backdrop matters here.
+	// Keyed on the backdrop alone: nothing else in the look changes it.
 	const bg = useMemo(() => figureTexture(look, { x: 0, y: 0, w: 400, h: 640 }, { only: ["background"] }), [key]);
 	useEffect(() => () => bg.texture.dispose(), [bg]);
 	const { camera, size } = useThree();

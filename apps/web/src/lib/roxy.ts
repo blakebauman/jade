@@ -153,14 +153,18 @@ export function useRoxyDraft(childId: string, server: Studio) {
 		};
 	}, [flush]);
 
-	const set = useCallback((next: Look, wornLookId: string | null = null) => {
-		setPast([...pastRef.current.slice(-UNDO_LIMIT + 1), latest.current.look]);
+	/** The kind of the last change, so a run of the same small change (typing a name) is one step to undo. */
+	const lastKind = useRef<string | null>(null);
+	const set = useCallback((next: Look, wornLookId: string | null = null, kind?: string) => {
+		if (!kind || kind !== lastKind.current) setPast([...pastRef.current.slice(-UNDO_LIMIT + 1), latest.current.look]);
+		lastKind.current = kind ?? null;
 		setState({ look: next, wornLookId, dirty: true });
 	}, []);
 
 	const undo = useCallback(() => {
 		const prev = pastRef.current.at(-1);
 		if (!prev) return;
+		lastKind.current = null;
 		setPast(pastRef.current.slice(0, -1));
 		setState({ look: prev, wornLookId: null, dirty: true });
 	}, []);

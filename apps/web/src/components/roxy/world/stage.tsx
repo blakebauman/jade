@@ -1,6 +1,6 @@
 import type { Look } from "@jade/core/roxy";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { type ReactNode, useEffect, useMemo, useRef } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef } from "react";
 import { CanvasTexture, type Group, RepeatWrapping, SRGBColorSpace, Vector3 } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { PetModel, RoxyModel } from "../three/RoxyModel.tsx";
@@ -20,6 +20,7 @@ const centre = (area: Area) => new Vector3(area.w / 2, 0.6, area.d / 2);
 
 /** The canvas for one place: camera, light and whatever the place puts in it. */
 export function WorldCanvas({ area, label, children }: { area: Area; label: string; children: ReactNode }) {
+	const focus = useRef(centre(area));
 	return (
 		<Canvas
 			orthographic
@@ -30,26 +31,57 @@ export function WorldCanvas({ area, label, children }: { area: Area; label: stri
 			aria-label={label}
 			role="img"
 		>
-			<CameraRig area={area} />
-			<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
-			<directionalLight position={[12, 16, 10]} intensity={1.2} />
-			{children}
+			<Focus.Provider value={focus}>
+				<CameraRig area={area} />
+				<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
+				<directionalLight position={[12, 16, 10]} intensity={1.2} />
+				{children}
+			</Focus.Provider>
 		</Canvas>
 	);
 }
 
-/** Keeps the camera on the area and zooms so all of it fits whatever the screen shape. */
+/** Where Roxy is, for a camera that follows her round places bigger than the screen. */
+const Focus = createContext<{ current: Vector3 } | null>(null);
+
+/** Places up to the home room's size fit on screen whole; bigger ones are framed at room size and follow Roxy. */
+const ROOM_FRAME = { w: 10, d: 8 };
+const fitsWhole = (area: Area) => area.w <= ROOM_FRAME.w + 0.5 && area.d <= ROOM_FRAME.d + 0.5;
+
+/**
+ * Keeps the camera on the area. A small area is framed whole; a bigger one at room size, gliding after Roxy and
+ * stopping at the edges so the view never runs off the ground.
+ */
 function CameraRig({ area }: { area: Area }) {
 	const { camera, size } = useThree();
+	const focus = useContext(Focus);
+	const whole = fitsWhole(area);
+	const reduced = useMemo(() => prefersReducedMotion(), []);
+	const look = useRef(centre(area));
 	useEffect(() => {
-		const c = centre(area);
-		camera.position.copy(c.clone().add(CAMERA_OFFSET));
-		camera.lookAt(c);
-		// Sized from the 10×8 room; bigger places zoom out to match.
-		const scale = Math.max(area.w / 10, area.d / 8);
+		const scale = whole ? Math.max(area.w / ROOM_FRAME.w, area.d / ROOM_FRAME.d) : 1.1;
 		camera.zoom = Math.min(size.width / (13.6 * scale), size.height / (10.4 * scale));
 		camera.updateProjectionMatrix();
-	}, [camera, size, area]);
+		if (whole) {
+			look.current = centre(area);
+			camera.position.copy(look.current.clone().add(CAMERA_OFFSET));
+			camera.lookAt(look.current);
+		}
+	}, [camera, size, area, whole]);
+	useFrame((_, dt) => {
+		if (whole || !focus) return;
+		// Keep the view's centre far enough in from the edges that the ground fills the screen.
+		const mx = Math.min(area.w / 2, 3.5);
+		const mz = Math.min(area.d / 2, 2.5);
+		const want = new Vector3(
+			Math.min(area.w - mx, Math.max(mx, focus.current.x)),
+			0.6,
+			Math.min(area.d - mz, Math.max(mz, focus.current.z)),
+		);
+		look.current.lerp(want, reduced ? 1 : Math.min(1, dt * 3));
+		camera.position.copy(look.current.clone().add(CAMERA_OFFSET));
+		camera.lookAt(look.current);
+	});
 	return null;
 }
 
@@ -119,6 +151,7 @@ export function Walkers({
 	const arrive = useRef(onArrive);
 	arrive.current = onArrive;
 	const reduced = useMemo(() => prefersReducedMotion(), []);
+	const focus = useContext(Focus);
 
 	useEffect(() => {
 		if (!walkTo) return;
@@ -162,6 +195,7 @@ export function Walkers({
 				arrive.current?.(spot);
 			}
 		}
+		focus?.current.copy(r.position);
 		if (roxyTurn.current) roxyTurn.current.position.y = moving ? Math.abs(Math.sin(t * 9)) * 0.04 : 0;
 		// The pet trots to a spot beside Roxy, a little behind.
 		const spot = r.position

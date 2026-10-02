@@ -179,9 +179,9 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 			start={
 				<>
 					<Link to="/play/$childId/games" params={{ childId }} className="key" data-variant="felt">
-						<ArrowLeft className="size-5" aria-hidden /> Games
+						<ArrowLeft className="size-5" aria-hidden /> <span className="max-md:sr-only">Games</span>
 					</Link>
-					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold">
+					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold max-md:sr-only">
 						Roxy{shown.slots.pet && shown.petName && <span className="font-normal"> and {shown.petName}</span>}
 					</h1>
 				</>
@@ -194,16 +194,31 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 						<span className="sr-only">stars to spend</span>
 					</p>
 					<Link to="/play/$childId/games/roxy/home" params={{ childId }} className="key">
-						<House className="size-5" aria-hidden /> Home
+						<House className="size-5" aria-hidden /> <span className="max-md:sr-only">Home</span>
 					</Link>
 					<Link to="/play/$childId/games/roxy/looks" params={{ childId }} className="key">
-						<Images className="size-5" aria-hidden /> My looks <span className="text-page-muted">({data.looks.length})</span>
+						<Images className="size-5" aria-hidden /> <span className="max-md:sr-only">My looks</span>{" "}
+						<span className="text-page-muted">({data.looks.length})</span>
 					</Link>
 				</>
 			}
 			actions={
 				<>
-					<fieldset aria-label="Pose" className="flex flex-wrap gap-1.5">
+					{/* On a phone, one key steps through the poses; on bigger screens they're all there to pick. */}
+					<button
+						type="button"
+						className="key md:hidden"
+						onClick={() => {
+							const now = POSES.indexOf(draft.look.pose ?? "stand");
+							const next = POSES[(now + 1) % POSES.length]!;
+							const { pose: _, ...rest } = draft.look;
+							draft.set(next === "stand" ? rest : { ...rest, pose: next });
+						}}
+					>
+						<PersonStanding className="size-5" aria-hidden />
+						<span className="sr-only">Pose: {POSE_LABEL[draft.look.pose ?? "stand"]}. Tap for the next one.</span>
+					</button>
+					<fieldset aria-label="Pose" className="hidden flex-wrap gap-1.5 md:flex">
 						{POSES.map((p) => (
 							<button
 								key={p}
@@ -222,10 +237,10 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 						))}
 					</fieldset>
 					<button type="button" className="key" onClick={draft.undo} disabled={!draft.canUndo}>
-						<Undo2 className="size-5" aria-hidden /> Undo
+						<Undo2 className="size-5" aria-hidden /> <span className="max-md:sr-only">Undo</span>
 					</button>
 					<button type="button" className="key" onClick={surprise}>
-						<Dices className="size-5" aria-hidden /> Surprise me
+						<Dices className="size-5" aria-hidden /> <span className="max-md:sr-only">Surprise me</span>
 					</button>
 					{!saving && (
 						<button
@@ -239,7 +254,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 							}}
 							disabled={locked.length > 0}
 						>
-							<Save className="size-5" aria-hidden /> Save look
+							<Save className="size-5" aria-hidden /> Save<span className="max-md:sr-only"> look</span>
 						</button>
 					)}
 				</>
@@ -333,7 +348,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 								name={draft.look.petName}
 								onName={(petName) => {
 									const { petName: _, ...rest } = draft.look;
-									draft.set(petName ? { ...rest, petName } : rest);
+									draft.set(petName ? { ...rest, petName } : rest, null, "petName");
 								}}
 							/>
 						)}

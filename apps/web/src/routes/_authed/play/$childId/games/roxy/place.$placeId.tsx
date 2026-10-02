@@ -117,17 +117,15 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 			start={
 				<>
 					<Link to="/play/$childId/games/roxy/town" params={{ childId }} className="key" data-variant="felt">
-						<ArrowLeft className="size-5" aria-hidden /> Town
+						<ArrowLeft className="size-5" aria-hidden /> <span className="max-md:sr-only">Town</span>
 					</Link>
-					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold">{info.label}</h1>
+					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold max-md:sr-only">{info.label}</h1>
 				</>
 			}
 			end={
-				<>
-					<p className="foil px-3.5 py-1.5 text-sm">
-						{finds.length - hidden.length} of {finds.length} found
-					</p>
-				</>
+				<p className="foil px-3.5 py-1.5 text-sm">
+					{finds.length - hidden.length} of {finds.length} found
+				</p>
 			}
 			actions={
 				<div className="patch max-w-md px-4 py-2 text-center">
