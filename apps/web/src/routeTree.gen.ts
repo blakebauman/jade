@@ -14,6 +14,7 @@ import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedParentRouteImport } from './routes/_authed/parent'
 import { Route as AuthedProfilesRouteImport } from './routes/_authed/profiles'
 import { Route as AuthedParentIndexRouteImport } from './routes/_authed/parent/index'
+import { Route as AuthedParentAdminRouteImport } from './routes/_authed/parent/admin'
 import { Route as AuthedParentKidsRouteImport } from './routes/_authed/parent/kids'
 import { Route as AuthedParentSettingsRouteImport } from './routes/_authed/parent/settings'
 import { Route as AuthedPlayChildIdRouteImport } from './routes/_authed/play/$childId'
@@ -52,6 +53,11 @@ const AuthedProfilesRoute = AuthedProfilesRouteImport.update({
 const AuthedParentIndexRoute = AuthedParentIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthedParentRoute,
+} as any)
+const AuthedParentAdminRoute = AuthedParentAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthedParentRoute,
 } as any)
 const AuthedParentKidsRoute = AuthedParentKidsRouteImport.update({
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/parent': typeof AuthedParentRouteWithChildren
   '/profiles': typeof AuthedProfilesRoute
+  '/parent/admin': typeof AuthedParentAdminRoute
   '/parent/kids': typeof AuthedParentKidsRoute
   '/parent/settings': typeof AuthedParentSettingsRoute
   '/play/$childId': typeof AuthedPlayChildIdRouteWithChildren
@@ -164,6 +171,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profiles': typeof AuthedProfilesRoute
+  '/parent/admin': typeof AuthedParentAdminRoute
   '/parent/kids': typeof AuthedParentKidsRoute
   '/parent/settings': typeof AuthedParentSettingsRoute
   '/parent': typeof AuthedParentIndexRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/_authed/parent': typeof AuthedParentRouteWithChildren
   '/_authed/profiles': typeof AuthedProfilesRoute
+  '/_authed/parent/admin': typeof AuthedParentAdminRoute
   '/_authed/parent/kids': typeof AuthedParentKidsRoute
   '/_authed/parent/settings': typeof AuthedParentSettingsRoute
   '/_authed/play/$childId': typeof AuthedPlayChildIdRouteWithChildren
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/'
     | '/parent'
     | '/profiles'
+    | '/parent/admin'
     | '/parent/kids'
     | '/parent/settings'
     | '/play/$childId'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/profiles'
+    | '/parent/admin'
     | '/parent/kids'
     | '/parent/settings'
     | '/parent'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/_authed'
     | '/_authed/parent'
     | '/_authed/profiles'
+    | '/_authed/parent/admin'
     | '/_authed/parent/kids'
     | '/_authed/parent/settings'
     | '/_authed/play/$childId'
@@ -308,6 +320,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/parent/'
       preLoaderRoute: typeof AuthedParentIndexRouteImport
+      parentRoute: typeof AuthedParentRoute
+    }
+    '/_authed/parent/admin': {
+      id: '/_authed/parent/admin'
+      path: '/admin'
+      fullPath: '/parent/admin'
+      preLoaderRoute: typeof AuthedParentAdminRouteImport
       parentRoute: typeof AuthedParentRoute
     }
     '/_authed/parent/kids': {
@@ -419,6 +438,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthedParentRouteChildren {
+  AuthedParentAdminRoute: typeof AuthedParentAdminRoute
   AuthedParentKidsRoute: typeof AuthedParentKidsRoute
   AuthedParentSettingsRoute: typeof AuthedParentSettingsRoute
   AuthedParentIndexRoute: typeof AuthedParentIndexRoute
@@ -427,6 +447,7 @@ interface AuthedParentRouteChildren {
 }
 
 const AuthedParentRouteChildren: AuthedParentRouteChildren = {
+  AuthedParentAdminRoute: AuthedParentAdminRoute,
   AuthedParentKidsRoute: AuthedParentKidsRoute,
   AuthedParentSettingsRoute: AuthedParentSettingsRoute,
   AuthedParentIndexRoute: AuthedParentIndexRoute,
