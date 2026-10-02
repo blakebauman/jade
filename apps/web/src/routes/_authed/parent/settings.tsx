@@ -1,4 +1,5 @@
 import { DEFAULT_PIN_RELOCK_MINUTES, PIN_RELOCK_MINUTES } from "@jade/core";
+import { HOLIDAY_LABEL, HOLIDAYS } from "@jade/core/roxy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { type FormEvent, useId, useState } from "react";
@@ -177,6 +178,54 @@ function Settings() {
 					<SignOut />
 				</section>
 			</div>
+			<RoxyHolidays />
 		</div>
+	);
+}
+
+/** Which holidays Roxy celebrates for this family's kids. All are on until a parent turns one off. */
+function RoxyHolidays() {
+	const { data: parent } = useQuery(parentQuery);
+	const qc = useQueryClient();
+	const id = useId();
+	const off = new Set(parent?.roxyHolidaysOff ?? []);
+	const save = useMutation({
+		mutationFn: (next: string[]) => api("/api/parent", { method: "PUT", json: { roxyHolidaysOff: next } }),
+		onMutate: (next) => qc.setQueryData(parentQuery.queryKey, (old) => old && { ...old, roxyHolidaysOff: next }),
+		onSettled: () => {
+			qc.invalidateQueries({ queryKey: ["parent"] });
+			qc.invalidateQueries({ queryKey: ["roxy"] });
+		},
+	});
+	return (
+		<section className="max-w-3xl space-y-4" aria-labelledby={`${id}-holidays`}>
+			<h2 id={`${id}-holidays`} className="text-2xl font-semibold">
+				Holidays in Roxy
+			</h2>
+			<p className="text-felt-muted">
+				In the week before each holiday, Roxy shows its collection and a free gift. Turn off any your family would rather skip; its items
+				are hidden too.
+			</p>
+			<div className="flex flex-wrap gap-2">
+				{HOLIDAYS.map((h) => {
+					const on = !off.has(h);
+					return (
+						<button
+							key={h}
+							type="button"
+							className="key"
+							data-toggle
+							data-pressed={on}
+							aria-pressed={on}
+							disabled={!parent}
+							onClick={() => save.mutate(on ? [...off, h] : [...off].filter((x) => x !== h))}
+						>
+							{HOLIDAY_LABEL[h]}
+						</button>
+					);
+				})}
+			</div>
+			{save.isError && <Problem>{SAVE_FAILED}</Problem>}
+		</section>
 	);
 }

@@ -7,6 +7,7 @@ import { childrenRoutes } from "./routes/children.ts";
 import { importRoutes } from "./routes/import.ts";
 import { listRoutes } from "./routes/lists.ts";
 import { parentRoutes } from "./routes/parent.ts";
+import { roxyRoutes } from "./routes/roxy.ts";
 import { sessionRoutes } from "./routes/sessions.ts";
 import { ttsRoutes } from "./routes/tts.ts";
 import { wordRoutes } from "./routes/words.ts";
@@ -15,6 +16,7 @@ export type { ApiBindings, AppEnv } from "./env.ts";
 
 const authed = new Hono<AppEnv>()
 	.use(requireParent)
+	.route("/children/:id/roxy", roxyRoutes)
 	.route("/children", childrenRoutes)
 	.route("/lists", listRoutes)
 	.route("/words", wordRoutes)

@@ -22,8 +22,12 @@ import { Route as AuthedParentProgressChildIdRouteImport } from './routes/_authe
 import { Route as AuthedPlayChildIdIndexRouteImport } from './routes/_authed/play/$childId/index'
 import { Route as AuthedPlayChildIdResultsRouteImport } from './routes/_authed/play/$childId/results'
 import { Route as AuthedPlayChildIdSpellingRouteImport } from './routes/_authed/play/$childId/spelling'
+import { Route as AuthedPlayChildIdGamesIndexRouteImport } from './routes/_authed/play/$childId/games/index'
 import { Route as AuthedPlayChildIdMathIndexRouteImport } from './routes/_authed/play/$childId/math/index'
 import { Route as AuthedPlayChildIdMathTopicRouteImport } from './routes/_authed/play/$childId/math/$topic'
+import { Route as AuthedPlayChildIdGamesRoxyIndexRouteImport } from './routes/_authed/play/$childId/games/roxy/index'
+import { Route as AuthedPlayChildIdGamesRoxyHomeRouteImport } from './routes/_authed/play/$childId/games/roxy/home'
+import { Route as AuthedPlayChildIdGamesRoxyLooksRouteImport } from './routes/_authed/play/$childId/games/roxy/looks'
 import { Route as AuthedPlayChildIdRoundListIdModeRouteImport } from './routes/_authed/play/$childId/round.$listId.$mode'
 
 const IndexRoute = IndexRouteImport.update({
@@ -93,6 +97,12 @@ const AuthedPlayChildIdSpellingRoute =
     path: '/spelling',
     getParentRoute: () => AuthedPlayChildIdRoute,
   } as any)
+const AuthedPlayChildIdGamesIndexRoute =
+  AuthedPlayChildIdGamesIndexRouteImport.update({
+    id: '/games/',
+    path: '/games/',
+    getParentRoute: () => AuthedPlayChildIdRoute,
+  } as any)
 const AuthedPlayChildIdMathIndexRoute =
   AuthedPlayChildIdMathIndexRouteImport.update({
     id: '/math/',
@@ -103,6 +113,24 @@ const AuthedPlayChildIdMathTopicRoute =
   AuthedPlayChildIdMathTopicRouteImport.update({
     id: '/math/$topic',
     path: '/math/$topic',
+    getParentRoute: () => AuthedPlayChildIdRoute,
+  } as any)
+const AuthedPlayChildIdGamesRoxyIndexRoute =
+  AuthedPlayChildIdGamesRoxyIndexRouteImport.update({
+    id: '/games/roxy/',
+    path: '/games/roxy/',
+    getParentRoute: () => AuthedPlayChildIdRoute,
+  } as any)
+const AuthedPlayChildIdGamesRoxyHomeRoute =
+  AuthedPlayChildIdGamesRoxyHomeRouteImport.update({
+    id: '/games/roxy/home',
+    path: '/games/roxy/home',
+    getParentRoute: () => AuthedPlayChildIdRoute,
+  } as any)
+const AuthedPlayChildIdGamesRoxyLooksRoute =
+  AuthedPlayChildIdGamesRoxyLooksRouteImport.update({
+    id: '/games/roxy/looks',
+    path: '/games/roxy/looks',
     getParentRoute: () => AuthedPlayChildIdRoute,
   } as any)
 const AuthedPlayChildIdRoundListIdModeRoute =
@@ -126,8 +154,12 @@ export interface FileRoutesByFullPath {
   '/play/$childId/spelling': typeof AuthedPlayChildIdSpellingRoute
   '/play/$childId/': typeof AuthedPlayChildIdIndexRoute
   '/play/$childId/math/$topic': typeof AuthedPlayChildIdMathTopicRoute
+  '/play/$childId/games/': typeof AuthedPlayChildIdGamesIndexRoute
   '/play/$childId/math/': typeof AuthedPlayChildIdMathIndexRoute
+  '/play/$childId/games/roxy/home': typeof AuthedPlayChildIdGamesRoxyHomeRoute
+  '/play/$childId/games/roxy/looks': typeof AuthedPlayChildIdGamesRoxyLooksRoute
   '/play/$childId/round/$listId/$mode': typeof AuthedPlayChildIdRoundListIdModeRoute
+  '/play/$childId/games/roxy/': typeof AuthedPlayChildIdGamesRoxyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,8 +173,12 @@ export interface FileRoutesByTo {
   '/play/$childId/spelling': typeof AuthedPlayChildIdSpellingRoute
   '/play/$childId': typeof AuthedPlayChildIdIndexRoute
   '/play/$childId/math/$topic': typeof AuthedPlayChildIdMathTopicRoute
+  '/play/$childId/games': typeof AuthedPlayChildIdGamesIndexRoute
   '/play/$childId/math': typeof AuthedPlayChildIdMathIndexRoute
+  '/play/$childId/games/roxy/home': typeof AuthedPlayChildIdGamesRoxyHomeRoute
+  '/play/$childId/games/roxy/looks': typeof AuthedPlayChildIdGamesRoxyLooksRoute
   '/play/$childId/round/$listId/$mode': typeof AuthedPlayChildIdRoundListIdModeRoute
+  '/play/$childId/games/roxy': typeof AuthedPlayChildIdGamesRoxyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -160,8 +196,12 @@ export interface FileRoutesById {
   '/_authed/play/$childId/spelling': typeof AuthedPlayChildIdSpellingRoute
   '/_authed/play/$childId/': typeof AuthedPlayChildIdIndexRoute
   '/_authed/play/$childId/math/$topic': typeof AuthedPlayChildIdMathTopicRoute
+  '/_authed/play/$childId/games/': typeof AuthedPlayChildIdGamesIndexRoute
   '/_authed/play/$childId/math/': typeof AuthedPlayChildIdMathIndexRoute
+  '/_authed/play/$childId/games/roxy/home': typeof AuthedPlayChildIdGamesRoxyHomeRoute
+  '/_authed/play/$childId/games/roxy/looks': typeof AuthedPlayChildIdGamesRoxyLooksRoute
   '/_authed/play/$childId/round/$listId/$mode': typeof AuthedPlayChildIdRoundListIdModeRoute
+  '/_authed/play/$childId/games/roxy/': typeof AuthedPlayChildIdGamesRoxyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -179,8 +219,12 @@ export interface FileRouteTypes {
     | '/play/$childId/spelling'
     | '/play/$childId/'
     | '/play/$childId/math/$topic'
+    | '/play/$childId/games/'
     | '/play/$childId/math/'
+    | '/play/$childId/games/roxy/home'
+    | '/play/$childId/games/roxy/looks'
     | '/play/$childId/round/$listId/$mode'
+    | '/play/$childId/games/roxy/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,8 +238,12 @@ export interface FileRouteTypes {
     | '/play/$childId/spelling'
     | '/play/$childId'
     | '/play/$childId/math/$topic'
+    | '/play/$childId/games'
     | '/play/$childId/math'
+    | '/play/$childId/games/roxy/home'
+    | '/play/$childId/games/roxy/looks'
     | '/play/$childId/round/$listId/$mode'
+    | '/play/$childId/games/roxy'
   id:
     | '__root__'
     | '/'
@@ -212,8 +260,12 @@ export interface FileRouteTypes {
     | '/_authed/play/$childId/spelling'
     | '/_authed/play/$childId/'
     | '/_authed/play/$childId/math/$topic'
+    | '/_authed/play/$childId/games/'
     | '/_authed/play/$childId/math/'
+    | '/_authed/play/$childId/games/roxy/home'
+    | '/_authed/play/$childId/games/roxy/looks'
     | '/_authed/play/$childId/round/$listId/$mode'
+    | '/_authed/play/$childId/games/roxy/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -314,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedPlayChildIdSpellingRouteImport
       parentRoute: typeof AuthedPlayChildIdRoute
     }
+    '/_authed/play/$childId/games/': {
+      id: '/_authed/play/$childId/games/'
+      path: '/games'
+      fullPath: '/play/$childId/games/'
+      preLoaderRoute: typeof AuthedPlayChildIdGamesIndexRouteImport
+      parentRoute: typeof AuthedPlayChildIdRoute
+    }
     '/_authed/play/$childId/math/': {
       id: '/_authed/play/$childId/math/'
       path: '/math'
@@ -326,6 +385,27 @@ declare module '@tanstack/react-router' {
       path: '/math/$topic'
       fullPath: '/play/$childId/math/$topic'
       preLoaderRoute: typeof AuthedPlayChildIdMathTopicRouteImport
+      parentRoute: typeof AuthedPlayChildIdRoute
+    }
+    '/_authed/play/$childId/games/roxy/': {
+      id: '/_authed/play/$childId/games/roxy/'
+      path: '/games/roxy'
+      fullPath: '/play/$childId/games/roxy/'
+      preLoaderRoute: typeof AuthedPlayChildIdGamesRoxyIndexRouteImport
+      parentRoute: typeof AuthedPlayChildIdRoute
+    }
+    '/_authed/play/$childId/games/roxy/home': {
+      id: '/_authed/play/$childId/games/roxy/home'
+      path: '/games/roxy/home'
+      fullPath: '/play/$childId/games/roxy/home'
+      preLoaderRoute: typeof AuthedPlayChildIdGamesRoxyHomeRouteImport
+      parentRoute: typeof AuthedPlayChildIdRoute
+    }
+    '/_authed/play/$childId/games/roxy/looks': {
+      id: '/_authed/play/$childId/games/roxy/looks'
+      path: '/games/roxy/looks'
+      fullPath: '/play/$childId/games/roxy/looks'
+      preLoaderRoute: typeof AuthedPlayChildIdGamesRoxyLooksRouteImport
       parentRoute: typeof AuthedPlayChildIdRoute
     }
     '/_authed/play/$childId/round/$listId/$mode': {
@@ -363,8 +443,12 @@ interface AuthedPlayChildIdRouteChildren {
   AuthedPlayChildIdSpellingRoute: typeof AuthedPlayChildIdSpellingRoute
   AuthedPlayChildIdIndexRoute: typeof AuthedPlayChildIdIndexRoute
   AuthedPlayChildIdMathTopicRoute: typeof AuthedPlayChildIdMathTopicRoute
+  AuthedPlayChildIdGamesIndexRoute: typeof AuthedPlayChildIdGamesIndexRoute
   AuthedPlayChildIdMathIndexRoute: typeof AuthedPlayChildIdMathIndexRoute
+  AuthedPlayChildIdGamesRoxyHomeRoute: typeof AuthedPlayChildIdGamesRoxyHomeRoute
+  AuthedPlayChildIdGamesRoxyLooksRoute: typeof AuthedPlayChildIdGamesRoxyLooksRoute
   AuthedPlayChildIdRoundListIdModeRoute: typeof AuthedPlayChildIdRoundListIdModeRoute
+  AuthedPlayChildIdGamesRoxyIndexRoute: typeof AuthedPlayChildIdGamesRoxyIndexRoute
 }
 
 const AuthedPlayChildIdRouteChildren: AuthedPlayChildIdRouteChildren = {
@@ -372,8 +456,12 @@ const AuthedPlayChildIdRouteChildren: AuthedPlayChildIdRouteChildren = {
   AuthedPlayChildIdSpellingRoute: AuthedPlayChildIdSpellingRoute,
   AuthedPlayChildIdIndexRoute: AuthedPlayChildIdIndexRoute,
   AuthedPlayChildIdMathTopicRoute: AuthedPlayChildIdMathTopicRoute,
+  AuthedPlayChildIdGamesIndexRoute: AuthedPlayChildIdGamesIndexRoute,
   AuthedPlayChildIdMathIndexRoute: AuthedPlayChildIdMathIndexRoute,
+  AuthedPlayChildIdGamesRoxyHomeRoute: AuthedPlayChildIdGamesRoxyHomeRoute,
+  AuthedPlayChildIdGamesRoxyLooksRoute: AuthedPlayChildIdGamesRoxyLooksRoute,
   AuthedPlayChildIdRoundListIdModeRoute: AuthedPlayChildIdRoundListIdModeRoute,
+  AuthedPlayChildIdGamesRoxyIndexRoute: AuthedPlayChildIdGamesRoxyIndexRoute,
 }
 
 const AuthedPlayChildIdRouteWithChildren =

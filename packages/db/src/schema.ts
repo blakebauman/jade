@@ -12,6 +12,11 @@ export const user = sqliteTable("user", {
 	email: text("email").notNull().unique(),
 	emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
 	image: text("image"),
+	// Better Auth admin plugin. `role` is "user" or "admin"; a banned parent can't sign in.
+	role: text("role").default("user"),
+	banned: integer("banned", { mode: "boolean" }).default(false),
+	banReason: text("ban_reason"),
+	banExpires: integer("ban_expires", { mode: "timestamp_ms" }),
 	createdAt,
 	updatedAt,
 });
@@ -24,6 +29,8 @@ export const session = sqliteTable(
 		token: text("token").notNull().unique(),
 		ipAddress: text("ip_address"),
 		userAgent: text("user_agent"),
+		/** Set when an admin is signed in as this parent (admin plugin impersonation). */
+		impersonatedBy: text("impersonated_by"),
 		userId: text("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
@@ -77,6 +84,8 @@ export const parentSettings = sqliteTable("parent_settings", {
 	pinHash: text("pin_hash"),
 	pinRelockMinutes: integer("pin_relock_minutes"),
 	timeZone: text("time_zone"),
+	/** Holidays this family has turned off in Roxy (JSON array of holiday ids). */
+	roxyHolidaysOff: text("roxy_holidays_off").notNull().default("[]"),
 });
 
 export const children = sqliteTable(
@@ -236,8 +245,62 @@ export const childStats = sqliteTable("child_stats", {
 	currentStreak: integer("current_streak").notNull().default(0),
 	bestStreak: integer("best_streak").notNull().default(0),
 	lastDay: text("last_day"),
+	/** Lifetime stars earned; it never goes down, so star badges stay put. Spendable = totalStars − starsSpent. */
 	totalStars: integer("total_stars").notNull().default(0),
+	/** Stars spent unlocking Roxy items. */
+	starsSpent: integer("stars_spent").notNull().default(0),
 	perfectRounds: integer("perfect_rounds").notNull().default(0),
 	wordsSpelled: integer("words_spelled").notNull().default(0),
 	badgesJson: text("badges_json").notNull().default("[]"),
+});
+
+// ── Roxy (games) ──
+
+/** Roxy items a child has unlocked with stars, or claimed free as a holiday gift (cost 0). */
+export const roxyUnlocks = sqliteTable(
+	"roxy_unlocks",
+	{
+		childId: text("child_id")
+			.notNull()
+			.references(() => children.id, { onDelete: "cascade" }),
+		itemId: text("item_id").notNull(),
+		cost: integer("cost").notNull(),
+		createdAt,
+	},
+	(t) => [primaryKey({ columns: [t.childId, t.itemId] })],
+);
+
+/** Saved looks: a child's gallery. `fingerprint` is unique across everyone, so no two saved Roxys are the same. */
+export const roxyLooks = sqliteTable(
+	"roxy_looks",
+	{
+		id: text("id").primaryKey(),
+		childId: text("child_id")
+			.notNull()
+			.references(() => children.id, { onDelete: "cascade" }),
+		name: text("name").notNull(),
+		lookJson: text("look_json").notNull(),
+		fingerprint: text("fingerprint").notNull().unique(),
+		createdAt,
+	},
+	(t) => [index("roxy_looks_child_idx").on(t.childId, t.createdAt)],
+);
+
+/** The look on the stage right now (autosaved), and which saved look it came from, if any. */
+export const roxyCurrent = sqliteTable("roxy_current", {
+	childId: text("child_id")
+		.primaryKey()
+		.references(() => children.id, { onDelete: "cascade" }),
+	lookJson: text("look_json").notNull(),
+	wornLookId: text("worn_look_id").references(() => roxyLooks.id, { onDelete: "set null" }),
+	updatedAt,
+});
+
+/** Roxy's home: the room's wallpaper, floor and furniture as JSON (see `HomeSchema` in @jade/core/roxy). */
+export const roxyHomes = sqliteTable("roxy_homes", {
+	childId: text("child_id")
+		.primaryKey()
+		.references(() => children.id, { onDelete: "cascade" }),
+	homeJson: text("home_json").notNull(),
+	updatedAt,
 });

@@ -82,7 +82,15 @@ export type Pack = { id: string; name: string; grade: number; wordCount: number;
 export type BadgeView = { id: string; label: string; icon: string; earned?: boolean };
 export type Progress = {
 	child: Child;
-	stats: { currentStreak: number; bestStreak: number; lastDay: string | null; totalStars: number; wordsSpelled: number };
+	stats: {
+		currentStreak: number;
+		bestStreak: number;
+		lastDay: string | null;
+		totalStars: number;
+		/** Spent in Roxy; the spendable balance is totalStars − starsSpent. Missing in progress cached before Roxy. */
+		starsSpent?: number;
+		wordsSpelled: number;
+	};
 	badges: BadgeView[];
 	reviewDue: string[];
 	mastered: number;

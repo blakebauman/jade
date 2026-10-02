@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice.
+Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. **Games** sits beside them; its first game is **Roxy**, a dress-up studio where stars earned in practice unlock items.
 
 Jade's World is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
@@ -118,6 +118,21 @@ Secrets:
 - `word_lists.archived_at` marks a past list; `list_children` says which kids a list is for (no rows: everyone, including kids added later). `PATCH /api/lists/:id` takes `archived` and `childIds`; only the parent's own kids are ever attached.
 - `GET /api/lists` returns `archived`, `childIds` and `perChild` (each kid's last play and mastered count). The kids' Spelling screen filters with `listIsFor` (`lib/api.ts`), treating summaries cached before this change as current and for everyone.
 - Archiving never touches Review: review is per child from `word_progress`, not per list.
+
+**Roxy (Games, `/play/$childId/games/roxy`):**
+- Pure logic lives in `packages/core/src/roxy/` (`@jade/core/roxy`): `catalog.ts` (items by slot, costs, holiday collections), `look.ts` (`LookSchema`, `normalizeLook`, `wear`, `fingerprint`, `starterLook`), `holidays.ts`, `palettes.ts`. Art lives in `apps/web/src/components/roxy/art/`, one map per slot keyed by item id; `art.test.ts` checks the catalog and art match and that every item renders on every body.
+- In code a character is a **look**, never an "avatar": `avatar` already means the number on a kid's tile.
+- A look stores palette keys, not hex. `normalizeLook` drops wrong colours, fills defaults, and rejects a dress worn with a top or bottom.
+- Each child starts from `starterLook(childId)`, which is seeded, uses only free items, and differs per child.
+- `roxy_looks.fingerprint` is unique across everyone, so no two saved looks in Jade's World are the same. A duplicate returns 409 `taken` (`mine` says whose it was). The gallery holds 12 looks per child.
+- **Stars:** `child_stats.total_stars` is lifetime (badges read it) and never goes down; `stars_spent` holds what Roxy has spent, and the balance is the difference. `POST …/roxy/unlock` inserts the unlock first, then charges only if the balance covers it, else removes the row (409 `stars`). It's idempotent.
+- **Holidays:** a collection opens 7 days before the first day, by the family's `day`. Lunar and lunisolar dates come from the `HOLIDAY_DATES` table, which runs to 2030; a test fails when it runs out. `POST …/roxy/claim` gives the gift free only inside the window and within a day of the server's date. Parents turn holidays off in Settings (`parent_settings.roxy_holidays_off`), which hides their items too.
+- The studio keeps the look on the device (`jade.roxy.{childId}`) and autosaves it with `PUT …/roxy/current` after 1.2s, or when back online. Unlocking, claiming and saving need a connection. `GET …/roxy?day=` is in the `jade-data` cache with `ignoreSearch`.
+
+**Admin (Better Auth admin plugin):**
+- Endpoints live under `/api/auth/admin/*` (list, ban, set role, impersonate); the client has `adminClient()` on `authClient.admin`.
+- Promote a parent in D1: `update user set role = 'admin' where email = '…'`. The session cookie cache holds the old role for up to 5 minutes, so sign in again.
+- A banned parent can't sign in and their sessions are revoked. Impersonation sessions last 1 hour (`session.impersonated_by`).
 
 **SRS and streaks:**
 - SRS is driven by first-try correctness. A new word spelled right starts in box 2, due tomorrow; a miss goes to box 1, due now.

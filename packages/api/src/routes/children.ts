@@ -104,6 +104,7 @@ export const childrenRoutes = new Hono<AppEnv>()
 				bestStreak: stats?.bestStreak ?? 0,
 				lastDay: stats?.lastDay ?? null,
 				totalStars: stats?.totalStars ?? 0,
+				starsSpent: stats?.starsSpent ?? 0,
 				wordsSpelled: stats?.wordsSpelled ?? 0,
 			},
 			badges: BADGES.map(({ id, label, icon }) => ({ id, label, icon, earned: earned.has(id) })),

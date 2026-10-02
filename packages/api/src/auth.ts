@@ -1,6 +1,7 @@
 import { type Db, schema } from "@jade/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin } from "better-auth/plugins";
 import type { ApiBindings } from "./env.ts";
 import { hashPassword, verifyPassword } from "./lib/password.ts";
 
@@ -26,6 +27,8 @@ export function createAuth(env: ApiBindings, db: Db) {
 			cookieCache: { enabled: true, maxAge: 5 * 60 },
 		},
 		trustedOrigins: [env.BETTER_AUTH_URL],
+		// Admin endpoints under /api/auth/admin/*. Promote a parent with `update user set role = 'admin'` in D1.
+		plugins: [admin({ impersonationSessionDuration: 60 * 60 })],
 	});
 }
 export type Auth = ReturnType<typeof createAuth>;

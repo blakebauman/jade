@@ -25,6 +25,7 @@
 		"@jade/api": "workspace:*",
 		"@jade/core": "workspace:*",
 		"@jade/ui": "workspace:*",
+		"@react-three/fiber": "catalog:",
 		"@tanstack/react-query": "catalog:",
 		"@tanstack/react-router": "catalog:",
 		"better-auth": "catalog:",
@@ -34,6 +35,7 @@
 		"motion": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
+		"three": "catalog:",
 		"zod": "catalog:",
 		"zustand": "catalog:"
 	},
@@ -49,6 +51,7 @@
 		"@types/node": "catalog:",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
+		"@types/three": "catalog:",
 		"@vitejs/plugin-react": "catalog:",
 		"jsdom": "catalog:",
 		"tailwindcss": "catalog:",

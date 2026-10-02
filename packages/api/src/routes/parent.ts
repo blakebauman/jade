@@ -1,5 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { DEFAULT_PIN_RELOCK_MINUTES, pinRelockMinutesSchema } from "@jade/core";
+import { HOLIDAYS } from "@jade/core/roxy";
 import { schema } from "@jade/db";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -19,6 +20,7 @@ export const parentRoutes = new Hono<AppEnv>()
 			hasPin: !!row?.pinHash,
 			pinRelockMinutes: row?.pinRelockMinutes ?? DEFAULT_PIN_RELOCK_MINUTES,
 			timeZone: row?.timeZone ?? null,
+			roxyHolidaysOff: JSON.parse(row?.roxyHolidaysOff ?? "[]") as string[],
 		});
 	})
 	.put(
@@ -33,17 +35,31 @@ export const parentRoutes = new Hono<AppEnv>()
 					.optional(),
 				pinRelockMinutes: pinRelockMinutesSchema.optional(),
 				timeZone: z.string().max(64).optional(),
+				/** Holidays this family would rather Roxy didn’t celebrate. */
+				roxyHolidaysOff: z.array(z.enum(HOLIDAYS)).max(HOLIDAYS.length).optional(),
 			}),
 		),
 		async (c) => {
-			const { pin, pinRelockMinutes, timeZone } = c.req.valid("json");
+			const { pin, pinRelockMinutes, timeZone, roxyHolidaysOff } = c.req.valid("json");
+			const holidaysOff = roxyHolidaysOff && JSON.stringify([...new Set(roxyHolidaysOff)]);
 			const pinHash = pin === undefined ? undefined : pin === null ? null : await hashPassword(pin);
 			await c.var.db
 				.insert(schema.parentSettings)
-				.values({ userId: c.var.userId, pinHash: pinHash ?? null, pinRelockMinutes: pinRelockMinutes ?? null, timeZone: timeZone ?? null })
+				.values({
+					userId: c.var.userId,
+					pinHash: pinHash ?? null,
+					pinRelockMinutes: pinRelockMinutes ?? null,
+					timeZone: timeZone ?? null,
+					roxyHolidaysOff: holidaysOff ?? "[]",
+				})
 				.onConflictDoUpdate({
 					target: schema.parentSettings.userId,
-					set: { ...(pinHash !== undefined && { pinHash }), ...(pinRelockMinutes && { pinRelockMinutes }), ...(timeZone && { timeZone }) },
+					set: {
+						...(pinHash !== undefined && { pinHash }),
+						...(pinRelockMinutes && { pinRelockMinutes }),
+						...(timeZone && { timeZone }),
+						...(holidaysOff && { roxyHolidaysOff: holidaysOff }),
+					},
 				});
 			return c.json({ ok: true });
 		},

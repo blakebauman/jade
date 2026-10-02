@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 export type ViewportState = { height: number; top: number; keyboard: boolean };
 
@@ -63,4 +63,22 @@ export const prefersReducedMotion = () => typeof window !== "undefined" && windo
 
 export function dayKey(date = new Date()) {
 	return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+
+const subscribeOnline = (cb: () => void) => {
+	window.addEventListener("online", cb);
+	window.addEventListener("offline", cb);
+	return () => {
+		window.removeEventListener("online", cb);
+		window.removeEventListener("offline", cb);
+	};
+};
+
+/** Whether the device thinks it's online, kept up to date. */
+export function useOnline() {
+	return useSyncExternalStore(
+		subscribeOnline,
+		() => navigator.onLine,
+		() => true,
+	);
 }

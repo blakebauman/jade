@@ -6,7 +6,8 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./packs": "./src/packs.ts",
-		"./math": "./src/math/index.ts"
+		"./math": "./src/math/index.ts",
+		"./roxy": "./src/roxy/index.ts"
 	},
 	"scripts": {
 		"lint": "biome check .",

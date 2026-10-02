@@ -466,3 +466,35 @@ describe("math", () => {
 		expect(await res.json()).toEqual({ fractions: 3 });
 	});
 });
+
+describe("admin", () => {
+	const signIn = async (email: string) => {
+		const res = await call("/api/auth/sign-in/email", { method: "POST", json: { email, password: "correct-horse-battery" } });
+		return res.headers
+			.getSetCookie()
+			.map((c) => c.split(";")[0])
+			.join("; ");
+	};
+
+	it("lets only admins list and ban parents, and a banned parent can't sign in", async () => {
+		const email = `admin-${crypto.randomUUID().slice(0, 6)}@example.com`;
+		await call("/api/auth/sign-up/email", { method: "POST", json: { email, password: "correct-horse-battery", name: "Admin" } });
+		const parent = await signUp();
+		const me = (await (await call("/api/auth/get-session", { cookie: parent })).json()) as { user: { id: string; email: string } };
+
+		expect((await call("/api/auth/admin/list-users", { cookie: parent })).status).toBe(403);
+
+		await env.DB.prepare("update user set role = 'admin' where email = ?").bind(email).run();
+		const admin = await signIn(email);
+		const list = (await (await call("/api/auth/admin/list-users", { cookie: admin })).json()) as { users: { id: string }[] };
+		expect(list.users.some((u) => u.id === me.user.id)).toBe(true);
+
+		const ban = await call("/api/auth/admin/ban-user", { method: "POST", cookie: admin, json: { userId: me.user.id, banReason: "test" } });
+		expect(ban.status).toBe(200);
+		const again = await call("/api/auth/sign-in/email", {
+			method: "POST",
+			json: { email: me.user.email, password: "correct-horse-battery" },
+		});
+		expect(again.status).toBe(403);
+	});
+});

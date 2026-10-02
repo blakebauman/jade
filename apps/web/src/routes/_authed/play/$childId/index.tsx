@@ -20,7 +20,17 @@ export const Route = createFileRoute("/_authed/play/$childId/")({
 type SpellingMode = (typeof SPELLING_MODES)[number];
 
 /** A subject as a big maple plaque: a word built from tiles, and what's waiting in it. */
-function SubjectTile({ to, word, note }: { to: "/play/$childId/spelling" | "/play/$childId/math"; word: string; note: string }) {
+function SubjectTile({
+	to,
+	word,
+	label,
+	note,
+}: {
+	to: "/play/$childId/spelling" | "/play/$childId/math" | "/play/$childId/games";
+	word: string;
+	label: string;
+	note: string;
+}) {
 	const child = useChild();
 	return (
 		<Link
@@ -31,11 +41,11 @@ function SubjectTile({ to, word, note }: { to: "/play/$childId/spelling" | "/pla
 		>
 			<span className="flex flex-wrap gap-1.5" aria-hidden>
 				{[...word].map((c, i) => (
-					<Tile key={`${c}-${i}`} letter={c} size={48} grain={i % 4} />
+					<Tile key={`${c}-${i}`} letter={c} size={40} grain={i % 4} />
 				))}
 			</span>
 			<span className="flex items-end justify-between gap-4">
-				<span className="font-display text-3xl font-semibold text-ink">{word === "spell" ? "Spelling" : "Math"}</span>
+				<span className="font-display text-3xl font-semibold text-ink">{label}</span>
 				<span className="text-right text-sm font-medium text-ink">{note}</span>
 			</span>
 		</Link>
@@ -74,7 +84,9 @@ function SubjectHub() {
 								<Star className="size-5 fill-ink-soft text-ink-soft" aria-hidden />
 								<span className="sr-only">Stars</span>
 							</dt>
-							<dd className="font-display text-xl font-semibold tabular-nums">{progress.stats.totalStars}</dd>
+							<dd className="font-display text-xl font-semibold tabular-nums">
+								{progress.stats.totalStars - (progress.stats.starsSpent ?? 0)}
+							</dd>
 						</div>
 					</dl>
 				)}
@@ -132,17 +144,20 @@ function SubjectHub() {
 
 			<section className="mt-12 space-y-5">
 				<h2 className="text-3xl font-semibold">What shall we practice?</h2>
-				<div className="grid gap-6 md:grid-cols-2">
+				<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 					<SubjectTile
 						to="/play/$childId/spelling"
 						word="spell"
+						label="Spelling"
 						note={spellingDue > 0 ? `${spellingDue} ${spellingDue === 1 ? "word" : "words"} to review` : "Hear it, spell it"}
 					/>
 					<SubjectTile
 						to="/play/$childId/math"
 						word="math"
+						label="Math"
 						note={factsDue > 0 ? `${factsDue} ${factsDue === 1 ? "fact" : "facts"} to review` : "Facts, fractions, puzzles"}
 					/>
+					<SubjectTile to="/play/$childId/games" word="play" label="Games" note="Style your Roxy" />
 				</div>
 			</section>
 
