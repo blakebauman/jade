@@ -8,12 +8,18 @@ const colorKey = z.string().max(4).optional();
 export const WornSchema = z.object({ item: z.string().max(40), c1: colorKey, c2: colorKey });
 export type Worn = z.infer<typeof WornSchema>;
 
+/** How Roxy stands in 3D. Saved with the look but not part of its fingerprint, like the pet's name. */
+export const POSES = ["stand", "wave", "hips", "cheer", "twirl"] as const;
+export type Pose = (typeof POSES)[number];
+export const POSE_LABEL: Record<Pose, string> = { stand: "Stand", wave: "Wave", hips: "Hands on hips", cheer: "Cheer", twirl: "Twirl" };
+
 export const LookSchema = z.object({
 	v: z.literal(1),
 	skin: z.enum(Object.keys(SKIN) as [SkinId, ...SkinId[]]),
 	slots: z.partialRecord(z.enum(SLOTS), WornSchema),
 	/** The pet's name. It isn't part of the fingerprint: renaming a pet doesn't make a new look. */
 	petName: z.string().trim().max(PET_NAME_MAX_).optional(),
+	pose: z.enum(POSES).optional(),
 });
 export type Look = z.infer<typeof LookSchema>;
 
@@ -51,7 +57,8 @@ export function normalizeLook(input: unknown): Look | null {
 	for (const slot of REQUIRED_SLOTS) if (!slots[slot]) return null;
 	for (const [slot, needs] of Object.entries(NEEDS) as [Slot, Slot][]) if (!slots[needs]) delete slots[slot];
 	const petName = slots.pet ? parsed.data.petName?.trim() : undefined;
-	return { v: 1, skin: parsed.data.skin, slots, ...(petName && { petName }) };
+	const pose = parsed.data.pose && parsed.data.pose !== "stand" ? parsed.data.pose : undefined;
+	return { v: 1, skin: parsed.data.skin, slots, ...(petName && { petName }), ...(pose && { pose }) };
 }
 
 /** Every item in the look that the child doesn't own yet. */

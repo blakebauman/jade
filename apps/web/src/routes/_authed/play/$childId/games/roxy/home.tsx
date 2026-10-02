@@ -16,6 +16,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Footprints, Lock, Paintbrush, RotateCw, Star, Trash2 } from "lucide-react";
 import { Component, lazy, type ReactNode, Suspense, useId, useState } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
+import { GameScreen } from "#/components/roxy/GameScreen.tsx";
 import { ApiError } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { useOnline } from "#/lib/hooks.ts";
@@ -172,15 +173,48 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 	const rooms = [...new Set(palette.map((f) => f.room))];
 
 	return (
-		<main className="mx-auto min-h-dvh max-w-6xl px-5 py-6 md:px-10">
-			<header className="flex flex-wrap items-center justify-between gap-4">
-				<div className="flex items-center gap-3">
+		<GameScreen
+			panelLabel="Decorating panel"
+			scene={
+				<NoWebGL>
+					<Suspense fallback={<p className="grid size-full place-items-center text-page-muted">Opening the door…</p>}>
+						<HomeScene
+							home={home}
+							look={look}
+							walkTo={walkTo}
+							selected={mode === "decorate" ? selected : null}
+							label={`Roxy’s home: ${home.items.length} things in the room`}
+							onFloor={(spot) => {
+								if (mode === "decorate" && picked && pickedItem && pickedItem.kind !== "wall") {
+									const turned = picked.rot % 2 === 1;
+									const w = turned ? pickedItem.d : pickedItem.w;
+									const d = turned ? pickedItem.w : pickedItem.d;
+									shift({ x: Math.round(spot.x - w / 2), z: Math.round(spot.z - d / 2) });
+								} else setWalkTo(spot);
+							}}
+							onWall={(wall, at) => {
+								if (mode === "decorate" && picked && pickedItem?.kind === "wall") {
+									const start = Math.round(at - pickedItem.w / 2);
+									shift(wall === "left" ? { wall, x: 0, z: start } : { wall, x: start, z: 0 });
+								}
+							}}
+							onFurniture={(uid) => {
+								if (mode === "decorate") setSelected(uid);
+							}}
+						/>
+					</Suspense>
+				</NoWebGL>
+			}
+			start={
+				<>
 					<Link to="/play/$childId/games/roxy" params={{ childId }} className="key" data-variant="felt">
 						<ArrowLeft className="size-5" aria-hidden /> Studio
 					</Link>
-					<h1 className="font-display text-3xl font-semibold">Roxy’s home</h1>
-				</div>
-				<div className="flex items-center gap-3">
+					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold">Roxy’s home</h1>
+				</>
+			}
+			end={
+				<>
 					<p className="foil gap-1.5 px-3.5 py-1.5" title="Stars to spend">
 						<Star className="size-5 fill-current" aria-hidden />
 						<span className="font-display text-xl font-semibold tabular-nums">{data.balance}</span>
@@ -206,43 +240,10 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 							<Paintbrush className="size-5" aria-hidden /> Decorate
 						</button>
 					</fieldset>
-				</div>
-			</header>
-
-			<div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-				<section aria-label="The room" className="lg:sticky lg:top-6 lg:self-start">
-					<div className="rack !p-2">
-						<div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-gradient-to-b from-[#cfe9f4] to-[#f4ead8]">
-							<NoWebGL>
-								<Suspense fallback={<p className="grid size-full place-items-center text-page-muted">Opening the door…</p>}>
-									<HomeScene
-										home={home}
-										look={look}
-										walkTo={walkTo}
-										selected={mode === "decorate" ? selected : null}
-										label={`Roxy’s home: ${home.items.length} things in the room`}
-										onFloor={(spot) => {
-											if (mode === "decorate" && picked && pickedItem && pickedItem.kind !== "wall") {
-												const turned = picked.rot % 2 === 1;
-												const w = turned ? pickedItem.d : pickedItem.w;
-												const d = turned ? pickedItem.w : pickedItem.d;
-												shift({ x: Math.round(spot.x - w / 2), z: Math.round(spot.z - d / 2) });
-											} else setWalkTo(spot);
-										}}
-										onWall={(wall, at) => {
-											if (mode === "decorate" && picked && pickedItem?.kind === "wall") {
-												const start = Math.round(at - pickedItem.w / 2);
-												shift(wall === "left" ? { wall, x: 0, z: start } : { wall, x: start, z: 0 });
-											}
-										}}
-										onFurniture={(uid) => {
-											if (mode === "decorate") setSelected(uid);
-										}}
-									/>
-								</Suspense>
-							</NoWebGL>
-						</div>
-					</div>
+				</>
+			}
+			actions={
+				<div className="patch max-w-md px-4 py-2 text-center">
 					<p role="status" className="mt-3 text-page-muted">
 						{message ??
 							(mode === "play"
@@ -252,10 +253,11 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 									: "Pick something to add, or tap a piece in the room to move it.")}
 					</p>
 					{draft.saving && !online && <p className="text-sm text-page-muted">Saved on this device. It’ll sync when you’re back online.</p>}
-				</section>
-
-				{mode === "decorate" && (
-					<section aria-label="Decorate" className="space-y-8">
+				</div>
+			}
+			{...(mode === "decorate" && {
+				panel: (
+					<div className="space-y-8">
 						{unlocking && (
 							<UnlockFurniture
 								item={unlocking}
@@ -397,10 +399,10 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 								</ul>
 							</section>
 						)}
-					</section>
-				)}
-			</div>
-		</main>
+					</div>
+				),
+			})}
+		/>
 	);
 }
 
