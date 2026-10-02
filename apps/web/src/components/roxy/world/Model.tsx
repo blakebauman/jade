@@ -6,10 +6,10 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { toonGradient } from "./Furniture.tsx";
 
 /**
- * Generated models (Tripo text-to-3D, in public/models): town scenery only, never anything that's recoloured from
- * the palette. Each file has been cut down to one 512px colour map and meshopt geometry; here its material becomes
- * the same three-step toon as the shapes built in code, so the two sit together. Until a file has loaded, or if it
- * can't, the scene shows the code-built version instead.
+ * Generated models (Tripo text-to-3D, in public/models): town scenery that's never recoloured, and the cat, whose
+ * white-and-grey coat is tinted from the palette (three/GeneratedPet.tsx). Each file has been cut down to one 512px
+ * colour map and meshopt geometry; here its material becomes the same three-step toon as the shapes built in code,
+ * so the two sit together. Until a file has loaded, or if it can't, the code-built version shows instead.
  */
 
 export const MODELS = {
@@ -20,12 +20,13 @@ export const MODELS = {
 	"school-desk": "/models/town/school-desk.glb",
 	"school-teacher-desk": "/models/town/school-teacher-desk.glb",
 	"school-bookshelf": "/models/town/school-bookshelf.glb",
+	"pet-cat": "/models/pets/pet-cat.glb",
 } as const;
 export type ModelId = keyof typeof MODELS;
 
 type V3 = [number, number, number];
 
-const withMeshopt = (loader: GLTFLoader) => {
+export const withMeshopt = (loader: GLTFLoader) => {
 	loader.setMeshoptDecoder(MeshoptDecoder);
 };
 
@@ -60,7 +61,7 @@ function Loaded({ id, height, at, rot }: { id: ModelId; height: number; at: V3; 
 	);
 }
 
-class Fallback extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+export class Fallback extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
 	override state = { failed: false };
 	static getDerivedStateFromError() {
 		return { failed: true };
