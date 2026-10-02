@@ -130,13 +130,16 @@ test("decorate Roxy's home, and it's still there after a reload", async ({ page 
 	await page.getByRole("button", { name: "Turn" }).click();
 	await inRoom.getByRole("button", { name: "Bed", exact: true }).click();
 	await page.getByRole("button", { name: "Put away" }).click();
+	// Saved shortly after each change. Listen before the last change: the save can land while the next steps run.
+	const saved = page.waitForResponse(
+		(r) => r.url().endsWith("/roxy/home") && r.request().method() === "PUT" && r.ok() && (r.request().postData() ?? "").includes('"dots"'),
+	);
 	await page.getByRole("button", { name: "Dots", exact: true }).click();
 	// Locked furniture asks for stars it doesn't have yet.
 	await page.getByRole("button", { name: "Add Piano, 30 stars" }).click();
 	await expect(page.getByText("Earn 30 more in Spelling or Math!")).toBeVisible();
 
-	// Saved shortly after each change.
-	await page.waitForResponse((r) => r.url().endsWith("/roxy/home") && r.request().method() === "PUT" && r.ok());
+	await saved;
 	await page.evaluate((id) => localStorage.removeItem(`jade.roxyhome.${id}`), ids[0]!);
 	await page.reload();
 	await page.getByRole("button", { name: "Decorate" }).click();
