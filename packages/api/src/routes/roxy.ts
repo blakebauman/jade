@@ -10,6 +10,7 @@ import {
 	HOLIDAYS,
 	type HolidayId,
 	type Home,
+	homeWithoutHolidays,
 	ITEM,
 	ITEMS,
 	LOOK_NAME_MAX,
@@ -21,6 +22,7 @@ import {
 	normalizeLook,
 	starterHome,
 	starterLook,
+	withoutHolidays,
 } from "@jade/core/roxy";
 import { type Db, schema } from "@jade/db";
 import { and, asc, count, eq, sql } from "drizzle-orm";
@@ -52,15 +54,15 @@ async function balance(db: Db, childId: string): Promise<number> {
 	return Math.max(0, (stats?.totalStars ?? 0) - (stats?.starsSpent ?? 0));
 }
 
-/** A look the child may wear: valid, and nothing in it still locked or from a holiday the family turned off. */
+/**
+ * A look the child may wear: valid, with nothing still locked. Anything from a holiday the family turned off is taken
+ * off rather than refused: the studio hides those items, so a look already wearing one could never be saved again.
+ */
 function wearable(input: unknown, unlocked: Set<string>, off: Set<HolidayId>): Look {
-	const look = normalizeLook(input);
-	if (!look) throw new HTTPException(400, { message: "That look doesn’t fit together" });
-	const hidden = Object.values(look.slots).some((w) => {
-		const h = ITEM.get(w.item)?.holiday;
-		return h && off.has(h);
-	});
-	if (hidden || lockedItemsIn(look, unlocked).length > 0) throw new HTTPException(403, { message: "Some of those are still locked" });
+	const parsed = normalizeLook(input);
+	if (!parsed) throw new HTTPException(400, { message: "That look doesn’t fit together" });
+	const look = withoutHolidays(parsed, off);
+	if (lockedItemsIn(look, unlocked).length > 0) throw new HTTPException(403, { message: "Some of those are still locked" });
 	return look;
 }
 
@@ -76,9 +78,10 @@ async function studio(db: Db, parentId: string, childId: string, day: string) {
 		db.select({ findId: schema.roxyFinds.findId }).from(schema.roxyFinds).where(eq(schema.roxyFinds.childId, childId)),
 	]);
 	return {
-		home: home ? (JSON.parse(home.homeJson) as Home) : starterHome(),
+		// What was saved before a parent turned a holiday off comes back without it.
+		home: home ? homeWithoutHolidays(JSON.parse(home.homeJson) as Home, off) : starterHome(),
 		finds: finds.map((f) => f.findId),
-		current: current ? (JSON.parse(current.lookJson) as Look) : starterLook(childId),
+		current: current ? withoutHolidays(JSON.parse(current.lookJson) as Look, off) : starterLook(childId),
 		wornLookId: current?.wornLookId ?? null,
 		looks: looks.map((l) => ({ id: l.id, name: l.name, look: JSON.parse(l.lookJson) as Look, createdAt: l.createdAt.getTime() })),
 		unlocked: [...unlocked],
@@ -99,7 +102,7 @@ export const roxyRoutes = new Hono<AppEnv>()
 		const child = await ownedChild(c.var.db, c.var.userId, c.req.param("id")!);
 		return c.json(await studio(c.var.db, c.var.userId, child.id, c.req.valid("query").day ?? today()));
 	})
-	/** Autosave of what's on the stage. */
+	/** Autosave of what's on the stage. Replies with the look as saved, which the device adopts. */
 	.put("/current", zValidator("json", z.object({ look: z.unknown(), wornLookId: z.string().nullable().optional() })), async (c) => {
 		const db = c.var.db;
 		const child = await ownedChild(db, c.var.userId, c.req.param("id")!);
@@ -114,7 +117,7 @@ export const roxyRoutes = new Hono<AppEnv>()
 			.insert(schema.roxyCurrent)
 			.values({ childId: child.id, lookJson, wornLookId: worn })
 			.onConflictDoUpdate({ target: schema.roxyCurrent.childId, set: { lookJson, wornLookId: worn, updatedAt: new Date() } });
-		return c.json({ ok: true });
+		return c.json({ ok: true, look, wornLookId: worn });
 	})
 	/**
 	 * Spend stars on an item. Idempotent: an item already owned costs nothing again. The unlock row goes in first,
@@ -127,6 +130,8 @@ export const roxyRoutes = new Hono<AppEnv>()
 		// Clothes and furniture share one set of unlocks; their ids never overlap (a core test checks).
 		const item = ITEM.get(itemId) ?? FURNITURE_BY_ID.get(itemId);
 		if (!item) throw new HTTPException(404, { message: "No such item" });
+		// A holiday's gift is only ever claimed, free, while its window is open (see /claim).
+		if ("gift" in item && item.gift) return c.json({ error: "gift" }, 403);
 		if (item.holiday && (await holidaysOff(db, c.var.userId)).has(item.holiday)) throw new HTTPException(403, { message: "Not available" });
 		if (item.cost > 0) {
 			const inserted = await db
@@ -173,18 +178,17 @@ export const roxyRoutes = new Hono<AppEnv>()
 		await c.var.db.insert(schema.roxyFinds).values({ childId: child.id, findId: find.id }).onConflictDoNothing();
 		return c.json({ ok: true });
 	})
-	/** Save the home. Furniture that doesn't fit is dropped; furniture not yet unlocked is refused. */
+	/**
+	 * Save the home. Furniture that doesn't fit, or is from a holiday the family turned off, is dropped; furniture not yet
+	 * unlocked is refused. Replies with the home as saved.
+	 */
 	.put("/home", zValidator("json", z.object({ home: z.unknown() })), async (c) => {
 		const db = c.var.db;
 		const child = await ownedChild(db, c.var.userId, c.req.param("id")!);
-		const home = normalizeHome(c.req.valid("json").home);
-		if (!home) throw new HTTPException(400, { message: "That room doesn’t fit together" });
-		const off = await holidaysOff(db, c.var.userId);
-		const hidden = home.items.some((p) => {
-			const h = FURNITURE_BY_ID.get(p.item)?.holiday;
-			return h && off.has(h);
-		});
-		if (hidden || lockedFurnitureIn(home, await unlockedItems(db, child.id)).length > 0)
+		const parsed = normalizeHome(c.req.valid("json").home);
+		if (!parsed) throw new HTTPException(400, { message: "That room doesn’t fit together" });
+		const home = homeWithoutHolidays(parsed, await holidaysOff(db, c.var.userId));
+		if (lockedFurnitureIn(home, await unlockedItems(db, child.id)).length > 0)
 			throw new HTTPException(403, { message: "Some of those are still locked" });
 		const homeJson = JSON.stringify(home);
 		await db

@@ -107,6 +107,13 @@ test("a holiday's collection shows in its week, and a parent can turn it off", a
 	await expect(page.getByRole("tab", { name: "Diwali" })).toHaveAttribute("aria-selected", "true");
 	await expect(page.getByRole("heading", { name: "Diwali" })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Bindi gem, free gift" })).toBeVisible();
+	// The gift tile opens the gift (free), never a star price. The server's real date is far from this fixed clock, and
+	// the kid hears why it didn't open.
+	await page.getByRole("button", { name: "Bindi gem, free gift" }).click();
+	await expect(page.getByText("Open your free bindi gem?")).toBeVisible();
+	await expect(page.getByText(/for \d+ stars/)).toHaveCount(0);
+	await page.getByRole("button", { name: "Open it" }).click();
+	await expect(page.getByText("Couldn’t open the gift. Check the date on this device.")).toBeVisible();
 
 	expect((await page.request.put("/api/parent", { headers: h, data: { roxyHolidaysOff: ["diwali"] } })).ok()).toBe(true);
 	await page.reload();
@@ -146,6 +153,52 @@ test("decorate Roxy's home, and it's still there after a reload", async ({ page 
 	await expect(inRoom.getByRole("button", { name: "Sofa", exact: true })).toBeVisible();
 	await expect(inRoom.getByRole("button", { name: "Bed", exact: true })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Dots", exact: true })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("unlocking a piece of furniture puts it in the room", async ({ page }) => {
+	const { h, ids } = await setup(page);
+	await earnStars(page, h, ids[0]!, ["cat", "dog", "sun", "hat", "pig", "cow", "bat", "rat", "map", "pen"]);
+	await page.goto(`/play/${ids[0]}/games/roxy/home`);
+	await page.getByRole("button", { name: "Decorate" }).click();
+	await page.getByRole("button", { name: "Add Piano, 30 stars" }).click();
+	await page.getByRole("button", { name: "Unlock" }).click();
+	await expect(page.getByText("The piano is yours, and it’s in the room!")).toBeVisible();
+	await expect(page.getByRole("region", { name: "In the room" }).getByRole("button", { name: "Piano", exact: true })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	await expect(page.getByRole("heading", { name: "Piano", exact: true })).toBeInViewport();
+});
+
+test("something found offline is saved once the device is back online", async ({ page, context }) => {
+	const { ids } = await setup(page);
+	await page.goto(`/play/${ids[0]}/games/roxy/place/park`);
+	await expect(page.getByText("0 of 5 found")).toBeVisible();
+	await context.setOffline(true);
+	await expect(page.getByText(/kept on this device and saved when you’re back online/)).toBeVisible();
+	await page.getByRole("button", { name: "Help me look" }).click();
+	await expect(page.getByText(/You found the golden acorn!/)).toBeVisible({ timeout: 15_000 });
+
+	const saved = page.waitForResponse((r) => r.url().endsWith("/roxy/find") && r.request().method() === "POST" && r.ok());
+	await context.setOffline(false);
+	await saved;
+	expect((await (await page.request.get(`/api/children/${ids[0]}/roxy`)).json()).finds).toEqual(["park-acorn"]);
+});
+
+test("without 3D, Help me look still finds things", async ({ page }) => {
+	await page.addInitScript(() => {
+		const getContext = HTMLCanvasElement.prototype.getContext;
+		// @ts-expect-error: a device with no WebGL gets no context.
+		HTMLCanvasElement.prototype.getContext = function (kind: string, ...rest: unknown[]) {
+			return kind.startsWith("webgl") ? null : getContext.call(this, kind, ...(rest as []));
+		};
+	});
+	const { ids } = await setup(page);
+	await page.goto(`/play/${ids[0]}/games/roxy/place/park`);
+	await expect(page.getByText("This device can’t show the 3D town")).toBeVisible();
+	await page.getByRole("button", { name: "Help me look" }).click();
+	await expect(page.getByText(/You found the golden acorn!/)).toBeVisible();
+	await expect(page.getByText("1 of 5 found")).toBeVisible();
 });
 
 test("go to town, find something hidden in the park, and it's counted", async ({ page }) => {

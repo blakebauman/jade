@@ -10,10 +10,11 @@ import {
 	type Worn,
 	wear,
 } from "@jade/core/roxy";
-import { queryOptions, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, queryOptions, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api.ts";
-import { dayKey } from "./hooks.ts";
+import { dayKey, prefersReducedMotion } from "./hooks.ts";
+import { permanent } from "./offline.ts";
 
 export type SavedLook = { id: string; name: string; look: Look; createdAt: number };
 export type OpenHoliday = {
@@ -55,8 +56,13 @@ export const roxyApi = {
 	find: (childId: string, findId: string) => api(`${base(childId)}/find`, { method: "POST", json: { findId } }),
 	home: (childId: string, home: Home) => api<Home>(`${base(childId)}/home`, { method: "PUT", json: { home } }),
 	current: (childId: string, look: Look, wornLookId: string | null) =>
-		api(`${base(childId)}/current`, { method: "PUT", json: { look, wornLookId } }),
+		api<{ ok: true; look: Look; wornLookId: string | null }>(`${base(childId)}/current`, { method: "PUT", json: { look, wornLookId } }),
 };
+
+/** The server's copy, fetched fresh: what a device adopts when the server won't take its own. */
+async function serverCopy(qc: QueryClient, childId: string): Promise<Studio | null> {
+	return qc.fetchQuery({ ...roxyQuery(childId), staleTime: 0 }).catch(() => null);
+}
 
 /** Put an item on, keeping the colours already chosen in that slot when they fit (so hair stays the same colour across styles). */
 export function tryOn(look: Look, slot: Slot, item: Item): Look {
@@ -124,15 +130,23 @@ export function useRoxyDraft(childId: string, server: Studio) {
 		const d = latest.current;
 		if (!d.dirty || !navigator.onLine) return;
 		try {
-			await roxyApi.current(childId, d.look, d.wornLookId);
-			qc.setQueryData(roxyQuery(childId).queryKey, (old) => old && { ...old, current: d.look, wornLookId: d.wornLookId });
+			// The server may take things off (a holiday a parent turned off); the stage shows what it kept.
+			const saved = await roxyApi.current(childId, d.look, d.wornLookId);
+			qc.setQueryData(roxyQuery(childId).queryKey, (old) => old && { ...old, current: saved.look, wornLookId: saved.wornLookId });
 			if (latest.current === d) {
-				const clean = { ...d, dirty: false };
+				const clean = { look: saved.look, wornLookId: saved.wornLookId, dirty: false };
 				setState(clean);
 				writeDraft(childId, clean);
 			}
-		} catch {
-			// Kept locally as dirty; the next change or reconnect tries again.
+		} catch (err) {
+			// Offline or a server hiccup: kept locally as dirty, and the next change or reconnect tries again.
+			if (!permanent(err)) return;
+			// Refused (say, something here is locked): sending it again never helps, so take the server's copy instead.
+			const server = await serverCopy(qc, childId);
+			if (latest.current !== d) return;
+			const clean = server ? { look: server.current, wornLookId: server.wornLookId, dirty: false } : { ...d, dirty: false };
+			setState(clean);
+			writeDraft(childId, clean);
 		}
 	}, [childId, qc]);
 
@@ -155,10 +169,14 @@ export function useRoxyDraft(childId: string, server: Studio) {
 
 	/** The kind of the last change, so a run of the same small change (typing a name) is one step to undo. */
 	const lastKind = useRef<string | null>(null);
-	const set = useCallback((next: Look, wornLookId: string | null = null, kind?: string) => {
-		if (!kind || kind !== lastKind.current) setPast([...pastRef.current.slice(-UNDO_LIMIT + 1), latest.current.look]);
+	/** A new look, or a change to the latest one (for changes that land after an await, so nothing made meanwhile is lost). */
+	const set = useCallback((next: Look | ((look: Look) => Look), wornLookId: string | null = null, kind?: string) => {
+		const prev = latest.current.look;
+		if (!kind || kind !== lastKind.current) setPast([...pastRef.current.slice(-UNDO_LIMIT + 1), prev]);
 		lastKind.current = kind ?? null;
-		setState({ look: next, wornLookId, dirty: true });
+		const look = typeof next === "function" ? next(prev) : next;
+		latest.current = { look, wornLookId, dirty: true };
+		setState(latest.current);
 	}, []);
 
 	const undo = useCallback(() => {
@@ -225,11 +243,16 @@ export function useHomeDraft(childId: string, server: Home) {
 		const d = latest.current;
 		if (!d.dirty || !navigator.onLine) return;
 		try {
+			// The server drops what doesn't fit or is from a holiday a parent turned off; the room shows what it kept.
 			const saved = await roxyApi.home(childId, d.home);
 			qc.setQueryData(roxyQuery(childId).queryKey, (old) => old && { ...old, home: saved });
-			if (latest.current === d) setState({ home: d.home, dirty: false });
-		} catch {
-			// Stays dirty on this device; the next change or reconnect tries again.
+			if (latest.current === d) setState({ home: saved, dirty: false });
+		} catch (err) {
+			// Offline or a server hiccup: stays dirty on this device, and the next change or reconnect tries again.
+			if (!permanent(err)) return;
+			// Refused: sending it again never helps, so take the server's copy instead.
+			const server = await serverCopy(qc, childId);
+			if (latest.current === d) setState({ home: server?.home ?? d.home, dirty: false });
 		}
 	}, [childId, qc]);
 
@@ -254,6 +277,83 @@ export function useHomeDraft(childId: string, server: Home) {
 		};
 	}, [flush]);
 
-	const set = useCallback((home: Home) => setState({ home, dirty: true }), []);
-	return { home: state.home, set, saving: state.dirty };
+	const set = useCallback((home: Home) => {
+		latest.current = { home, dirty: true };
+		setState(latest.current);
+	}, []);
+	/** The home as it is now, for changes that land after an await (the one a render saw may be out of date). */
+	const current = useCallback(() => latest.current.home, []);
+	return { home: state.home, set, current, saving: state.dirty };
+}
+
+const findsKey = (childId: string) => `jade.roxyfinds.${childId}`;
+
+/** Finds made on this device that the server hasn't confirmed yet. */
+export function pendingFinds(childId: string): string[] {
+	try {
+		const raw = JSON.parse(localStorage.getItem(findsKey(childId)) ?? "[]");
+		return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string") : [];
+	} catch {
+		return [];
+	}
+}
+function writePendingFinds(childId: string, ids: string[]) {
+	try {
+		if (ids.length === 0) localStorage.removeItem(findsKey(childId));
+		else localStorage.setItem(findsKey(childId), JSON.stringify(ids));
+	} catch {
+		// Storage blocked: it's still sent now if online.
+	}
+}
+
+/** Remember a find on this device, then send every one still waiting. */
+export function recordFind(childId: string, findId: string): Promise<boolean> {
+	const waiting = pendingFinds(childId);
+	if (!waiting.includes(findId)) writePendingFinds(childId, [...waiting, findId]);
+	return flushFinds(childId);
+}
+
+/**
+ * Send the finds waiting on this device. Finding is idempotent, so a resend is harmless. A refusal (say, a find the
+ * catalog no longer has) is dropped; anything else waits for the next try. Resolves true if any reached the server.
+ */
+export async function flushFinds(childId: string): Promise<boolean> {
+	let sent = false;
+	for (const findId of pendingFinds(childId)) {
+		if (!navigator.onLine) break;
+		try {
+			await roxyApi.find(childId, findId);
+			sent = true;
+		} catch (err) {
+			if (!permanent(err)) break;
+		}
+		writePendingFinds(
+			childId,
+			pendingFinds(childId).filter((id) => id !== findId),
+		);
+	}
+	return sent;
+}
+
+/** Send finds made offline as soon as a Roxy screen opens online, and again whenever the connection comes back. */
+export function useSendFinds(childId: string) {
+	const qc = useQueryClient();
+	useEffect(() => {
+		const send = () =>
+			void flushFinds(childId).then((sent) => {
+				if (sent) void qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey });
+			});
+		send();
+		window.addEventListener("online", send);
+		return () => window.removeEventListener("online", send);
+	}, [childId, qc]);
+}
+
+/** Bring a prompt that just opened into view: the item grids may have been scrolled far below it. */
+export function useRevealed<T extends HTMLElement>() {
+	const ref = useRef<T>(null);
+	useEffect(() => {
+		ref.current?.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+	}, []);
+	return ref;
 }

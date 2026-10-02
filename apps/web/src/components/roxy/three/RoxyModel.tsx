@@ -1,8 +1,9 @@
 import { hex, ITEM, type Look, type Pose } from "@jade/core/roxy";
 import { useFrame } from "@react-three/fiber";
-import { type MutableRefObject, useMemo, useRef } from "react";
+import { type MutableRefObject, memo, useMemo, useRef } from "react";
 import type { Group } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
+import { useWake } from "../world/pace.tsx";
 import { Bag, bagPlace, Earrings, Glasses, Hat, HIDES_HAIR_3D, Necklace } from "./accessories.tsx";
 import { AnimalHead, Ears, fur3, Pet3D, Tail } from "./animals.tsx";
 import { DIMS3, Face, HEAD_R, HEAD_SCALE, type Shape3, Torso, Y } from "./body.tsx";
@@ -20,7 +21,7 @@ const LEG_LEN = Y.hip - Y.ankle;
 
 type Props = { look: Look; pose?: Pose; walking?: MutableRefObject<number> };
 
-export function RoxyModel({ look, pose, walking }: Props) {
+function RoxyModelBase({ look, pose, walking }: Props) {
 	const shape = (look.slots.body?.item.replace("body-", "") ?? "mid") as Shape3;
 	const d = DIMS3[shape];
 	const form = look.slots.form && ITEM.get(look.slots.form.item);
@@ -56,11 +57,14 @@ export function RoxyModel({ look, pose, walking }: Props) {
 	const arms = [useRef<Group>(null), useRef<Group>(null)];
 	const legs = [useRef<Group>(null), useRef<Group>(null)];
 	const p = pose ?? look.pose ?? "stand";
+	const wake = useWake();
 
 	useFrame((state) => {
 		const t = state.clock.elapsedTime;
 		const walk = walking?.current ?? 0;
 		const swing = reduced ? 0 : Math.sin(t * 9) * walk;
+		// Breathing is slow enough for the idle tick; a wave or a twirl needs every frame.
+		if (!reduced && !walk && (p === "twirl" || p === "wave")) wake();
 		const sway = reduced ? 0 : 1;
 		if (body.current) body.current.scale.y = 1 + Math.sin(t * 2) * 0.008 * sway;
 		if (head.current) head.current.rotation.z = Math.sin(t * 1.3) * 0.03 * sway;
@@ -176,7 +180,7 @@ export function RoxyModel({ look, pose, walking }: Props) {
 }
 
 /** The pet from a look, on its own, so it can walk separately. */
-export function PetModel({ look }: { look: Look }) {
+function PetModelBase({ look }: { look: Look }) {
 	const pet = look.slots.pet;
 	if (!pet) return null;
 	const { c1, c2 } = colours(look, "pet");
@@ -190,3 +194,7 @@ export function PetModel({ look }: { look: Look }) {
 		/>
 	);
 }
+
+// Memoised: a tap in a place re-renders the scene, and rebuilding her shapes each time is wasted work.
+export const RoxyModel = memo(RoxyModelBase);
+export const PetModel = memo(PetModelBase);

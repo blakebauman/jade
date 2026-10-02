@@ -1,13 +1,15 @@
 import type { Look } from "@jade/core/roxy";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasTexture, type Group, RepeatWrapping, SRGBColorSpace, Vector3 } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { PetModel, RoxyModel } from "../three/RoxyModel.tsx";
+import { Pace, useContextLoss, useWake } from "./pace.tsx";
+import { type Block, findPath, type Grid, makeGrid, nearestFree } from "./path.ts";
 
 /**
  * What every place in Roxy's world shares: a fixed, slightly-raised corner camera (picture-book, not a flight
- * simulator), soft light, and Roxy and her pet as the studio's 2D art on upright cards that turn to face the camera.
+ * simulator), soft light, and Roxy and her pet walking round whatever is in the way.
  * An area is measured in grid squares, from (0, 0) at the back-left corner.
  */
 
@@ -21,22 +23,27 @@ const centre = (area: Area) => new Vector3(area.w / 2, 0.6, area.d / 2);
 /** The canvas for one place: camera, light and whatever the place puts in it. */
 export function WorldCanvas({ area, label, children }: { area: Area; label: string; children: ReactNode }) {
 	const focus = useRef(centre(area));
+	const onCreated = useContextLoss();
 	return (
 		<Canvas
 			orthographic
 			flat
+			frameloop="demand"
+			onCreated={onCreated}
 			dpr={[1, 2]}
 			camera={{ position: centre(area).add(CAMERA_OFFSET).toArray(), near: 0.1, far: 200, zoom: 50 }}
 			gl={{ alpha: true, antialias: true }}
 			aria-label={label}
 			role="img"
 		>
-			<Focus.Provider value={focus}>
-				<CameraRig area={area} />
-				<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
-				<directionalLight position={[12, 16, 10]} intensity={1.2} />
-				{children}
-			</Focus.Provider>
+			<Pace>
+				<Focus.Provider value={focus}>
+					<CameraRig area={area} />
+					<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
+					<directionalLight position={[12, 16, 10]} intensity={1.2} />
+					{children}
+				</Focus.Provider>
+			</Pace>
 		</Canvas>
 	);
 }
@@ -58,6 +65,7 @@ function CameraRig({ area }: { area: Area }) {
 	const whole = fitsWhole(area);
 	const reduced = useMemo(() => prefersReducedMotion(), []);
 	const look = useRef(centre(area));
+	const wake = useWake();
 	useEffect(() => {
 		const scale = whole ? Math.max(area.w / ROOM_FRAME.w, area.d / ROOM_FRAME.d) : 1.1;
 		camera.zoom = Math.min(size.width / (13.6 * scale), size.height / (10.4 * scale));
@@ -73,17 +81,16 @@ function CameraRig({ area }: { area: Area }) {
 		// Keep the view's centre far enough in from the edges that the ground fills the screen.
 		const mx = Math.min(area.w / 2, 3.5);
 		const mz = Math.min(area.d / 2, 2.5);
-		const want = new Vector3(
-			Math.min(area.w - mx, Math.max(mx, focus.current.x)),
-			0.6,
-			Math.min(area.d - mz, Math.max(mz, focus.current.z)),
-		);
+		want.set(Math.min(area.w - mx, Math.max(mx, focus.current.x)), 0.6, Math.min(area.d - mz, Math.max(mz, focus.current.z)));
+		if (look.current.distanceToSquared(want) > 1e-5) wake();
 		look.current.lerp(want, reduced ? 1 : Math.min(1, dt * 3));
-		camera.position.copy(look.current.clone().add(CAMERA_OFFSET));
+		camera.position.copy(look.current).add(CAMERA_OFFSET);
 		camera.lookAt(look.current);
 	});
 	return null;
 }
+
+const want = new Vector3();
 
 /** A canvas texture drawn in code, repeated across a surface. */
 export function canvasTexture(w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void, repeat: [number, number]) {
@@ -113,9 +120,10 @@ const yaw = Math.atan2(CAMERA_OFFSET.x, CAMERA_OFFSET.z);
 /** The camera's right, along the floor: which way "left" and "right" are on screen. */
 export const RIGHT = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
 
-export function Shadow({ r }: { r: number }) {
+/** A soft round shadow on the ground under something, squashed with `s` for long things. */
+export function Shadow({ r, s }: { r: number; s?: [number, number, number] }) {
 	return (
-		<mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+		<mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={s}>
 			<circleGeometry args={[r, 24]} />
 			<meshBasicMaterial color="#2b1d14" transparent opacity={0.18} />
 		</mesh>
@@ -123,21 +131,24 @@ export function Shadow({ r }: { r: number }) {
 }
 
 /**
- * Roxy walks to `walkTo` (kept inside the area), her pet trotting after. Both are the 3D toys: they turn to face
- * the way they're going and turn back to face you when they stop. `onArrive` fires once each time she gets where
- * she was going, so a place can hand her what she walked over to pick up.
+ * Roxy walks to `walkTo`, round anything in `blocks`, her pet trotting after. Both are the 3D toys: they turn to
+ * face the way they're going and turn back to face you when they stop. `onArrive` fires once each time she gets
+ * where she was going, so a place can hand her what she walked over to pick up. `blocks` should keep its identity
+ * between renders (memoise it); the route grid is rebuilt when it changes.
  */
 export function Walkers({
 	look,
 	walkTo,
 	area,
 	start,
+	blocks = NO_BLOCKS,
 	onArrive,
 }: {
 	look: Look;
 	walkTo: Spot | null;
 	area: Area;
 	start?: Spot;
+	blocks?: readonly Block[];
 	onArrive?: (spot: Spot) => void;
 }) {
 	const roxy = useRef<Group>(null);
@@ -145,26 +156,47 @@ export function Walkers({
 	const petRef = useRef<Group>(null);
 	const petTurn = useRef<Group>(null);
 	const walking = useRef(0);
-	const first = start ?? { x: area.w / 2 + 0.5, z: area.d / 2 + 1.5 };
-	const target = useRef(new Vector3(first.x, 0, first.z));
+	const grid = useMemo(() => makeGrid(area, blocks), [area, blocks]);
+	// Where they first stand. Set once: after that only the frame loop moves them, so a re-render mid-walk can't
+	// put her back anywhere.
+	const [first] = useState(() => {
+		const s = nearestFree(grid, start ?? { x: area.w / 2 + 0.5, z: area.d / 2 + 1.5 });
+		const pet = petSpot(grid, new Vector3(s.x, 0, s.z), new Vector3());
+		return { roxy: [s.x, 0, s.z] as V3, pet: pet.toArray() as V3 };
+	});
+	/** The waypoints still ahead; she heads for the first. */
+	const route = useRef<Vector3[]>([]);
 	const arriving = useRef<Spot | null>(null);
 	const arrive = useRef(onArrive);
 	arrive.current = onArrive;
 	const reduced = useMemo(() => prefersReducedMotion(), []);
 	const focus = useContext(Focus);
+	const wake = useWake();
 
 	useEffect(() => {
-		if (!walkTo) return;
-		target.current.set(Math.min(area.w - 0.4, Math.max(0.4, walkTo.x)), 0, Math.min(area.d - 0.3, Math.max(0.5, walkTo.z)));
+		const r = roxy.current;
+		if (!walkTo || !r) return;
+		const path = findPath(grid, { x: r.position.x, z: r.position.z }, walkTo);
+		route.current = path.map((p) => new Vector3(p.x, 0, p.z));
 		arriving.current = walkTo;
-		if (reduced && roxy.current) roxy.current.position.copy(target.current);
-	}, [walkTo, reduced, area]);
+		const last = route.current.at(-1);
+		if (reduced && last) r.position.copy(last);
+	}, [walkTo, reduced, grid]);
+
+	// Furniture moved under her (the home): step off it.
+	useEffect(() => {
+		const r = roxy.current;
+		if (!r || route.current.length) return;
+		const s = nearestFree(grid, { x: r.position.x, z: r.position.z });
+		if (s.x !== r.position.x || s.z !== r.position.z) route.current = [new Vector3(s.x, 0, s.z)];
+	}, [grid]);
 
 	/** Turn smoothly toward an angle (the short way round). */
 	const turnTo = (g: Group | null, angle: number, dt: number) => {
 		if (!g) return;
 		let diff = angle - g.rotation.y;
 		diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+		if (Math.abs(diff) > 0.01) wake();
 		g.rotation.y += diff * Math.min(1, dt * 8);
 	};
 
@@ -174,20 +206,22 @@ export function Walkers({
 		if (!r || !p) return;
 		const step = Math.min(dt, 0.05);
 		const t = state.clock.elapsedTime;
-		const toTarget = target.current.clone().sub(r.position);
-		const dist = toTarget.length();
+		let next = route.current[0];
+		// Close enough to a waypoint on the way: on to the next, without stopping.
+		while (next && route.current.length > 1 && r.position.distanceTo(next) < 0.08) {
+			route.current.shift();
+			next = route.current[0];
+		}
+		const dist = next ? toTarget.subVectors(next, r.position).length() : 0;
 		const moving = dist > 0.05 && !reduced;
 		walking.current += ((moving ? 1 : 0) - walking.current) * Math.min(1, step * 10);
+		if (moving || walking.current > 0.01 || arriving.current) wake();
 		if (moving) {
-			r.position.add(
-				toTarget
-					.clone()
-					.normalize()
-					.multiplyScalar(Math.min(dist, 2.6 * step)),
-			);
+			r.position.addScaledVector(toTarget, Math.min(dist, 2.6 * step) / dist);
 			turnTo(roxyTurn.current, Math.atan2(toTarget.x, toTarget.z), step);
 		} else {
-			if (reduced) r.position.copy(target.current);
+			if (next) r.position.copy(next);
+			route.current = [];
 			turnTo(roxyTurn.current, yaw, step);
 			if (arriving.current) {
 				const spot = arriving.current;
@@ -197,24 +231,17 @@ export function Walkers({
 		}
 		focus?.current.copy(r.position);
 		if (roxyTurn.current) roxyTurn.current.position.y = moving ? Math.abs(Math.sin(t * 9)) * 0.04 : 0;
-		// The pet trots to a spot beside Roxy, a little behind.
-		const spot = r.position
-			.clone()
-			.add(RIGHT.clone().multiplyScalar(1.1))
-			.add(new Vector3(0, 0, -0.25));
+		// The pet trots to a clear spot beside Roxy, a little behind.
+		const spot = petSpot(grid, r.position, petWant);
 		const toSpot = spot.sub(p.position);
 		const petDist = toSpot.length();
 		const petMoving = petDist > 0.08 && !reduced;
+		if (petMoving) wake();
 		if (petMoving) {
-			p.position.add(
-				toSpot
-					.clone()
-					.normalize()
-					.multiplyScalar(Math.min(petDist, 2.4 * step)),
-			);
+			p.position.addScaledVector(toSpot, Math.min(petDist, 2.4 * step) / petDist);
 			turnTo(petTurn.current, Math.atan2(toSpot.x, toSpot.z), step);
 		} else {
-			if (reduced) p.position.copy(r.position.clone().add(RIGHT.clone().multiplyScalar(1.1)));
+			if (reduced) p.position.add(toSpot);
 			turnTo(petTurn.current, yaw, step);
 		}
 		if (petTurn.current) petTurn.current.position.y = petMoving ? Math.abs(Math.sin(t * 14)) * 0.08 : 0;
@@ -222,13 +249,13 @@ export function Walkers({
 
 	return (
 		<>
-			<group ref={roxy} position={target.current.toArray()}>
+			<group ref={roxy} position={first.roxy}>
 				<Shadow r={0.45} />
 				<group ref={roxyTurn} rotation={[0, yaw, 0]}>
 					<RoxyModel look={look} walking={walking} />
 				</group>
 			</group>
-			<group ref={petRef} position={target.current.clone().add(RIGHT.clone().multiplyScalar(1.1)).toArray()}>
+			<group ref={petRef} position={first.pet}>
 				{look.slots.pet && (
 					<>
 						<Shadow r={0.32} />
@@ -240,4 +267,20 @@ export function Walkers({
 			</group>
 		</>
 	);
+}
+
+type V3 = [number, number, number];
+const NO_BLOCKS: readonly Block[] = [];
+// Scratch vectors for the frame loop, so walking doesn't allocate every frame.
+const toTarget = new Vector3();
+const petWant = new Vector3();
+const PET_SIDE = RIGHT.clone()
+	.multiplyScalar(1.1)
+	.add(new Vector3(0, 0, -0.25));
+
+/** Where the pet wants to be: beside Roxy, or the nearest clear spot to that (never in a wall or a bed). */
+function petSpot(grid: Grid, at: Vector3, out: Vector3) {
+	out.copy(at).add(PET_SIDE);
+	const s = nearestFree(grid, { x: out.x, z: out.z });
+	return out.set(s.x, 0, s.z);
 }

@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { FURNITURE, FURNITURE_BY_ID, fits, type Home, ITEM, lockedFurnitureIn, normalizeHome, ROOM, starterHome } from "../roxy/index.ts";
+import {
+	FURNITURE,
+	FURNITURE_BY_ID,
+	fits,
+	type Home,
+	homeWithoutHolidays,
+	ITEM,
+	lockedFurnitureIn,
+	normalizeHome,
+	ROOM,
+	starterHome,
+} from "../roxy/index.ts";
 
 describe("homes", () => {
 	it("has unique furniture with sensible footprints, and a free starter room", () => {
@@ -44,6 +55,13 @@ describe("homes", () => {
 		const home = normalizeHome({ ...starterHome(), items: [{ uid: "p", item: "piano", x: 3, z: 3, rot: 0 }] })!;
 		expect(lockedFurnitureIn(home, new Set()).map((x) => x.id)).toEqual(["piano"]);
 		expect(lockedFurnitureIn(home, new Set(["piano"]))).toEqual([]);
+	});
+
+	it("puts away furniture from a holiday the family turned off", () => {
+		const home = normalizeHome({ ...starterHome(), items: [...starterHome().items, { uid: "h", item: "pumpkins", x: 5, z: 7, rot: 0 }] })!;
+		expect(home.items.map((p) => p.uid)).toContain("h");
+		expect(homeWithoutHolidays(home, new Set(["halloween"])).items).toEqual(starterHome().items);
+		expect(homeWithoutHolidays(home, new Set(["christmas"]))).toBe(home);
 	});
 });
 

@@ -187,6 +187,15 @@ export function normalizeHome(input: unknown): Home | null {
 export const lockedFurnitureIn = (home: Home, unlocked: ReadonlySet<string>) =>
 	[...new Set(home.items.map((p) => p.item))].map((id) => FURNITURE_BY_ID.get(id)!).filter((x) => x.cost > 0 && !unlocked.has(x.id));
 
+/** The home without furniture from a holiday the family turned off (it's hidden in the picker, so it can't be put away). */
+export function homeWithoutHolidays(home: Home, off: ReadonlySet<string>): Home {
+	const items = home.items.filter((p) => {
+		const holiday = FURNITURE_BY_ID.get(p.item)?.holiday;
+		return !holiday || !off.has(holiday);
+	});
+	return items.length === home.items.length ? home : { ...home, items };
+}
+
 /** Everyone's first home: a bed, a rug, a lamp, a plant, a window and a picture. */
 export const starterHome = (): Home => ({
 	v: 1,
