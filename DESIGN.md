@@ -233,7 +233,7 @@ At Night, place stickers sit under the lamp a step quieter (saturate 0.9, bright
 
 ### Neutral
 - **Chalk** (page-ink): all text on the page, focus rings, filled pips, caret and accent colour, and the face of the primary `go` key. By Day it is a deep jade ink.
-- **Lichen** (page-muted): secondary text on the page (5.6:1 at Night, 6.0:1 by Day), empty pip rings, slot labels, and the brand's "world".
+- **Lichen** (page-muted): secondary text on the page (5.6:1 at Night, 6.0:1 by Day), empty pip rings, and slot labels.
 - **Walnut Ink** (ink): text on maple and on the rack.
 - **Soft Ink** (ink-soft): point numbers on tiles.
 
@@ -389,7 +389,9 @@ The play row. It holds typed tiles, then squares (every remaining square when th
 - **Focus:** the global chalk outline at a 1px offset.
 
 ### Navigation
-The parent header puts the Brand (five tiles "jade's" plus "world" in Lichen) on the left. On the right are page keys: Lists, Kids and Settings, with the current section `data-pressed` (list and progress pages count as Lists and Kids), then Practice with a back arrow, set apart from the section keys. On a phone the three section keys drop to their own full-width row. Sign-out lives in Settings → Account and on the PIN gate, never beside Practice. Sub-pages open with a page back key ("← Lists", "← Kids"); play screens open with "← Subjects".
+The parent header puts the Brand (five tiles "jade's", the j lifted, plus "world" on a small die-cut sticker with no place hue, tilted 3deg) on the left. On the right are page keys: Lists, Kids and Settings, with the current section `data-pressed` (list and progress pages count as Lists and Kids), then Practice with a back arrow, set apart from the section keys. On a phone the three section keys drop to their own full-width row. Sign-out lives in Settings → Account and on the PIN gate, never beside Practice. Sub-pages open with a page back key ("← Lists", "← Kids"); play screens open with "← Subjects".
+
+**Brand mark.** The wordmark's lifted maple "j" tile, die-cut as the album's first sticker (white vinyl rim, gloss, -7deg tilt, soft lift shadow) with a holographic foil star stuck on its upper right corner, on the jade page under the lamp. It is the favicon and every app icon; all of them are generated from `apps/web/scripts/icon-mark.mjs` by `scripts/icons.sh`. The maskable icon keeps the mark inside the central 80% circle, and the iOS touch icon is full bleed.
 
 Parent word racks (`WordRack`) fit their row: tiles shrink for a long word in a narrow row down to 14–16px, so a rack never pushes the page sideways or its ✕ off-screen. Words read from a photo wear a dashed Lichen outline and a small "check" until the parent fixes or accepts them; they drop onto the rack one after another as they arrive.
 

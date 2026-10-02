@@ -1,4 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+// Jade's World mark: the wordmark's lifted maple "j" tile, die-cut as the first sticker in the album, with a silver foil
+// star stuck on its corner, on the jade page under the lamp.
+// The maple keeps its grain; the page's paper tooth is left out, since it disappears at icon size and triples the PNGs.
+// Usage: node scripts/icon-mark.mjs <out.svg> <variant: rounded|bleed|maskable|small>
+import { writeFileSync } from "node:fs";
+
+const [out, variant = "rounded"] = process.argv.slice(2);
+
+const scale = variant === "maskable" ? 0.78 : 1; // keep everything inside the 80% safe circle
+const small = variant === "small";
+
+const star = (cx, cy, R, r) => {
+	const pts = [];
+	for (let i = 0; i < 10; i++) {
+		const a = -Math.PI / 2 + (i * Math.PI) / 5;
+		const rad = i % 2 ? r : R;
+		pts.push([cx + rad * Math.cos(a), cy + rad * Math.sin(a)]);
+	}
+	return `M${pts.map((p) => p.map((n) => n.toFixed(1)).join(" ")).join("L")}Z`;
+};
+
+const bg =
+	variant === "rounded" || variant === "small"
+		? `<rect width="512" height="512" rx="112" fill="url(#lamp)"/>`
+		: `<rect width="512" height="512" fill="url(#lamp)"/>`;
+const clip = variant === "rounded" || variant === "small" ? `clip-path="url(#corner)"` : "";
+
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <title>Jade's World</title>
   <!-- Jade's World mark: the wordmark's lifted maple "j" tile, die-cut as the album's first sticker, with a silver foil star
        stuck on its corner, on the jade page under the lamp. Authored SVG, no external source or font.
@@ -40,10 +67,10 @@
     <clipPath id="corner"><rect width="512" height="512" rx="112"/></clipPath>
   </defs>
 
-  <rect width="512" height="512" rx="112" fill="url(#lamp)"/>
+  ${bg}
 
-  <g clip-path="url(#corner)">
-  <g transform="translate(256 262) scale(1) translate(-270 -254)">
+  <g ${clip}>
+  <g transform="translate(256 262) scale(${scale}) translate(-270 -254)">
     <!-- the j sticker, tilted the way the wordmark lifts it -->
     <g transform="rotate(-7 256 262)">
       <!-- lift shadow: offset down, soft -->
@@ -54,22 +81,24 @@
       <!-- maple tile: bevel, then face -->
       <rect x="114" y="118" width="284" height="290" rx="58" fill="#c9965a"/>
       <rect x="114" y="118" width="284" height="266" rx="58" fill="url(#maple)"/>
-      
+      ${small ? "" : `<rect x="114" y="118" width="284" height="266" rx="58" fill="#fff" filter="url(#grain)"/>`}
       <!-- the j, pressed ink, rounded like Fredoka -->
-      <circle cx="281" cy="173" r="27" fill="#23180f"/>
-      <path d="M281 226 V300 Q281 350 236 350 Q214 350 202 340" fill="none" stroke="#23180f" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="281" cy="173" r="${small ? 27 : 24}" fill="#23180f"/>
+      <path d="M281 226 V300 Q281 350 236 350 Q214 350 202 340" fill="none" stroke="#23180f" stroke-width="${small ? 52 : 44}" stroke-linecap="round" stroke-linejoin="round"/>
       <!-- vinyl gloss across the top of the sticker -->
       <rect x="92" y="96" width="328" height="334" rx="78" fill="url(#gloss)"/>
     </g>
 
     <!-- the silver foil star, stuck over the sticker's top right corner -->
     <g transform="rotate(14 384 136)">
-      <path d="M384.0 70.0L406.9 114.4L456.3 122.5L421.1 158.1L428.7 207.5L384.0 185.0L339.3 207.5L346.9 158.1L311.7 122.5L361.1 114.4Z" fill="#021612" opacity="0.55" filter="url(#lift-sm)" stroke="#021612" stroke-width="22" stroke-linejoin="round"/>
-      <path d="M384.0 60.0L406.9 104.4L456.3 112.5L421.1 148.1L428.7 197.5L384.0 175.0L339.3 197.5L346.9 148.1L311.7 112.5L361.1 104.4Z" fill="#f4f8f6" stroke="#f4f8f6" stroke-width="24" stroke-linejoin="round"/>
-      <path d="M384.0 60.0L406.9 104.4L456.3 112.5L421.1 148.1L428.7 197.5L384.0 175.0L339.3 197.5L346.9 148.1L311.7 112.5L361.1 104.4Z" fill="none" stroke="#9fb4ac" stroke-opacity="0.7" stroke-width="2" stroke-linejoin="round" transform="translate(384 136) scale(1.2) translate(-384 -136)"/>
-      <path d="M384.0 60.0L406.9 104.4L456.3 112.5L421.1 148.1L428.7 197.5L384.0 175.0L339.3 197.5L346.9 148.1L311.7 112.5L361.1 104.4Z" fill="url(#foil)" stroke="#8d97b5" stroke-width="2.5" stroke-linejoin="round"/>
-      <path d="M384.0 60.0L406.9 104.4L456.3 112.5L421.1 148.1L428.7 197.5L384.0 175.0L339.3 197.5L346.9 148.1L311.7 112.5L361.1 104.4Z" fill="url(#gloss)"/>
+      <path d="${star(384, 146, 76, 39)}" fill="#021612" opacity="0.55" filter="url(#lift-sm)" stroke="#021612" stroke-width="22" stroke-linejoin="round"/>
+      <path d="${star(384, 136, 76, 39)}" fill="#f4f8f6" stroke="#f4f8f6" stroke-width="24" stroke-linejoin="round"/>
+      <path d="${star(384, 136, 76, 39)}" fill="none" stroke="#9fb4ac" stroke-opacity="0.7" stroke-width="2" stroke-linejoin="round" transform="translate(384 136) scale(1.2) translate(-384 -136)"/>
+      <path d="${star(384, 136, 76, 39)}" fill="url(#foil)" stroke="#8d97b5" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="${star(384, 136, 76, 39)}" fill="url(#gloss)"/>
     </g>
   </g>
   </g>
 </svg>
+`;
+writeFileSync(out, svg);

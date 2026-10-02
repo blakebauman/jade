@@ -21,7 +21,7 @@ export default defineConfig({
 			manifest: {
 				name: "Jade's World",
 				short_name: "Jade's World",
-				description: "Spelling bee and math practice for 8–11 year olds.",
+				description: "Spelling bee and math practice for 8–11 year olds, with stars to spend in Roxy’s dress-up studio.",
 				theme_color: "#0e4f43",
 				background_color: "#0e4f43",
 				display: "standalone",
@@ -30,7 +30,7 @@ export default defineConfig({
 				icons: [
 					{ src: "/icon-192.png", sizes: "192x192", type: "image/png" },
 					{ src: "/icon-512.png", sizes: "512x512", type: "image/png" },
-					{ src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+					{ src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
 				],
 			},
 			workbox: {
