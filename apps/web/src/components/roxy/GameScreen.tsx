@@ -37,7 +37,7 @@ export function GameScreen({
 				<div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
 					{end}
 					{full.supported && (
-						<button type="button" className="key" onClick={full.toggle} aria-pressed={full.on}>
+						<button type="button" className="key max-md:hidden" onClick={full.toggle} aria-pressed={full.on}>
 							{full.on ? <Minimize className="size-5" aria-hidden /> : <Maximize className="size-5" aria-hidden />}
 							<span className="sr-only md:not-sr-only">{full.on ? "Exit full screen" : "Full screen"}</span>
 						</button>
@@ -57,7 +57,7 @@ export function GameScreen({
 				<div
 					className={`pointer-events-none absolute inset-x-0 flex justify-center p-3 md:p-5 ${open && panel ? "bottom-[46dvh] lg:right-[30rem] lg:bottom-0" : "bottom-0"}`}
 				>
-					<div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2">{actions}</div>
+					<div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 max-md:text-sm">{actions}</div>
 				</div>
 			)}
 

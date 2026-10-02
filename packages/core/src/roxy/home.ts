@@ -145,7 +145,7 @@ export function fits(home: Home, p: Pick<Placed, "x" | "z" | "rot" | "wall"> & {
 		if (!p.wall || at < 0 || at + item.w > along) return false;
 		return home.items.every((o) => {
 			const other = FURNITURE_BY_ID.get(o.item);
-			if (!other || other.kind !== "wall" || o.uid === p.uid || o.wall !== p.wall) return true;
+			if (other?.kind !== "wall" || o.uid === p.uid || o.wall !== p.wall) return true;
 			const oat = o.wall === "left" ? o.z : o.x;
 			return at + item.w <= oat || oat + other.w <= at;
 		});
@@ -155,7 +155,7 @@ export function fits(home: Home, p: Pick<Placed, "x" | "z" | "rot" | "wall"> & {
 	if (item.kind === "rug") return true;
 	return home.items.every((o) => {
 		const other = FURNITURE_BY_ID.get(o.item);
-		if (!other || other.kind !== "floor" || o.uid === p.uid) return true;
+		if (other?.kind !== "floor" || o.uid === p.uid) return true;
 		const b = footprint(o, other);
 		return a.x1 < b.x0 || b.x1 < a.x0 || a.z1 < b.z0 || b.z1 < a.z0;
 	});

@@ -148,6 +148,6 @@ export const SLOT_VIEW: Partial<Record<Slot, string>> = {
 	socks: "100 440 200 200",
 	shoes: "100 500 200 140",
 	bag: "60 230 320 340",
-	pet: "250 440 150 190",
-	petwear: "250 440 150 190",
+	pet: "262 452 140 170",
+	petwear: "262 452 140 170",
 };

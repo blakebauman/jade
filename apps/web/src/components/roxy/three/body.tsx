@@ -98,7 +98,7 @@ export function Face({ look }: { look: Look }) {
 		look.skin,
 		look.slots.hair?.c1,
 	]);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: `key` is the part of the look the face uses.
+	// Keyed on `key`, the part of the look the face uses.
 	const face = useMemo(() => figureTexture(look, FACE_VIEW, { only: FACE_SLOTS }), [key]);
 	useEffect(() => () => face.texture.dispose(), [face]);
 	return (

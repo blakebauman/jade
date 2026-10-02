@@ -208,9 +208,9 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 			start={
 				<>
 					<Link to="/play/$childId/games/roxy" params={{ childId }} className="key" data-variant="felt">
-						<ArrowLeft className="size-5" aria-hidden /> Studio
+						<ArrowLeft className="size-5" aria-hidden /> <span className="max-md:sr-only">Studio</span>
 					</Link>
-					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold">Roxy’s home</h1>
+					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold max-md:sr-only">Roxy’s home</h1>
 				</>
 			}
 			end={
