@@ -91,6 +91,9 @@ export const WOOD = "#c9965f";
 export const WOOD_DARK = "#9c6b3f";
 export const WHITE = "#f6f1e7";
 export const LEAF = "#5fa04a";
+/** Leaf greens for the sunny and shady sides of a plant (mixing in white turns toon leaves grey). */
+export const LEAF_LIGHT = "#7dbf52";
+export const LEAF_DARK = "#4a8a3a";
 export const POT = "#d9734a";
 export const GOLD = "#e8b93c";
 
@@ -255,7 +258,7 @@ const BUILDS: Record<string, Build> = {
 		<>
 			<Cyl r={0.26} r2={0.2} h={0.45} p={[0, 0.23, 0]} c={POT} />
 			<Ball r={0.36} p={[0, 0.85, 0]} c={LEAF} />
-			<Ball r={0.26} p={[0.18, 1.15, 0.05]} c={lighter(LEAF, 0.15)} />
+			<Ball r={0.26} p={[0.18, 1.15, 0.05]} c={LEAF_LIGHT} />
 			<Ball r={0.22} p={[-0.2, 1.1, -0.05]} c={LEAF} />
 		</>
 	),

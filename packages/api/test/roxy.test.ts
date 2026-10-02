@@ -136,7 +136,48 @@ describe("roxy", () => {
 		await call("/api/parent", { method: "PUT", cookie, json: { roxyHolidaysOff: ["halloween"] } });
 		expect((await studio("2026-10-31")).holidays.map((h) => h.id)).not.toContain("halloween");
 		expect((await studio()).holidaysOff).toEqual(["halloween"]);
-		expect((await post("/unlock", { itemId: "hat-witch" })).status).toBe(403);
+		expect((await post("/unlock", { itemId: "outer-bat" })).status).toBe(403);
+	});
+
+	it("never sells a holiday's gift: it's only claimed, free", async () => {
+		const { id, studio, post, cookie } = await family();
+		await giveStars(id, 50);
+		const res = await post("/unlock", { itemId: "hat-witch" });
+		expect(res.status).toBe(403);
+		expect(await res.json()).toEqual({ error: "gift" });
+		expect(await studio()).toMatchObject({ unlocked: [], balance: 50 });
+		const progress = (await (await call(`/api/children/${id}/progress`, { cookie })).json()) as { stats: { starsSpent: number } };
+		expect(progress.stats.starsSpent).toBe(0);
+	});
+
+	it("takes off a holiday a parent turned off instead of refusing every save", async () => {
+		const { id, studio, base, cookie, post } = await family();
+		await giveStars(id, 100);
+		for (const itemId of ["outer-bat", "stage-halloween", "pumpkins"]) expect((await post("/unlock", { itemId })).status).toBe(200);
+		const putLook = (look: Look) => call(`${base}/current`, { method: "PUT", cookie, json: { look } });
+		const putHome = (home: Home) => call(`${base}/home`, { method: "PUT", cookie, json: { home } });
+		const spooky = wear(wear(starterLook(id), "outer", { item: "outer-bat" }), "background", { item: "stage-halloween" });
+		const room = { ...starterHome(), items: [...starterHome().items, { uid: "h", item: "pumpkins", x: 5, z: 7, rot: 0 }] };
+		expect((await putLook(spooky)).status).toBe(200);
+		expect((await putHome(room)).status).toBe(200);
+
+		await call("/api/parent", { method: "PUT", cookie, json: { roxyHolidaysOff: ["halloween"] } });
+		// What was saved comes back without it...
+		const after = await studio();
+		expect(after.current.slots.outer).toBeUndefined();
+		expect(after.current.slots.background?.item).not.toBe("stage-halloween");
+		expect(after.home.items).toEqual(starterHome().items);
+		// ...and a device still holding the old look or room saves, getting back what was kept.
+		const look = await putLook(spooky);
+		expect(look.status).toBe(200);
+		const saved = (await look.json()) as { look: Look };
+		expect(saved.look.slots.outer).toBeUndefined();
+		expect(saved.look).toEqual(after.current);
+		const home = await putHome(room);
+		expect(home.status).toBe(200);
+		expect(((await home.json()) as Home).items).toEqual(starterHome().items);
+		// Something never unlocked is still refused.
+		expect((await putLook(wear(spooky, "hat", { item: "hat-crown" }))).status).toBe(403);
 	});
 
 	it("keeps each child's home, tidies what doesn't fit, and charges for locked furniture", async () => {

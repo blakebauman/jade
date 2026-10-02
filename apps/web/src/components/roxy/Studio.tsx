@@ -45,11 +45,21 @@ import {
 	Star,
 	Undo2,
 } from "lucide-react";
-import { Component, lazy, type ReactNode, Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Component, lazy, type ReactNode, Suspense, useId, useMemo, useState } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
 import { ApiError } from "#/lib/api.ts";
-import { prefersReducedMotion, useOnline } from "#/lib/hooks.ts";
-import { LOOK_NAMES, roxyApi, roxyQuery, type Studio as StudioData, tryOn, useRoxyDraft } from "#/lib/roxy.ts";
+import { useOnline } from "#/lib/hooks.ts";
+import {
+	LOOK_NAMES,
+	type OpenHoliday,
+	roxyApi,
+	roxyQuery,
+	type Studio as StudioData,
+	tryOn,
+	useRevealed,
+	useRoxyDraft,
+	useSendFinds,
+} from "#/lib/roxy.ts";
 import { GameScreen } from "./GameScreen.tsx";
 import { RoxyFigure, SLOT_VIEW } from "./RoxyFigure.tsx";
 
@@ -84,6 +94,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	const online = useOnline();
 	const id = useId();
 	const draft = useRoxyDraft(childId, data);
+	useSendFinds(childId);
 	const unlocked = useMemo(() => new Set(data.unlocked), [data.unlocked]);
 	const off = useMemo(() => new Set<string>(data.holidaysOff), [data.holidaysOff]);
 	const holidays = data.holidays;
@@ -126,7 +137,8 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		setBusy(true);
 		try {
 			await roxyApi.unlock(childId, item.id);
-			draft.set(tryOn(draft.look, slot, item));
+			// The look as it is now, not as it was when "Unlock" was tapped.
+			draft.set((look) => tryOn(look, slot, item));
 			setTrying(null);
 			await Promise.all([refresh(), progressRefresh()]);
 		} catch (err) {
@@ -140,15 +152,22 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		}
 	}
 
-	async function claim(holiday: StudioData["holidays"][number]) {
+	async function claim(holiday: OpenHoliday) {
 		setBusy(true);
+		setMessage(null);
 		try {
 			await roxyApi.claim(childId, holiday.id);
 			const gift = ITEMS.find((i) => i.id === holiday.gift)!;
-			draft.set(tryOn(draft.look, gift.slot, gift));
+			draft.set((look) => tryOn(look, gift.slot, gift));
+			setTrying(null);
 			await refresh();
-		} catch {
-			setMessage("Couldn’t open the gift. Check the connection and try again.");
+		} catch (err) {
+			// The server says why it refused (say, the device's date is off); anything else is the connection.
+			setMessage(
+				err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 429
+					? `Couldn’t open the gift. ${err.message}.`
+					: "Couldn’t open the gift. Check the connection and try again.",
+			);
 		} finally {
 			setBusy(false);
 		}
@@ -311,7 +330,9 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 							balance={data.balance}
 							online={online}
 							busy={busy}
+							giftOpen={holidays.find((h) => trying.item.gift && h.id === trying.item.holiday)}
 							onUnlock={() => void unlock(trying.item, trying.slot)}
+							onClaim={(h) => void claim(h)}
 							onCancel={() => setTrying(null)}
 						/>
 					)}
@@ -504,11 +525,12 @@ function SlotPicker({
 					return (
 						<li key={item.id}>
 							<ItemButton
-								label={`${item.label}${owned ? "" : `, ${item.cost} stars`}${item.holiday ? `, ${HOLIDAY_LABEL[item.holiday]}` : ""}`}
+								label={`${item.label}${owned ? "" : item.gift ? ", free gift" : `, ${item.cost} stars`}${item.holiday ? `, ${HOLIDAY_LABEL[item.holiday]}` : ""}`}
 								selected={selected}
 								// Tapping the moon gem's form again turns the Roxy back.
 								onClick={() => onPick(slot === "form" && worn?.item === item.id ? null : item)}
-								badge={!owned ? item.cost : undefined}
+								// A holiday's gift is never bought, so it shows no price.
+								badge={owned ? undefined : item.gift ? "gift" : item.cost}
 							>
 								<RoxyFigure look={tryOn(look, slot, item)} viewBox={SLOT_VIEW[slot]} className="size-full" title={item.label} />
 							</ItemButton>
@@ -539,7 +561,8 @@ function ItemButton({
 	label: string;
 	selected: boolean;
 	onClick: () => void;
-	badge?: number;
+	/** Locked: its price in stars, or "gift" for a holiday's free gift. */
+	badge?: number | "gift";
 	children: ReactNode;
 }) {
 	return (
@@ -554,14 +577,32 @@ function ItemButton({
 			{children}
 			{badge !== undefined && (
 				<span className="plaque absolute right-1 bottom-1 gap-0.5 px-1.5 py-0.5 text-xs" aria-hidden>
-					<Lock className="size-3" /> {badge}
+					{badge === "gift" ? (
+						<Gift className="size-3" />
+					) : (
+						<>
+							<Lock className="size-3" /> {badge}
+						</>
+					)}
 				</span>
 			)}
 		</button>
 	);
 }
 
-function UnlockPrompt(props: { item: Item; balance: number; online: boolean; busy: boolean; onUnlock: () => void; onCancel: () => void }) {
+type UnlockProps = {
+	item: Item;
+	balance: number;
+	online: boolean;
+	busy: boolean;
+	/** For a holiday's gift: its holiday, while that's open. */
+	giftOpen: OpenHoliday | undefined;
+	onUnlock: () => void;
+	onClaim: (holiday: OpenHoliday) => void;
+	onCancel: () => void;
+};
+
+function UnlockPrompt(props: UnlockProps) {
 	const ref = useRevealed<HTMLDivElement>();
 	return (
 		<div ref={ref} className="scroll-mt-6">
@@ -570,21 +611,42 @@ function UnlockPrompt(props: { item: Item; balance: number; online: boolean; bus
 	);
 }
 
-function UnlockChoice({
-	item,
-	balance,
-	online,
-	busy,
-	onUnlock,
-	onCancel,
-}: {
-	item: Item;
-	balance: number;
-	online: boolean;
-	busy: boolean;
-	onUnlock: () => void;
-	onCancel: () => void;
-}) {
+function UnlockChoice({ item, balance, online, busy, giftOpen, onUnlock, onClaim, onCancel }: UnlockProps) {
+	// A holiday's gift is never bought: it's opened free while the holiday is on, and waits for it otherwise.
+	if (item.gift && !giftOpen)
+		return (
+			<p role="status" className="patch mt-6 flex flex-wrap items-center justify-between gap-3 p-4">
+				<span>
+					<span className="font-display text-lg font-semibold">{item.label}</span> is a free gift for {HOLIDAY_LABEL[item.holiday!]}. It
+					opens the week before.
+				</span>
+				<button type="button" className="key" onClick={onCancel}>
+					OK
+				</button>
+			</p>
+		);
+	if (item.gift && !online)
+		return (
+			<p role="status" className="patch mt-6 p-4">
+				Opening your free {item.label.toLowerCase()} needs the internet.
+				<button type="button" className="key ml-3" onClick={onCancel}>
+					OK
+				</button>
+			</p>
+		);
+	if (item.gift && giftOpen)
+		return (
+			<Confirm
+				className="mt-6"
+				message={`Open your free ${item.label.toLowerCase()}?`}
+				note={`It’s a ${giftOpen.label} gift. No stars needed.`}
+				confirmLabel="Open it"
+				cancelLabel="Not now"
+				busy={busy}
+				onConfirm={() => onClaim(giftOpen)}
+				onCancel={onCancel}
+			/>
+		);
 	if (!online)
 		return (
 			<p role="status" className="patch mt-6 p-4">
@@ -629,7 +691,7 @@ function HolidayPanel({
 	onClaim,
 	onPick,
 }: {
-	holiday: StudioData["holidays"][number];
+	holiday: OpenHoliday;
 	look: Look;
 	unlocked: ReadonlySet<string>;
 	busy: boolean;
@@ -678,15 +740,6 @@ function HolidayPanel({
 			</ul>
 		</section>
 	);
-}
-
-/** Bring a prompt that just opened into view: the item grids may have been scrolled far below it. */
-function useRevealed<T extends HTMLElement>() {
-	const ref = useRef<T>(null);
-	useEffect(() => {
-		ref.current?.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-	}, []);
-	return ref;
 }
 
 function SaveLook({

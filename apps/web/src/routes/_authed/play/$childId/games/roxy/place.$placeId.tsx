@@ -8,7 +8,7 @@ import { GameScreen } from "#/components/roxy/GameScreen.tsx";
 import type { Hotspot } from "#/components/roxy/world/PlaceScene.tsx";
 import { useChild } from "#/lib/child.ts";
 import { useOnline } from "#/lib/hooks.ts";
-import { roxyApi, roxyQuery, type Studio, shownLook } from "#/lib/roxy.ts";
+import { pendingFinds, recordFind, roxyQuery, type Studio, shownLook, useSendFinds } from "#/lib/roxy.ts";
 import { speaker } from "#/lib/speaker.ts";
 
 const scene = () => import("#/components/roxy/world/PlaceScene.tsx");
@@ -25,10 +25,13 @@ export const Route = createFileRoute("/_authed/play/$childId/games/roxy/place/$p
 });
 
 /** If this device can't draw 3D, say so; the finds and buttons below still work. */
-class NoWebGL extends Component<{ children: ReactNode }, { failed: boolean }> {
+class NoWebGL extends Component<{ children: ReactNode; onFail: () => void }, { failed: boolean }> {
 	override state = { failed: false };
 	static getDerivedStateFromError() {
 		return { failed: true };
+	}
+	override componentDidCatch() {
+		this.props.onFail();
 	}
 	override render() {
 		if (this.state.failed)
@@ -55,16 +58,31 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 	const info = PLACE_INFO[place];
 	const look = shownLook(childId, data);
 	const finds = FINDS.filter((f) => f.place === place);
-	const [found, setFound] = useState(() => new Set(data.finds));
+	// Finds this device hasn't got onto the server yet count too, so they survive a reload offline.
+	const [found, setFound] = useState(() => new Set([...data.finds, ...pendingFinds(childId)]));
+	/** No 3D here, so Roxy can't walk over: "Help me look" picks things up straight away. */
+	const [noScene, setNoScene] = useState(false);
 	const [walkTo, setWalkTo] = useState<{ x: number; z: number } | null>(null);
 	const [message, setMessage] = useState<string | null>(null);
 	const [panel, setPanel] = useState<Hotspot | null>(null);
 	/** The find Roxy is walking over to pick up. */
 	const heading = useRef<string | null>(null);
 
+	useSendFinds(childId);
+
 	async function walkToFind(findId: string) {
-		const { findSpot } = await scene();
-		const spot = findSpot(place, findId);
+		if (noScene) {
+			pickUp(findId);
+			return;
+		}
+		// The 3D code may not be here yet, and offline it may never come (it isn't cached until a place has been
+		// opened online): then she can't walk over, so pick it up now.
+		const loaded = await scene().catch(() => null);
+		if (!loaded) {
+			pickUp(findId);
+			return;
+		}
+		const spot = loaded.findSpot(place, findId);
 		if (!spot) return;
 		heading.current = findId;
 		setWalkTo({ ...spot });
@@ -76,11 +94,10 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 		setFound((s) => new Set([...s, findId]));
 		const left = finds.filter((f) => f.id !== findId && !found.has(f.id)).length;
 		setMessage(`You found the ${find.label.toLowerCase()}! ${left === 0 ? "That’s everything here!" : `${left} more hiding here.`}`);
-		// Saved now if online; if not, it's found again next visit (finding twice changes nothing).
-		void roxyApi
-			.find(childId, findId)
-			.then(() => qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey }))
-			.catch(() => {});
+		// Kept on this device and sent now, or when the connection is back (finding twice changes nothing).
+		void recordFind(childId, findId).then((sent) => {
+			if (sent) void qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey });
+		});
 	}
 
 	const hidden = finds.filter((f) => !found.has(f.id));
@@ -89,7 +106,7 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 		<GameScreen
 			panelLabel="What’s here"
 			scene={
-				<NoWebGL>
+				<NoWebGL onFail={() => setNoScene(true)}>
 					<Suspense fallback={<p className="grid size-full place-items-center text-page-muted">On the way…</p>}>
 						<PlaceScene
 							place={place}
@@ -189,7 +206,11 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 								<Search className="size-5" aria-hidden /> Help me look
 							</button>
 						)}
-						{!online && <p className="text-sm text-page-muted">You’re offline. Finds are kept when you’re back online and visit again.</p>}
+						{!online && (
+							<p className="text-sm text-page-muted">
+								You’re offline. What you find is kept on this device and saved when you’re back online.
+							</p>
+						)}
 					</section>
 				</div>
 			}

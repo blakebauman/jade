@@ -2,6 +2,7 @@ import { FURNITURE_BY_ID, footprint, type Home, hex, type Look, type Placed, ROO
 import type { ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { FurnitureMesh, Toon } from "./Furniture.tsx";
+import type { Block } from "./path.ts";
 import { canvasTexture, type Spot, tint, Walkers, WorldCanvas } from "./stage.tsx";
 
 /** Roxy's home: one room on a grid (see `HomeSchema`), with Roxy and her pet walking about in it. */
@@ -24,15 +25,26 @@ type Props = {
 };
 
 export function HomeScene(props: Props) {
+	const blocks = useMemo(() => furnitureBlocks(props.home), [props.home]);
 	return (
 		<WorldCanvas area={ROOM} label={props.label}>
 			<Room home={props.home} onFloor={props.onFloor} onWall={props.onWall} />
 			{props.home.items.map((p) => (
 				<PlacedThing key={p.uid} placed={p} selected={p.uid === props.selected} onPick={props.onFurniture} />
 			))}
-			<Walkers look={props.look} walkTo={props.walkTo} area={ROOM} />
+			<Walkers look={props.look} walkTo={props.walkTo} area={ROOM} blocks={blocks} />
 		</WorldCanvas>
 	);
+}
+
+/** Floor furniture is in Roxy's way; rugs and wall things aren't. */
+function furnitureBlocks(home: Home): Block[] {
+	return home.items.flatMap((p) => {
+		const item = FURNITURE_BY_ID.get(p.item);
+		if (item?.kind !== "floor") return [];
+		const f = footprint(p, item);
+		return [{ x0: f.x0, z0: f.z0, x1: f.x0 + f.w, z1: f.z0 + f.d }];
+	});
 }
 
 // ── The room ──

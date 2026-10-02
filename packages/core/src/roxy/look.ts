@@ -27,7 +27,7 @@ export const LOOK_NAME_MAX = 24;
 export const PET_NAME_MAX = PET_NAME_MAX_;
 export const MAX_SAVED_LOOKS = 12;
 
-/** Items that are free, or that this child has unlocked. Holiday gifts are never free: they're claimed. */
+/** Items that are free, or that this child has unlocked. Holiday gifts are never free: they're claimed, never bought. */
 export const isOwned = (item: Item, unlocked: ReadonlySet<string>) => item.cost === 0 || unlocked.has(item.id);
 
 /**
@@ -59,6 +59,29 @@ export function normalizeLook(input: unknown): Look | null {
 	const petName = slots.pet ? parsed.data.petName?.trim() : undefined;
 	const pose = parsed.data.pose && parsed.data.pose !== "stand" ? parsed.data.pose : undefined;
 	return { v: 1, skin: parsed.data.skin, slots, ...(petName && { petName }), ...(pose && { pose }) };
+}
+
+/**
+ * The look without anything from a holiday the family turned off: those items are hidden in the studio, so they can't
+ * be taken off there. A hidden stage gives way to the first free everyday one (every look needs a stage).
+ */
+export function withoutHolidays(look: Look, off: ReadonlySet<string>): Look {
+	let out = look;
+	for (const [slot, worn] of Object.entries(look.slots) as [Slot, Worn][]) {
+		const holiday = ITEM.get(worn.item)?.holiday;
+		if (!holiday || !off.has(holiday)) continue;
+		if (!(REQUIRED_SLOTS as readonly Slot[]).includes(slot)) {
+			out = wear(out, slot, null);
+			continue;
+		}
+		const item = ITEMS.find((i) => i.slot === slot && !i.holiday && i.cost === 0)!;
+		const swap: Worn = { item: item.id };
+		item.defaults?.forEach((key, i) => {
+			swap[i === 0 ? "c1" : "c2"] = key;
+		});
+		out = wear(out, slot, swap);
+	}
+	return out;
 }
 
 /** Every item in the look that the child doesn't own yet. */

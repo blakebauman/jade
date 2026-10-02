@@ -21,6 +21,7 @@ import {
 	TABS,
 	thanksgiving,
 	wear,
+	withoutHolidays,
 } from "../roxy/index.ts";
 
 describe("catalog", () => {
@@ -119,6 +120,24 @@ describe("looks", () => {
 		const rng = seeded(7);
 		for (let i = 0; i < 100; i++) expect(lockedItemsIn(randomLook(rng), new Set())).toEqual([]);
 		expect(isOwned(ITEM.get("hat-santa")!, new Set())).toBe(false);
+	});
+
+	it("takes off what a family turned off, swapping a hidden stage for an everyday one", () => {
+		const spooky = normalizeLook(
+			wear(wear(wear(look, "background", { item: "stage-halloween" }), "hat", { item: "hat-witch" }), "glasses", { item: "glasses-round" }),
+		)!;
+		const off = new Set(["halloween"]);
+		const out = withoutHolidays(spooky, off);
+		expect(out.slots.hat).toBeUndefined();
+		expect(out.slots.glasses).toEqual(spooky.slots.glasses);
+		expect(ITEM.get(out.slots.background!.item)).toMatchObject({ cost: 0 });
+		expect(ITEM.get(out.slots.background!.item)?.holiday).toBeUndefined();
+		expect(normalizeLook(out)).toEqual(out);
+		// Nothing hidden: the same look back.
+		expect(withoutHolidays(spooky, new Set(["christmas"]))).toBe(spooky);
+		// The pet stays; only its holiday hat goes.
+		const pet = wear(wear(look, "pet", { item: "pet-cat" }), "petwear", { item: "petwear-santa" });
+		expect(withoutHolidays(pet, new Set(["christmas"]))).toEqual(wear(pet, "petwear", null));
 	});
 });
 

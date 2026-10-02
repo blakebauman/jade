@@ -4,6 +4,7 @@ import {
 	FURNITURE_BY_ID,
 	type Furniture,
 	fits,
+	footprint,
 	type Home,
 	MAX_FURNITURE,
 	PALETTES,
@@ -20,7 +21,7 @@ import { GameScreen } from "#/components/roxy/GameScreen.tsx";
 import { ApiError } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { useOnline } from "#/lib/hooks.ts";
-import { roxyApi, roxyQuery, type Studio, shownLook, useHomeDraft } from "#/lib/roxy.ts";
+import { roxyApi, roxyQuery, type Studio, shownLook, useHomeDraft, useRevealed, useSendFinds } from "#/lib/roxy.ts";
 
 // three.js only loads here, never on the practice screens.
 const HomeScene = lazy(() => import("#/components/roxy/world/HomeScene.tsx").then((m) => ({ default: m.HomeScene })));
@@ -101,6 +102,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 	const online = useOnline();
 	const id = useId();
 	const draft = useHomeDraft(childId, data.home);
+	useSendFinds(childId);
 	const home = draft.home;
 	const look = shownLook(childId, data);
 	const [mode, setMode] = useState<"play" | "decorate">("play");
@@ -137,18 +139,24 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 			setUnlocking(item);
 			return;
 		}
-		if (home.items.length >= MAX_FURNITURE) {
+		place(item, home);
+	}
+
+	/** Put a piece in the first spot it fits in `room`. Says why not, and returns false, when it can't go in. */
+	function place(item: Furniture, room: Home): boolean {
+		if (room.items.length >= MAX_FURNITURE) {
 			setMessage(`The room holds ${MAX_FURNITURE} things. Take one out first.`);
-			return;
+			return false;
 		}
-		const spot = freeSpot(home, item);
+		const spot = freeSpot(room, item);
 		if (!spot) {
 			setMessage(`There’s no room for the ${item.label.toLowerCase()}. Move something first.`);
-			return;
+			return false;
 		}
 		const placed: Placed = { uid: newUid(), item: item.id, ...spot, ...(item.colour && { c1: item.colour }) };
-		update([...home.items, placed]);
+		draft.set({ ...room, items: [...room.items, placed] });
 		setSelected(placed.uid);
+		return true;
 	}
 
 	async function unlock(item: Furniture) {
@@ -158,6 +166,8 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 			await qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey });
 			await qc.invalidateQueries({ queryKey: ["progress", childId] });
 			setUnlocking(null);
+			// Unlocked to be used: it goes straight into the room, like tapping a piece already owned.
+			if (place(item, draft.current())) setMessage(`The ${item.label.toLowerCase()} is yours, and it’s in the room!`);
 		} catch (err) {
 			setMessage(
 				err instanceof ApiError && err.status === 409
@@ -199,7 +209,18 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 								}
 							}}
 							onFurniture={(uid) => {
-								if (mode === "decorate") setSelected(uid);
+								if (mode === "decorate") return setSelected(uid);
+								// Playing: walk over to it (she stops beside it, never on it).
+								const p = home.items.find((x) => x.uid === uid);
+								const item = p && FURNITURE_BY_ID.get(p.item);
+								if (!p || !item) return;
+								if (item.kind === "wall") {
+									const at = p.wall === "left" ? { x: 0.6, z: p.z + item.w / 2 } : { x: p.x + item.w / 2, z: 0.8 };
+									setWalkTo(at);
+								} else {
+									const f = footprint(p, item);
+									setWalkTo({ x: f.x0 + f.w / 2, z: f.z0 + f.d / 2 });
+								}
 							}}
 						/>
 					</Suspense>
@@ -259,47 +280,52 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 				panel: (
 					<div className="space-y-8">
 						{unlocking && (
-							<UnlockFurniture
-								item={unlocking}
-								balance={data.balance}
-								online={online}
-								busy={busy}
-								onUnlock={() => void unlock(unlocking)}
-								onCancel={() => setUnlocking(null)}
-							/>
+							<Revealed key={unlocking.id}>
+								<UnlockFurniture
+									item={unlocking}
+									balance={data.balance}
+									online={online}
+									busy={busy}
+									onUnlock={() => void unlock(unlocking)}
+									onCancel={() => setUnlocking(null)}
+								/>
+							</Revealed>
 						)}
 
+						{/* Keyed by piece, so picking another (or adding one) brings its keys into view. */}
 						{picked && pickedItem && (
-							<section aria-labelledby={`${id}-picked`} className="patch space-y-3 p-4">
-								<h2 id={`${id}-picked`} className="font-display text-xl font-semibold">
-									{pickedItem.label}
-								</h2>
-								<div className="flex flex-wrap gap-2">
-									{pickedItem.kind !== "wall" && (
-										<button type="button" className="key" onClick={() => shift({ rot: (picked.rot + 1) % 4 })}>
-											<RotateCw className="size-5" aria-hidden /> Turn
+							<Revealed key={picked.uid}>
+								<section aria-labelledby={`${id}-picked`} className="patch space-y-3 p-4">
+									<h2 id={`${id}-picked`} className="font-display text-xl font-semibold">
+										{pickedItem.label}
+									</h2>
+									<div className="flex flex-wrap gap-2">
+										{pickedItem.kind !== "wall" && (
+											<button type="button" className="key" onClick={() => shift({ rot: (picked.rot + 1) % 4 })}>
+												<RotateCw className="size-5" aria-hidden /> Turn
+											</button>
+										)}
+										<MoveKeys picked={picked} kind={pickedItem.kind} onMove={shift} />
+										<button
+											type="button"
+											className="key"
+											onClick={() => {
+												update(home.items.filter((p) => p.uid !== picked.uid));
+												setSelected(null);
+											}}
+										>
+											<Trash2 className="size-5" aria-hidden /> Put away
 										</button>
+									</div>
+									{pickedItem.colour && (
+										<Swatches
+											value={picked.c1}
+											label={`${pickedItem.label} colour`}
+											onPick={(c1) => update(home.items.map((p) => (p.uid === picked.uid ? { ...p, c1 } : p)))}
+										/>
 									)}
-									<MoveKeys picked={picked} kind={pickedItem.kind} onMove={shift} />
-									<button
-										type="button"
-										className="key"
-										onClick={() => {
-											update(home.items.filter((p) => p.uid !== picked.uid));
-											setSelected(null);
-										}}
-									>
-										<Trash2 className="size-5" aria-hidden /> Put away
-									</button>
-								</div>
-								{pickedItem.colour && (
-									<Swatches
-										value={picked.c1}
-										label={`${pickedItem.label} colour`}
-										onPick={(c1) => update(home.items.map((p) => (p.uid === picked.uid ? { ...p, c1 } : p)))}
-									/>
-								)}
-							</section>
+								</section>
+							</Revealed>
 						)}
 
 						<section aria-labelledby={`${id}-walls`} className="space-y-3">
@@ -403,6 +429,16 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 				),
 			})}
 		/>
+	);
+}
+
+/** Scrolls into view when it opens (each `key` is a new opening): on a phone the furniture lists may be far below. */
+function Revealed({ children }: { children: ReactNode }) {
+	const ref = useRevealed<HTMLDivElement>();
+	return (
+		<div ref={ref} className="scroll-mt-6">
+			{children}
+		</div>
 	);
 }
 
