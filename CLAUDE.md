@@ -131,7 +131,19 @@ Secrets:
 - **Pets** are the `pet` and `petwear` slots (`petwear` needs a pet; `normalizeLook` drops it otherwise). `petName` is on the look but left out of the fingerprint, so renaming a pet isn't a new look.
 - **Games are built with three.js** (`three` + `@react-three/fiber`), loaded only on game screens (`lazy()`), never on Spelling, Math or parent screens.
 - **3D Roxy** lives in `components/roxy/three/`. `RoxyModel` builds her from the look: `body.tsx` (proportions per body shape, `radiusAt` for clothes to wrap, the face as the studio's SVG features on a sphere patch via `world/texture.ts`), `hair.tsx`, `clothes.tsx` (tops, dresses, jackets and bottoms are specs, such as sleeve length, hem and pattern, over lathed shells), `accessories.tsx`, `animals.tsx` (gem ears and tails, moon-gem heads, pets). Arms, legs and head hang from pivots, so `walking` (a ref, 0–1) swings them and `pose` (on the look, not in the fingerprint) sets the arms. `model.test.ts` fails if a wearable item has no 3D model. Item thumbnails and gallery cards are still the SVG.
-- Game screens use `GameScreen.tsx` (a full-screen scene, a floating header, a hideable panel, and Full screen through the Fullscreen API where it exists; iPhone Safari has none).
+- Game screens use `GameScreen.tsx`. The scene is the screen and the chrome floats small in its corners on `.glass` (DESIGN.md "Game screens"):
+  - Top-left: a back `.orb` and the masthead (`eyebrow`, and a `title` whose `<span>` word is berry; `accent(label)` does a place name).
+  - Top-right: `orbs`, then Full screen (Fullscreen API where it exists; iPhone Safari has none) and Show/Hide panel.
+  - Bottom: keyboard `hints` (fine pointer, only when there's room), `prompt` and `actions` in the centre, and `status` on the right (under the title on a phone). `touch` controls get their own row on touch screens.
+  - The panel is a floating glass sheet whose open state is remembered per screen (`panelKey`, `jade.roxy.panel.*`). Places start it closed (`panelOpen={false}`); `reveal` opens it when a hotspot is used.
+  - The backdrop is `--scene-top`/`--scene-ground`, re-tinted for Day and Night.
+- **Walking Roxy directly** (places, and home while playing), beside tap-to-walk:
+  - `world/drive.ts` is pure and tested: `keysToInput`, `toWorld` (camera-relative) and `stepFree` (slides along walls, using `isFree` in `path.ts`).
+  - `useDrive` reads WASD, the arrows and Space into a ref the frame loop reads; it ignores keys while typing, in tab lists, in the panel and in dialogs. `TouchControls` writes the stick and Hop into the same ref.
+  - `Walkers` takes `drive` and `onMove`. A hop is one 0.4s arc per press, with none under reduced motion.
+  - Places only: dragging turns the view up to 30° (`WorldCanvas orbit`), and it eases back after 3s. A drag never counts as a tap. Home stays fixed.
+  - "Press E": `placeTargets` (PlaceScene) and `nearest` (`world/near.ts`) find what she's beside; E or the prompt's button does what a tap would.
+- **Go to…** (`Destinations.tsx`): a dialog on the studio, home and every place, listing them all with "· here" on the current one.
 - **Roxy's home** (`games/roxy/home`, `world/HomeScene.tsx`): one 10×8 room seen from a fixed angle with an orthographic camera. Furniture is built from rounded shapes in code with toon shading (`world/Furniture.tsx`); `furniture.test.ts` checks every catalog piece has a model.
   - The home is `HomeSchema` in `core/roxy/home.ts`: wallpaper, floor, and up to 40 placed pieces on whole squares (walls: `back`/`left`). `normalizeHome` drops pieces outside the room or on top of other furniture (rugs go under). Stored in `roxy_homes`, returned as `home` on `GET …/roxy`, saved with `PUT …/roxy/home` (403 if it holds locked furniture), kept on the device as `jade.roxyhome.{childId}` and autosaved like the look.
   - Furniture unlocks through the same `POST …/roxy/unlock` and `roxy_unlocks` rows as clothes; a core test keeps their ids apart.

@@ -1,15 +1,16 @@
 import type { Look } from "@jade/core/roxy";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { CanvasTexture, type Group, RepeatWrapping, SRGBColorSpace, Vector3 } from "three";
+import { createContext, type ReactNode, type Ref, type RefObject, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { CanvasTexture, type Group, type Mesh, RepeatWrapping, SRGBColorSpace, Vector3 } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { PetModel, RoxyModel } from "../three/RoxyModel.tsx";
+import { type DriveInput, stepFree, toWorld } from "./drive.ts";
 import { Pace, useContextLoss, useWake } from "./pace.tsx";
 import { type Block, findPath, type Grid, makeGrid, nearestFree } from "./path.ts";
 
 /**
- * What every place in Roxy's world shares: a fixed, slightly-raised corner camera (picture-book, not a flight
- * simulator), soft light, and Roxy and her pet walking round whatever is in the way.
+ * What every place in Roxy's world shares: a slightly-raised corner camera (picture-book, not a flight simulator)
+ * that a drag can turn a little in town, soft light, and Roxy and her pet walking round whatever is in the way.
  * An area is measured in grid squares, from (0, 0) at the back-left corner.
  */
 
@@ -20,33 +21,88 @@ const CAMERA_OFFSET = new Vector3(8, 9, 10.5);
 
 const centre = (area: Area) => new Vector3(area.w / 2, 0.6, area.d / 2);
 
-/** The canvas for one place: camera, light and whatever the place puts in it. */
-export function WorldCanvas({ area, label, children }: { area: Area; label: string; children: ReactNode }) {
+/** How far a drag can turn the view either way, and how long it stays turned once let go. */
+const ORBIT_MAX = Math.PI / 6;
+const ORBIT_HOLD_MS = 3000;
+/** How far the pointer moves before a press is a drag (turning the view) rather than a tap (walking there). */
+const DRAG_PX = 6;
+
+/** The view's turn: the corner camera's own angle plus however far a drag has turned it. */
+type View = { turn: number; yaw: number; drag: { id: number; x: number; moved: boolean } | null; idleAt: number };
+
+/**
+ * The canvas for one place: camera, light and whatever the place puts in it. With `orbit`, dragging sideways turns
+ * the view up to 30° either way (the home has no front walls, so it stays put); a drag never counts as a tap.
+ */
+export function WorldCanvas({ area, label, orbit = false, children }: { area: Area; label: string; orbit?: boolean; children: ReactNode }) {
 	const focus = useRef(centre(area));
+	const view = useRef<View>({ turn: 0, yaw, drag: null, idleAt: 0 });
+	const dragged = useRef(false);
 	const onCreated = useContextLoss();
+	const end = (id: number) => {
+		const v = view.current;
+		if (v.drag?.id !== id) return;
+		dragged.current = v.drag.moved;
+		v.drag = null;
+		v.idleAt = performance.now();
+	};
 	return (
-		<Canvas
-			orthographic
-			flat
-			frameloop="demand"
-			onCreated={onCreated}
-			dpr={[1, 2]}
-			camera={{ position: centre(area).add(CAMERA_OFFSET).toArray(), near: 0.1, far: 200, zoom: 50 }}
-			gl={{ alpha: true, antialias: true }}
-			aria-label={label}
-			role="img"
+		<div
+			className="h-full w-full"
+			style={orbit ? { touchAction: "none" } : undefined}
+			// A drag that turned the view ends in a click; swallow it before the scene sees it as a tap on the ground.
+			onClickCapture={(e) => {
+				if (!dragged.current) return;
+				dragged.current = false;
+				e.stopPropagation();
+			}}
+			onPointerDown={(e) => {
+				if (!orbit || view.current.drag) return;
+				dragged.current = false;
+				view.current.drag = { id: e.pointerId, x: e.clientX, moved: false };
+			}}
+			onPointerMove={(e) => {
+				const d = view.current.drag;
+				if (!d || d.id !== e.pointerId) return;
+				const dx = e.clientX - d.x;
+				if (!d.moved && Math.abs(dx) < DRAG_PX) return;
+				if (!d.moved) e.currentTarget.setPointerCapture?.(e.pointerId);
+				d.moved = true;
+				d.x = e.clientX;
+				const v = view.current;
+				v.turn = Math.max(-ORBIT_MAX, Math.min(ORBIT_MAX, v.turn - dx * 0.006));
+				v.idleAt = performance.now();
+			}}
+			onPointerUp={(e) => end(e.pointerId)}
+			onPointerCancel={(e) => end(e.pointerId)}
 		>
-			<Pace>
-				<Focus.Provider value={focus}>
-					<CameraRig area={area} />
-					<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
-					<directionalLight position={[12, 16, 10]} intensity={1.2} />
-					{children}
-				</Focus.Provider>
-			</Pace>
-		</Canvas>
+			<Canvas
+				orthographic
+				flat
+				frameloop="demand"
+				onCreated={onCreated}
+				dpr={[1, 2]}
+				camera={{ position: centre(area).add(CAMERA_OFFSET).toArray(), near: 0.1, far: 200, zoom: 50 }}
+				gl={{ alpha: true, antialias: true }}
+				aria-label={label}
+				role="img"
+			>
+				<Pace>
+					<Focus.Provider value={focus}>
+						<ViewContext.Provider value={view}>
+							<CameraRig area={area} />
+							<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
+							<directionalLight position={[12, 16, 10]} intensity={1.2} />
+							{children}
+						</ViewContext.Provider>
+					</Focus.Provider>
+				</Pace>
+			</Canvas>
+		</div>
 	);
 }
+
+const ViewContext = createContext<RefObject<View> | null>(null);
 
 /** Where Roxy is, for a camera that follows her round places bigger than the screen. */
 const Focus = createContext<{ current: Vector3 } | null>(null);
@@ -65,6 +121,7 @@ function CameraRig({ area }: { area: Area }) {
 	const whole = fitsWhole(area);
 	const reduced = useMemo(() => prefersReducedMotion(), []);
 	const look = useRef(centre(area));
+	const view = useContext(ViewContext);
 	const wake = useWake();
 	useEffect(() => {
 		const scale = whole ? Math.max(area.w / ROOM_FRAME.w, area.d / ROOM_FRAME.d) : 1.1;
@@ -77,20 +134,40 @@ function CameraRig({ area }: { area: Area }) {
 		}
 	}, [camera, size, area, whole]);
 	useFrame((_, dt) => {
-		if (whole || !focus) return;
+		const v = view?.current;
+		// A turned view eases back to the corner once it's been left alone (snaps back with reduced motion).
+		let turned = false;
+		if (v && !v.drag && v.turn !== 0 && performance.now() - v.idleAt > ORBIT_HOLD_MS) {
+			v.turn = reduced || Math.abs(v.turn) < 0.002 ? 0 : v.turn * (1 - Math.min(1, dt * 3));
+		}
+		if (v) {
+			turned = v.yaw !== yaw + v.turn;
+			v.yaw = yaw + v.turn;
+		}
+		offset.copy(CAMERA_OFFSET).applyAxisAngle(UP, v?.turn ?? 0);
+		if (turned) wake();
+		if (whole || !focus) {
+			if (turned) {
+				camera.position.copy(look.current).add(offset);
+				camera.lookAt(look.current);
+			}
+			return;
+		}
 		// Keep the view's centre far enough in from the edges that the ground fills the screen.
 		const mx = Math.min(area.w / 2, 3.5);
 		const mz = Math.min(area.d / 2, 2.5);
 		want.set(Math.min(area.w - mx, Math.max(mx, focus.current.x)), 0.6, Math.min(area.d - mz, Math.max(mz, focus.current.z)));
 		if (look.current.distanceToSquared(want) > 1e-5) wake();
 		look.current.lerp(want, reduced ? 1 : Math.min(1, dt * 3));
-		camera.position.copy(look.current).add(CAMERA_OFFSET);
+		camera.position.copy(look.current).add(offset);
 		camera.lookAt(look.current);
 	});
 	return null;
 }
 
 const want = new Vector3();
+const offset = new Vector3();
+const UP = new Vector3(0, 1, 0);
 
 /** A canvas texture drawn in code, repeated across a surface. */
 export function canvasTexture(w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void, repeat: [number, number]) {
@@ -121,9 +198,9 @@ const yaw = Math.atan2(CAMERA_OFFSET.x, CAMERA_OFFSET.z);
 export const RIGHT = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
 
 /** A soft round shadow on the ground under something, squashed with `s` for long things. */
-export function Shadow({ r, s }: { r: number; s?: [number, number, number] }) {
+export function Shadow({ r, s, ref }: { r: number; s?: [number, number, number]; ref?: Ref<Mesh> }) {
 	return (
-		<mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={s}>
+		<mesh ref={ref} position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={s}>
 			<circleGeometry args={[r, 24]} />
 			<meshBasicMaterial color="#2b1d14" transparent opacity={0.18} />
 		</mesh>
@@ -135,6 +212,8 @@ export function Shadow({ r, s }: { r: number; s?: [number, number, number] }) {
  * face the way they're going and turn back to face you when they stop. `onArrive` fires once each time she gets
  * where she was going, so a place can hand her what she walked over to pick up. `blocks` should keep its identity
  * between renders (memoise it); the route grid is rebuilt when it changes.
+ * `drive` walks her directly (the keys or the touch stick), sliding along whatever's in the way, and hops her;
+ * `onMove` hears where she is a few times a second while she moves, for "Press E" when she's beside something.
  */
 export function Walkers({
 	look,
@@ -143,6 +222,8 @@ export function Walkers({
 	start,
 	blocks = NO_BLOCKS,
 	onArrive,
+	drive,
+	onMove,
 }: {
 	look: Look;
 	walkTo: Spot | null;
@@ -150,6 +231,8 @@ export function Walkers({
 	start?: Spot;
 	blocks?: readonly Block[];
 	onArrive?: (spot: Spot) => void;
+	drive?: RefObject<DriveInput>;
+	onMove?: (spot: Spot) => void;
 }) {
 	const roxy = useRef<Group>(null);
 	const roxyTurn = useRef<Group>(null);
@@ -169,9 +252,16 @@ export function Walkers({
 	const arriving = useRef<Spot | null>(null);
 	const arrive = useRef(onArrive);
 	arrive.current = onArrive;
+	const moved = useRef(onMove);
+	moved.current = onMove;
 	const reduced = useMemo(() => prefersReducedMotion(), []);
 	const focus = useContext(Focus);
+	const view = useContext(ViewContext);
 	const wake = useWake();
+	const shadow = useRef<Mesh>(null);
+	/** How far into a hop she is (s), or -1 on the ground; and whether Hop was already held (one hop per press). */
+	const hop = useRef({ t: -1, held: false });
+	const told = useRef({ at: 0, x: Number.NaN, z: Number.NaN });
 
 	useEffect(() => {
 		const r = roxy.current;
@@ -206,6 +296,33 @@ export function Walkers({
 		if (!r || !p) return;
 		const step = Math.min(dt, 0.05);
 		const t = state.clock.elapsedTime;
+		const facing = view?.current.yaw ?? yaw;
+		const d = drive?.current;
+		// Walked directly: the keys or the stick take over from any walk to a tapped spot.
+		let driven = false;
+		if (d && (d.x !== 0 || d.y !== 0)) {
+			route.current = [];
+			arriving.current = null;
+			const dir = toWorld(d, facing);
+			const speed = 2.6 * step;
+			const to = stepFree(grid, { x: r.position.x, z: r.position.z }, { x: dir.x * speed, z: dir.z * speed });
+			driven = to.x !== r.position.x || to.z !== r.position.z;
+			r.position.set(to.x, 0, to.z);
+			turnTo(roxyTurn.current, Math.atan2(dir.x, dir.z), step);
+			wake();
+		}
+		// One hop per press of Space or Hop: a short arc up and down (none with reduced motion).
+		const h = hop.current;
+		if (d?.hop && !h.held && h.t < 0 && !reduced) h.t = 0;
+		h.held = !!d?.hop;
+		let lift = 0;
+		if (h.t >= 0) {
+			h.t += step;
+			lift = h.t >= HOP_S ? 0 : Math.sin((Math.PI * h.t) / HOP_S) * HOP_H;
+			if (h.t >= HOP_S) h.t = -1;
+			wake();
+		}
+		if (shadow.current) shadow.current.scale.setScalar(1 - lift);
 		let next = route.current[0];
 		// Close enough to a waypoint on the way: on to the next, without stopping.
 		while (next && route.current.length > 1 && r.position.distanceTo(next) < 0.08) {
@@ -213,16 +330,17 @@ export function Walkers({
 			next = route.current[0];
 		}
 		const dist = next ? toTarget.subVectors(next, r.position).length() : 0;
-		const moving = dist > 0.05 && !reduced;
+		const routed = dist > 0.05 && !reduced;
+		const moving = routed || (driven && !reduced);
 		walking.current += ((moving ? 1 : 0) - walking.current) * Math.min(1, step * 10);
 		if (moving || walking.current > 0.01 || arriving.current) wake();
-		if (moving) {
+		if (routed) {
 			r.position.addScaledVector(toTarget, Math.min(dist, 2.6 * step) / dist);
 			turnTo(roxyTurn.current, Math.atan2(toTarget.x, toTarget.z), step);
-		} else {
+		} else if (!driven) {
 			if (next) r.position.copy(next);
 			route.current = [];
-			turnTo(roxyTurn.current, yaw, step);
+			turnTo(roxyTurn.current, facing, step);
 			if (arriving.current) {
 				const spot = arriving.current;
 				arriving.current = null;
@@ -230,7 +348,16 @@ export function Walkers({
 			}
 		}
 		focus?.current.copy(r.position);
-		if (roxyTurn.current) roxyTurn.current.position.y = moving ? Math.abs(Math.sin(t * 9)) * 0.04 : 0;
+		if (roxyTurn.current) roxyTurn.current.position.y = lift || (moving ? Math.abs(Math.sin(t * 9)) * 0.04 : 0);
+		// Tell the place where she is, a few times a second while she's moving.
+		const k = told.current;
+		const now = state.clock.elapsedTime;
+		if (moved.current && now - k.at > 0.1 && (k.x !== r.position.x || k.z !== r.position.z)) {
+			k.at = now;
+			k.x = r.position.x;
+			k.z = r.position.z;
+			moved.current({ x: k.x, z: k.z });
+		}
 		// The pet trots to a clear spot beside Roxy, a little behind.
 		const spot = petSpot(grid, r.position, petWant);
 		const toSpot = spot.sub(p.position);
@@ -242,7 +369,7 @@ export function Walkers({
 			turnTo(petTurn.current, Math.atan2(toSpot.x, toSpot.z), step);
 		} else {
 			if (reduced) p.position.add(toSpot);
-			turnTo(petTurn.current, yaw, step);
+			turnTo(petTurn.current, facing, step);
 		}
 		if (petTurn.current) petTurn.current.position.y = petMoving ? Math.abs(Math.sin(t * 14)) * 0.08 : 0;
 	});
@@ -250,7 +377,7 @@ export function Walkers({
 	return (
 		<>
 			<group ref={roxy} position={first.roxy}>
-				<Shadow r={0.45} />
+				<Shadow r={0.45} ref={shadow} />
 				<group ref={roxyTurn} rotation={[0, yaw, 0]}>
 					<RoxyModel look={look} walking={walking} />
 				</group>
@@ -270,6 +397,9 @@ export function Walkers({
 }
 
 type V3 = [number, number, number];
+/** A hop: how long it takes (s) and how high it goes. */
+const HOP_S = 0.4;
+const HOP_H = 0.45;
 const NO_BLOCKS: readonly Block[] = [];
 // Scratch vectors for the frame loop, so walking doesn't allocate every frame.
 const toTarget = new Vector3();

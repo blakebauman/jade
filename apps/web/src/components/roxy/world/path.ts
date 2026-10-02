@@ -41,6 +41,10 @@ const cellOf = (g: Grid, s: Spot) => ({
 const centreOf = (c: number, r: number): Spot => ({ x: (c + 0.5) / FINE, z: (r + 0.5) / FINE });
 const free = (g: Grid, c: number, r: number) => c >= 0 && r >= 0 && c < g.cols && r < g.rows && !g.blocked[r * g.cols + c];
 
+/** Whether Roxy can stand at a spot: on the ground and clear of everything (off the area is never free). */
+export const isFree = (g: Grid, s: Spot) =>
+	s.x >= 0 && s.z >= 0 && s.x < g.area.w && s.z < g.area.d && free(g, Math.floor(s.x * FINE), Math.floor(s.z * FINE));
+
 /** The nearest spot Roxy can stand on: the spot itself when it's clear. */
 export function nearestFree(g: Grid, s: Spot): Spot {
 	const { c, r } = cellOf(g, s);

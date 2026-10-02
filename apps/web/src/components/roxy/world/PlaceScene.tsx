@@ -1,11 +1,13 @@
 import { type Look, PLACE_INFO, type PlaceId } from "@jade/core/roxy";
 import type { ThreeEvent } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
-import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Color, DoubleSide, type Group, type InstancedMesh, Matrix4, Object3D } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
+import type { DriveInput } from "./drive.ts";
 import { B, Ball, Cyl, GOLD, LEAF, LEAF_DARK, LEAF_LIGHT, lighter, POT, Toon, toonGradient, WHITE, WOOD, WOOD_DARK } from "./Furniture.tsx";
 import { Model } from "./Model.tsx";
+import type { Target } from "./near.ts";
 import { useWake } from "./pace.tsx";
 import type { Block } from "./path.ts";
 import { type Area, canvasTexture, Shadow, type Spot, Walkers, WorldCanvas } from "./stage.tsx";
@@ -807,6 +809,16 @@ export function findSpot(place: PlaceId, findId: string): Spot | null {
 /** Where Roxy starts and what she walks round, for checking every find can be reached. */
 export const placeLayout = (place: PlaceId) => ({ area: PLACE_INFO[place].area, start: PLACES[place].start, blocks: PLACES[place].blocks });
 export const FIND_SPOTS_FOR = (place: PlaceId) => Object.keys(PLACES[place].finds);
+/** What Roxy can walk up to and use here: the finds still hidden, and the hotspots (stand in front of them). */
+export function placeTargets(place: PlaceId, found: ReadonlySet<string>): Target[] {
+	const def = PLACES[place];
+	return [
+		...Object.entries(def.finds)
+			.filter(([id]) => !found.has(id))
+			.map(([id, f]) => ({ kind: "find" as const, id, stand: { x: f.at[0], z: f.at[2] + 0.6 } })),
+		...(def.hotspots ?? []).map((h) => ({ kind: "hotspot" as const, id: h.id, stand: { x: h.at[0], z: h.at[2] + 0.6 } })),
+	];
+}
 
 type Props = {
 	place: PlaceId;
@@ -817,10 +829,14 @@ type Props = {
 	onFind: (findId: string) => void;
 	onHotspot: (id: Hotspot) => void;
 	onArrive: (spot: Spot) => void;
+	/** Walks Roxy directly (keys or the touch stick). */
+	drive?: RefObject<DriveInput>;
+	/** Where Roxy is, a few times a second while she moves. */
+	onMove?: (spot: Spot) => void;
 	label: string;
 };
 
-export function PlaceScene({ place, look, found, walkTo, onGround, onFind, onHotspot, onArrive, label }: Props) {
+export function PlaceScene({ place, look, found, walkTo, onGround, onFind, onHotspot, onArrive, drive, onMove, label }: Props) {
 	const def = PLACES[place];
 	const area = PLACE_INFO[place].area;
 	const ground = useMemo(() => def.ground(area), [def, area]);
@@ -839,7 +855,7 @@ export function PlaceScene({ place, look, found, walkTo, onGround, onFind, onHot
 		fn();
 	};
 	return (
-		<WorldCanvas area={area} label={label}>
+		<WorldCanvas area={area} label={label} orbit>
 			<mesh position={[area.w / 2, -0.15, area.d / 2]} onClick={(e) => tap(() => onGround({ x: e.point.x, z: e.point.z }))(e)}>
 				<boxGeometry args={[area.w, 0.3, area.d]} />
 				<meshToonMaterial map={ground} />
@@ -872,7 +888,16 @@ export function PlaceScene({ place, look, found, walkTo, onGround, onFind, onHot
 			{bursts.map((id) => (
 				<FindBurst key={id} at={def.finds[id]!.at} node={def.finds[id]!.node} onDone={() => setBursts((b) => b.filter((x) => x !== id))} />
 			))}
-			<Walkers look={look} walkTo={walkTo} area={area} start={def.start} blocks={def.blocks} onArrive={onArrive} />
+			<Walkers
+				look={look}
+				walkTo={walkTo}
+				area={area}
+				start={def.start}
+				blocks={def.blocks}
+				onArrive={onArrive}
+				drive={drive}
+				onMove={onMove}
+			/>
 		</WorldCanvas>
 	);
 }

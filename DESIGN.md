@@ -430,23 +430,35 @@ When a screen's data takes longer than about a second, the page shows three 40px
 ### Roxy stage (Games)
 Roxy is the one place character illustration lives. The character is a hand-authored, layered SVG doll (`apps/web/src/components/roxy/`), drawn on one body template (viewBox 400×640) so every item fits the slim, medium and round bodies.
 
-- **Where it can appear:** only inside a maple-framed stage (a `.rack`), item thumbnails, the gallery, and the child's current look on the berry Games sticker (the hub's right page and the Games screen). It never decorates other screens.
+- **Where it can appear:** only on game screens and in a maple-framed stage (a `.rack`), item thumbnails, the gallery, and the child's current look on the berry Games sticker (the hub's right page and the Games screen). It never decorates other screens.
 - **Colours:** Roxy's fabric, skin, hair and makeup palettes live in `@jade/core/roxy` (`palettes.ts`). They are paint, not feedback. The four law colours never mean right or wrong here, and no UI chrome around the stage uses them.
 - **Outlines:** one soft dark line (`LINE` in `geometry.ts`), never pure black. Shading is the item's own colour darkened.
 - **Motion:** the same rules apply. The moon gem's transform is a `tile-flip` of the stage. There are no sparkles, particles or looping animation.
 - **Diversity:** 14 skin tones, 3 body shapes, and hair textures from straight to coily, locs and braids, with no default doll.
 - **Holidays:** collections are joyful and accurate, never caricature. Religious symbols appear only as stage decoration, never as costumes.
 
-### Roxy's home (three.js)
-Games are built with three.js. The world is a doll's house, not a video game: one room seen from a fixed, slightly raised corner (orthographic, no free camera), so it reads like a picture-book page.
+### Roxy's world (three.js)
+Games are built with three.js. The world is a doll's house and a little town, not a video game: seen from a raised corner (orthographic), so it reads like a picture-book page.
 
 - **Roxy is a 3D toy.** She's built in code from soft rounded shapes with the same three-step toon shading as the furniture, and stands about three squares tall with a big head. Her face (eyes, brows, mouth, makeup, face paint) is the studio's own face art wrapped onto the front of the head, so every face option works in 3D. Pets are 3D too, drawn 1.5× life size next to her, as toys are.
-- **Full screen:** game screens (studio, home, places) fill the window. The header floats over the scene, the controls sit in a panel that can be hidden (on the right on wide screens, a bottom sheet on narrow ones), and "Full screen" hides the browser's bars where the browser allows it.
 - **Studio stage:** Roxy on a round stage with her chosen backdrop behind (the stage art, cropped to fill the screen, never stretched). Drag to turn her; she eases back to face you. Poses (stand, wave, hands on hips, cheer, twirl) save with the look.
 - **Furniture is toy-like:** rounded shapes, flat pastel colour, three-step toon shading, soft light, no hard shadows (a faint round shadow sits under Roxy and her pet). Fabric colours come from the same palette as clothes.
-- **The room sits in a maple `.rack` frame** on a pale sky-to-sand backdrop, like the studio stage.
-- **Motion:** a short walk with a gentle bob, a slow breath while standing, and the pet trotting after. All of it stops under reduced motion. No particles, confetti or camera swoops.
-- **Every action in the room has a button beside it,** so nothing is tap-the-canvas only.
+- **Camera:** the home is fixed (its room has no front or right walls). In town places a drag turns the view up to 30° either way and it eases back after a moment; it snaps back under reduced motion. No zoom, no swoops.
+- **Walking:** tap the ground and she walks there, or walk her with WASD or the arrows (a stick on touch screens) and hop with Space (the Hop key). Walking up to a find or a hotspot shows a prompt: "Press E to pick up the golden acorn" (a button on touch).
+- **Motion:** a short walk with a gentle bob, a hop, a slow breath while standing, and the pet trotting after. All of it stops under reduced motion. No confetti or camera swoops.
+- **Every action has a button too,** so nothing is canvas only.
+
+### Game screens
+Studio, home and places fill the window with the scene. Their chrome is the one exception to "nothing floats": small and in the corners, so the scene is the screen.
+
+- **Glass:** chrome over a live scene is `.glass`, frosted page (`page-raised` at 72% with a 14px blur), so it re-tints with Day and Night. Never use it on album pages.
+- **Top-left:** a round back `.orb`, then the masthead: an `.eyebrow` (tiny uppercase, letter-spaced, `page-muted`) over a big Fredoka title whose second word is berry ("The **park**", "Roxy **and Mochi**").
+- **Top-right:** round 48px `.orb` icon keys (each named by its aria-label, shown as a tooltip), led by the stars in a `.glass-pill`: screen links, Go to…, Full screen, Show/Hide panel.
+- **Bottom-left:** keyboard hints with `.kbd` keys on a mouse-and-keyboard screen; the stick on a touch one. **Bottom-right:** the status line (a berry dot and "2 of 5 found"). **Bottom-centre:** the action row (Undo, Save look) or the prompt.
+- **Panel:** a floating glass sheet, on the right on wide screens and along the bottom on narrow ones. It starts open in the studio and when decorating, closed in places, and remembers what the kid chose.
+- **Go to…:** a dialog listing the studio, Roxy's home and every place, with "· here" on the current one.
+- **Backdrop:** `--scene-top` → `--scene-ground` (pale sky to sand in Day, a jade dusk at Night).
+- **Loading:** a soft berry drop breathing (`.breathe`) and "Getting Roxy ready…".
 
 ## Do's and Don'ts
 

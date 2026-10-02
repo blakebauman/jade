@@ -60,7 +60,9 @@ import {
 	useRoxyDraft,
 	useSendFinds,
 } from "#/lib/roxy.ts";
-import { GameScreen } from "./GameScreen.tsx";
+import { Destinations } from "./Destinations.tsx";
+import { GameLoading } from "./GameLoading.tsx";
+import { GameScreen, Hint } from "./GameScreen.tsx";
 import { RoxyFigure, SLOT_VIEW } from "./RoxyFigure.tsx";
 
 // three.js only loads on game screens.
@@ -188,39 +190,52 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	return (
 		<GameScreen
 			panelLabel="Dress-up panel"
+			panelKey="studio"
 			scene={
-				<Suspense fallback={<p className="grid size-full place-items-center text-page-muted">Setting up the stage…</p>}>
+				<Suspense fallback={<GameLoading label="Setting up the stage…" />}>
 					<NoWebGL fallback={<RoxyFigure look={shown} title={describe(shown)} className="mx-auto block h-full w-auto py-20" />}>
 						<StudioStage look={shown} label={describe(shown)} />
 					</NoWebGL>
 				</Suspense>
 			}
-			start={
-				<>
-					<Link to="/play/$childId/games" params={{ childId }} className="key" data-variant="felt">
-						<ArrowLeft className="size-5" aria-hidden /> <span className="max-md:sr-only">Games</span>
-					</Link>
-					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold max-md:sr-only">
-						Roxy{shown.slots.pet && shown.petName && <span className="font-normal"> and {shown.petName}</span>}
-					</h1>
-				</>
+			back={
+				<Link to="/play/$childId/games" params={{ childId }} className="orb glass" aria-label="Back to Games" title="Back to Games">
+					<ArrowLeft aria-hidden />
+				</Link>
 			}
-			end={
+			eyebrow="Roxy’s studio"
+			title={<>Roxy{shown.slots.pet && shown.petName && <span> and {shown.petName}</span>}</>}
+			orbs={
 				<>
-					<p className="foil gap-1.5 px-3.5 py-1.5" title="Stars to spend">
+					<p className="glass glass-pill" title="Stars to spend">
 						<Star className="size-5 fill-current" aria-hidden />
 						<span className="font-display text-xl font-semibold tabular-nums">{data.balance}</span>
 						<span className="sr-only">stars to spend</span>
 					</p>
-					<Link to="/play/$childId/games/roxy/home" params={{ childId }} className="key">
-						<House className="size-5" aria-hidden /> <span className="max-md:sr-only">Home</span>
+					<Link to="/play/$childId/games/roxy/home" params={{ childId }} className="orb glass" aria-label="Home" title="Roxy’s home">
+						<House aria-hidden />
 					</Link>
-					<Link to="/play/$childId/games/roxy/looks" params={{ childId }} className="key">
-						<Images className="size-5" aria-hidden /> <span className="max-md:sr-only">My looks</span>{" "}
-						<span className="text-page-muted">({data.looks.length})</span>
+					<Link
+						to="/play/$childId/games/roxy/looks"
+						params={{ childId }}
+						className="orb glass relative"
+						aria-label={`My looks (${data.looks.length})`}
+						title="My looks"
+					>
+						<Images aria-hidden />
+						{data.looks.length > 0 && (
+							<span
+								className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-roxy px-1 font-display text-xs font-semibold text-sticker-ink"
+								aria-hidden
+							>
+								{data.looks.length}
+							</span>
+						)}
 					</Link>
+					<Destinations childId={childId} here="studio" />
 				</>
 			}
+			hints={<Hint keys={["Drag"]}>turn Roxy round</Hint>}
 			actions={
 				<>
 					{/* On a phone, one key steps through the poses; on bigger screens they're all there to pick. */}

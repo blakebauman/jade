@@ -2,10 +2,15 @@ import { FIND_BY_ID, FINDS, PLACE_INFO, PLACES, type PlaceId } from "@jade/core/
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, Calculator, Gift, PawPrint, Search } from "lucide-react";
-import { Component, lazy, type ReactNode, Suspense, useId, useRef, useState } from "react";
+import { Component, lazy, type ReactNode, Suspense, useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
-import { GameScreen } from "#/components/roxy/GameScreen.tsx";
+import { Destinations } from "#/components/roxy/Destinations.tsx";
+import { GameLoading } from "#/components/roxy/GameLoading.tsx";
+import { accent, GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
+import { TouchControls } from "#/components/roxy/TouchControls.tsx";
+import { nearest, type Target } from "#/components/roxy/world/near.ts";
 import type { Hotspot } from "#/components/roxy/world/PlaceScene.tsx";
+import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { useChild } from "#/lib/child.ts";
 import { useOnline } from "#/lib/hooks.ts";
 import { pendingFinds, recordFind, roxyQuery, type Studio, shownLook, useSendFinds } from "#/lib/roxy.ts";
@@ -67,6 +72,22 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 	const [panel, setPanel] = useState<Hotspot | null>(null);
 	/** The find Roxy is walking over to pick up. */
 	const heading = useRef<string | null>(null);
+	/** Opens the panel when a hotspot is used (a new value each time). */
+	const [reveal, setReveal] = useState<string | null>(null);
+	const drive = useDrive(!noScene);
+	/** What she's standing beside, for "Press E". */
+	const [near, setNear] = useState<Target | null>(null);
+	const targets = useRef<Target[]>([]);
+	const at = useRef<{ x: number; z: number } | null>(null);
+	useEffect(() => {
+		// The list comes with the 3D code, so it only loads once the scene has.
+		void scene()
+			.then((m) => {
+				targets.current = m.placeTargets(place, found);
+				setNear(at.current && nearest(at.current, targets.current));
+			})
+			.catch(() => {});
+	}, [place, found]);
 
 	useSendFinds(childId);
 
@@ -102,24 +123,60 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 
 	const hidden = finds.filter((f) => !found.has(f.id));
 
+	function openHotspot(spot: Hotspot) {
+		setPanel(spot);
+		setReveal(`${spot}:${Date.now()}`);
+	}
+	function act(t: Target) {
+		if (t.kind === "find") void walkToFind(t.id);
+		else openHotspot(t.id as Hotspot);
+	}
+	const acting = useRef(act);
+	acting.current = act;
+	// E uses whatever she's beside, the keyboard twin of the prompt's button.
+	useEffect(() => {
+		if (!near) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.code !== "KeyE" || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+			const t = e.target;
+			if (t instanceof HTMLElement && (t.isContentEditable || t.closest("input, textarea, select"))) return;
+			e.preventDefault();
+			acting.current(near);
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [near]);
+	const nearLabel =
+		near?.kind === "find"
+			? { verb: "pick up", what: `the ${FIND_BY_ID.get(near.id)?.label.toLowerCase() ?? "find"}`, key: "Pick up" }
+			: near?.id === "chalkboard"
+				? { verb: "read", what: "the chalkboard", key: "Read" }
+				: near
+					? { verb: "look at", what: "the pets", key: "Look" }
+					: null;
+
 	return (
 		<GameScreen
 			panelLabel="What’s here"
+			panelKey="place"
+			panelOpen={false}
+			reveal={reveal}
 			scene={
 				<NoWebGL onFail={() => setNoScene(true)}>
-					<Suspense fallback={<p className="grid size-full place-items-center text-page-muted">On the way…</p>}>
+					<Suspense fallback={<GameLoading />}>
 						<PlaceScene
 							place={place}
 							look={look}
 							found={found}
 							walkTo={walkTo}
+							drive={drive}
 							label={`${info.label}. ${hidden.length} things still hidden.`}
 							onGround={(spot) => {
 								heading.current = null;
 								setWalkTo(spot);
 							}}
 							onFind={(findId) => void walkToFind(findId)}
-							onHotspot={setPanel}
+							onHotspot={openHotspot}
 							onArrive={() => {
 								if (heading.current) {
 									const findId = heading.current;
@@ -127,29 +184,65 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 									pickUp(findId);
 								}
 							}}
+							onMove={(spot) => {
+								at.current = spot;
+								const t = nearest(spot, targets.current);
+								setNear((was) => (was?.id === t?.id ? was : t));
+							}}
 						/>
 					</Suspense>
 				</NoWebGL>
 			}
-			start={
+			back={
+				<Link to="/play/$childId/games/roxy/town" params={{ childId }} className="orb glass" aria-label="Back to Town" title="Back to Town">
+					<ArrowLeft aria-hidden />
+				</Link>
+			}
+			eyebrow="Roxy’s town"
+			title={accent(info.label)}
+			orbs={<Destinations childId={childId} here={place} />}
+			status={
+				<GameStatus>
+					{finds.length - hidden.length} of {finds.length} found
+				</GameStatus>
+			}
+			hints={
 				<>
-					<Link to="/play/$childId/games/roxy/town" params={{ childId }} className="key" data-variant="felt">
-						<ArrowLeft className="size-5" aria-hidden /> <span className="max-md:sr-only">Town</span>
-					</Link>
-					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold max-md:sr-only">{info.label}</h1>
+					<Hint keys={["W", "A", "S", "D"]}>walk</Hint>
+					<Hint keys={["Space"]}>hop</Hint>
+					<Hint keys={["Click"]}>walk there</Hint>
+					<Hint keys={["Drag"]}>look round</Hint>
 				</>
 			}
-			end={
-				<p className="foil px-3.5 py-1.5 text-sm">
-					{finds.length - hidden.length} of {finds.length} found
-				</p>
-			}
-			actions={
-				<div className="patch max-w-md px-4 py-2 text-center">
-					<p role="status" className="mt-3 text-page-muted">
-						{message ?? "Tap the ground to walk. Some things are hidden: tap one to pick it up."}
+			touch={!noScene && <TouchControls drive={drive} />}
+			prompt={
+				<div aria-live="polite" className="flex flex-col items-center gap-2">
+					{near && nearLabel && (
+						<button type="button" className="glass glass-pill font-display font-semibold" onClick={() => act(near)}>
+							<span className="[@media(pointer:fine)]:hidden">
+								{nearLabel.key} {nearLabel.what}
+							</span>
+							<span className="hidden [@media(pointer:fine)]:inline">
+								Press <kbd className="kbd">E</kbd> to {nearLabel.verb} {nearLabel.what}
+							</span>
+						</button>
+					)}
+					{!online && (
+						<p className="glass glass-pill text-sm text-page-muted">
+							You’re offline. What you find is kept on this device and saved when you’re back online.
+						</p>
+					)}
+					<p role="status" className={message ? "glass glass-pill text-sm" : "sr-only"}>
+						{message ?? "Walk round and look: some things are hidden. Tap one to pick it up."}
 					</p>
 				</div>
+			}
+			actions={
+				hidden.length > 0 && (
+					<button type="button" className="key" onClick={() => void walkToFind(hidden[0]!.id)}>
+						<Search className="size-5" aria-hidden /> Help me look
+					</button>
+				)
 			}
 			panel={
 				<div className="space-y-6">
@@ -201,16 +294,6 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 								</li>
 							))}
 						</ul>
-						{hidden.length > 0 && (
-							<button type="button" className="key" onClick={() => void walkToFind(hidden[0]!.id)}>
-								<Search className="size-5" aria-hidden /> Help me look
-							</button>
-						)}
-						{!online && (
-							<p className="text-sm text-page-muted">
-								You’re offline. What you find is kept on this device and saved when you’re back online.
-							</p>
-						)}
 					</section>
 				</div>
 			}
