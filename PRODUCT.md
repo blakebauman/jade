@@ -104,7 +104,7 @@ Success means the child spells the week's list correctly and without help. Misse
 
 ## Brand Commitments
 
-- The name is **Jade Learning**.
+- The name is **Jade's World**.
 
 ## Evidence on Hand
 

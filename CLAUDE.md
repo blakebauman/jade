@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice.
 
-Jade Learning is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
+Jade's World is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
 - **The loop:** hear the word, ask for the definition, a sentence or the origin, then spell it tile by tile, with feedback on every letter.
 - **Missed words:** they come back through spaced review until they stick.
@@ -166,7 +166,7 @@ Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any
 
 ## Deploy
 
-Production: **https://jade.bauman.workers.dev** (Worker `jade`). It was first deployed 2026-09-28 as `jade-learning` and renamed to `jade` the same day, with D1 `jade-learning`, R2 `jade-learning-audio` and the `BETTER_AUTH_SECRET` secret set.
+Production: **https://jadesworld.app** (Worker `jade`, custom domain). It was first deployed 2026-09-28 as `jade-learning` at jade.bauman.workers.dev and renamed to `jade` the same day, with D1 `jade-learning`, R2 `jade-learning-audio` and the `BETTER_AUTH_SECRET` secret set. On 2026-10-01 the app became **Jade's World** on jadesworld.app; workers.dev is off and `www.jadesworld.app` 301s to the apex through a zone Redirect Rule (the asset layer answers before the Worker, so the redirect can't live in code).
 
 ```bash
 pnpm db:migrate:remote   # after adding a migration
@@ -174,4 +174,4 @@ pnpm run deploy          # build + wrangler deploy
 ```
 
 - `vars.BETTER_AUTH_URL` in `wrangler.jsonc` is the production origin. Local dev overrides it with `BETTER_AUTH_URL=http://localhost:5190` in `apps/web/.dev.vars`, so keep that line or local sign-in breaks.
-- If you add a custom domain, update `BETTER_AUTH_URL`, because Better Auth checks the request origin against it.
+- `BETTER_AUTH_URL` must match the domain in `routes`, because Better Auth checks the request origin against it. Change both together.

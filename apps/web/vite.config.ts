@@ -19,8 +19,8 @@ export default defineConfig({
 			registerType: "autoUpdate",
 			includeAssets: ["favicon.svg", "apple-touch-icon.png"],
 			manifest: {
-				name: "Jade Learning",
-				short_name: "Jade",
+				name: "Jade's World",
+				short_name: "Jade's World",
 				description: "Spelling bee and math practice for 8–11 year olds.",
 				theme_color: "#0e4f43",
 				background_color: "#0e4f43",

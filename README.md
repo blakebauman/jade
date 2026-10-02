@@ -1,6 +1,6 @@
-# Jade Learning
+# Jade's World
 
-Spelling bee and math practice for 8–11 year olds, on laptop and iPad. Live at https://jade.bauman.workers.dev
+Spelling bee and math practice for 8–11 year olds, on laptop and iPad. Live at https://jadesworld.app
 
 A parent loads this week's school words: paste them, drop a CSV, snap a photo of the sheet, or start from a grade pack.
 

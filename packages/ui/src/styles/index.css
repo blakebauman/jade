@@ -1,5 +1,5 @@
 /*
- * Jade Learning: letter tiles on a jade board.
+ * Jade's World: letter tiles on a jade board.
  * Colour laws (one meaning each, everywhere):
  *   marigold = right · coral = wrong letter · sky = missing letter · stone = extra letter
  * Letter ink stays dark on every tile; feedback colour lives on tile edges and underlines only.

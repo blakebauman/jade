@@ -1,5 +1,5 @@
 ---
-name: Jade Learning
+name: Jade's World
 description: Spelling bee practice on a jade felt board, where every letter is a maple tile you can check piece by piece.
 colors:
   felt: "#0e4f43"
@@ -130,7 +130,7 @@ components:
     height: "3rem"
 ---
 
-# Design System: Jade Learning
+# Design System: Jade's World
 
 ## Overview
 
