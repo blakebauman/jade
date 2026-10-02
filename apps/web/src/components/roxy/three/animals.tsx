@@ -125,7 +125,18 @@ export function AnimalHead({ animal, fur, patch }: { animal: Animal; fur: string
 
 // ── Pets ──
 
-type PetDef = { draw: (c1: string, c2: string) => React.ReactNode; neck: V3; neckR: number; head: V3 };
+/**
+ * `bib` is for chubby pets (the generated ones), whose chest is wider than a neck ring: how far forward the chest is
+ * under the collar (`z`) and how big a bandana fits there (`r`). The bandana then hangs from the collar line and
+ * stands upright on the chest instead of sloping back into the body.
+ */
+type PetDef = {
+	draw: (c1: string, c2: string) => React.ReactNode;
+	neck: V3;
+	neckR: number;
+	head: V3;
+	bib?: { z: number; r: number };
+};
 const eye = (p: V3, r = 0.035) => (
 	<group position={p}>
 		<Ball r={r} c={INK} />
@@ -398,6 +409,20 @@ export const PETS_3D: Record<string, PetDef> = {
 	},
 };
 
+/** A bandana: a three-sided cone hanging point down, one face to the front. */
+function Bandana({ p, c }: { p: PetDef; c: string }) {
+	if (!p.bib) {
+		const y = p.neck[1] - p.neckR * 0.5;
+		return <Cone r={p.neckR + 0.02} h={p.neckR * 1.4} p={[p.neck[0], y, p.neck[2] + 0.02]} rot={[Math.PI, 0, 0]} c={c} seg={3} />;
+	}
+	// Hung from the collar line. The front face slopes back to the point by r/2 over h; tip it forward by that much so
+	// it stands upright, its face on the chest (once upright, the face is r/4 · cos(tip) in front of the centre).
+	const { r, z } = p.bib;
+	const h = r * 1.4;
+	const tip = Math.atan(r / (2 * h));
+	return <Cone r={r} h={h} p={[p.neck[0], p.neck[1] - h / 2, z - (r / 4) * Math.cos(tip)]} rot={[Math.PI - tip, 0, 0]} c={c} seg={3} />;
+}
+
 const PETWEAR: Record<string, (pet: PetDef, c1: string) => React.ReactNode> = {
 	"petwear-collar": (p, c1) => (
 		<>
@@ -412,16 +437,7 @@ const PETWEAR: Record<string, (pet: PetDef, c1: string) => React.ReactNode> = {
 			))}
 		</group>
 	),
-	"petwear-bandana": (p, c1) => (
-		<Cone
-			r={p.neckR + 0.02}
-			h={p.neckR * 1.4}
-			p={[p.neck[0], p.neck[1] - p.neckR * 0.5, p.neck[2] + 0.02]}
-			rot={[Math.PI, 0, 0]}
-			c={c1}
-			seg={3}
-		/>
-	),
+	"petwear-bandana": (p, c1) => <Bandana p={p} c={c1} />,
 	"petwear-scarf": (p, c1) => <Ring r={p.neckR + 0.01} tube={0.035} p={p.neck} c={c1} rot={[Math.PI / 2, 0, 0]} />,
 	"petwear-partyhat": (p) => (
 		<>
@@ -440,16 +456,7 @@ const PETWEAR: Record<string, (pet: PetDef, c1: string) => React.ReactNode> = {
 			<Ball r={0.03} p={[p.neck[0], p.neck[1] - 0.03, p.neck[2] + p.neckR]} c="#e85d75" />
 		</>
 	),
-	"petwear-pumpkin": (p) => (
-		<Cone
-			r={p.neckR + 0.02}
-			h={p.neckR * 1.4}
-			p={[p.neck[0], p.neck[1] - p.neckR * 0.5, p.neck[2] + 0.02]}
-			rot={[Math.PI, 0, 0]}
-			c="#f08a3c"
-			seg={3}
-		/>
-	),
+	"petwear-pumpkin": (p) => <Bandana p={p} c="#f08a3c" />,
 	"petwear-santa": (p) => (
 		<>
 			<Cone r={0.07} h={0.16} p={[p.head[0], p.head[1] + 0.08, p.head[2]]} rot={[0, 0, -0.3]} c="#d8413c" />
@@ -459,16 +466,25 @@ const PETWEAR: Record<string, (pet: PetDef, c1: string) => React.ReactNode> = {
 };
 export const PETWEAR_3D = new Set(Object.keys(PETWEAR));
 
-/** A pet, two and a half times life size next to Roxy (toy proportions), with its accessory. */
+/** A pet, two and a half times life size next to Roxy (toy proportions), with its accessory: generated if it has a model. */
 export function Pet3D({ item, c1, c2, wear, wearC }: { item: string; c1: string; c2: string; wear?: string; wearC: string }) {
 	const pet = PETS_3D[item];
 	if (!pet) return null;
 	const w = wear ? PETWEAR[wear] : undefined;
-	const generated = !w && GENERATED_PETS[item];
+	const generated = GENERATED_PETS[item];
+	const drawn = (
+		<>
+			{pet.draw(c1, c2)}
+			{w?.(pet, wearC)}
+		</>
+	);
 	return (
 		<group scale={1.5}>
-			{generated ? <GeneratedPet def={generated} c1={c1} c2={c2} fallback={pet.draw(c1, c2)} /> : pet.draw(c1, c2)}
-			{w?.(pet, wearC)}
+			{generated ? (
+				<GeneratedPet def={generated} c1={c1} c2={c2} {...(w && { wear: w({ ...pet, ...generated.anchors }, wearC) })} fallback={drawn} />
+			) : (
+				drawn
+			)}
 		</group>
 	);
 }
