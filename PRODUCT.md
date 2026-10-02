@@ -21,6 +21,7 @@ web
 ## Users
 
 **Primary: the child.** In spelling they're the speller; the UI calls them kids.
+- Built first for one 4th grader, who was 9 in October 2026. The design, content and games grow with her: pitch them at her age now, not younger, and let them get older as she does.
 - Aged 8–11, in the middle grades.
 - Practices on a family laptop with a physical keyboard, or on an iPad using touch, the on-screen keyboard, or a keyboard case.
 - Usually practices at home after school, or before a class spelling test, a spelling bee or a math quiz.
