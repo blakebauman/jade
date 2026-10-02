@@ -503,6 +503,8 @@ describe("admin", () => {
 
 		const ban = await call("/api/auth/admin/ban-user", { method: "POST", cookie: admin, json: { userId: me.user.id, banReason: "test" } });
 		expect(ban.status).toBe(200);
+		// The ban holds straight away, even for a session cookie that still carries a cached copy of the session.
+		expect((await call("/api/children", { cookie: parent })).status).toBe(401);
 		const again = await call("/api/auth/sign-in/email", {
 			method: "POST",
 			json: { email: me.user.email, password: "correct-horse-battery" },

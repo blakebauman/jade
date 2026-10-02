@@ -11,7 +11,8 @@ export const withDb = createMiddleware<AppEnv>(async (c, next) => {
 });
 
 export const requireParent = createMiddleware<AppEnv>(async (c, next) => {
-	const session = await createAuth(c.env, c.var.db).api.getSession({ headers: c.req.raw.headers });
+	// Read the session from D1, not the 5-minute cookie cache, so a ban or a sign-out elsewhere holds on the next request.
+	const session = await createAuth(c.env, c.var.db).api.getSession({ headers: c.req.raw.headers, query: { disableCookieCache: true } });
 	if (!session) throw new HTTPException(401, { message: "Sign in required" });
 	c.set("userId", session.user.id);
 	await next();
