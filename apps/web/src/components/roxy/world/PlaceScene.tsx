@@ -2,6 +2,7 @@ import { type Look, PLACE_INFO, type PlaceId } from "@jade/core/roxy";
 import type { ThreeEvent } from "@react-three/fiber";
 import { type ReactNode, useEffect, useMemo } from "react";
 import { B, Ball, Cyl, GOLD, LEAF, lighter, POT, Toon, WHITE, WOOD, WOOD_DARK } from "./Furniture.tsx";
+import { Model } from "./Model.tsx";
 import { type Area, canvasTexture, type Spot, Walkers, WorldCanvas } from "./stage.tsx";
 
 /**
@@ -24,7 +25,7 @@ type Place = {
 
 // ── Small shapes ──
 
-const tree = (x: number, z: number, s = 1) => (
+const codeTree = (x: number, z: number, s = 1) => (
 	<group key={`t${x}${z}`} position={[x, 0, z]} scale={s}>
 		<Cyl r={0.16} r2={0.22} h={1.4} p={[0, 0.7, 0]} c={WOOD_DARK} seg={10} />
 		<Ball r={0.9} p={[0, 1.9, 0]} c={LEAF} />
@@ -52,7 +53,7 @@ const flowers = (x: number, z: number, c: string) => (
 		))}
 	</group>
 );
-const bench = (x: number, z: number, rot = 0) => (
+const codeBench = (x: number, z: number, rot = 0) => (
 	<group key={`be${x}${z}`} position={[x, 0, z]} rotation={[0, rot, 0]}>
 		<B s={[1.6, 0.1, 0.5]} p={[0, 0.45, 0]} c={WOOD} />
 		<B s={[1.6, 0.4, 0.08]} p={[0, 0.75, -0.22]} c={WOOD} />
@@ -60,6 +61,14 @@ const bench = (x: number, z: number, rot = 0) => (
 			<B key={dx} s={[0.08, 0.45, 0.45]} p={[dx, 0.22, 0]} c="#6b7a93" />
 		))}
 	</group>
+);
+// Generated models of the same things, the same size and in the same places; the code-built ones show until they
+// load. Tripo faces a model down its x axis, so the bench turns a quarter to put its back to -z.
+const tree = (x: number, z: number, s = 1) => (
+	<Model key={`t${x}${z}`} id="park-tree" height={3.05 * s} at={[x, 0, z]} fallback={codeTree(x, z, s)} />
+);
+const bench = (x: number, z: number) => (
+	<Model key={`be${x}${z}`} id="park-bench" height={1.2} at={[x, 0, z]} rot={-Math.PI / 2} fallback={codeBench(x, z)} />
 );
 const desk = (x: number, z: number) => (
 	<group key={`d${x}${z}`} position={[x, 0, z]}>
@@ -146,16 +155,24 @@ const PLACES: Record<PlaceId, Place> = {
 				{flowers(3.8, 7.6, "#e85d75")}
 				{flowers(7.5, 8.6, "#f2c94c")}
 				{flowers(13, 4.2, "#8a5bd1")}
-				{/* The slide. */}
-				<group position={[6.5, 0, 8]}>
-					<B s={[0.1, 1.6, 0.1]} p={[-0.4, 0.8, -0.3]} c="#e85d75" />
-					<B s={[0.1, 1.6, 0.1]} p={[0.4, 0.8, -0.3]} c="#e85d75" />
-					<B s={[0.9, 0.08, 0.6]} p={[0, 1.6, -0.3]} c="#f2c94c" />
-					<mesh position={[0, 0.85, 0.55]} rotation={[0.85, 0, 0]}>
-						<boxGeometry args={[0.8, 0.06, 2]} />
-						<Toon color="#3cb6c9" />
-					</mesh>
-				</group>
+				{/* The slide, its ladder at the back and the chute running toward the front. */}
+				<Model
+					id="park-slide"
+					height={1.55}
+					at={[6.5, 0, 8.4]}
+					rot={-Math.PI / 2}
+					fallback={
+						<group position={[6.5, 0, 8]}>
+							<B s={[0.1, 1.6, 0.1]} p={[-0.4, 0.8, -0.3]} c="#e85d75" />
+							<B s={[0.1, 1.6, 0.1]} p={[0.4, 0.8, -0.3]} c="#e85d75" />
+							<B s={[0.9, 0.08, 0.6]} p={[0, 1.6, -0.3]} c="#f2c94c" />
+							<mesh position={[0, 0.85, 0.55]} rotation={[0.85, 0, 0]}>
+								<boxGeometry args={[0.8, 0.06, 2]} />
+								<Toon color="#3cb6c9" />
+							</mesh>
+						</group>
+					}
+				/>
 			</>
 		),
 		finds: {
@@ -211,8 +228,18 @@ const PLACES: Record<PlaceId, Place> = {
 					))}
 				</group>
 				{/* The counter, and the cat's scratching post. */}
-				<B s={[2.6, 1, 0.8]} p={[7, 0.5, 6.4]} c="#3cb6c9" />
-				<B s={[2.7, 0.08, 0.9]} p={[7, 1.04, 6.4]} c={WHITE} />
+				<Model
+					id="petshop-counter"
+					height={2}
+					at={[7, 0, 6.4]}
+					rot={Math.PI / 2}
+					fallback={
+						<>
+							<B s={[2.6, 1, 0.8]} p={[7, 0.5, 6.4]} c="#3cb6c9" />
+							<B s={[2.7, 0.08, 0.9]} p={[7, 1.04, 6.4]} c={WHITE} />
+						</>
+					}
+				/>
 				<group position={[3.2, 0, 6.8]}>
 					<B s={[0.8, 0.08, 0.8]} p={[0, 0.04, 0]} c="#c9b28c" />
 					<Cyl r={0.1} h={1.3} p={[0, 0.65, 0]} c="#e8d9b0" seg={10} />

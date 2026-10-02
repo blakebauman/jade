@@ -36,7 +36,7 @@ export default defineConfig({
 			workbox: {
 				navigateFallback: "/index.html",
 				navigateFallbackDenylist: [/^\/api\//, /^\/health$/],
-				globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+				globPatterns: ["**/*.{js,css,html,svg,png,woff2,glb}"],
 				runtimeCaching: [
 					{
 						// Spoken words never change for a given text+voice; once heard, a round replays offline.
