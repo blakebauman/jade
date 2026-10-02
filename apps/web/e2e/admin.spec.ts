@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { expect, type Page, test } from "@playwright/test";
 import { openLanding } from "./helpers.ts";
 
@@ -11,15 +10,21 @@ async function signUp(page: Page, name: string) {
 	return { email, h };
 }
 
-/** There's no way to become an admin from the app; it's set in D1 by hand, as here against the local database. */
-function promote(email: string) {
-	execFileSync(
-		"pnpm",
-		["exec", "wrangler", "d1", "execute", "DB", "--local", "--command", `update user set role = 'admin' where email = '${email}'`],
-		{
-			stdio: "ignore",
-		},
-	);
+/**
+ * There's no way to become an admin from the app; it's set in D1 by hand. Here that's done through the dev server's
+ * own local explorer API, not `wrangler d1 execute`: a second process writing the same SQLite file locks it
+ * (SQLITE_BUSY) and can fail the dev server's own queries mid-test.
+ */
+async function promote(page: Page, email: string) {
+	const api = "/cdn-cgi/local/explorer/api/d1/database";
+	const dbs = (await (await page.request.get(api)).json()) as { result: { name: string; uuid: string }[] };
+	const db = dbs.result.find((d) => d.name === "DB");
+	if (!db) throw new Error("No local D1 database named DB");
+	const res = await page.request.post(`${api}/${db.uuid}/raw`, {
+		data: { sql: "update user set role = 'admin' where email = ?", params: [email] },
+	});
+	const body = (await res.json()) as { success: boolean; result?: { meta: { changes: number } }[] };
+	if (!body.success || body.result?.[0]?.meta.changes !== 1) throw new Error(`Couldn't promote ${email}: ${JSON.stringify(body)}`);
 }
 
 test.describe.configure({ mode: "serial" });
@@ -35,7 +40,7 @@ test("an admin finds a family, signs in as them past their PIN, and comes back",
 	await expect(page.getByRole("link", { name: "Lists" })).toBeVisible();
 	await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
 
-	promote(admin.email);
+	await promote(page, admin.email);
 	// The session cookie still carries the old role; signing in again picks up the new one.
 	await page.context().clearCookies();
 	await page.request.post("/api/auth/sign-in/email", { headers: admin.h, data: { email: admin.email, password: PASSWORD } });
@@ -65,7 +70,7 @@ test("a banned family can't sign in until the ban is lifted", async ({ page }) =
 	const family = await signUp(page, "Family E2E 2");
 	await page.context().clearCookies();
 	const admin = await signUp(page, "Admin E2E 2");
-	promote(admin.email);
+	await promote(page, admin.email);
 	await page.context().clearCookies();
 	await page.request.post("/api/auth/sign-in/email", { headers: admin.h, data: { email: admin.email, password: PASSWORD } });
 
