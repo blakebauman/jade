@@ -76,7 +76,7 @@ function Landing() {
 	}
 
 	return (
-		<main className="mx-auto grid min-h-dvh max-w-6xl content-center gap-12 px-5 py-10 md:grid-cols-[1.2fr_1fr] md:gap-16 md:px-10">
+		<main className="mx-auto grid min-h-dvh max-w-6xl content-center gap-12 px-safe-5 py-safe-10 md:grid-cols-[1.2fr_1fr] md:gap-16 md:px-safe-10">
 			<section className="min-w-0 space-y-8">
 				<Brand size={40} />
 				<h1 className="text-5xl leading-[1.05] font-semibold md:text-6xl">

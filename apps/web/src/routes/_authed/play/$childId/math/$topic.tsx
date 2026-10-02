@@ -12,7 +12,7 @@ import { Keypad } from "#/components/math/Keypad.tsx";
 import { NumberTiles, ProblemRow, tokensText } from "#/components/math/ProblemRow.tsx";
 import { Visual } from "#/components/math/Visual.tsx";
 import { useChild } from "#/lib/child.ts";
-import { dayKey, useVisualViewport } from "#/lib/hooks.ts";
+import { dayKey, useVisualViewport, useWakeLock } from "#/lib/hooks.ts";
 import { type MathMode, useMathRound } from "#/lib/mathRound.ts";
 import { finishSession, saveAttempts, startSession } from "#/lib/offline.ts";
 import { roundProgress } from "#/lib/queries.ts";
@@ -38,8 +38,10 @@ function MathRound() {
 	const child = useChild();
 	const navigate = useNavigate();
 	const qc = useQueryClient();
-	const { keyboard } = useVisualViewport();
+	const { compact } = useVisualViewport();
 	const s = useMathRound();
+	// Once the round has begun, the screen stays on while the kid works it out.
+	useWakeLock(s.phase !== "ready");
 	const [saving, setSaving] = useState(false);
 	/** "Stop here?" is showing; the round's keys wait until it's answered. */
 	const [askStop, setAskStop] = useState(false);
@@ -182,7 +184,7 @@ function MathRound() {
 
 	if (s.problems.length === 0 && s.childId === child.id) {
 		return (
-			<main className="grid min-h-dvh place-items-center p-6 text-center">
+			<main className="grid min-h-dvh place-items-center p-safe-6 text-center">
 				<div className="space-y-5">
 					<h1 className="text-3xl font-semibold">No facts to review right now</h1>
 					<Link to="/play/$childId/math" params={{ childId: child.id }} className="key" data-variant="go">
@@ -199,7 +201,7 @@ function MathRound() {
 	const extra = keysFor(problem.answer);
 
 	return (
-		<main className="mx-auto flex max-w-5xl flex-col px-4 md:px-8" style={{ minHeight: "100dvh" }}>
+		<main className="mx-auto flex max-w-5xl flex-col px-safe-4 pt-safe-0 pb-safe-0 md:px-safe-8" style={{ minHeight: "100dvh" }}>
 			<header className="flex items-center gap-3 py-4 md:gap-4">
 				<Link
 					to="/play/$childId/math"
@@ -264,7 +266,7 @@ function MathRound() {
 					</div>
 				</section>
 			) : (
-				<section className={`flex flex-1 flex-col items-center gap-6 pb-8 ${keyboard ? "" : "justify-center"}`}>
+				<section className={`flex flex-1 flex-col items-center gap-6 pb-8 ${compact ? "" : "justify-center"}`}>
 					<div className="flex w-full flex-col items-center gap-4">
 						<button
 							type="button"
@@ -311,7 +313,7 @@ function MathRound() {
 							onBackspace={() => s.backspace()}
 							onCheck={check}
 							canCheck={!!s.typed && !/[/.]$/.test(s.typed)}
-							compact={keyboard}
+							compact={compact}
 						/>
 					) : (
 						<button

@@ -1,5 +1,6 @@
 import { Maximize, Minimize, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
+import { useWakeLock } from "#/lib/hooks.ts";
 
 /**
  * A game screen: the 3D scene is the screen, and everything else floats small in its corners on frosted glass.
@@ -8,7 +9,8 @@ import { type ReactNode, useEffect, useId, useState } from "react";
  * - Bottom-left: keyboard hints on a mouse-and-keyboard screen, or the touch controls on a touch one.
  * - Bottom-centre: a prompt ("Press E to…") over the action row (Undo, Save look…).
  * - Bottom-right: the status line ("2 of 5 found"); on a phone it sits under the title.
- * The panel floats as a glass sheet: on the right on wide screens, along the bottom on narrow ones, and the scene
+ * The panel floats as a glass sheet: on the right on wide screens (narrower on a phone on its side), along the bottom
+ * on upright phones and iPads, and the scene
  * shrinks to what it leaves. Whether it's open is remembered per screen. Edges keep clear of the notch and home bar.
  */
 export function GameScreen({
@@ -55,6 +57,8 @@ export function GameScreen({
 	const id = useId();
 	const [open, setOpen] = usePanelOpen(panelKey, panelOpen);
 	const full = useFullscreen();
+	// A game is played at arm's length with long pauses to look; the screen stays on while it's open.
+	useWakeLock(true);
 	const sheet = open && !!panel;
 	useEffect(() => {
 		if (reveal) setOpen(true);
@@ -65,7 +69,7 @@ export function GameScreen({
 			<div className={`absolute inset-0 ${sheet ? SCENE_BESIDE_PANEL : ""}`}>{scene}</div>
 
 			<header
-				className={`pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 ${GUTTER_TOP} ${sheet ? "lg:right-[29.5rem]" : ""}`}
+				className={`pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 ${GUTTER_TOP} ${sheet ? "short:right-[21rem] lg:right-[29.5rem]" : ""}`}
 			>
 				<div className="flex min-w-0 items-start gap-3">
 					<div className="pointer-events-auto">{back}</div>
@@ -129,7 +133,7 @@ export function GameScreen({
 					<div className="flex items-end justify-end">
 						{/* One status, moved up under the title on a phone, where the bottom belongs to the stick. */}
 						{status && (
-							<div className="max-md:fixed max-md:top-[calc(max(0.75rem,env(safe-area-inset-top))+3.6rem)] max-md:left-[calc(max(0.75rem,env(safe-area-inset-left))+3.75rem)]">
+							<div className="max-md:fixed max-md:top-[calc(max(0.75rem,var(--safe-top))+3.6rem)] max-md:left-[calc(max(0.75rem,var(--safe-left))+3.75rem)]">
 								{status}
 							</div>
 						)}
@@ -189,15 +193,15 @@ export function Hint({ keys, children }: { keys: string[]; children: ReactNode }
 }
 
 const GUTTER_TOP =
-	"pt-[max(0.75rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] pl-[max(0.75rem,env(safe-area-inset-left))] md:pt-[max(1.5rem,env(safe-area-inset-top))] md:pr-[max(1.5rem,env(safe-area-inset-right))] md:pl-[max(1.5rem,env(safe-area-inset-left))]";
+	"pt-[max(0.75rem,var(--safe-top))] pr-[max(0.75rem,var(--safe-right))] pl-[max(0.75rem,var(--safe-left))] md:pt-[max(1.5rem,var(--safe-top))] md:pr-[max(1.5rem,var(--safe-right))] md:pl-[max(1.5rem,var(--safe-left))]";
 const GUTTER_BOTTOM =
-	"pb-[max(0.75rem,env(safe-area-inset-bottom))] pr-[max(0.75rem,env(safe-area-inset-right))] pl-[max(0.75rem,env(safe-area-inset-left))] md:pb-[max(1.5rem,env(safe-area-inset-bottom))] md:pr-[max(1.5rem,env(safe-area-inset-right))] md:pl-[max(1.5rem,env(safe-area-inset-left))]";
+	"pb-[max(0.75rem,var(--safe-bottom))] pr-[max(0.75rem,var(--safe-right))] pl-[max(0.75rem,var(--safe-left))] md:pb-[max(1.5rem,var(--safe-bottom))] md:pr-[max(1.5rem,var(--safe-right))] md:pl-[max(1.5rem,var(--safe-left))]";
 /** Narrow: the sheet is 46dvh tall, 0.75rem off the bottom. Wide: a 28rem column, 0.75rem off the right. */
-const SCENE_BESIDE_PANEL = "max-lg:bottom-[calc(46dvh+0.75rem)] lg:right-[29.5rem]";
-const BAR_BESIDE_PANEL = "max-lg:bottom-[calc(46dvh+0.75rem)] lg:bottom-0 lg:right-[29.5rem]";
-const GUTTER_ABOVE_PANEL = "px-3 pb-3 md:px-6 lg:pb-[max(1.5rem,env(safe-area-inset-bottom))]";
+const SCENE_BESIDE_PANEL = "max-lg:bottom-[calc(46dvh+0.75rem)] short:!bottom-0 short:right-[21rem] lg:right-[29.5rem]";
+const BAR_BESIDE_PANEL = "max-lg:bottom-[calc(46dvh+0.75rem)] short:!bottom-0 short:right-[21rem] lg:bottom-0 lg:right-[29.5rem]";
+const GUTTER_ABOVE_PANEL = "px-3 pb-3 md:px-6 short:pb-[max(0.75rem,var(--safe-bottom))] lg:pb-[max(1.5rem,var(--safe-bottom))]";
 const PANEL =
-	"absolute inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 h-[46dvh] overflow-y-auto overscroll-contain rounded-[1.25rem] p-4 lg:inset-x-auto lg:top-[max(0.75rem,env(safe-area-inset-top))] lg:right-[max(0.75rem,env(safe-area-inset-right))] lg:h-auto lg:w-[28rem] lg:p-6";
+	"absolute inset-x-3 bottom-[max(0.75rem,var(--safe-bottom))] z-20 h-[46dvh] overflow-y-auto overscroll-contain rounded-[1.25rem] p-4 lg:inset-x-auto lg:top-[max(0.75rem,var(--safe-top))] lg:right-[max(0.75rem,var(--safe-right))] lg:h-auto lg:w-[28rem] lg:p-6 short:inset-x-auto short:top-[max(0.75rem,var(--safe-top))] short:right-[max(0.75rem,var(--safe-right))] short:h-auto short:w-[20rem]";
 /** A mouse and keyboard on a window wide enough for hints; otherwise touch controls. */
 const FINE_ONLY = "hidden [@media(pointer:fine)_and_(min-width:701px)]:@min-[10rem]:flex";
 const TOUCH_ONLY = "[@media(pointer:fine)_and_(min-width:701px)]:hidden";

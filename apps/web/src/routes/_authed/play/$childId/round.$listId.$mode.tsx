@@ -13,7 +13,7 @@ import { buildBank, TileBank } from "#/components/round/TileBank.tsx";
 import type { WordInfo } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { describeMiss, firstFlagged } from "#/lib/feedback.ts";
-import { dayKey, prefersReducedMotion, useVisualViewport } from "#/lib/hooks.ts";
+import { dayKey, prefersReducedMotion, useVisualViewport, useWakeLock } from "#/lib/hooks.ts";
 import { finishSession, saveAttempts, startSession } from "#/lib/offline.ts";
 import { listQuery, progressQuery, roundProgress, wordQuery } from "#/lib/queries.ts";
 import { cleanTyped, type RoundWord, useRound } from "#/lib/round.ts";
@@ -53,10 +53,12 @@ function RoundScreen() {
 	const child = useChild();
 	const navigate = useNavigate();
 	const qc = useQueryClient();
-	const { keyboard } = useVisualViewport();
+	const { keyboard, compact } = useVisualViewport();
 	const reduced = useMemo(prefersReducedMotion, []);
 
 	const s = useRound();
+	// Once the round has begun, the screen stays on while the speller thinks.
+	useWakeLock(s.phase !== "ready");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [checkNonce, setCheckNonce] = useState(0);
 	const [revealShown, setRevealShown] = useState(0);
@@ -336,7 +338,7 @@ function RoundScreen() {
 
 	if (listWords.length === 0) {
 		return (
-			<main className="grid min-h-dvh place-items-center p-6 text-center">
+			<main className="grid min-h-dvh place-items-center p-safe-6 text-center">
 				<div className="space-y-5">
 					<h1 className="text-3xl font-semibold">{listId === "review" ? "Nothing to review today" : "This list has no words yet"}</h1>
 					<Link to="/play/$childId/spelling" params={{ childId: child.id }} className="key" data-variant="go">
@@ -350,18 +352,18 @@ function RoundScreen() {
 	const judged = s.phase === "correct" || s.phase === "reveal" || s.phase === "retry";
 	const notes = s.grade && !s.grade.correct ? describeMiss(s.grade, s.phase === "reveal") : [];
 	const canType = s.phase === "spelling" || s.phase === "retry";
-	const sayIt = keyboard ? 56 : 120;
+	const sayIt = compact ? 56 : 120;
 
 	return (
 		<main
 			// With the iPad keyboard up, pin the screen to exactly the visible area above it. Safari scrolls the page to
 			// reveal the focused field; a fixed box at the visual viewport's offset can't be slid under the keyboard.
-			className={`mx-auto flex max-w-5xl flex-col px-4 md:px-8 ${keyboard ? "fixed inset-x-0 z-10 overflow-y-auto overscroll-contain" : ""}`}
+			className={`mx-auto flex max-w-5xl flex-col px-safe-4 pt-safe-0 md:px-safe-8 ${keyboard ? "fixed inset-x-0 z-10 overflow-y-auto overscroll-contain" : "pb-safe-0"}`}
 			style={keyboard ? { top: "var(--vvtop, 0px)", height: "var(--vvh)" } : { minHeight: "var(--vvh, 100dvh)" }}
 			data-keyboard={keyboard || undefined}
 		>
 			{/* Top rail */}
-			<header className={`flex items-center gap-3 md:gap-4 ${keyboard ? "py-2" : "py-4"}`}>
+			<header className={`flex items-center gap-3 md:gap-4 ${compact ? "py-2" : "py-4"}`}>
 				<Link
 					to="/play/$childId/spelling"
 					params={{ childId: child.id }}
@@ -376,9 +378,9 @@ function RoundScreen() {
 				>
 					<X className="size-5" aria-hidden />
 				</Link>
-				{!keyboard && <KidTile name={child.name} avatar={child.avatar} size={40} />}
+				{!compact && <KidTile name={child.name} avatar={child.avatar} size={40} />}
 				<div className="min-w-0 flex-1">
-					{!keyboard && (
+					{!compact && (
 						<p className="truncate text-sm text-page-muted">
 							{MODE_TITLE[mode]} · {name}
 						</p>
@@ -437,11 +439,9 @@ function RoundScreen() {
 					</div>
 				</section>
 			) : (
-				<section
-					className={`flex flex-1 flex-col items-center ${keyboard ? "justify-start gap-4 pt-1 pb-3" : "justify-center gap-7 pb-8"}`}
-				>
-					{/* Say it + bee questions; one compact row while the keyboard is up. */}
-					<div className={`flex items-center ${keyboard ? "flex-row flex-wrap justify-center gap-2" : "flex-col gap-5"}`}>
+				<section className={`flex flex-1 flex-col items-center ${compact ? "justify-start gap-4 pt-1 pb-3" : "justify-center gap-7 pb-8"}`}>
+					{/* Say it + bee questions; one compact row while the keyboard is up or the screen is short. */}
+					<div className={`flex items-center ${compact ? "flex-row flex-wrap justify-center gap-2" : "flex-col gap-5"}`}>
 						<div className="flex items-center gap-4">
 							<button
 								type="button"
@@ -453,11 +453,11 @@ function RoundScreen() {
 								<Volume2 style={{ width: sayIt * 0.42, height: sayIt * 0.42 }} aria-hidden strokeWidth={2.2} />
 							</button>
 							<button type="button" className="key" data-variant="tile" onClick={() => sayWord(true)} aria-label="Say it slowly">
-								<Snail className="size-5" aria-hidden /> {!keyboard && "Slowly"}
+								<Snail className="size-5" aria-hidden /> {!compact && "Slowly"}
 							</button>
 						</div>
 						{s.phase !== "study" && (
-							<fieldset className={`rack m-0 flex min-w-0 flex-wrap justify-center gap-2 border-0 ${keyboard ? "!py-1.5 !px-2" : ""}`}>
+							<fieldset className={`rack m-0 flex min-w-0 flex-wrap justify-center gap-2 border-0 ${compact ? "!py-1.5 !px-2" : ""}`}>
 								<legend className="sr-only">Ask about the word</legend>
 								<button
 									type="button"
@@ -485,7 +485,7 @@ function RoundScreen() {
 								)}
 							</fieldset>
 						)}
-						{spoken && !keyboard && (
+						{spoken && !compact && (
 							<p className="plaque max-w-[60ch] !block px-4 py-2.5 text-center" aria-live="polite">
 								<span className="mr-2 font-display font-semibold">{spoken.label}:</span>
 								{maskWord(spoken.text, word)}
@@ -521,7 +521,7 @@ function RoundScreen() {
 											disabled={s.typed.length === 0}
 											onClick={check}
 										>
-											<Check className="size-6" aria-hidden /> <span className={keyboard ? "sr-only" : "max-sm:sr-only"}>Check</span>
+											<Check className="size-6" aria-hidden /> <span className={compact ? "sr-only" : "max-sm:sr-only"}>Check</span>
 										</button>
 									) : (
 										<button

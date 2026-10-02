@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
-export type ViewportState = { height: number; top: number; keyboard: boolean };
+/** `compact`: little height to work with (the keyboard is up, or a phone on its side), so screens tighten up. */
+export type ViewportState = { height: number; top: number; keyboard: boolean; compact: boolean };
 
 /**
  * Tracks the part of the screen the speller can actually see. On iPad the on-screen keyboard covers the page
@@ -14,6 +15,7 @@ export function useVisualViewport(): ViewportState {
 		height: typeof window === "undefined" ? 800 : window.innerHeight,
 		top: 0,
 		keyboard: false,
+		compact: false,
 	});
 	useEffect(() => {
 		const vv = window.visualViewport;
@@ -26,9 +28,12 @@ export function useVisualViewport(): ViewportState {
 			if (Math.abs(width - baseline.width) > 40) baseline = { width, height: 0 };
 			baseline.height = Math.max(baseline.height, height, document.documentElement.clientHeight);
 			const keyboard = height < baseline.height * 0.8;
+			const compact = keyboard || height < 480;
 			document.documentElement.style.setProperty("--vvh", `${height}px`);
 			document.documentElement.style.setProperty("--vvtop", `${top}px`);
-			setState((s) => (s.height === height && s.top === top && s.keyboard === keyboard ? s : { height, top, keyboard }));
+			setState((s) =>
+				s.height === height && s.top === top && s.keyboard === keyboard && s.compact === compact ? s : { height, top, keyboard, compact },
+			);
 		};
 		update();
 		vv?.addEventListener("resize", update);
@@ -81,4 +86,49 @@ export function useOnline() {
 		() => navigator.onLine,
 		() => true,
 	);
+}
+
+/** A media query, kept up to date: an iPad picks up a trackpad, or the family flips Reduced Motion. */
+export function useMedia(query: string) {
+	return useSyncExternalStore(
+		(cb) => {
+			const mq = window.matchMedia(query);
+			mq.addEventListener("change", cb);
+			return () => mq.removeEventListener("change", cb);
+		},
+		() => window.matchMedia(query).matches,
+		() => false,
+	);
+}
+
+/** A finger, not a mouse: touch screens get on-screen controls (the stick) instead of keyboard hints. */
+export const useCoarsePointer = () => useMedia("(pointer: coarse)");
+
+/**
+ * Keeps the screen awake while `active` (a round, a game scene): a kid thinking over a word shouldn't come back to a
+ * locked iPad. iOS drops the lock whenever the app is hidden, so it's asked for again on the way back.
+ */
+export function useWakeLock(active: boolean) {
+	useEffect(() => {
+		if (!active || !("wakeLock" in navigator)) return;
+		let lock: WakeLockSentinel | undefined;
+		let gone = false;
+		const take = async () => {
+			if (document.visibilityState !== "visible" || (lock && !lock.released)) return;
+			try {
+				const l = await navigator.wakeLock.request("screen");
+				if (gone) void l.release();
+				else lock = l;
+			} catch {
+				// Refused (Low Power Mode, an iframe, a browser without it): the screen just sleeps as usual.
+			}
+		};
+		void take();
+		document.addEventListener("visibilitychange", take);
+		return () => {
+			gone = true;
+			document.removeEventListener("visibilitychange", take);
+			void lock?.release().catch(() => {});
+		};
+	}, [active]);
 }

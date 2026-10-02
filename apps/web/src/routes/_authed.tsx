@@ -68,7 +68,7 @@ function ImpersonationBar() {
 	const [busy, setBusy] = useState(false);
 	if (!impersonating || playing) return null;
 	return (
-		<div className="mx-auto max-w-6xl px-5 pt-4 md:px-10">
+		<div className="mx-auto max-w-6xl px-safe-5 pt-safe-4 md:px-safe-10">
 			<div className="patch flex flex-wrap items-center justify-between gap-3 p-3 pl-5" role="status">
 				<p className="text-sm">
 					Signed in as <span className="font-semibold">{user.email}</span> from the admin area

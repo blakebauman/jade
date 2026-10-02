@@ -49,7 +49,7 @@ function MyLooks() {
 		);
 
 	return (
-		<main className="mx-auto min-h-dvh max-w-6xl px-5 py-6 md:px-10">
+		<main className="mx-auto min-h-dvh max-w-6xl px-safe-5 py-safe-6 md:px-safe-10">
 			<header className="flex flex-wrap items-center gap-3">
 				<Link to="/play/$childId/games/roxy" params={{ childId: child.id }} className="key" data-variant="felt">
 					<ArrowLeft className="size-5" aria-hidden /> Roxy

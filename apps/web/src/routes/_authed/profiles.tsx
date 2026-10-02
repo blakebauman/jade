@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authed/profiles")({
 function Profiles() {
 	const { data: kids } = useSuspenseQuery(childrenQuery);
 	return (
-		<main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-5 py-8 md:px-10">
+		<main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-safe-5 py-safe-8 md:px-safe-10">
 			<header className="flex items-center justify-between">
 				<Brand size={30} />
 				<Link to="/parent" className="key" data-variant="felt">

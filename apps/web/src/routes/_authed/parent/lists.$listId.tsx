@@ -8,6 +8,7 @@ import { Confirm } from "#/components/Confirm.tsx";
 import { Problem } from "#/components/Problem.tsx";
 import { WordRack } from "#/components/WordRack.tsx";
 import { ApiError, api, failure, type ListWord, type WordList } from "#/lib/api.ts";
+import { useCoarsePointer } from "#/lib/hooks.ts";
 import { preparePhoto, wordsFromFile } from "#/lib/import.ts";
 import { childrenQuery, listQuery } from "#/lib/queries.ts";
 import { warmList } from "#/lib/warm.ts";
@@ -92,7 +93,7 @@ function ListEditor() {
 	const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...(d ?? EMPTY), ...patch }));
 
 	// On a touch device the camera is the quickest way in; with a keyboard, pasting is.
-	const [touch] = useState(() => typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches);
+	const touch = useCoarsePointer();
 	const [tab, setTab] = useState<"paste" | "file" | "photo">(isNew && touch ? "photo" : "paste");
 	/** Reopening a list is about its words: the ways to add more stay folded until asked for. */
 	const [showImport, setShowImport] = useState(isNew);
@@ -771,7 +772,7 @@ function WordRow({
 							<span className="text-xs text-page-muted">
 								Your own {k} <span className="opacity-80">(optional; otherwise we look it up)</span>
 							</span>
-							<input className="field text-sm" value={w[k] ?? ""} onChange={(e) => onChange(k, e.target.value || null)} />
+							<input className="field" value={w[k] ?? ""} onChange={(e) => onChange(k, e.target.value || null)} />
 						</label>
 					))}
 				</div>

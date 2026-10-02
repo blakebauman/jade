@@ -22,6 +22,7 @@ pnpm dev                 # Apply local D1 migrations, then Vite + Worker on http
                          # `wrangler login` is required and usage is billed (fractions of a cent).
 pnpm test                # All unit tests: core (vitest), api (vitest-pool-workers + miniflare D1/R2), web (jsdom)
 pnpm test:e2e            # Playwright: laptop (Chromium), iPad Pro 11 (WebKit), iPhone 15. Starts `pnpm dev` if needed.
+                          # Both on their sides too, for devices.spec.ts and the keyboard spec only.
 pnpm test:e2e:offline    # Opening the app offline, against a production build (vite preview on 4173, Chromium)
 pnpm --filter @jade/api test -- -t "tts"   # One API test by name
 pnpm typecheck           # tsc across packages
@@ -194,10 +195,15 @@ Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any
 - No emoji as icons; use lucide.
 - Kids are identified by their initial tile plus a chosen point value.
 
-**iPad specifics:**
-- The round screen sizes itself to `--vvh` (`useVisualViewport`) so the answer row stays above the on-screen keyboard.
+**iPad and iPhone:**
+- The round screen sizes itself to `--vvh` (`useVisualViewport`) so the answer row stays above the on-screen keyboard. `compact` (keyboard up, or under 480px tall: a phone on its side) tightens both rounds.
 - Audio is unlocked on the first tap (`speaker.unlock()`) through one shared `<audio>` element.
 - The typing input disables autocorrect and spellcheck, which would otherwise give answers away.
+- **Safe areas:** the installed app draws under the notch and home bar (`viewport-fit=cover`, `black-translucent`). Pages pad with `p-safe-*`, `px-safe-*`, `py-safe-*`, `pt-safe-*`, `pb-safe-*` (`packages/ui/src/styles/index.css`): the larger of that spacing step and the inset, so `py-safe-6` replaces `py-6`, and `md:px-safe-10` replaces `md:px-10` (an iPhone on its side is wider than `md`). Insets are read through `--safe-*`, never `env()` directly, so e2e can fake a notch.
+- `short:` is a phone on its side (landscape, ≤32rem tall, under `lg`): `GameScreen`'s panel moves beside the scene.
+- Hand-written `:hover` rules sit in `@media (hover: hover)` (a tap leaves `:hover` stuck on iOS); keys, tiles and stickers have `touch-action: manipulation` (no double-tap zoom) and no long-press callout. Inputs stay ≥16px or iOS zooms in.
+- `useWakeLock` keeps the screen on during a round and on game screens. `useCoarsePointer` (`lib/hooks.ts`) is the live touch-screen check.
+- iOS never offers to install: parents on iPhone or iPad Safari get `InstallHint` in the parent area (`lib/install.ts`; dismissed for good in `jade.install-dismissed`). Launch screens are `public/splash/` from `scripts/splash.mjs`, linked in `index.html` and kept out of the precache.
 
 ## Testing notes
 

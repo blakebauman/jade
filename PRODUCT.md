@@ -68,6 +68,7 @@ Success means the child spells the week's list correctly and without help. Misse
   - Portrait and landscape.
   - When the on-screen keyboard is up it covers about half the screen, so the word, the audio controls and the input must stay visible above it. Math never opens it: the keypad is the only input.
   - iOS only allows audio after a tap, so every round starts with a tap.
+- **iPhone works too:** the family's phone, in Safari or installed. Nothing sits under the notch or the home bar, the rounds fit a phone on its side, and the keyboard covers about half the screen there as well.
 
 ## Capabilities and Constraints
 
