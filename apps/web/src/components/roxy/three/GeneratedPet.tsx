@@ -19,15 +19,46 @@ import { useWake } from "../world/pace.tsx";
  * scale). `split` is where grey markings end and light coat begins (texture lightness, sRGB); the hamster's grey is
  * paler than the others'. `keep` is how saturated a texel must be to keep its own colour; the hamster's fur is pure
  * grey, so its pink ears and paws can be paler than the cat's, whose cream fur is a little warm. `swap` is for a
- * pet whose c1 is the darker part: the hamster's body is c1 and its pale belly c2, so its grey back takes c1. A pet wearing
- * petwear stays code-built: its accessories hang off fixed points.
+ * pet whose c1 is the darker part: the hamster's body is c1 and its pale belly c2, so its grey back takes c1.
+ * `anchors` are where petwear hangs, measured from each model like the code pets' (`head` is the top of the skull
+ * between the ears, `neck` the middle of where a collar goes, `neckR` its radius, `bib` how far forward the chest is
+ * under the collar and how big a bandana fits there); the accessory waddles with the pet.
  */
-type GeneratedPetDef = { model: ModelId; height: number; split?: [number, number]; keep?: [number, number]; swap?: true };
+type V3 = [number, number, number];
+export type PetAnchors = { neck: V3; neckR: number; head: V3; bib: { z: number; r: number } };
+type GeneratedPetDef = {
+	model: ModelId;
+	height: number;
+	anchors: PetAnchors;
+	split?: [number, number];
+	keep?: [number, number];
+	swap?: true;
+};
 export const GENERATED_PETS: Partial<Record<string, GeneratedPetDef>> = {
-	"pet-cat": { model: "pet-cat", height: 0.7 },
-	"pet-dog": { model: "pet-dog", height: 0.72 },
-	"pet-bunny": { model: "pet-bunny", height: 0.8 },
-	"pet-hamster": { model: "pet-hamster", height: 0.45, split: [0.69, 0.77], keep: [0.14, 0.22], swap: true },
+	"pet-cat": {
+		model: "pet-cat",
+		height: 0.7,
+		anchors: { neck: [0, 0.27, 0.21], neckR: 0.2, head: [0, 0.6, 0.12], bib: { z: 0.31, r: 0.2 } },
+	},
+	"pet-dog": {
+		model: "pet-dog",
+		height: 0.72,
+		anchors: { neck: [0, 0.31, 0.07], neckR: 0.17, head: [0, 0.71, 0.12], bib: { z: 0.24, r: 0.17 } },
+	},
+	"pet-bunny": {
+		model: "pet-bunny",
+		height: 0.8,
+		anchors: { neck: [0, 0.27, 0.06], neckR: 0.18, head: [0, 0.62, 0.1], bib: { z: 0.24, r: 0.13 } },
+	},
+	"pet-hamster": {
+		model: "pet-hamster",
+		height: 0.45,
+		// No neck to speak of: the collar goes just under its cheeks.
+		anchors: { neck: [0, 0.24, 0.03], neckR: 0.15, head: [0, 0.44, 0.03], bib: { z: 0.17, r: 0.11 } },
+		split: [0.69, 0.77],
+		keep: [0.14, 0.22],
+		swap: true,
+	},
 };
 const SPLIT: [number, number] = [0.58, 0.68];
 const KEEP: [number, number] = [0.28, 0.38];
@@ -65,7 +96,7 @@ function tinted(source: MeshStandardMaterial, split: [number, number], keep: [nu
 
 const at = new Vector3();
 
-function Loaded({ def, c1, c2 }: { def: GeneratedPetDef; c1: string; c2: string }) {
+function Loaded({ def, c1, c2, wear }: { def: GeneratedPetDef; c1: string; c2: string; wear?: ReactNode }) {
 	const gltf = useLoader(GLTFLoader, MODELS[def.model], withMeshopt);
 	const invalidate = useThree((s) => s.invalidate);
 	const { object, scale, lift, uniforms } = useMemo(() => {
@@ -119,11 +150,21 @@ function Loaded({ def, c1, c2 }: { def: GeneratedPetDef; c1: string; c2: string 
 			<group rotation={[0, -Math.PI / 2, 0]}>
 				<primitive object={object} scale={scale} position={[0, lift, 0]} />
 			</group>
+			{wear}
 		</group>
 	);
 }
 
-export function GeneratedPet({ fallback, ...props }: { def: GeneratedPetDef; c1: string; c2: string; fallback: ReactNode }) {
+export function GeneratedPet({
+	fallback,
+	...props
+}: {
+	def: GeneratedPetDef;
+	c1: string;
+	c2: string;
+	wear?: ReactNode;
+	fallback: ReactNode;
+}) {
 	return (
 		<Fallback fallback={fallback}>
 			<Suspense fallback={fallback}>
