@@ -6,7 +6,7 @@ const WORDS = ["believe", "rhythm"];
 test("parent sets up a list, speller plays a Bee round and sees missed words", async ({ page }, info) => {
 	const spoken = await stubVoice(page);
 	await stubWords(page);
-	const email = `e2e-${info.project.name}-${Date.now()}@example.com`;
+	const email = `e2e-${info.project.name}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}@example.com`;
 
 	// Parent signs up.
 	await page.goto("/");
