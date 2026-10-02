@@ -75,7 +75,7 @@ function SpellingHome() {
 	const start = unfinished ? "resume" : due.length > 0 ? "review" : first ? "list" : "none";
 
 	return (
-		<main className="mx-auto min-h-dvh max-w-5xl px-5 py-6 md:px-10">
+		<main className="mx-auto min-h-dvh max-w-5xl px-safe-5 py-safe-6 md:px-safe-10">
 			<header className="flex flex-wrap items-center justify-between gap-4">
 				<div className="flex items-center gap-3">
 					<Link to="/play/$childId" params={{ childId: child.id }} className="key" data-variant="felt">

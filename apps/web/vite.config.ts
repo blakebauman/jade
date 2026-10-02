@@ -26,6 +26,7 @@ export default defineConfig({
 				background_color: "#0e4f43",
 				display: "standalone",
 				orientation: "any",
+				id: "/",
 				start_url: "/",
 				icons: [
 					{ src: "/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -37,6 +38,9 @@ export default defineConfig({
 				navigateFallback: "/index.html",
 				navigateFallbackDenylist: [/^\/api\//, /^\/health$/],
 				globPatterns: ["**/*.{js,css,html,svg,png,woff2,glb}"],
+				// Latin type only: the other scripts' subsets load on demand (unicode-range) and would only weigh down the
+				// install on a phone. Splash screens are fetched by iOS itself when the app is added, never by the app.
+				globIgnores: ["**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,hebrew}-*.woff2", "splash/**"],
 				runtimeCaching: [
 					{
 						// Spoken words never change for a given text+voice; once heard, a round replays offline.

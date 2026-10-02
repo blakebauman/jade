@@ -4,6 +4,7 @@ import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tansta
 import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { Brand } from "#/components/Brand.tsx";
+import { InstallHint } from "#/components/InstallHint.tsx";
 import { Pending } from "#/components/Pending.tsx";
 import { Problem } from "#/components/Problem.tsx";
 import { SignOut } from "#/components/SignOut.tsx";
@@ -57,7 +58,7 @@ function PinGate({ onUnlock }: { onUnlock: (forgotPin: boolean) => void }) {
 		setUsePassword(password);
 	}
 	return (
-		<main className="grid min-h-dvh place-items-center p-6">
+		<main className="grid min-h-dvh place-items-center p-safe-6">
 			<div className="w-full max-w-xs space-y-6">
 				<form onSubmit={submit} noValidate className="patch space-y-4 p-6 text-center" key={String(usePassword)}>
 					<h1 className="text-2xl font-semibold">Parents only</h1>
@@ -202,7 +203,7 @@ function ParentLayout() {
 			/>
 		);
 	return (
-		<div className="mx-auto min-h-dvh max-w-6xl px-5 pb-16 md:px-10">
+		<div className="mx-auto min-h-dvh max-w-6xl px-safe-5 pt-safe-0 pb-safe-16 md:px-safe-10">
 			<header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 py-5 md:py-6">
 				{/* The brand is a mark, not a second way to Practice: the Practice key is the one exit. */}
 				<Brand size={28} />
@@ -231,6 +232,7 @@ function ParentLayout() {
 					<ArrowLeft className="size-5" aria-hidden /> Practice
 				</Link>
 			</header>
+			<InstallHint />
 			<Outlet />
 		</div>
 	);

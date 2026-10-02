@@ -6,7 +6,7 @@ import { Square, Tile } from "@jade/ui/components/tile";
  */
 export function Pending() {
 	return (
-		<main className="grid min-h-dvh place-items-center p-6 text-center" aria-busy="true">
+		<main className="grid min-h-dvh place-items-center p-safe-6 text-center" aria-busy="true">
 			<div className="flex flex-col items-center gap-5">
 				<span className="flex items-center gap-1.5" aria-hidden>
 					{[0, 1, 2].map((i) => (

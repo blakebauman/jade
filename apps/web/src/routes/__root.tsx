@@ -4,7 +4,7 @@ import { createRootRouteWithContext, Link, Outlet } from "@tanstack/react-router
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
 	component: () => <Outlet />,
 	notFoundComponent: () => (
-		<main className="grid min-h-dvh place-items-center p-6 text-center">
+		<main className="grid min-h-dvh place-items-center p-safe-6 text-center">
 			<div className="space-y-5">
 				<h1 className="text-4xl font-semibold">That square is empty</h1>
 				<p className="text-page-muted">We couldn’t find that page.</p>
@@ -15,7 +15,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 		</main>
 	),
 	errorComponent: ({ error, reset }) => (
-		<main className="grid min-h-dvh place-items-center p-6 text-center">
+		<main className="grid min-h-dvh place-items-center p-safe-6 text-center">
 			<div className="max-w-md space-y-5">
 				<h1 className="text-4xl font-semibold">Something slipped off the board</h1>
 				<p className="text-page-muted">{error instanceof Error ? error.message : "Please try again."}</p>

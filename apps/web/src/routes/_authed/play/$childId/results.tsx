@@ -112,7 +112,7 @@ function Results() {
 	}
 
 	return (
-		<main className="mx-auto min-h-dvh max-w-4xl px-5 py-10 md:px-10">
+		<main className="mx-auto min-h-dvh max-w-4xl px-safe-5 py-safe-10 md:px-safe-10">
 			<section className="flex flex-col items-center gap-5 text-center">
 				<div className="flex gap-3" role="img" aria-label={`${stars} of 3 stars`}>
 					{[1, 2, 3].map((i) =>

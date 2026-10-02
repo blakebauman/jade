@@ -1,7 +1,8 @@
 // Jade's World mark: the wordmark's lifted maple "j" tile, die-cut as the first sticker in the album, with a silver foil
 // star stuck on its corner, on the jade page under the lamp.
 // The maple keeps its grain; the page's paper tooth is left out, since it disappears at icon size and triples the PNGs.
-// Usage: node scripts/icon-mark.mjs <out.svg> <variant: rounded|bleed|maskable|small>
+// Usage: node scripts/icon-mark.mjs <out.svg> <variant: rounded|bleed|maskable|small|mark>
+// `mark` is the sticker and star alone on transparency, for the splash screens (scripts/splash.mjs).
 import { writeFileSync } from "node:fs";
 
 const [out, variant = "rounded"] = process.argv.slice(2);
@@ -20,9 +21,11 @@ const star = (cx, cy, R, r) => {
 };
 
 const bg =
-	variant === "rounded" || variant === "small"
-		? `<rect width="512" height="512" rx="112" fill="url(#lamp)"/>`
-		: `<rect width="512" height="512" fill="url(#lamp)"/>`;
+	variant === "mark"
+		? ""
+		: variant === "rounded" || variant === "small"
+			? `<rect width="512" height="512" rx="112" fill="url(#lamp)"/>`
+			: `<rect width="512" height="512" fill="url(#lamp)"/>`;
 const clip = variant === "rounded" || variant === "small" ? `clip-path="url(#corner)"` : "";
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
