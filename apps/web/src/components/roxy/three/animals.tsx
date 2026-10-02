@@ -467,7 +467,7 @@ export function Pet3D({ item, c1, c2, wear, wearC }: { item: string; c1: string;
 	const generated = !w && GENERATED_PETS[item];
 	return (
 		<group scale={1.5}>
-			{generated ? <GeneratedPet id={generated} c1={c1} c2={c2} fallback={pet.draw(c1, c2)} /> : pet.draw(c1, c2)}
+			{generated ? <GeneratedPet def={generated} c1={c1} c2={c2} fallback={pet.draw(c1, c2)} /> : pet.draw(c1, c2)}
 			{w?.(pet, wearC)}
 		</group>
 	);
