@@ -35,6 +35,8 @@ export type Studio = {
 	holidays: OpenHoliday[];
 	holidaysOff: HolidayId[];
 	home: Home;
+	/** Things found around town. */
+	finds: string[];
 };
 
 export const roxyQuery = (childId: string) =>
@@ -50,6 +52,7 @@ export const roxyApi = {
 	wear: (childId: string, lookId: string) => api(`${base(childId)}/looks/${lookId}`, { method: "PATCH", json: { wear: true } }),
 	rename: (childId: string, lookId: string, name: string) => api(`${base(childId)}/looks/${lookId}`, { method: "PATCH", json: { name } }),
 	remove: (childId: string, lookId: string) => api(`${base(childId)}/looks/${lookId}`, { method: "DELETE" }),
+	find: (childId: string, findId: string) => api(`${base(childId)}/find`, { method: "POST", json: { findId } }),
 	home: (childId: string, home: Home) => api<Home>(`${base(childId)}/home`, { method: "PUT", json: { home } }),
 	current: (childId: string, look: Look, wornLookId: string | null) =>
 		api(`${base(childId)}/current`, { method: "PUT", json: { look, wornLookId } }),

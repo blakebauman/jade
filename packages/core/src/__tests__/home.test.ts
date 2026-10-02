@@ -46,3 +46,15 @@ describe("homes", () => {
 		expect(lockedFurnitureIn(home, new Set(["piano"]))).toEqual([]);
 	});
 });
+
+describe("town", () => {
+	it("hides five things in every place, each with its own id", async () => {
+		const { FINDS, PLACES } = await import("../roxy/index.ts");
+		expect(new Set(FINDS.map((f) => f.id)).size).toBe(FINDS.length);
+		for (const p of PLACES)
+			expect(
+				FINDS.filter((f) => f.place === p),
+				p,
+			).toHaveLength(5);
+	});
+});

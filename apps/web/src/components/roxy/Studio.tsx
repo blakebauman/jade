@@ -73,7 +73,7 @@ function itemsFor(slot: Slot, off: ReadonlySet<string>) {
 	return [...all.filter((i) => !i.holiday), ...all.filter((i) => i.holiday)];
 }
 
-export function Studio({ childId, data }: { childId: string; data: StudioData }) {
+export function Studio({ childId, data, initialTab }: { childId: string; data: StudioData; initialTab?: string }) {
 	const qc = useQueryClient();
 	const online = useOnline();
 	const id = useId();
@@ -81,7 +81,9 @@ export function Studio({ childId, data }: { childId: string; data: StudioData })
 	const unlocked = useMemo(() => new Set(data.unlocked), [data.unlocked]);
 	const off = useMemo(() => new Set<string>(data.holidaysOff), [data.holidaysOff]);
 	const holidays = data.holidays;
-	const [tab, setTab] = useState<TabId>(holidays.length > 0 ? "holiday" : "body");
+	const [tab, setTab] = useState<TabId>(
+		TABS.some((t) => t.id === initialTab) ? (initialTab as TabId) : holidays.length > 0 ? "holiday" : "body",
+	);
 	/** A locked item being tried on, waiting for "Use stars?". */
 	const [trying, setTrying] = useState<{ slot: Slot; item: Item } | null>(null);
 	const [saving, setSaving] = useState(false);

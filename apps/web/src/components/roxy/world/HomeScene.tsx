@@ -1,28 +1,14 @@
 import { FURNITURE_BY_ID, footprint, type Home, hex, type Look, type Placed, ROOM } from "@jade/core/roxy";
-import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import { CanvasTexture, DoubleSide, type Group, RepeatWrapping, SRGBColorSpace, Vector3 } from "three";
-import { prefersReducedMotion } from "#/lib/hooks.ts";
-import { PET_VIEW } from "../RoxyFigure.tsx";
+import type { ThreeEvent } from "@react-three/fiber";
+import { useEffect, useMemo } from "react";
 import { FurnitureMesh, Toon } from "./Furniture.tsx";
-import { figureTexture } from "./texture.ts";
+import { canvasTexture, type Spot, tint, Walkers, WorldCanvas } from "./stage.tsx";
 
-/**
- * Roxy's home in three.js: one room seen from the front-right corner with a fixed, slightly-above camera (picture-book,
- * not a flight simulator). Roxy and her pet are the studio's 2D art standing in the room on upright cards that turn to
- * face the camera, so every outfit carries over.
- */
+/** Roxy's home: one room on a grid (see `HomeSchema`), with Roxy and her pet walking about in it. */
 
 const WALL_H = 3;
-const CENTRE = new Vector3(ROOM.w / 2, 0.6, ROOM.d / 2);
-const CAMERA_OFFSET = new Vector3(8, 9, 10.5);
-/** Roxy is chunky and nearly three squares tall, like a toy in a dolls' house. */
-const FIGURE_H = 2.9;
-const UNITS_PER_PX = FIGURE_H / 640;
-/** Pets are drawn bigger than life next to Roxy, as toys are, so they read at a glance. */
-const PET_SCALE = 1.6;
 
-export type Spot = { x: number; z: number };
+export type { Spot };
 
 type Props = {
 	home: Home;
@@ -39,60 +25,17 @@ type Props = {
 
 export function HomeScene(props: Props) {
 	return (
-		<Canvas
-			orthographic
-			flat
-			dpr={[1, 2]}
-			camera={{ position: CENTRE.clone().add(CAMERA_OFFSET).toArray(), near: 0.1, far: 100, zoom: 50 }}
-			gl={{ alpha: true, antialias: true }}
-			aria-label={props.label}
-			role="img"
-		>
-			<CameraRig />
-			<hemisphereLight args={["#fffaf0", "#d8cbb8", 2.1]} />
-			<directionalLight position={[12, 16, 10]} intensity={1.2} />
+		<WorldCanvas area={ROOM} label={props.label}>
 			<Room home={props.home} onFloor={props.onFloor} onWall={props.onWall} />
 			{props.home.items.map((p) => (
 				<PlacedThing key={p.uid} placed={p} selected={p.uid === props.selected} onPick={props.onFurniture} />
 			))}
-			<Walkers look={props.look} walkTo={props.walkTo} />
-		</Canvas>
+			<Walkers look={props.look} walkTo={props.walkTo} area={ROOM} />
+		</WorldCanvas>
 	);
 }
 
-/** Keeps the camera on the room and zooms so the whole room fits whatever the screen shape. */
-function CameraRig() {
-	const { camera, size } = useThree();
-	useEffect(() => {
-		camera.position.copy(CENTRE.clone().add(CAMERA_OFFSET));
-		camera.lookAt(CENTRE);
-		camera.zoom = Math.min(size.width / 13.6, size.height / 10.4);
-		camera.updateProjectionMatrix();
-	}, [camera, size]);
-	return null;
-}
-
 // ── The room ──
-
-function canvasTexture(w: number, h: number, draw: (ctx: CanvasRenderingContext2D) => void, repeat: [number, number]) {
-	const canvas = document.createElement("canvas");
-	canvas.width = w;
-	canvas.height = h;
-	const ctx = canvas.getContext("2d");
-	if (ctx) draw(ctx);
-	const t = new CanvasTexture(canvas);
-	t.colorSpace = SRGBColorSpace;
-	t.wrapS = RepeatWrapping;
-	t.wrapT = RepeatWrapping;
-	t.repeat.set(...repeat);
-	return t;
-}
-
-const tint = (hexColour: string, amount: number) => {
-	const n = Number.parseInt(hexColour.slice(1), 16);
-	const mix = (c: number) => Math.round(c + (255 - c) * amount);
-	return `rgb(${mix((n >> 16) & 255)},${mix((n >> 8) & 255)},${mix(n & 255)})`;
-};
 
 function wallpaper(pattern: Home["wall"]["pattern"], c1: string) {
 	const base = tint(c1, 0.55);
@@ -285,117 +228,5 @@ function Outline({ w, d, y, upright }: { w: number; d: number; y: number; uprigh
 				</mesh>
 			))}
 		</group>
-	);
-}
-
-// ── Roxy and the pet ──
-
-const yaw = Math.atan2(CAMERA_OFFSET.x, CAMERA_OFFSET.z);
-const pitch = Math.atan2(CAMERA_OFFSET.y, Math.hypot(CAMERA_OFFSET.x, CAMERA_OFFSET.z));
-/** Upright cards look shorter from above; stretch them back so Roxy keeps her proportions on screen. */
-const UPRIGHT = 1 / Math.cos(pitch);
-const RIGHT = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-
-/** A card standing on the floor, its bottom edge at the feet, turned to face the camera. */
-function Card({ map, w, h, feet }: { map: CanvasTexture; w: number; h: number; feet: number }) {
-	return (
-		<mesh position={[0, (h / 2 - feet) * UPRIGHT, 0]} scale={[1, UPRIGHT, 1]} rotation={[0, yaw, 0]}>
-			<planeGeometry args={[w, h]} />
-			<meshBasicMaterial map={map} transparent alphaTest={0.02} side={DoubleSide} />
-		</mesh>
-	);
-}
-
-function Shadow({ r }: { r: number }) {
-	return (
-		<mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-			<circleGeometry args={[r, 24]} />
-			<meshBasicMaterial color="#2b1d14" transparent opacity={0.18} />
-		</mesh>
-	);
-}
-
-function Walkers({ look, walkTo }: { look: Look; walkTo: Spot | null }) {
-	const key = JSON.stringify(look);
-	const figure = useMemo(() => figureTexture(look, { x: 0, y: 0, w: 400, h: 640 }, { omit: ["background", "pet", "petwear"] }), [key]);
-	const pet = useMemo(() => (look.slots.pet ? figureTexture(look, PET_VIEW, { only: ["pet", "petwear"] }) : null), [key]);
-	useEffect(() => () => figure.texture.dispose(), [figure]);
-	useEffect(() => () => pet?.texture.dispose(), [pet]);
-
-	const roxy = useRef<Group>(null);
-	const roxyCard = useRef<Group>(null);
-	const petRef = useRef<Group>(null);
-	const petCard = useRef<Group>(null);
-	const target = useRef(new Vector3(ROOM.w / 2 + 0.5, 0, ROOM.d / 2 + 1.5));
-	const reduced = useMemo(() => prefersReducedMotion(), []);
-
-	useEffect(() => {
-		if (!walkTo) return;
-		target.current.set(Math.min(ROOM.w - 0.4, Math.max(0.4, walkTo.x)), 0, Math.min(ROOM.d - 0.3, Math.max(0.5, walkTo.z)));
-		if (reduced && roxy.current) roxy.current.position.copy(target.current);
-	}, [walkTo, reduced]);
-
-	useFrame((state, dt) => {
-		const r = roxy.current;
-		const p = petRef.current;
-		if (!r || !p) return;
-		const step = Math.min(dt, 0.05);
-		const t = state.clock.elapsedTime;
-		const toTarget = target.current.clone().sub(r.position);
-		const dist = toTarget.length();
-		const walking = dist > 0.05 && !reduced;
-		if (walking) {
-			r.position.add(toTarget.normalize().multiplyScalar(Math.min(dist, 2.6 * step)));
-			// Face the way she's walking, as seen on screen.
-			const facing = toTarget.dot(RIGHT) < 0 ? -1 : 1;
-			if (roxyCard.current) roxyCard.current.scale.x = facing;
-		} else if (reduced) {
-			r.position.copy(target.current);
-		}
-		if (roxyCard.current) {
-			roxyCard.current.position.y = walking ? Math.abs(Math.sin(t * 10)) * 0.08 : 0;
-			// A slow breath while standing.
-			roxyCard.current.scale.y = reduced ? 1 : 1 + Math.sin(t * 2) * 0.012;
-		}
-		// The pet trots to a spot beside Roxy, a little behind.
-		const spot = r.position
-			.clone()
-			.add(RIGHT.clone().multiplyScalar(1.05))
-			.add(new Vector3(0, 0, -0.25));
-		const toSpot = spot.sub(p.position);
-		const petDist = toSpot.length();
-		const petMoving = petDist > 0.08 && !reduced;
-		if (petMoving) p.position.add(toSpot.normalize().multiplyScalar(Math.min(petDist, 2.3 * step)));
-		else if (reduced) p.position.copy(r.position.clone().add(RIGHT.clone().multiplyScalar(1.05)));
-		if (petCard.current) {
-			petCard.current.position.y = petMoving ? Math.abs(Math.sin(t * 14)) * 0.07 : 0;
-			if (petMoving) petCard.current.scale.x = toSpot.dot(RIGHT) < 0 ? -1 : 1;
-		}
-	});
-
-	return (
-		<>
-			<group ref={roxy} position={target.current.toArray()}>
-				<Shadow r={0.42} />
-				<group ref={roxyCard}>
-					<Card map={figure.texture} w={400 * UNITS_PER_PX} h={FIGURE_H} feet={(26 / 640) * FIGURE_H} />
-				</group>
-			</group>
-			<group ref={petRef} position={target.current.clone().add(RIGHT.clone().multiplyScalar(1.05)).toArray()}>
-				{pet && (
-					<>
-						<Shadow r={0.3} />
-						<group ref={petCard}>
-							<Card
-								map={pet.texture}
-								w={PET_VIEW.w * UNITS_PER_PX * PET_SCALE}
-								h={PET_VIEW.h * UNITS_PER_PX * PET_SCALE}
-								feet={6 * UNITS_PER_PX * PET_SCALE}
-							/>
-						</group>
-					</>
-				)}
-			</group>
-		</>
 	);
 }

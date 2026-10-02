@@ -144,3 +144,26 @@ test("decorate Roxy's home, and it's still there after a reload", async ({ page 
 	await expect(inRoom.getByRole("button", { name: "Bed", exact: true })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Dots", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
+
+test("go to town, find something hidden in the park, and it's counted", async ({ page }) => {
+	const { ids } = await setup(page);
+	await page.goto(`/play/${ids[0]}/games`);
+	await page.getByRole("link", { name: /^Town/ }).click();
+	await expect(page.getByRole("heading", { name: "Town" })).toBeVisible();
+	await page.getByRole("link", { name: /^The park/ }).click();
+	await expect(page.getByRole("heading", { name: "The park" })).toBeVisible();
+	await expect(page.getByText("0 of 5 found")).toBeVisible();
+
+	// "Help me look" walks Roxy over to the next hidden thing and picks it up.
+	await page.getByRole("button", { name: "Help me look" }).click();
+	await expect(page.getByText(/You found the golden acorn!/)).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText("1 of 5 found")).toBeVisible();
+
+	await page.getByRole("link", { name: "Town" }).click();
+	await expect(page.getByRole("link", { name: /^The park.*1 of 5 found/ })).toBeVisible();
+
+	// The pet shop's sign leads to choosing a pet.
+	await page.getByRole("link", { name: /^Pet shop/ }).click();
+	await page.getByRole("link", { name: "Choose a pet" }).click();
+	await expect(page.getByRole("tab", { name: "Pets" })).toHaveAttribute("aria-selected", "true");
+});

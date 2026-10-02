@@ -12,6 +12,7 @@ type Studio = {
 	holidays: { id: string; gift: string; claimed: boolean }[];
 	holidaysOff: string[];
 	home: Home;
+	finds: string[];
 };
 
 async function family() {
@@ -151,5 +152,14 @@ describe("roxy", () => {
 		expect((await post("/unlock", { itemId: "piano" })).status).toBe(200);
 		expect((await put(piano)).status).toBe(200);
 		expect((await studio()).home.items).toEqual([{ uid: "p", item: "piano", x: 4, z: 6, rot: 0 }]);
+	});
+
+	it("remembers what a child has found around town, once each", async () => {
+		const { studio, post } = await family();
+		expect((await studio()).finds).toEqual([]);
+		expect((await post("/find", { findId: "park-acorn" })).status).toBe(200);
+		expect((await post("/find", { findId: "park-acorn" })).status).toBe(200);
+		expect((await post("/find", { findId: "moon-rock" })).status).toBe(404);
+		expect((await studio()).finds).toEqual(["park-acorn"]);
 	});
 });

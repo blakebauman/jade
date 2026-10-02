@@ -57,6 +57,13 @@
       "when": 1790913252612,
       "tag": "0007_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1790913858137,
+      "tag": "0008_roxy_finds",
+      "breakpoints": true
     }
   ]
 }

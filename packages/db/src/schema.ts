@@ -308,3 +308,16 @@ export const roxyHomes = sqliteTable("roxy_homes", {
 	homeJson: text("home_json").notNull(),
 	updatedAt,
 });
+
+/** Things a child has found around Roxy's town (see `FINDS` in @jade/core/roxy). */
+export const roxyFinds = sqliteTable(
+	"roxy_finds",
+	{
+		childId: text("child_id")
+			.notNull()
+			.references(() => children.id, { onDelete: "cascade" }),
+		findId: text("find_id").notNull(),
+		createdAt,
+	},
+	(t) => [primaryKey({ columns: [t.childId, t.findId] })],
+);

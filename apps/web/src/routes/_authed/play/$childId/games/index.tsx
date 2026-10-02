@@ -1,7 +1,8 @@
+import { FINDS } from "@jade/core/roxy";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, CalendarHeart } from "lucide-react";
+import { ArrowLeft, CalendarHeart, MapPinned } from "lucide-react";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
 import { useChild } from "#/lib/child.ts";
 import { roxyQuery, shownLook } from "#/lib/roxy.ts";
@@ -49,6 +50,30 @@ function GamesHome() {
 							{holiday && (
 								<span className="foil gap-1.5 px-3 py-1 text-sm">
 									<CalendarHeart className="size-4" aria-hidden /> {holiday.label} collection
+								</span>
+							)}
+						</span>
+					</Link>
+				</li>
+				<li>
+					<Link
+						to="/play/$childId/games/roxy/town"
+						params={{ childId: child.id }}
+						className="sticker flex items-center gap-5 p-5 md:p-6"
+						data-place="roxy"
+						style={{ "--tilt": "1.5deg" } as React.CSSProperties}
+					>
+						<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
+							<MapPinned className="size-14" />
+						</span>
+						<span className="min-w-0 space-y-2">
+							<span className="block font-display text-3xl font-semibold">Town</span>
+							<span className="block text-sm font-medium">
+								Take Roxy and your pet to the park, the pet shop and school, and find what’s hidden.
+							</span>
+							{roxy && (
+								<span className="foil gap-1.5 px-3 py-1 text-sm">
+									{roxy.finds.length} of {FINDS.length} found
 								</span>
 							)}
 						</span>

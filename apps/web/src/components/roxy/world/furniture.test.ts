@@ -9,3 +9,16 @@ describe("Roxy's home", () => {
 		expect([...FURNITURE_ART].filter((id) => !ids.includes(id))).toEqual([]);
 	});
 });
+
+describe("Roxy's town", () => {
+	it("hides every find somewhere in its place's scene", async () => {
+		const { FINDS, PLACES } = await import("@jade/core/roxy");
+		const { FIND_SPOTS_FOR } = await import("./PlaceScene.tsx");
+		for (const p of PLACES)
+			expect(FIND_SPOTS_FOR(p).sort(), p).toEqual(
+				FINDS.filter((f) => f.place === p)
+					.map((f) => f.id)
+					.sort(),
+			);
+	});
+});

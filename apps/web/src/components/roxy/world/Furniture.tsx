@@ -45,14 +45,14 @@ function rounded(w: number, h: number, d: number) {
 }
 
 /** A rounded box, positioned by its centre. */
-function B({ s, p, c, e, o }: { s: V3; p: V3; c: string; e?: number; o?: number }) {
+export function B({ s, p, c, e, o }: { s: V3; p: V3; c: string; e?: number; o?: number }) {
 	return (
 		<mesh position={p} geometry={rounded(...s)}>
 			<Toon color={c} {...(e && { emissive: e })} {...(o !== undefined && { opacity: o })} />
 		</mesh>
 	);
 }
-function Cyl({
+export function Cyl({
 	r,
 	r2,
 	h,
@@ -78,7 +78,7 @@ function Cyl({
 		</mesh>
 	);
 }
-function Ball({ r, p, c, s, e }: { r: number; p: V3; c: string; s?: V3; e?: number }) {
+export function Ball({ r, p, c, s, e }: { r: number; p: V3; c: string; s?: V3; e?: number }) {
 	return (
 		<mesh position={p} scale={s}>
 			<sphereGeometry args={[r, 20, 14]} />
@@ -87,14 +87,14 @@ function Ball({ r, p, c, s, e }: { r: number; p: V3; c: string; s?: V3; e?: numb
 	);
 }
 
-const WOOD = "#c9965f";
-const WOOD_DARK = "#9c6b3f";
-const WHITE = "#f6f1e7";
-const LEAF = "#5fa04a";
-const POT = "#d9734a";
-const GOLD = "#e8b93c";
+export const WOOD = "#c9965f";
+export const WOOD_DARK = "#9c6b3f";
+export const WHITE = "#f6f1e7";
+export const LEAF = "#5fa04a";
+export const POT = "#d9734a";
+export const GOLD = "#e8b93c";
 
-const lighter = (hex: string, amount = 0.35) => `#${new Color(hex).lerp(new Color("#ffffff"), amount).getHexString()}`;
+export const lighter = (hex: string, amount = 0.35) => `#${new Color(hex).lerp(new Color("#ffffff"), amount).getHexString()}`;
 
 const flame = (p: V3) => <Ball r={0.06} p={p} c="#f4cd4b" s={[1, 1.6, 1]} e={0.9} />;
 const candles = (n: number, colours: (i: number) => string, y: number, span: number) =>

@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import {
 	activeHolidays,
 	daysBetween,
+	FIND_BY_ID,
 	FURNITURE_BY_ID,
 	fingerprint,
 	HOLIDAY_LABEL,
@@ -65,16 +66,18 @@ function wearable(input: unknown, unlocked: Set<string>, off: Set<HolidayId>): L
 
 /** Everything the studio needs. `day` is the family's local day, for which holiday collections are open. */
 async function studio(db: Db, parentId: string, childId: string, day: string) {
-	const [current, looks, unlocked, stars, off, home] = await Promise.all([
+	const [current, looks, unlocked, stars, off, home, finds] = await Promise.all([
 		db.query.roxyCurrent.findFirst({ where: eq(schema.roxyCurrent.childId, childId) }),
 		db.select().from(schema.roxyLooks).where(eq(schema.roxyLooks.childId, childId)).orderBy(asc(schema.roxyLooks.createdAt)),
 		unlockedItems(db, childId),
 		balance(db, childId),
 		holidaysOff(db, parentId),
 		db.query.roxyHomes.findFirst({ where: eq(schema.roxyHomes.childId, childId) }),
+		db.select({ findId: schema.roxyFinds.findId }).from(schema.roxyFinds).where(eq(schema.roxyFinds.childId, childId)),
 	]);
 	return {
 		home: home ? (JSON.parse(home.homeJson) as Home) : starterHome(),
+		finds: finds.map((f) => f.findId),
 		current: current ? (JSON.parse(current.lookJson) as Look) : starterLook(childId),
 		wornLookId: current?.wornLookId ?? null,
 		looks: looks.map((l) => ({ id: l.id, name: l.name, look: JSON.parse(l.lookJson) as Look, createdAt: l.createdAt.getTime() })),
@@ -161,6 +164,14 @@ export const roxyRoutes = new Hono<AppEnv>()
 		const gift = ITEMS.find((i) => i.holiday === holidayId && i.gift)!;
 		await db.insert(schema.roxyUnlocks).values({ childId: child.id, itemId: gift.id, cost: 0 }).onConflictDoNothing();
 		return c.json({ ok: true, itemId: gift.id });
+	})
+	/** Something found around town. Finding it again changes nothing. */
+	.post("/find", zValidator("json", z.object({ findId: z.string().max(40) })), async (c) => {
+		const child = await ownedChild(c.var.db, c.var.userId, c.req.param("id")!);
+		const find = FIND_BY_ID.get(c.req.valid("json").findId);
+		if (!find) throw new HTTPException(404, { message: "Nothing like that here" });
+		await c.var.db.insert(schema.roxyFinds).values({ childId: child.id, findId: find.id }).onConflictDoNothing();
+		return c.json({ ok: true });
 	})
 	/** Save the home. Furniture that doesn't fit is dropped; furniture not yet unlocked is refused. */
 	.put("/home", zValidator("json", z.object({ home: z.unknown() })), async (c) => {
