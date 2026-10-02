@@ -6,6 +6,7 @@ import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { toonGradient } from "../world/Furniture.tsx";
 import { Fallback, MODELS, type ModelId, withMeshopt } from "../world/Model.tsx";
 import { useWake } from "../world/pace.tsx";
+import { Bowl } from "./bowl.tsx";
 
 /**
  * Generated pets. The model's coat comes out of Tripo white with grey markings, and the shader paints it from the
@@ -22,17 +23,28 @@ import { useWake } from "../world/pace.tsx";
  * pet whose c1 is the darker part: the hamster's body is c1 and its pale belly c2, so its grey back takes c1.
  * `anchors` are where petwear hangs, measured from each model like the code pets' (`head` is the top of the skull
  * between the ears, `neck` the middle of where a collar goes, `neckR` its radius, `bib` how far forward the chest is
- * under the collar and how big a bandana fits there); the accessory waddles with the pet.
+ * under the collar and how big a bandana fits there); the accessory waddles with the pet. Without `anchors` the
+ * code pet's are used: the goldfish's model swims in the code-built bowl, which is what its accessories go on.
+ *
+ * Tripo faces most models down +x, so they turn a quarter to face +z; `turn` says otherwise (found from where the
+ * eyes are in each model). `dark` is how dark a texel must be to stay as it is (eyes), and `marksL` how light the
+ * markings usually are, for their shading; the turtle's skin is nearly as dark as its eyes. `at` moves the model,
+ * and `around` is code-built scenery drawn with it, in the pet's coordinates.
  */
 type V3 = [number, number, number];
 export type PetAnchors = { neck: V3; neckR: number; head: V3; bib: { z: number; r: number } };
 type GeneratedPetDef = {
 	model: ModelId;
 	height: number;
-	anchors: PetAnchors;
+	anchors?: PetAnchors;
+	turn?: number;
 	split?: [number, number];
 	keep?: [number, number];
+	dark?: [number, number];
+	marksL?: number;
 	swap?: true;
+	at?: V3;
+	around?: ReactNode;
 };
 export const GENERATED_PETS: Partial<Record<string, GeneratedPetDef>> = {
 	"pet-cat": {
@@ -59,9 +71,38 @@ export const GENERATED_PETS: Partial<Record<string, GeneratedPetDef>> = {
 		keep: [0.14, 0.22],
 		swap: true,
 	},
+	"pet-goldfish": {
+		model: "pet-goldfish",
+		height: 0.2,
+		turn: Math.PI / 2,
+		at: [0, 0.18, 0.02],
+		around: (
+			<>
+				<Bowl />
+			</>
+		),
+	},
+	"pet-turtle": {
+		model: "pet-turtle",
+		height: 0.34,
+		turn: Math.PI,
+		dark: [0.08, 0.12],
+		marksL: 0.27,
+		// The head pokes out in front of the shell: hats go on it, not on the shell, and the collar under its chin.
+		anchors: { neck: [0, 0.11, 0.18], neckR: 0.08, head: [0, 0.235, 0.2], bib: { z: 0.27, r: 0.045 } },
+	},
+	"pet-frog": {
+		model: "pet-frog",
+		height: 0.45,
+		split: [0.7, 0.78],
+		swap: true,
+		// The collar goes at the throat, under the wide mouth; hats sit between the eyes.
+		anchors: { neck: [0, 0.27, 0.025], neckR: 0.165, head: [0, 0.43, 0.04], bib: { z: 0.17, r: 0.1 } },
+	},
 };
 const SPLIT: [number, number] = [0.58, 0.68];
 const KEEP: [number, number] = [0.28, 0.38];
+const DARK: [number, number] = [0.18, 0.28];
 
 const TINT = /* glsl */ `
 #ifdef USE_MAP
@@ -70,25 +111,28 @@ const TINT = /* glsl */ `
 	float l = dot( s, vec3( 0.299, 0.587, 0.114 ) );
 	float sat = max( max( s.r, s.g ), s.b ) - min( min( s.r, s.g ), s.b );
 	float coat = smoothstep( uSplit.x, uSplit.y, l );
-	vec3 fur = mix( uMarks * clamp( l / ( uSplit.x - 0.08 ), 0.6, 1.2 ), uCoat * clamp( l / 0.82, 0.75, 1.1 ), coat );
+	vec3 fur = mix( uMarks * clamp( l / uMarksL, 0.6, 1.2 ), uCoat * clamp( l / 0.82, 0.75, 1.1 ), coat );
 	// Pink (red over green, blue not below green) is kept even when pale; warm cream fur has blue lowest.
 	float pink = step( 0.06, s.r - s.g ) * step( s.g - 0.01, s.b ) * smoothstep( 0.06, 0.12, sat );
-	float keep = max( max( smoothstep( uKeep.x, uKeep.y, sat ), pink ), 1.0 - smoothstep( 0.18, 0.28, l ) );
+	float keep = max( max( smoothstep( uKeep.x, uKeep.y, sat ), pink ), 1.0 - smoothstep( uDark.x, uDark.y, l ) );
 	diffuseColor.rgb *= mix( fur, lin, keep );
 #endif
 `;
 
-function tinted(source: MeshStandardMaterial, split: [number, number], keep: [number, number]) {
+function tinted(source: MeshStandardMaterial, def: GeneratedPetDef) {
+	const split = def.split ?? SPLIT;
 	const uniforms = {
 		uCoat: { value: new Color() },
 		uMarks: { value: new Color() },
 		uSplit: { value: new Vector2(...split) },
-		uKeep: { value: new Vector2(...keep) },
+		uKeep: { value: new Vector2(...(def.keep ?? KEEP)) },
+		uDark: { value: new Vector2(...(def.dark ?? DARK)) },
+		uMarksL: { value: def.marksL ?? split[0] - 0.08 },
 	};
 	const material = new MeshToonMaterial({ map: source.map, gradientMap: toonGradient() });
 	material.onBeforeCompile = (shader) => {
 		Object.assign(shader.uniforms, uniforms);
-		shader.fragmentShader = `uniform vec3 uCoat;\nuniform vec3 uMarks;\nuniform vec2 uSplit;\nuniform vec2 uKeep;\n${shader.fragmentShader.replace("#include <map_fragment>", TINT)}`;
+		shader.fragmentShader = `uniform vec3 uCoat;\nuniform vec3 uMarks;\nuniform vec2 uSplit;\nuniform vec2 uKeep;\nuniform vec2 uDark;\nuniform float uMarksL;\n${shader.fragmentShader.replace("#include <map_fragment>", TINT)}`;
 	};
 	material.customProgramCacheKey = () => "jade-tinted-pet";
 	return { material, uniforms };
@@ -105,7 +149,7 @@ function Loaded({ def, c1, c2, wear }: { def: GeneratedPetDef; c1: string; c2: s
 		object.traverse((o) => {
 			const mesh = o as Mesh;
 			if (!mesh.isMesh) return;
-			tint ??= tinted(mesh.material as MeshStandardMaterial, def.split ?? SPLIT, def.keep ?? KEEP);
+			tint ??= tinted(mesh.material as MeshStandardMaterial, def);
 			mesh.material = tint.material;
 		});
 		const box = new Box3().setFromObject(object);
@@ -146,8 +190,8 @@ function Loaded({ def, c1, c2, wear }: { def: GeneratedPetDef; c1: string; c2: s
 
 	return (
 		<group ref={root}>
-			{/* Tripo faces a model down +x; pets face +z. */}
-			<group rotation={[0, -Math.PI / 2, 0]}>
+			{def.around}
+			<group position={def.at ?? [0, 0, 0]} rotation={[0, def.turn ?? -Math.PI / 2, 0]}>
 				<primitive object={object} scale={scale} position={[0, lift, 0]} />
 			</group>
 			{wear}
