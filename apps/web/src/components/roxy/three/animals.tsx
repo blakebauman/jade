@@ -2,6 +2,7 @@ import type { Animal } from "@jade/core/roxy";
 import { useMemo } from "react";
 import { CatmullRomCurve3, Vector3 } from "three";
 import { HEAD_R, onFace } from "./body.tsx";
+import { GENERATED_PETS, GeneratedPet } from "./GeneratedPet.tsx";
 import { Ball, Cone, darker, lighter, M, Mat, Ring, type V3 } from "./shapes.tsx";
 
 /**
@@ -463,9 +464,10 @@ export function Pet3D({ item, c1, c2, wear, wearC }: { item: string; c1: string;
 	const pet = PETS_3D[item];
 	if (!pet) return null;
 	const w = wear ? PETWEAR[wear] : undefined;
+	const generated = !w && GENERATED_PETS[item];
 	return (
 		<group scale={1.5}>
-			{pet.draw(c1, c2)}
+			{generated ? <GeneratedPet id={generated} c1={c1} c2={c2} fallback={pet.draw(c1, c2)} /> : pet.draw(c1, c2)}
 			{w?.(pet, wearC)}
 		</group>
 	);
