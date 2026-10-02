@@ -6,8 +6,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { toonGradient } from "./Furniture.tsx";
 
 /**
- * Generated models (Tripo text-to-3D, in public/models): town scenery that's never recoloured, and the cat, whose
- * white-and-grey coat is tinted from the palette (three/GeneratedPet.tsx). Each file has been cut down to one 512px
+ * Generated models (Tripo text-to-3D, in public/models): town scenery that's never recoloured, and pets, whose
+ * white-and-grey coats are tinted from the palette (three/GeneratedPet.tsx). Each file has been cut down to one 512px
  * colour map and meshopt geometry; here its material becomes the same three-step toon as the shapes built in code,
  * so the two sit together. Until a file has loaded, or if it can't, the code-built version shows instead.
  */
@@ -21,6 +21,9 @@ export const MODELS = {
 	"school-teacher-desk": "/models/town/school-teacher-desk.glb",
 	"school-bookshelf": "/models/town/school-bookshelf.glb",
 	"pet-cat": "/models/pets/pet-cat.glb",
+	"pet-dog": "/models/pets/pet-dog.glb",
+	"pet-bunny": "/models/pets/pet-bunny.glb",
+	"pet-hamster": "/models/pets/pet-hamster.glb",
 } as const;
 export type ModelId = keyof typeof MODELS;
 
