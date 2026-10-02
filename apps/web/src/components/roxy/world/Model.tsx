@@ -24,6 +24,9 @@ export const MODELS = {
 	"pet-dog": "/models/pets/pet-dog.glb",
 	"pet-bunny": "/models/pets/pet-bunny.glb",
 	"pet-hamster": "/models/pets/pet-hamster.glb",
+	"pet-goldfish": "/models/pets/pet-goldfish.glb",
+	"pet-turtle": "/models/pets/pet-turtle.glb",
+	"pet-frog": "/models/pets/pet-frog.glb",
 } as const;
 export type ModelId = keyof typeof MODELS;
 

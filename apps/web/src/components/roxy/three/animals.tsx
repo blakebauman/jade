@@ -2,6 +2,7 @@ import type { Animal } from "@jade/core/roxy";
 import { useMemo } from "react";
 import { CatmullRomCurve3, Vector3 } from "three";
 import { HEAD_R, onFace } from "./body.tsx";
+import { Bowl } from "./bowl.tsx";
 import { GENERATED_PETS, GeneratedPet } from "./GeneratedPet.tsx";
 import { Ball, Cone, darker, lighter, M, Mat, Ring, type V3 } from "./shapes.tsx";
 
@@ -238,10 +239,7 @@ export const PETS_3D: Record<string, PetDef> = {
 		head: [0, 0.52, 0],
 		draw: (c1, c2) => (
 			<>
-				<M c="#bfe3f0" p={[0, 0.26, 0]} side="double">
-					<sphereGeometry args={[0.26, 24, 18, 0, Math.PI * 2, 0.5, Math.PI - 0.5]} />
-				</M>
-				<Ball r={0.22} p={[0, 0.2, 0]} c="#5fa3e0" s={[1, 0.6, 1]} />
+				<Bowl />
 				<Ball r={0.08} p={[0, 0.28, 0.02]} c={c1} s={[1.4, 1, 0.7]} />
 				<Cone r={0.06} h={0.08} p={[-0.13, 0.28, 0.02]} rot={[0, 0, Math.PI / 2]} c={c2} />
 				{eye([0.08, 0.3, 0.07], 0.016)}
@@ -481,7 +479,13 @@ export function Pet3D({ item, c1, c2, wear, wearC }: { item: string; c1: string;
 	return (
 		<group scale={1.5}>
 			{generated ? (
-				<GeneratedPet def={generated} c1={c1} c2={c2} {...(w && { wear: w({ ...pet, ...generated.anchors }, wearC) })} fallback={drawn} />
+				<GeneratedPet
+					def={generated}
+					c1={c1}
+					c2={c2}
+					{...(w && { wear: w({ ...pet, ...(generated.anchors ?? {}) }, wearC) })}
+					fallback={drawn}
+				/>
 			) : (
 				drawn
 			)}
