@@ -10,6 +10,8 @@ import {
 	PALETTES,
 	type PaletteName,
 	PET_NAME_MAX,
+	POSE_LABEL,
+	POSES,
 	REQUIRED_SLOTS,
 	randomLook,
 	SKIN,
@@ -43,12 +45,16 @@ import {
 	Star,
 	Undo2,
 } from "lucide-react";
-import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Component, lazy, type ReactNode, Suspense, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
 import { ApiError } from "#/lib/api.ts";
 import { prefersReducedMotion, useOnline } from "#/lib/hooks.ts";
 import { LOOK_NAMES, roxyApi, roxyQuery, type Studio as StudioData, tryOn, useRoxyDraft } from "#/lib/roxy.ts";
+import { GameScreen } from "./GameScreen.tsx";
 import { RoxyFigure, SLOT_VIEW } from "./RoxyFigure.tsx";
+
+// three.js only loads on game screens.
+const StudioStage = lazy(() => import("./three/StudioStage.tsx").then((m) => ({ default: m.StudioStage })));
 
 type TabId = (typeof TABS)[number]["id"] | "holiday";
 const TAB_ICON: Record<TabId, typeof Shirt> = {
@@ -91,9 +97,6 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	const [busy, setBusy] = useState(false);
 
 	const shown = trying ? tryOn(draft.look, trying.slot, trying.item) : draft.look;
-	// The stage flips like a tile when the moon gem changes the form, never on first load.
-	const formKey = shown.slots.form?.item ?? "human";
-	const firstForm = useRef(formKey);
 	const locked = lockedItemsIn(draft.look, unlocked);
 	const refresh = () => qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey });
 	const progressRefresh = () => qc.invalidateQueries({ queryKey: ["progress", childId] });
@@ -164,15 +167,27 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	const current = tabs.find((t) => t.id === tab) ?? tabs[0]!;
 
 	return (
-		<main className="mx-auto min-h-dvh max-w-6xl px-5 py-6 md:px-10">
-			<header className="flex flex-wrap items-center justify-between gap-4">
-				<div className="flex items-center gap-3">
+		<GameScreen
+			panelLabel="Dress-up panel"
+			scene={
+				<Suspense fallback={<p className="grid size-full place-items-center text-page-muted">Setting up the stage…</p>}>
+					<NoWebGL fallback={<RoxyFigure look={shown} title={describe(shown)} className="mx-auto block h-full w-auto py-20" />}>
+						<StudioStage look={shown} label={describe(shown)} />
+					</NoWebGL>
+				</Suspense>
+			}
+			start={
+				<>
 					<Link to="/play/$childId/games" params={{ childId }} className="key" data-variant="felt">
 						<ArrowLeft className="size-5" aria-hidden /> Games
 					</Link>
-					<h1 className="font-display text-3xl font-semibold">Roxy</h1>
-				</div>
-				<div className="flex items-center gap-3">
+					<h1 className="foil px-4 py-1.5 font-display text-2xl font-semibold">
+						Roxy{shown.slots.pet && shown.petName && <span className="font-normal"> and {shown.petName}</span>}
+					</h1>
+				</>
+			}
+			end={
+				<>
 					<p className="foil gap-1.5 px-3.5 py-1.5" title="Stars to spend">
 						<Star className="size-5 fill-current" aria-hidden />
 						<span className="font-display text-xl font-semibold tabular-nums">{data.balance}</span>
@@ -184,43 +199,53 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 					<Link to="/play/$childId/games/roxy/looks" params={{ childId }} className="key">
 						<Images className="size-5" aria-hidden /> My looks <span className="text-page-muted">({data.looks.length})</span>
 					</Link>
-				</div>
-			</header>
-
-			<div className="mt-8 grid gap-8 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-				<section aria-label="Your Roxy" className="md:sticky md:top-6 md:self-start">
-					<div className="rack mx-auto w-full max-w-[15rem] md:max-w-[max(16rem,calc((100dvh-11rem)*0.625))] !p-3">
-						<div key={formKey} className={`overflow-hidden rounded-xl ${formKey !== firstForm.current ? "animate-tile-flip" : ""}`}>
-							<RoxyFigure look={shown} title={describe(shown)} className="block h-auto w-full" />
-						</div>
-					</div>
-					{shown.slots.pet && shown.petName && <p className="mt-2 text-center font-display text-lg text-page-muted">and {shown.petName}</p>}
-					<div className="mx-auto mt-4 flex w-full max-w-[15rem] md:max-w-[max(16rem,calc((100dvh-11rem)*0.625))] flex-wrap items-center gap-2">
-						<button type="button" className="key" onClick={draft.undo} disabled={!draft.canUndo}>
-							<Undo2 className="size-5" aria-hidden /> Undo
-						</button>
-						<button type="button" className="key" onClick={surprise}>
-							<Dices className="size-5" aria-hidden /> Surprise me
-						</button>
-						{!saving && (
+				</>
+			}
+			actions={
+				<>
+					<fieldset aria-label="Pose" className="flex flex-wrap gap-1.5">
+						{POSES.map((p) => (
 							<button
+								key={p}
 								type="button"
-								className="key ml-auto"
-								data-variant="go"
+								className="key !min-h-11 !px-3 text-base"
+								data-toggle
+								aria-pressed={(draft.look.pose ?? "stand") === p}
+								data-pressed={(draft.look.pose ?? "stand") === p}
 								onClick={() => {
-									setTrying(null);
-									setMessage(null);
-									setSaving(true);
+									const { pose: _, ...rest } = draft.look;
+									draft.set(p === "stand" ? rest : { ...rest, pose: p });
 								}}
-								disabled={locked.length > 0}
 							>
-								<Save className="size-5" aria-hidden /> Save look
+								{POSE_LABEL[p]}
 							</button>
-						)}
-					</div>
-				</section>
-
-				<section aria-label="Dress up">
+						))}
+					</fieldset>
+					<button type="button" className="key" onClick={draft.undo} disabled={!draft.canUndo}>
+						<Undo2 className="size-5" aria-hidden /> Undo
+					</button>
+					<button type="button" className="key" onClick={surprise}>
+						<Dices className="size-5" aria-hidden /> Surprise me
+					</button>
+					{!saving && (
+						<button
+							type="button"
+							className="key"
+							data-variant="go"
+							onClick={() => {
+								setTrying(null);
+								setMessage(null);
+								setSaving(true);
+							}}
+							disabled={locked.length > 0}
+						>
+							<Save className="size-5" aria-hidden /> Save look
+						</button>
+					)}
+				</>
+			}
+			panel={
+				<>
 					<div role="tablist" aria-label="What to change" className="flex flex-wrap gap-2">
 						{tabs.map((t) => {
 							const Icon = TAB_ICON[t.id];
@@ -313,10 +338,21 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 							/>
 						)}
 					</div>
-				</section>
-			</div>
-		</main>
+				</>
+			}
+		/>
 	);
+}
+
+/** If this device can't draw 3D, show the drawing instead. */
+class NoWebGL extends Component<{ children: ReactNode; fallback: ReactNode }, { failed: boolean }> {
+	override state = { failed: false };
+	static getDerivedStateFromError() {
+		return { failed: true };
+	}
+	override render() {
+		return this.state.failed ? this.props.fallback : this.props.children;
+	}
 }
 
 const PET_NAMES = ["Biscuit", "Mochi", "Pepper", "Ziggy", "Noodle", "Sprout", "Pickle", "Luna", "Taco", "Bean"];

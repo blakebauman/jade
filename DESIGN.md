@@ -438,7 +438,9 @@ Roxy is the one place character illustration lives. The character is a hand-auth
 ### Roxy's home (three.js)
 Games are built with three.js. The world is a doll's house, not a video game: one room seen from a fixed, slightly raised corner (orthographic, no free camera), so it reads like a picture-book page.
 
-- **Characters stay 2D.** Roxy and her pet are the same illustration as the studio, standing upright in the room and turned to face the viewer. Pets are drawn 1.6× life size next to Roxy, as toys are.
+- **Roxy is a 3D toy.** She's built in code from soft rounded shapes with the same three-step toon shading as the furniture, and stands about three squares tall with a big head. Her face (eyes, brows, mouth, makeup, face paint) is the studio's own face art wrapped onto the front of the head, so every face option works in 3D. Pets are 3D too, drawn 1.5× life size next to her, as toys are.
+- **Full screen:** game screens (studio, home, places) fill the window. The header floats over the scene, the controls sit in a panel that can be hidden (on the right on wide screens, a bottom sheet on narrow ones), and "Full screen" hides the browser's bars where the browser allows it.
+- **Studio stage:** Roxy on a round stage with her chosen backdrop behind (the stage art, cropped to fill the screen, never stretched). Drag to turn her; she eases back to face you. Poses (stand, wave, hands on hips, cheer, twirl) save with the look.
 - **Furniture is toy-like:** rounded shapes, flat pastel colour, three-step toon shading, soft light, no hard shadows (a faint round shadow sits under Roxy and her pet). Fabric colours come from the same palette as clothes.
 - **The room sits in a maple `.rack` frame** on a pale sky-to-sand backdrop, like the studio stage.
 - **Motion:** a short walk with a gentle bob, a slow breath while standing, and the pet trotting after. All of it stops under reduced motion. No particles, confetti or camera swoops.

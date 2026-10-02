@@ -1,10 +1,9 @@
 import type { Look } from "@jade/core/roxy";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
-import { CanvasTexture, DoubleSide, type Group, RepeatWrapping, SRGBColorSpace, Vector3 } from "three";
+import { CanvasTexture, type Group, RepeatWrapping, SRGBColorSpace, Vector3 } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
-import { PET_VIEW } from "../RoxyFigure.tsx";
-import { figureTexture } from "./texture.ts";
+import { PetModel, RoxyModel } from "../three/RoxyModel.tsx";
 
 /**
  * What every place in Roxy's world shares: a fixed, slightly-raised corner camera (picture-book, not a flight
@@ -16,11 +15,6 @@ export type Area = { w: number; d: number };
 export type Spot = { x: number; z: number };
 
 const CAMERA_OFFSET = new Vector3(8, 9, 10.5);
-/** Roxy is chunky and nearly three squares tall, like a toy in a dolls' house. */
-const FIGURE_H = 2.9;
-const UNITS_PER_PX = FIGURE_H / 640;
-/** Pets are drawn bigger than life next to Roxy, as toys are, so they read at a glance. */
-const PET_SCALE = 1.6;
 
 const centre = (area: Area) => new Vector3(area.w / 2, 0.6, area.d / 2);
 
@@ -84,21 +78,8 @@ export const tint = (hexColour: string, amount: number) => {
 // ── Roxy and the pet ──
 
 const yaw = Math.atan2(CAMERA_OFFSET.x, CAMERA_OFFSET.z);
-const pitch = Math.atan2(CAMERA_OFFSET.y, Math.hypot(CAMERA_OFFSET.x, CAMERA_OFFSET.z));
-/** Upright cards look shorter from above; stretch them back so Roxy keeps her proportions on screen. */
-const UPRIGHT = 1 / Math.cos(pitch);
 /** The camera's right, along the floor: which way "left" and "right" are on screen. */
 export const RIGHT = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-
-/** A card standing on the floor, its bottom edge at the feet, turned to face the camera. */
-export function Card({ map, w, h, feet }: { map: CanvasTexture; w: number; h: number; feet: number }) {
-	return (
-		<mesh position={[0, (h / 2 - feet) * UPRIGHT, 0]} scale={[1, UPRIGHT, 1]} rotation={[0, yaw, 0]}>
-			<planeGeometry args={[w, h]} />
-			<meshBasicMaterial map={map} transparent alphaTest={0.02} side={DoubleSide} />
-		</mesh>
-	);
-}
 
 export function Shadow({ r }: { r: number }) {
 	return (
@@ -110,8 +91,9 @@ export function Shadow({ r }: { r: number }) {
 }
 
 /**
- * Roxy walks to `walkTo` (kept inside the area), her pet trotting after. `onArrive` fires once each time she gets
- * where she was going, so a place can hand her what she walked over to pick up.
+ * Roxy walks to `walkTo` (kept inside the area), her pet trotting after. Both are the 3D toys: they turn to face
+ * the way they're going and turn back to face you when they stop. `onArrive` fires once each time she gets where
+ * she was going, so a place can hand her what she walked over to pick up.
  */
 export function Walkers({
 	look,
@@ -126,17 +108,11 @@ export function Walkers({
 	start?: Spot;
 	onArrive?: (spot: Spot) => void;
 }) {
-	const key = JSON.stringify(look);
-	// Keyed on `key` (the look as text): the look itself is a new object every render.
-	const figure = useMemo(() => figureTexture(look, { x: 0, y: 0, w: 400, h: 640 }, { omit: ["background", "pet", "petwear"] }), [key]);
-	const pet = useMemo(() => (look.slots.pet ? figureTexture(look, PET_VIEW, { only: ["pet", "petwear"] }) : null), [key]);
-	useEffect(() => () => figure.texture.dispose(), [figure]);
-	useEffect(() => () => pet?.texture.dispose(), [pet]);
-
 	const roxy = useRef<Group>(null);
-	const roxyCard = useRef<Group>(null);
+	const roxyTurn = useRef<Group>(null);
 	const petRef = useRef<Group>(null);
-	const petCard = useRef<Group>(null);
+	const petTurn = useRef<Group>(null);
+	const walking = useRef(0);
 	const first = start ?? { x: area.w / 2 + 0.5, z: area.d / 2 + 1.5 };
 	const target = useRef(new Vector3(first.x, 0, first.z));
 	const arriving = useRef<Spot | null>(null);
@@ -151,6 +127,14 @@ export function Walkers({
 		if (reduced && roxy.current) roxy.current.position.copy(target.current);
 	}, [walkTo, reduced, area]);
 
+	/** Turn smoothly toward an angle (the short way round). */
+	const turnTo = (g: Group | null, angle: number, dt: number) => {
+		if (!g) return;
+		let diff = angle - g.rotation.y;
+		diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+		g.rotation.y += diff * Math.min(1, dt * 8);
+	};
+
 	useFrame((state, dt) => {
 		const r = roxy.current;
 		const p = petRef.current;
@@ -159,59 +143,63 @@ export function Walkers({
 		const t = state.clock.elapsedTime;
 		const toTarget = target.current.clone().sub(r.position);
 		const dist = toTarget.length();
-		const walking = dist > 0.05 && !reduced;
-		if (walking) {
-			r.position.add(toTarget.normalize().multiplyScalar(Math.min(dist, 2.6 * step)));
-			// Face the way she's walking, as seen on screen.
-			if (roxyCard.current) roxyCard.current.scale.x = toTarget.dot(RIGHT) < 0 ? -1 : 1;
+		const moving = dist > 0.05 && !reduced;
+		walking.current += ((moving ? 1 : 0) - walking.current) * Math.min(1, step * 10);
+		if (moving) {
+			r.position.add(
+				toTarget
+					.clone()
+					.normalize()
+					.multiplyScalar(Math.min(dist, 2.6 * step)),
+			);
+			turnTo(roxyTurn.current, Math.atan2(toTarget.x, toTarget.z), step);
 		} else {
 			if (reduced) r.position.copy(target.current);
+			turnTo(roxyTurn.current, yaw, step);
 			if (arriving.current) {
 				const spot = arriving.current;
 				arriving.current = null;
 				arrive.current?.(spot);
 			}
 		}
-		if (roxyCard.current) {
-			roxyCard.current.position.y = walking ? Math.abs(Math.sin(t * 10)) * 0.08 : 0;
-			// A slow breath while standing.
-			roxyCard.current.scale.y = reduced ? 1 : 1 + Math.sin(t * 2) * 0.012;
-		}
+		if (roxyTurn.current) roxyTurn.current.position.y = moving ? Math.abs(Math.sin(t * 9)) * 0.04 : 0;
 		// The pet trots to a spot beside Roxy, a little behind.
 		const spot = r.position
 			.clone()
-			.add(RIGHT.clone().multiplyScalar(1.05))
+			.add(RIGHT.clone().multiplyScalar(1.1))
 			.add(new Vector3(0, 0, -0.25));
 		const toSpot = spot.sub(p.position);
 		const petDist = toSpot.length();
 		const petMoving = petDist > 0.08 && !reduced;
-		if (petMoving) p.position.add(toSpot.normalize().multiplyScalar(Math.min(petDist, 2.3 * step)));
-		else if (reduced) p.position.copy(r.position.clone().add(RIGHT.clone().multiplyScalar(1.05)));
-		if (petCard.current) {
-			petCard.current.position.y = petMoving ? Math.abs(Math.sin(t * 14)) * 0.07 : 0;
-			if (petMoving) petCard.current.scale.x = toSpot.dot(RIGHT) < 0 ? -1 : 1;
+		if (petMoving) {
+			p.position.add(
+				toSpot
+					.clone()
+					.normalize()
+					.multiplyScalar(Math.min(petDist, 2.4 * step)),
+			);
+			turnTo(petTurn.current, Math.atan2(toSpot.x, toSpot.z), step);
+		} else {
+			if (reduced) p.position.copy(r.position.clone().add(RIGHT.clone().multiplyScalar(1.1)));
+			turnTo(petTurn.current, yaw, step);
 		}
+		if (petTurn.current) petTurn.current.position.y = petMoving ? Math.abs(Math.sin(t * 14)) * 0.08 : 0;
 	});
 
 	return (
 		<>
 			<group ref={roxy} position={target.current.toArray()}>
-				<Shadow r={0.42} />
-				<group ref={roxyCard}>
-					<Card map={figure.texture} w={400 * UNITS_PER_PX} h={FIGURE_H} feet={(26 / 640) * FIGURE_H} />
+				<Shadow r={0.45} />
+				<group ref={roxyTurn} rotation={[0, yaw, 0]}>
+					<RoxyModel look={look} walking={walking} />
 				</group>
 			</group>
-			<group ref={petRef} position={target.current.clone().add(RIGHT.clone().multiplyScalar(1.05)).toArray()}>
-				{pet && (
+			<group ref={petRef} position={target.current.clone().add(RIGHT.clone().multiplyScalar(1.1)).toArray()}>
+				{look.slots.pet && (
 					<>
-						<Shadow r={0.3} />
-						<group ref={petCard}>
-							<Card
-								map={pet.texture}
-								w={PET_VIEW.w * UNITS_PER_PX * PET_SCALE}
-								h={PET_VIEW.h * UNITS_PER_PX * PET_SCALE}
-								feet={6 * UNITS_PER_PX * PET_SCALE}
-							/>
+						<Shadow r={0.32} />
+						<group ref={petTurn} rotation={[0, yaw, 0]}>
+							<PetModel look={look} />
 						</group>
 					</>
 				)}

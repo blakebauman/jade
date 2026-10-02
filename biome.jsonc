@@ -67,7 +67,7 @@
 		{
 			// three.js scenes: <mesh onClick> is a 3D object, not an HTML element. Every action there also has a real
 			// button on the page, so the HTML click-handler rules don't apply.
-			"includes": ["apps/web/src/components/roxy/world/**"],
+			"includes": ["apps/web/src/components/roxy/world/**", "apps/web/src/components/roxy/three/**"],
 			"linter": {
 				"rules": {
 					"a11y": {
