@@ -164,6 +164,7 @@ const NAV = [
 	{ to: "/parent/kids", label: "Kids", match: (path: string) => path.startsWith("/parent/kids") || path.startsWith("/parent/progress") },
 	{ to: "/parent/settings", label: "Settings", match: (path: string) => path.startsWith("/parent/settings") },
 ] as const;
+const ADMIN_NAV = { to: "/parent/admin", label: "Admin", match: (path: string) => path.startsWith("/parent/admin") } as const;
 
 /** True once `ms` has passed, so a quick load shows nothing rather than a flash of the loading board. */
 function useAfter(ms: number) {
@@ -176,20 +177,22 @@ function useAfter(ms: number) {
 }
 
 function ParentLayout() {
-	const { user } = Route.useRouteContext();
+	const { user, impersonating } = Route.useRouteContext();
+	const nav = user.role === "admin" ? [...NAV, ADMIN_NAV] : NAV;
 	const { data: parent, isPending } = useQuery(parentQuery);
 	const [unlocked, unlock] = useParentUnlock(user.id, (parent?.pinRelockMinutes ?? DEFAULT_PIN_RELOCK_MINUTES) * 60_000);
 	// With no PIN the area is open; count it as unlocked so a PIN set in Settings doesn't lock the parent out that moment.
+	// An admin signed in as this family doesn't know their PIN, and the PIN only keeps kids out.
 	useEffect(() => {
-		if (parent?.hasPin === false) unlock();
-	}, [parent?.hasPin, unlock]);
+		if (parent?.hasPin === false || impersonating) unlock();
+	}, [parent?.hasPin, impersonating, unlock]);
 	const navigate = useNavigate();
 	const path = useLocation({ select: (l) => l.pathname.replace(/\/$/, "") });
 	const slow = useAfter(600);
 
 	// Fail closed: nothing shows until we know there's no PIN. If that can't be learned (offline, nothing cached), ask for it.
 	if (isPending) return slow ? <Pending /> : null;
-	if (parent?.hasPin !== false && !unlocked)
+	if (parent?.hasPin !== false && !unlocked && !impersonating)
 		return (
 			<PinGate
 				onUnlock={(forgotPin) => {
@@ -204,10 +207,10 @@ function ParentLayout() {
 				{/* The brand is a mark, not a second way to Practice: the Practice key is the one exit. */}
 				<Brand size={28} />
 				<nav
-					className="order-last grid w-full grid-cols-3 gap-2 sm:order-none sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center"
+					className={`order-last grid w-full ${nav.length === 4 ? "grid-cols-4" : "grid-cols-3"} gap-2 sm:order-none sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center`}
 					aria-label="Parent"
 				>
-					{NAV.map((n) => {
+					{nav.map((n) => {
 						const current = n.match(path);
 						return (
 							<Link

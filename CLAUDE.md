@@ -139,6 +139,8 @@ Secrets:
 - Endpoints live under `/api/auth/admin/*` (list, ban, set role, impersonate); the client has `adminClient()` on `authClient.admin`.
 - Promote a parent in D1: `update user set role = 'admin' where email = '…'`. The session cookie cache holds the old role for up to 5 minutes, so sign in again.
 - A banned parent can't sign in and their sessions are revoked. Impersonation sessions last 1 hour (`session.impersonated_by`).
+- The UI is `parent/admin.tsx` (an Admin key in the parent nav, only for `role = "admin"`): find a family, ban or lift a ban, "Sign in as". `_authed` puts `impersonating` in the route context; while it's true a bar offers "Back to my account" (not on play screens) and the PIN gate stays open.
+- Switching accounts (`lib/admin.ts`) refuses while practice is still queued, then forgets the device and reloads, so one family's data never shows under the other.
 
 **Day and Night (`lib/theme.ts`):**
 - `parent_settings.appearance` is `auto`, `day` or `night` (Settings → Day and Night). Auto follows the device's `prefers-color-scheme`, live.
