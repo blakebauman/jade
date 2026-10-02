@@ -74,7 +74,7 @@ export function Square({ size = 72, className, active }: { size?: number; classN
 	return (
 		<span
 			aria-hidden
-			className={cn("square inline-block shrink-0", active && "ring-2 ring-felt-ink/70 ring-offset-2 ring-offset-felt", className)}
+			className={cn("square inline-block shrink-0", active && "ring-2 ring-page-ink/70 ring-offset-2 ring-offset-page", className)}
 			style={{ width: size, height: size }}
 		/>
 	);
@@ -89,7 +89,7 @@ export function Pips({ box, className, label }: { box: number; className?: strin
 			aria-label={label ?? (box === 0 ? "New word" : `Mastery ${box} of 5`)}
 		>
 			{[1, 2, 3, 4, 5].map((i) => (
-				<span key={i} className={cn("size-[9px] rounded-full", i <= box ? "bg-felt-ink" : "ring-[1.5px] ring-felt-muted ring-inset")} />
+				<span key={i} className={cn("size-[9px] rounded-full", i <= box ? "bg-page-ink" : "ring-[1.5px] ring-page-muted ring-inset")} />
 			))}
 		</span>
 	);

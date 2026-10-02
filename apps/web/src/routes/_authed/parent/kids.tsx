@@ -60,7 +60,7 @@ function AvatarPicker({ value, onChange, name }: { value: string; onChange: (v: 
 	return (
 		<fieldset className="space-y-2">
 			<legend className="text-sm font-medium">Tile number</legend>
-			<p className="max-w-prose text-sm text-felt-muted">
+			<p className="max-w-prose text-sm text-page-muted">
 				Their first letter goes on the tile; the number in the corner is theirs to pick, so siblings can tell tiles apart.
 			</p>
 			<div className="flex flex-wrap gap-2">
@@ -75,7 +75,7 @@ function AvatarPicker({ value, onChange, name }: { value: string; onChange: (v: 
 							className="peer sr-only"
 							aria-label={`Number ${a}`}
 						/>
-						<span className="block rounded-xl p-1 peer-checked:ring-3 peer-checked:ring-felt-ink peer-focus-visible:outline-3 peer-focus-visible:outline-felt-ink">
+						<span className="block rounded-xl p-1 peer-checked:ring-3 peer-checked:ring-page-ink peer-focus-visible:outline-3 peer-focus-visible:outline-page-ink">
 							<Tile letter={name.trim()[0]?.toUpperCase() || "?"} points={a} size={44} />
 							<span className="mt-1 block text-center font-display text-base font-semibold tabular-nums" aria-hidden>
 								{a}
@@ -167,7 +167,7 @@ function Group({ title, save, children }: { title: string; save: Update; childre
 
 function SaveStatus({ status }: { status: string | null }) {
 	return (
-		<span className="inline-flex items-center gap-1 text-sm text-felt-muted" role="status">
+		<span className="inline-flex items-center gap-1 text-sm text-page-muted" role="status">
 			{status === "Saved" && <Check className="size-4" aria-hidden />}
 			{status}
 		</span>
@@ -292,7 +292,7 @@ function KidEditor({ child, onRemove }: { child: Child; onRemove: () => void }) 
 					</label>
 					<label htmlFor={ids.rate} className="block min-w-0 space-y-1.5">
 						<span className="flex justify-between text-sm font-medium">
-							Speaking speed <span className="font-normal text-felt-muted tabular-nums">{rate.toFixed(2)}×</span>
+							Speaking speed <span className="font-normal text-page-muted tabular-nums">{rate.toFixed(2)}×</span>
 						</span>
 						<input
 							id={ids.rate}
@@ -308,7 +308,7 @@ function KidEditor({ child, onRemove }: { child: Child; onRemove: () => void }) 
 					<label className="flex min-h-11 cursor-pointer items-center gap-3 self-end">
 						<input
 							type="checkbox"
-							className="size-6 shrink-0 accent-felt-ink"
+							className="size-6 shrink-0 accent-page-ink"
 							checked={s.showLength}
 							onChange={(e) => spelling.update.mutate({ settings: { showLength: e.target.checked } })}
 						/>
@@ -370,12 +370,12 @@ function MathSettings({ child, onChange }: { child: Child; onChange: (m: ChildSe
 				<fieldset className="space-y-3 border-0 p-0">
 					<legend className="text-sm font-medium">
 						Times tables{" "}
-						<span className="font-normal text-felt-muted">
+						<span className="font-normal text-page-muted">
 							· {m.tables.length === TABLES.length ? "all 11 on" : `${m.tables.length} of 11 on`}
 						</span>
 					</legend>
 					<div className="flex flex-wrap items-center gap-2 text-sm">
-						<span className="text-felt-muted">Quick pick:</span>
+						<span className="text-page-muted">Quick pick:</span>
 						{TABLE_PRESETS.map((p) => (
 							<button
 								key={p.label}
@@ -451,21 +451,21 @@ function MathLevels({ child }: { child: Child }) {
 	const skills = child.settings.math.topics.flatMap((t) => TOPIC_SKILLS[t]);
 	const levels = progress?.math.levels;
 	return (
-		<section className="space-y-3 border-t border-felt-line/50 pt-4" aria-labelledby={id}>
+		<section className="space-y-3 border-t border-page-line/50 pt-4" aria-labelledby={id}>
 			<div className="flex items-baseline justify-between gap-3">
 				<h4 id={id} className="text-sm font-medium">
 					How hard
 				</h4>
-				<span className="text-sm text-felt-muted" role="status">
+				<span className="text-sm text-page-muted" role="status">
 					{set.isPending ? "Saving…" : set.isSuccess ? "Saved" : ""}
 				</span>
 			</div>
-			<p className="max-w-prose text-sm text-felt-muted">Levels move on their own. Nudge one if it feels too easy or too hard.</p>
+			<p className="max-w-prose text-sm text-page-muted">Levels move on their own. Nudge one if it feels too easy or too hard.</p>
 			{!levels ? (
 				isError ? (
 					<Problem>Couldn’t load {child.name}’s levels. Check the connection and try again.</Problem>
 				) : (
-					<p className="text-sm text-felt-muted">Loading levels…</p>
+					<p className="text-sm text-page-muted">Loading levels…</p>
 				)
 			) : (
 				<ul className="space-y-3">
@@ -475,9 +475,9 @@ function MathLevels({ child }: { child: Child }) {
 							<li key={skill} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
 								<span className="min-w-0">
 									<span className="block">
-										{SKILL_LABEL[skill]} <span className="text-felt-muted">· level {level} of 5</span>
+										{SKILL_LABEL[skill]} <span className="text-page-muted">· level {level} of 5</span>
 									</span>
-									<span className="block text-sm text-felt-muted tabular-nums">e.g. {example(skill, level)}</span>
+									<span className="block text-sm text-page-muted tabular-nums">e.g. {example(skill, level)}</span>
 								</span>
 								<span className="flex gap-2">
 									<button
@@ -550,7 +550,7 @@ function AddChild({ onDone, onAdded }: { onDone?: () => void; onAdded: (name: st
 				</label>
 			</div>
 			<AvatarPicker value={avatar} onChange={setAvatar} name={name} />
-			<p className="text-sm text-felt-muted">Voice, letter style and math topics can be changed once they’re added.</p>
+			<p className="text-sm text-page-muted">Voice, letter style and math topics can be changed once they’re added.</p>
 			<div className="flex flex-wrap gap-2">
 				<button type="submit" className="key" data-variant="go" disabled={!name.trim() || create.isPending}>
 					{create.isPending ? "Adding…" : "Add child"}
@@ -624,7 +624,7 @@ function Kids() {
 				);
 			})}
 			{kids.length === 0 && (
-				<p className="max-w-prose text-felt-muted">
+				<p className="max-w-prose text-page-muted">
 					Add each child who will practice. They’ll pick their tile on the “Who’s practicing?” screen.
 				</p>
 			)}
@@ -654,7 +654,7 @@ function Kids() {
 								<KidTile name={k.name} avatar={k.avatar} size={56} />
 								<div className="min-w-0 flex-1">
 									<h2 className="font-display text-2xl font-medium break-words">{k.name}</h2>
-									<p className="text-sm text-felt-muted">{gradeName(k.grade)}</p>
+									<p className="text-sm text-page-muted">{gradeName(k.grade)}</p>
 								</div>
 								<div className="flex gap-2">
 									<Link
@@ -691,7 +691,7 @@ function Kids() {
 								/>
 							)}
 							{remove.isError && remove.variables === k.id && <Problem>{failure(remove.error, `remove ${k.name}`)}</Problem>}
-							<hr className="border-felt-line/60" />
+							<hr className="border-page-line/60" />
 						</li>
 					);
 				})}

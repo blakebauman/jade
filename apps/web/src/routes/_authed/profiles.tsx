@@ -25,23 +25,25 @@ function Profiles() {
 				<h1 className="text-center text-4xl font-semibold md:text-5xl">Who’s practicing?</h1>
 				{kids.length === 0 ? (
 					<div className="mx-auto max-w-sm space-y-5 text-center">
-						<p className="text-felt-muted">No kids yet. A parent adds each child and their word lists first.</p>
+						<p className="text-page-muted">No kids yet. A parent adds each child and their word lists first.</p>
 						<Link to="/parent/kids" className="key" data-variant="go">
 							Add a child
 						</Link>
 					</div>
 				) : (
-					<ul className="flex flex-wrap justify-center gap-6 md:gap-10">
-						{kids.map((k) => (
+					<ul className="flex flex-wrap justify-center gap-8 md:gap-12">
+						{kids.map((k, i) => (
 							<li key={k.id}>
+								{/* Each kid's album: a name sticker on the cover, their tile and their name. */}
 								<Link
 									to="/play/$childId"
 									params={{ childId: k.id }}
 									onClick={() => speaker.unlock()}
-									className="group flex flex-col items-center gap-3 rounded-2xl p-3 transition-transform hover:-translate-y-1"
+									className="sticker flex w-44 flex-col items-center gap-3 px-4 pt-6 pb-4 md:w-52"
+									style={{ "--tilt": `${i % 2 ? 2.5 : -2.5}deg` } as React.CSSProperties}
 								>
-									<KidTile name={k.name} avatar={k.avatar} size={112} />
-									<span className="font-display text-2xl font-medium">{k.name}</span>
+									<KidTile name={k.name} avatar={k.avatar} size={104} />
+									<span className="font-display text-2xl font-medium text-page-ink">{k.name}</span>
 								</Link>
 							</li>
 						))}

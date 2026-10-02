@@ -64,23 +64,23 @@ function MyLooks() {
 				<div className="min-w-0 flex-1 space-y-4">
 					<div>
 						<p className="font-display text-3xl font-semibold">{child.name}</p>
-						{look.slots.pet && look.petName && <p className="text-felt-muted">with {look.petName}</p>}
+						{look.slots.pet && look.petName && <p className="text-page-muted">with {look.petName}</p>}
 					</div>
 					<dl className="flex flex-wrap gap-x-8 gap-y-2">
 						<div>
-							<dt className="text-sm text-felt-muted">Stars to spend</dt>
+							<dt className="text-sm text-page-muted">Stars to spend</dt>
 							<dd className="flex items-center gap-1.5 font-display text-2xl font-semibold tabular-nums">
 								<Star className="size-5 fill-current" aria-hidden /> {data.balance}
 							</dd>
 						</div>
 						<div>
-							<dt className="text-sm text-felt-muted">Saved looks</dt>
+							<dt className="text-sm text-page-muted">Saved looks</dt>
 							<dd className="font-display text-2xl font-semibold tabular-nums">
 								{data.looks.length} of {MAX_SAVED_LOOKS}
 							</dd>
 						</div>
 						<div>
-							<dt className="text-sm text-felt-muted">Stickers</dt>
+							<dt className="text-sm text-page-muted">Stickers</dt>
 							<dd className="font-display text-2xl font-semibold tabular-nums">{stickers}</dd>
 						</div>
 					</dl>
@@ -100,13 +100,13 @@ function MyLooks() {
 					{error}
 				</p>
 			)}
-			{!online && <p className="mt-6 text-felt-muted">You’re offline. Your looks are here to see; changes need the internet.</p>}
+			{!online && <p className="mt-6 text-page-muted">You’re offline. Your looks are here to see; changes need the internet.</p>}
 
 			{data.looks.length === 0 ? (
 				<section className="patch mt-10 flex flex-wrap items-center justify-between gap-5 p-6">
 					<div>
 						<h2 className="text-2xl font-semibold">No saved looks yet</h2>
-						<p className="text-felt-muted">Style your Roxy, then tap Save look to keep it here.</p>
+						<p className="text-page-muted">Style your Roxy, then tap Save look to keep it here.</p>
 					</div>
 					<Link to="/play/$childId/games/roxy" params={{ childId: child.id }} className="key" data-variant="go">
 						<Shirt className="size-5" aria-hidden /> Style Roxy
@@ -124,9 +124,9 @@ function MyLooks() {
 								<div className="flex items-baseline justify-between gap-2 px-1">
 									<h2 className="truncate font-display text-xl font-semibold">
 										{look.name}
-										{look.look.petName && <span className="font-normal text-felt-muted"> and {look.look.petName}</span>}
+										{look.look.petName && <span className="font-normal text-page-muted"> and {look.look.petName}</span>}
 									</h2>
-									{wearing && <span className="shrink-0 text-sm text-felt-muted">On stage</span>}
+									{wearing && <span className="shrink-0 text-sm text-page-muted">On stage</span>}
 								</div>
 								{deleting === look.id ? (
 									<Confirm

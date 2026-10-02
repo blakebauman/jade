@@ -108,7 +108,7 @@ export function AnswerRow({
 									style={{
 										width: size,
 										height: size,
-										boxShadow: "inset 0 -0.3em 0 var(--color-sky), inset 0 0.2em 0.5em rgb(0 0 0 / 0.45)",
+										boxShadow: "inset 0 -0.3em 0 var(--color-sky), inset 0 0.2em 0.5em var(--tone-recess)",
 									}}
 									role="img"
 									aria-label="missing letter"
@@ -146,11 +146,11 @@ export function AnswerRow({
 				)}
 				{note && (
 					<p
-						className="pointer-events-none absolute top-full mt-3 -translate-x-1/2 rounded-lg bg-felt-deep px-3 py-1.5 text-center text-sm whitespace-nowrap shadow-md md:text-base"
+						className="pointer-events-none absolute top-full mt-3 -translate-x-1/2 rounded-lg bg-page-deep px-3 py-1.5 text-center text-sm whitespace-nowrap shadow-md md:text-base"
 						style={{ left: Math.max(80, Math.min(noteLeft, width - 80)) }}
 						aria-live="polite"
 					>
-						<span aria-hidden className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 bg-felt-deep" />
+						<span aria-hidden className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 bg-page-deep" />
 						<span className="relative">{note.text}</span>
 					</p>
 				)}

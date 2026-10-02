@@ -84,16 +84,16 @@ function Landing() {
 					<br />
 					Solve it.
 				</h1>
-				<p className="max-w-[46ch] text-lg text-pretty text-felt-muted">
+				<p className="max-w-[46ch] text-lg text-pretty text-page-muted">
 					Spelling and math practice for 8–11 year olds. Load this week’s school list, and your child hears each word, asks for the
 					definition or a sentence, and places the letters tile by tile, with feedback on every letter. Math covers times tables, mental
 					math, fractions and word problems, with levels that adjust as they go.
 				</p>
 				<DemoRow />
-				<p className="text-sm text-felt-muted">
-					One tile went coral: <span className="font-semibold text-felt-ink">nece</span>
-					<span className="font-semibold text-felt-ink underline decoration-coral decoration-[3px] underline-offset-4">s</span>
-					<span className="font-semibold text-felt-ink">sary</span> has a single <span className="font-semibold text-felt-ink">c</span>.
+				<p className="text-sm text-page-muted">
+					One tile went coral: <span className="font-semibold text-page-ink">nece</span>
+					<span className="font-semibold text-page-ink underline decoration-coral decoration-[3px] underline-offset-4">s</span>
+					<span className="font-semibold text-page-ink">sary</span> has a single <span className="font-semibold text-page-ink">c</span>.
 				</p>
 			</section>
 
@@ -136,14 +136,14 @@ function Landing() {
 						/>
 					</label>
 					{error && (
-						<p role="alert" className="rounded-lg bg-felt-deep px-3 py-2 text-sm text-felt-ink">
+						<p role="alert" className="rounded-lg bg-page-deep px-3 py-2 text-sm text-page-ink">
 							{error}
 						</p>
 					)}
 					<button type="submit" className="key w-full" data-variant="go" disabled={busy}>
 						{busy ? "One moment…" : mode === "signup" ? "Create family account" : "Sign in"}
 					</button>
-					<p className="text-xs text-felt-muted">
+					<p className="text-xs text-page-muted">
 						The account belongs to a parent. Kids pick their own tile to practice. No child email or password.
 					</p>
 				</form>

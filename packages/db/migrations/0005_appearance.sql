@@ -1,0 +1,1 @@
+ALTER TABLE `parent_settings` ADD `appearance` text DEFAULT 'auto' NOT NULL;

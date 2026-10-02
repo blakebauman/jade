@@ -370,6 +370,18 @@ describe("parent pin", () => {
 		// Changing the timeout leaves the PIN alone.
 		expect(await (await call("/api/parent", { cookie })).json()).toMatchObject({ hasPin: true, pinRelockMinutes: 15 });
 	});
+
+	it("keeps the family's Day / Night choice, Auto until they pick", async () => {
+		const cookie = await signUp();
+		expect(await (await call("/api/parent", { cookie })).json()).toMatchObject({ appearance: "auto" });
+		expect((await call("/api/parent", { method: "PUT", cookie, json: { appearance: "dusk" } })).status).toBe(400);
+		await call("/api/parent", { method: "PUT", cookie, json: { pin: "2468" } });
+		await call("/api/parent", { method: "PUT", cookie, json: { appearance: "night" } });
+		// Choosing Night leaves the PIN alone, and changing the PIN leaves Night alone.
+		expect(await (await call("/api/parent", { cookie })).json()).toMatchObject({ hasPin: true, appearance: "night" });
+		await call("/api/parent", { method: "PUT", cookie, json: { pinRelockMinutes: 15 } });
+		expect(await (await call("/api/parent", { cookie })).json()).toMatchObject({ appearance: "night" });
+	});
 });
 
 describe("math", () => {

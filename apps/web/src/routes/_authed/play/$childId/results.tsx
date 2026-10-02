@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { CloudOff, RotateCcw, Star, Volume2 } from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
-import { BadgeIcon } from "#/components/BadgeIcon.tsx";
+import { BadgeIcon, badgeSticker } from "#/components/BadgeIcon.tsx";
 import { useChild } from "#/lib/child.ts";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { type MathMode, useMathRound } from "#/lib/mathRound.ts";
@@ -30,7 +30,7 @@ function AttemptTiles({ target, typed, size = 22 }: { target: string; typed: str
 					<span
 						key={`m${i}`}
 						className="square inline-block shrink-0"
-						style={{ width: size, height: size, boxShadow: "inset 0 -0.3em 0 var(--color-sky), inset 0 0.2em 0.5em rgb(0 0 0 / 0.45)" }}
+						style={{ width: size, height: size, boxShadow: "inset 0 -0.3em 0 var(--color-sky), inset 0 0.2em 0.5em var(--tone-recess)" }}
 					/>
 				) : (
 					<Tile
@@ -130,15 +130,15 @@ function Results() {
 					{correct} of {round.attempts.length} {isMath ? "right" : "spelled right"}
 				</p>
 				{round.planned > round.attempts.length && (
-					<p className="text-felt-muted">
+					<p className="text-page-muted">
 						Stopped after {round.attempts.length} of {round.planned} {unit}. Everything you answered is saved.
 					</p>
 				)}
 				{round.summary && round.summary.streak > 1 && (
-					<p className="text-felt-muted">{round.summary.streak}-day streak. Keep it going tomorrow.</p>
+					<p className="text-page-muted">{round.summary.streak}-day streak. Keep it going tomorrow.</p>
 				)}
 				{round.queued && (
-					<p className="flex items-center gap-2 text-sm text-felt-muted">
+					<p className="flex items-center gap-2 text-sm text-page-muted">
 						<CloudOff className="size-4" aria-hidden /> Saved on this device. It’ll sync when you’re back online.
 					</p>
 				)}
@@ -146,8 +146,13 @@ function Results() {
 
 			{(round.newBadges ?? []).length > 0 && (
 				<section className="mt-10 flex flex-wrap justify-center gap-3" aria-label="New badges">
-					{round.newBadges.map((b) => (
-						<p key={b.id} className="plaque animate-tile-drop px-5 py-2.5 font-display text-lg">
+					{round.newBadges.map((b, i) => (
+						<p
+							key={b.id}
+							className={`sticker flex animate-sticker-place items-center gap-2 !rounded-full px-5 py-2.5 font-display text-lg ${badgeSticker(b.icon).className}`}
+							data-place={badgeSticker(b.icon)["data-place"]}
+							style={{ "--tilt": `${i % 2 ? 2 : -2}deg`, animationDelay: `${300 + i * 120}ms` } as React.CSSProperties}
+						>
 							<BadgeIcon icon={b.icon} className="size-5" /> New badge: {b.label}
 						</p>
 					))}
@@ -202,7 +207,7 @@ function Results() {
 								<div className="min-w-0 space-y-2">
 									<div className="flex flex-wrap items-center gap-3">
 										<WordTiles word={a.word} size={34} laws={[...a.word].map(() => "right")} />
-										{progress && <Pips box={progress.boxes[a.word] ?? 1} className="rounded-full bg-felt-deep/80 px-2 py-1.5" />}
+										{progress && <Pips box={progress.boxes[a.word] ?? 1} className="rounded-full bg-page-deep/80 px-2 py-1.5" />}
 									</div>
 									{(a.correct ? round.firstTries?.[a.clientId] : a.typed) !== undefined && (
 										<p className="flex flex-wrap items-center gap-2 text-sm text-ink">

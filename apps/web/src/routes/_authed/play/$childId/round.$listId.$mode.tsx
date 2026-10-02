@@ -379,7 +379,7 @@ function RoundScreen() {
 				{!keyboard && <KidTile name={child.name} avatar={child.avatar} size={40} />}
 				<div className="min-w-0 flex-1">
 					{!keyboard && (
-						<p className="truncate text-sm text-felt-muted">
+						<p className="truncate text-sm text-page-muted">
 							{MODE_TITLE[mode]} · {name}
 						</p>
 					)}
@@ -399,7 +399,7 @@ function RoundScreen() {
 				</div>
 				<p className="font-display text-lg font-medium tabular-nums" aria-live="polite">
 					{Math.min(s.index + 1, s.words.length)}
-					<span className="text-felt-muted">/{s.words.length}</span>
+					<span className="text-page-muted">/{s.words.length}</span>
 				</p>
 			</header>
 
@@ -420,7 +420,7 @@ function RoundScreen() {
 				<section className="grid flex-1 place-items-center">
 					<div className="flex flex-col items-center gap-8 text-center">
 						<h1 className="text-4xl font-semibold md:text-5xl">{s.words.length} words. Ready?</h1>
-						<p className="max-w-[40ch] text-felt-muted">
+						<p className="max-w-[40ch] text-page-muted">
 							{mode === "learn"
 								? "Look at each word, hear it, then cover it and spell it."
 								: mode === "tiles"
@@ -430,9 +430,9 @@ function RoundScreen() {
 						<button type="button" className="key !min-h-16 !px-10 !text-2xl" data-variant="go" onClick={begin}>
 							<Volume2 className="size-7" aria-hidden /> Start
 						</button>
-						<p className="hidden text-sm text-felt-muted md:block">
-							Keys: <kbd className="rounded bg-felt-deep px-1.5">↑</kbd> say again · <kbd className="rounded bg-felt-deep px-1.5">↓</kbd>{" "}
-							slowly · <kbd className="rounded bg-felt-deep px-1.5">Enter</kbd> check
+						<p className="hidden text-sm text-page-muted md:block">
+							Keys: <kbd className="rounded bg-page-deep px-1.5">↑</kbd> say again · <kbd className="rounded bg-page-deep px-1.5">↓</kbd>{" "}
+							slowly · <kbd className="rounded bg-page-deep px-1.5">Enter</kbd> check
 						</p>
 					</div>
 				</section>
@@ -570,17 +570,17 @@ function RoundScreen() {
 								aria-live="assertive"
 							>
 								{s.phase === "correct" && (
-									<p className="font-display text-2xl font-semibold text-felt-ink">{s.current.tries > 1 ? "Fixed it!" : "Spot on!"}</p>
+									<p className="font-display text-2xl font-semibold text-page-ink">{s.current.tries > 1 ? "Fixed it!" : "Spot on!"}</p>
 								)}
 								{s.phase === "retry" && (
 									<p className="text-lg">
 										Almost.{notes.length > 1 && ` Also: ${notes.slice(1).join(" · ")}.`}{" "}
-										<span className="text-felt-muted">Fix the marked tiles and check again.</span>
+										<span className="text-page-muted">Fix the marked tiles and check again.</span>
 									</p>
 								)}
 								{s.phase === "reveal" && notes.length > 1 && <p className="text-lg">Also: {notes.slice(1).join(" · ")}</p>}
 								{!judged && (
-									<span className="flex items-center gap-2 text-sm text-felt-muted">
+									<span className="flex items-center gap-2 text-sm text-page-muted">
 										<Pips box={box} /> {box === 0 ? "New word" : box >= 4 ? "Nearly mastered" : "Practicing"}
 										{s.typed.length > 0 && !child.settings.showLength && mode === "bee" && (
 											<span className="tabular-nums">· {s.typed.length} letters</span>
@@ -591,7 +591,7 @@ function RoundScreen() {
 
 							{s.phase === "reveal" && (
 								<div className="flex w-full flex-col items-center gap-3">
-									<p className="text-sm text-felt-muted">Here’s how it’s spelled:</p>
+									<p className="text-sm text-page-muted">Here’s how it’s spelled:</p>
 									<RevealRow word={word} shown={revealShown} />
 								</div>
 							)}
@@ -655,7 +655,7 @@ function StudyCard({
 					);
 				})}
 			</div>
-			{info?.partOfSpeech && <p className="text-sm text-felt-muted italic">{info.partOfSpeech}</p>}
+			{info?.partOfSpeech && <p className="text-sm text-page-muted italic">{info.partOfSpeech}</p>}
 			<dl className="max-w-[60ch] space-y-2 text-center">
 				{definition && (
 					<div>
@@ -666,7 +666,7 @@ function StudyCard({
 				{sentence && (
 					<div>
 						<dt className="sr-only">Sentence</dt>
-						<dd className="text-felt-muted">“{sentence}”</dd>
+						<dd className="text-page-muted">“{sentence}”</dd>
 					</div>
 				)}
 			</dl>

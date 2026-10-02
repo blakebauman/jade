@@ -216,7 +216,7 @@ function MathRound() {
 				</Link>
 				<KidTile name={child.name} avatar={child.avatar} size={40} />
 				<div className="min-w-0 flex-1">
-					<p className="truncate text-sm text-felt-muted">Math · {title}</p>
+					<p className="truncate text-sm text-page-muted">Math · {title}</p>
 					<ol className="mt-1.5 flex flex-wrap gap-1" aria-label={`Problem ${s.index + 1} of ${s.problems.length}`}>
 						{s.problems.map((p, i) => {
 							const a = s.attempts[i];
@@ -230,7 +230,7 @@ function MathRound() {
 				</div>
 				<p className="font-display text-lg font-medium tabular-nums" aria-live="polite">
 					{Math.min(s.index + 1, s.problems.length)}
-					<span className="text-felt-muted">/{s.problems.length}</span>
+					<span className="text-page-muted">/{s.problems.length}</span>
 				</p>
 			</header>
 
@@ -253,13 +253,13 @@ function MathRound() {
 						<h1 className="text-4xl font-semibold md:text-5xl">
 							{s.problems.length} {s.problems.length === 1 ? "problem" : "problems"}. Ready?
 						</h1>
-						<p className="max-w-[40ch] text-felt-muted">Tap the number keys to answer. No clock: take your time.</p>
+						<p className="max-w-[40ch] text-page-muted">Tap the number keys to answer. No clock: take your time.</p>
 						<button type="button" className="key !min-h-16 !px-10 !text-2xl" data-variant="go" onClick={begin}>
 							<Volume2 className="size-7" aria-hidden /> Start
 						</button>
-						<p className="hidden text-sm text-felt-muted md:block">
-							Keys: <kbd className="rounded bg-felt-deep px-1.5">0–9</kbd> answer · <kbd className="rounded bg-felt-deep px-1.5">↑</kbd>{" "}
-							read again · <kbd className="rounded bg-felt-deep px-1.5">Enter</kbd> check
+						<p className="hidden text-sm text-page-muted md:block">
+							Keys: <kbd className="rounded bg-page-deep px-1.5">0–9</kbd> answer · <kbd className="rounded bg-page-deep px-1.5">↑</kbd>{" "}
+							read again · <kbd className="rounded bg-page-deep px-1.5">Enter</kbd> check
 						</p>
 					</div>
 				</section>
@@ -292,7 +292,7 @@ function MathRound() {
 					</div>
 
 					{s.phase === "reveal" && (
-						<div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-3xl bg-felt-deep/60 p-5">
+						<div className="flex w-full max-w-xl flex-col items-center gap-4 rounded-3xl bg-page-deep/60 p-5">
 							<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
 								<p className="font-display text-2xl">
 									The answer is<span className="sr-only"> {answerText(problem.answer)}</span>

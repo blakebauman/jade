@@ -86,6 +86,10 @@ export const parentSettings = sqliteTable("parent_settings", {
 	timeZone: text("time_zone"),
 	/** Holidays this family has turned off in Roxy (JSON array of holiday ids). */
 	roxyHolidaysOff: text("roxy_holidays_off").notNull().default("[]"),
+	/** Day, Night, or Auto (follow the device). Applies on every device the family signs in on. */
+	appearance: text("appearance", { enum: ["auto", "day", "night"] })
+		.notNull()
+		.default("auto"),
 });
 
 export const children = sqliteTable(

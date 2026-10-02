@@ -1,6 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { authClient } from "#/lib/auth.ts";
 import { forgetDevice, rememberedUser, rememberUser } from "#/lib/device.ts";
+import { parentQuery } from "#/lib/queries.ts";
+import { applyAppearance } from "#/lib/theme.ts";
 
 type User = NonNullable<Awaited<ReturnType<typeof authClient.getSession>>["data"]>["user"];
 
@@ -31,5 +35,15 @@ export const Route = createFileRoute("/_authed")({
 		void forgetDevice();
 		throw redirect({ to: "/", search: { next: location.href } });
 	},
-	component: Outlet,
+	component: Authed,
 });
+
+/** The family's Day / Night choice comes with the account, so every device they sign in on is lit the same way. */
+function Authed() {
+	const { data: parent } = useQuery(parentQuery);
+	const appearance = parent?.appearance;
+	useEffect(() => {
+		if (appearance) applyAppearance(appearance);
+	}, [appearance]);
+	return <Outlet />;
+}

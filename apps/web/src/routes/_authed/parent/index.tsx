@@ -131,13 +131,13 @@ function Lists() {
 							{kids.length > 0 ? (
 								`${names(kids.map((k) => k.name))} ${kids.length === 1 ? "is" : "are"} ready.`
 							) : (
-								<Link to="/parent/kids" className="underline underline-offset-4 hover:text-felt-ink">
+								<Link to="/parent/kids" className="underline underline-offset-4 hover:text-page-ink">
 									Each child gets their own tile, voice and math topics.
 								</Link>
 							)}
 						</FirstRunStep>
 						<FirstRunStep n={2} done={lists.length > 0} title="Add this week’s list">
-							<Link to="/parent/lists/$listId" params={{ listId: "new" }} className="underline underline-offset-4 hover:text-felt-ink">
+							<Link to="/parent/lists/$listId" params={{ listId: "new" }} className="underline underline-offset-4 hover:text-page-ink">
 								Snap a photo of the school sheet or paste it
 							</Link>
 							, or start from a grade pack below.
@@ -172,7 +172,7 @@ function Lists() {
 				{current.length > 0 ? (
 					<ul className="grid gap-3 md:grid-cols-2">
 						{current.map((l) => (
-							<li key={l.id} className={`patch flex flex-col ${l.id === saved ? "ring-2 ring-felt-ink/70" : ""}`}>
+							<li key={l.id} className={`patch flex flex-col ${l.id === saved ? "ring-2 ring-page-ink/70" : ""}`}>
 								<Link
 									to="/parent/lists/$listId"
 									params={{ listId: l.id }}
@@ -182,7 +182,7 @@ function Lists() {
 									<span className="min-w-0 flex-1 space-y-3">
 										<span className="flex flex-wrap items-baseline justify-between gap-x-3">
 											<span className="font-display text-xl font-medium break-words">{l.name}</span>
-											<span className="text-sm text-felt-muted tabular-nums">
+											<span className="text-sm text-page-muted tabular-nums">
 												{l.wordCount} {l.wordCount === 1 ? "word" : "words"}
 												{gradeLabel(l.grade) ? ` · ${gradeLabel(l.grade)}` : ""}
 											</span>
@@ -191,25 +191,25 @@ function Lists() {
 											{l.preview.map((w) => (
 												<WordRack key={w} word={w} max={20} min={12} />
 											))}
-											{l.wordCount > l.preview.length && <span className="self-end text-sm text-felt-muted">…</span>}
+											{l.wordCount > l.preview.length && <span className="self-end text-sm text-page-muted">…</span>}
 										</span>
 									</span>
-									<ChevronRight className="size-5 shrink-0 text-felt-muted group-hover:text-felt-ink" aria-hidden />
+									<ChevronRight className="size-5 shrink-0 text-page-muted group-hover:text-page-ink" aria-hidden />
 								</Link>
-								<div className="flex flex-wrap items-end justify-between gap-3 border-t border-felt-line/50 px-5 py-3">
+								<div className="flex flex-wrap items-end justify-between gap-3 border-t border-page-line/50 px-5 py-3">
 									{kids.length > 0 ? (
 										<ul className="min-w-0 space-y-1.5 text-sm" aria-label={`Who ${l.name} is for`}>
 											{kidsFor(l, kids).map((k) => (
 												<li key={k.id} className="flex items-center gap-2">
 													<KidTile name={k.name} avatar={k.avatar} size={22} />
 													<span>
-														<span className="font-medium">{k.name}</span> <span className="text-felt-muted">{kidProgress(l, k)}</span>
+														<span className="font-medium">{k.name}</span> <span className="text-page-muted">{kidProgress(l, k)}</span>
 													</span>
 												</li>
 											))}
 										</ul>
 									) : (
-										<span className="text-sm text-felt-muted">For every kid you add</span>
+										<span className="text-sm text-page-muted">For every kid you add</span>
 									)}
 									<button
 										type="button"
@@ -227,7 +227,7 @@ function Lists() {
 					</ul>
 				) : (
 					lists.length > 0 && (
-						<p className="max-w-prose text-felt-muted">Nothing this week yet. Add a new list, or bring one back from past lists below.</p>
+						<p className="max-w-prose text-page-muted">Nothing this week yet. Add a new list, or bring one back from past lists below.</p>
 					)
 				)}
 			</section>
@@ -247,12 +247,12 @@ function Lists() {
 						</button>
 					</h2>
 					{showPast && (
-						<ul id={ids.past} className="divide-y divide-felt-line/60">
+						<ul id={ids.past} className="divide-y divide-page-line/60">
 							{past.map((l) => (
 								<li key={l.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
 									<Link to="/parent/lists/$listId" params={{ listId: l.id }} className="min-w-0 underline-offset-4 hover:underline">
 										<span className="font-display text-lg font-medium">{l.name}</span>{" "}
-										<span className="text-sm text-felt-muted tabular-nums">{l.wordCount} words</span>
+										<span className="text-sm text-page-muted tabular-nums">{l.wordCount} words</span>
 									</Link>
 									<button
 										type="button"
@@ -286,7 +286,7 @@ function Lists() {
 				</h2>
 				{showPacks && (
 					<div id={ids.packs} className="space-y-5">
-						<p className="max-w-prose text-felt-muted">
+						<p className="max-w-prose text-page-muted">
 							Ready-made starters. Adding one copies it into your lists so you can trim or add words. K–3 are the Dolch sight words; 4th and
 							5th are commonly taught tricky words.
 							{kidGrades.length > 0 && " Your kids’ grades come first."}
@@ -334,7 +334,7 @@ function PackCard({
 		<li className="patch flex flex-col gap-3 p-5">
 			<div className="flex items-baseline justify-between gap-3">
 				<h3 className="font-display text-lg font-medium">{p.name}</h3>
-				<span className="text-sm text-felt-muted tabular-nums">{p.wordCount} words</span>
+				<span className="text-sm text-page-muted tabular-nums">{p.wordCount} words</span>
 			</div>
 			<div className="flex flex-wrap gap-x-3 gap-y-2" aria-hidden={open}>
 				{p.preview.slice(0, 4).map((w) => (
@@ -342,7 +342,7 @@ function PackCard({
 				))}
 			</div>
 			{open && (
-				<p id={id} className="text-sm leading-relaxed text-felt-muted">
+				<p id={id} className="text-sm leading-relaxed text-page-muted">
 					{words.join(", ")}
 				</p>
 			)}
@@ -376,7 +376,7 @@ function FirstRunStep({ n, done, title, children }: { n: number; done: boolean; 
 	return (
 		<li className="flex gap-4">
 			<span
-				className="grid size-10 shrink-0 place-items-center rounded-[0.7rem] bg-felt-deep font-display text-lg tabular-nums"
+				className="grid size-10 shrink-0 place-items-center rounded-[0.7rem] bg-page-deep font-display text-lg tabular-nums"
 				aria-hidden
 			>
 				{done ? <Check className="size-5" /> : n}
@@ -386,7 +386,7 @@ function FirstRunStep({ n, done, title, children }: { n: number; done: boolean; 
 					{title}
 					{done && <span className="sr-only"> (done)</span>}
 				</span>
-				<span className="block text-sm text-felt-muted">{children}</span>
+				<span className="block text-sm text-page-muted">{children}</span>
 			</span>
 		</li>
 	);

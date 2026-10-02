@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { DEFAULT_PIN_RELOCK_MINUTES, pinRelockMinutesSchema } from "@jade/core";
+import { APPEARANCES, DEFAULT_APPEARANCE, DEFAULT_PIN_RELOCK_MINUTES, pinRelockMinutesSchema } from "@jade/core";
 import { HOLIDAYS } from "@jade/core/roxy";
 import { schema } from "@jade/db";
 import { and, eq } from "drizzle-orm";
@@ -21,6 +21,7 @@ export const parentRoutes = new Hono<AppEnv>()
 			pinRelockMinutes: row?.pinRelockMinutes ?? DEFAULT_PIN_RELOCK_MINUTES,
 			timeZone: row?.timeZone ?? null,
 			roxyHolidaysOff: JSON.parse(row?.roxyHolidaysOff ?? "[]") as string[],
+			appearance: row?.appearance ?? DEFAULT_APPEARANCE,
 		});
 	})
 	.put(
@@ -37,10 +38,11 @@ export const parentRoutes = new Hono<AppEnv>()
 				timeZone: z.string().max(64).optional(),
 				/** Holidays this family would rather Roxy didn’t celebrate. */
 				roxyHolidaysOff: z.array(z.enum(HOLIDAYS)).max(HOLIDAYS.length).optional(),
+				appearance: z.enum(APPEARANCES).optional(),
 			}),
 		),
 		async (c) => {
-			const { pin, pinRelockMinutes, timeZone, roxyHolidaysOff } = c.req.valid("json");
+			const { pin, pinRelockMinutes, timeZone, roxyHolidaysOff, appearance } = c.req.valid("json");
 			const holidaysOff = roxyHolidaysOff && JSON.stringify([...new Set(roxyHolidaysOff)]);
 			const pinHash = pin === undefined ? undefined : pin === null ? null : await hashPassword(pin);
 			await c.var.db
@@ -51,6 +53,7 @@ export const parentRoutes = new Hono<AppEnv>()
 					pinRelockMinutes: pinRelockMinutes ?? null,
 					timeZone: timeZone ?? null,
 					roxyHolidaysOff: holidaysOff ?? "[]",
+					appearance: appearance ?? DEFAULT_APPEARANCE,
 				})
 				.onConflictDoUpdate({
 					target: schema.parentSettings.userId,
@@ -59,6 +62,7 @@ export const parentRoutes = new Hono<AppEnv>()
 						...(pinRelockMinutes && { pinRelockMinutes }),
 						...(timeZone && { timeZone }),
 						...(holidaysOff && { roxyHolidaysOff: holidaysOff }),
+						...(appearance && { appearance }),
 					},
 				});
 			return c.json({ ok: true });

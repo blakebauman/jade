@@ -13,6 +13,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Pending } from "./components/Pending.tsx";
 import { flushPending } from "./lib/offline.ts";
+import { initTheme } from "./lib/theme.ts";
 import { routeTree } from "./routeTree.gen.ts";
 
 const queryClient = new QueryClient({
@@ -33,6 +34,7 @@ declare module "@tanstack/react-router" {
 	}
 }
 
+initTheme();
 registerSW({ immediate: true });
 // Rounds finished offline sync as soon as the device is back online.
 window.addEventListener("online", () => void flushPending());

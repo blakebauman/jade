@@ -61,7 +61,7 @@ function PinGate({ onUnlock }: { onUnlock: (forgotPin: boolean) => void }) {
 			<div className="w-full max-w-xs space-y-6">
 				<form onSubmit={submit} noValidate className="patch space-y-4 p-6 text-center" key={String(usePassword)}>
 					<h1 className="text-2xl font-semibold">Parents only</h1>
-					<label className="block text-sm text-felt-muted" htmlFor={`${id}-secret`}>
+					<label className="block text-sm text-page-muted" htmlFor={`${id}-secret`}>
 						{usePassword ? "Your account password" : "Enter the 4-digit PIN"}
 					</label>
 					{usePassword ? (
@@ -104,7 +104,7 @@ function PinGate({ onUnlock }: { onUnlock: (forgotPin: boolean) => void }) {
 					</button>
 					<button
 						type="button"
-						className="min-h-11 text-sm text-felt-muted underline underline-offset-4 hover:text-felt-ink"
+						className="min-h-11 text-sm text-page-muted underline underline-offset-4 hover:text-page-ink"
 						onClick={() => switchTo(!usePassword)}
 					>
 						{usePassword ? "Use the PIN instead" : "Forgot the PIN?"}

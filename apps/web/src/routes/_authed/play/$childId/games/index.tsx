@@ -32,22 +32,22 @@ function GamesHome() {
 					<Link
 						to="/play/$childId/games/roxy"
 						params={{ childId: child.id }}
-						className="rack flex items-center gap-5 !p-5 transition-[filter,transform] hover:brightness-105 active:translate-y-px md:!p-6"
+						className="sticker flex items-center gap-5 p-5 md:p-6"
+						data-place="roxy"
+						style={{ "--tilt": "-1.5deg" } as React.CSSProperties}
 					>
 						<span className="block w-28 shrink-0 overflow-hidden rounded-xl md:w-32" aria-hidden>
 							{roxy ? (
 								<RoxyFigure look={shownLook(child.id, roxy)} className="block h-auto w-full" />
 							) : (
-								<span className="block aspect-[5/8] bg-felt-deep" />
+								<span className="block aspect-[5/8] bg-page-deep/40" />
 							)}
 						</span>
 						<span className="min-w-0 space-y-2">
-							<span className="block font-display text-3xl font-semibold text-ink">Roxy</span>
-							<span className="block text-sm font-medium text-ink">
-								Style your own character, then turn them into an animal with a magic gem.
-							</span>
+							<span className="block font-display text-3xl font-semibold">Roxy</span>
+							<span className="block text-sm font-medium">Style your own character, then turn them into an animal with a magic gem.</span>
 							{holiday && (
-								<span className="plaque gap-1.5 px-3 py-1 text-sm">
+								<span className="foil gap-1.5 px-3 py-1 text-sm">
 									<CalendarHeart className="size-4" aria-hidden /> {holiday.label} collection
 								</span>
 							)}

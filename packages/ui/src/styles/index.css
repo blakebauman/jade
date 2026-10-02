@@ -1,21 +1,33 @@
 /*
- * Jade's World: letter tiles on a jade board.
+ * Jade's World: a sticker album on jade pages, with maple letter tiles you handle and check.
  * Colour laws (one meaning each, everywhere):
  *   marigold = right · coral = wrong letter · sky = missing letter · stone = extra letter
  * Letter ink stays dark on every tile; feedback colour lives on tile edges and underlines only.
+ *
+ * Two lights, one album: Night (the default below, a jade page under a warm lamp) and Day
+ * (:root[data-theme="day"], a mint-jade page in daylight). lib/theme.ts sets data-theme before first paint.
  */
 @import "tw-animate-css";
 
 @theme {
-	/* A surface pressed into the felt: fields, pressed keys, unpractised squares. */
-	--inset-shadow-recess: inset 0 0.15em 0.4em rgb(0 0 0 / 0.4);
-	/* Board */
-	--color-felt: #0e4f43;
-	--color-felt-deep: #093a31;
-	--color-felt-raised: #135c4e;
-	--color-felt-line: #1a6a5a;
-	--color-felt-ink: #e3f3ec;
-	--color-felt-muted: #a3d0c0;
+	/* A surface pressed into the page: fields, pressed keys, unpractised squares. */
+	--inset-shadow-recess: inset 0 0.15em 0.4em var(--tone-recess);
+	/* The page */
+	--color-page: #0e4f43;
+	--color-page-deep: #093a31;
+	--color-page-raised: #135c4e;
+	--color-page-line: #1a6a5a;
+	--color-page-ink: #e3f3ec;
+	--color-page-muted: #a3d0c0;
+	/* Where a tile goes: squares, fields, the empty Check. */
+	--color-page-pit: #072e27;
+
+	/* Stickers: the white vinyl rim, and one printed hue per place. None of them is a law colour. */
+	--color-vinyl: #dfe8e3;
+	--color-spell: #17795e;
+	--color-math: #5b4bc4;
+	--color-roxy: #b8326f;
+	--color-sticker-ink: #f4fbf7;
 
 	/* Tiles */
 	--color-maple: #f1c98a;
@@ -42,13 +54,13 @@
 	/* Proportional so a 22px list tile and an 88px play tile read as the same object. */
 	--radius-tile: 18%;
 
-	/* Authored SVG textures (feTurbulence), no raster assets: maple grain in four variants and jade felt nap. */
+	/* Authored SVG textures (feTurbulence), no raster assets: maple grain in four variants, the page's paper tooth and its mottle. */
 	--tex-grain-0: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0125 0.3125' numOctaves='3' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
 	--tex-grain-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
 	--tex-grain-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.00625 0.35625' numOctaves='3' seed='37' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
 	--tex-grain-3: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0125 0.4' numOctaves='3' seed='51' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E");
-	--tex-felt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='f' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.02  0 0 0 0 0.12  0 0 0 0 0.09  0 0 0 0.42 -0.12'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23f)'/%3E%3C/svg%3E");
-	--tex-felt-mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Cfilter id='m' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0078125' numOctaves='3' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85  0 0 0 0 1  0 0 0 0 0.93  0 0 0 0.07 -0.02'/%3E%3C/filter%3E%3Crect width='512' height='512' filter='url(%23m)'/%3E%3C/svg%3E");
+	--tex-page: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='f' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.25' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.02  0 0 0 0 0.12  0 0 0 0 0.09  0 0 0 0.24 -0.08'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23f)'/%3E%3C/svg%3E");
+	--tex-page-mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512'%3E%3Cfilter id='m' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0078125' numOctaves='3' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85  0 0 0 0 1  0 0 0 0 0.93  0 0 0 0.07 -0.02'/%3E%3C/filter%3E%3Crect width='512' height='512' filter='url(%23m)'/%3E%3C/svg%3E");
 	--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
 	--animate-tile-drop: tile-drop 240ms var(--ease-out-expo) both;
@@ -56,6 +68,8 @@
 	--animate-tile-nudge: tile-nudge 360ms var(--ease-out-expo);
 	/* A heavier drop with a small settle: star tiles on a round worth celebrating. */
 	--animate-tile-land: tile-land 420ms var(--ease-out-expo) both;
+	/* A sticker pressed onto the page: it comes down a little turned and settles at its own tilt. */
+	--animate-sticker-place: sticker-place 320ms var(--ease-out-expo) both;
 
 	@keyframes tile-drop {
 		0% { transform: translateY(-18px) scale(1.06); }
@@ -65,6 +79,10 @@
 		0% { transform: perspective(500px) rotateX(0deg); }
 		45% { transform: perspective(500px) rotateX(88deg); }
 		100% { transform: perspective(500px) rotateX(0deg); }
+	}
+	@keyframes sticker-place {
+		0% { transform: translateY(-14px) rotate(calc(var(--tilt, 0deg) - 7deg)) scale(1.07); }
+		100% { transform: translateY(0) rotate(var(--tilt, 0deg)) scale(1); }
 	}
 	@keyframes tile-nudge {
 		0%, 100% { transform: translateX(0); }
@@ -95,25 +113,63 @@
 [data-font="lexend"] { --tile-face: "Lexend Variable"; }
 [data-font="atkinson"] { --tile-face: "Atkinson Hyperlegible"; }
 
+/*
+ * Light. Tones that aren't Tailwind colours: shadows cast onto the page, the lit edge of a raised key, the dark of a
+ * recess, the outline that keeps a raised key visible on a pale page, and the page's own lighting.
+ */
+:root {
+	color-scheme: dark;
+	--tone-drop: rgb(3 25 20 / 0.55);
+	--tone-drop-deep: rgb(3 25 20 / 0.6);
+	--tone-lit: rgb(255 255 255 / 0.08);
+	--tone-key-line: rgb(255 255 255 / 0.05);
+	--tone-recess: rgb(0 0 0 / 0.4);
+	--tone-pit-lip: rgb(255 255 255 / 0.06);
+	/* Night: a warm reading lamp pools on the upper left of the page. */
+	--page-light:
+		radial-gradient(55% 48% at 18% 0%, rgb(255 184 110 / 0.2) 0%, rgb(255 184 110 / 0.07) 45%, transparent 75%),
+		radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-page) 100%, white 4%) 0%, var(--color-page) 45%, var(--color-page-deep) 100%);
+	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23a3d0c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+}
+:root[data-theme="day"] {
+	color-scheme: light;
+	--color-page: #d4ebe1;
+	--color-page-deep: #bcdccd;
+	--color-page-raised: #e9f5ef;
+	--color-page-line: #9cc7b4;
+	--color-page-ink: #0d3a31;
+	--color-page-muted: #335c4f;
+	--color-page-pit: #b3d5c5;
+	--color-vinyl: #fbfdfb;
+	--tone-drop: rgb(22 74 58 / 0.26);
+	--tone-drop-deep: rgb(22 74 58 / 0.32);
+	--tone-lit: rgb(255 255 255 / 0.75);
+	--tone-key-line: rgb(13 58 49 / 0.14);
+	--tone-recess: rgb(16 60 48 / 0.2);
+	--tone-pit-lip: rgb(255 255 255 / 0.6);
+	/* Day: daylight from above, and the album page's gloss catching it in one soft diagonal band. */
+	--page-light:
+		linear-gradient(118deg, transparent 28%, rgb(255 255 255 / 0.32) 40%, transparent 56%),
+		radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-page) 100%, white 30%) 0%, var(--color-page) 50%, color-mix(in oklab, var(--color-page) 70%, var(--color-page-deep)) 100%);
+	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23335c4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+}
+
 @layer base {
 	html {
-		background: var(--color-felt-deep);
-		color: var(--color-felt-ink);
+		background: var(--color-page-deep);
+		color: var(--color-page-ink);
 		font-family: var(--font-body);
 		-webkit-tap-highlight-color: transparent;
 		text-size-adjust: 100%;
-		scrollbar-color: var(--color-felt-line) var(--color-felt-deep);
-		accent-color: var(--color-felt-ink);
-		caret-color: var(--color-felt-ink);
+		scrollbar-color: var(--color-page-line) var(--color-page-deep);
+		accent-color: var(--color-page-ink);
+		caret-color: var(--color-page-ink);
 	}
 	body {
 		min-height: 100dvh;
-		/* Felt: fine isotropic nap + soft large-scale mottling over a lit-from-above field. */
-		background:
-			var(--tex-felt-mottle),
-			var(--tex-felt),
-			radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-felt) 100%, white 4%) 0%, var(--color-felt) 45%, var(--color-felt-deep) 100%);
-		background-size: 512px 512px, 128px 128px, auto;
+		/* The album page: paper tooth and soft mottling over the page's light (a lamp by Night, daylight by Day). */
+		background: var(--tex-page-mottle), var(--tex-page), var(--page-light);
+		background-size: 512px 512px, 128px 128px, auto, auto;
 		background-attachment: fixed;
 		overscroll-behavior-y: none;
 	}
@@ -122,7 +178,7 @@
 		color: var(--color-ink);
 	}
 	:focus-visible {
-		outline: 3px solid var(--color-felt-ink);
+		outline: 3px solid var(--color-page-ink);
 		outline-offset: 3px;
 		border-radius: 0.7rem;
 	}
@@ -159,7 +215,7 @@
 			inset 0 -0.3em 0 var(--tile-edge, var(--color-maple-lo)),
 			inset 0 1px 0 rgb(255 255 255 / 0.6),
 			inset 0 0 0 1px rgb(120 78 34 / 0.12),
-			0 0.35em 0.7em -0.1em rgb(3 25 20 / 0.55);
+			0 0.35em 0.7em -0.1em var(--tone-drop);
 		transition: box-shadow 160ms var(--ease-out-expo), transform 160ms var(--ease-out-expo);
 		user-select: none;
 	}
@@ -186,7 +242,7 @@
 		box-shadow:
 			inset 0 -0.2em 0 var(--color-maple-lo),
 			inset 0 1px 0 rgb(255 255 255 / 0.55),
-			0 0.3em 0.6em -0.2em rgb(3 25 20 / 0.55);
+			0 0.3em 0.6em -0.2em var(--tone-drop);
 	}
 
 	/* Maple as a fill for shapes that aren't tiles (fraction-bar pieces, array counters): grained, never flat. */
@@ -210,21 +266,21 @@
 		box-shadow:
 			inset 0 1px 0 rgb(255 230 190 / 0.35),
 			inset 0 -0.35rem 0 rgb(80 48 18 / 0.45),
-			0 0.4rem 0.9rem -0.2rem rgb(3 25 20 / 0.6);
+			0 0.4rem 0.9rem -0.2rem var(--tone-drop-deep);
 	}
 
 	/* A square on the board waiting for a tile. */
 	.square {
 		border-radius: var(--radius-tile);
-		background: color-mix(in oklab, var(--color-felt-deep) 80%, black);
-		box-shadow: inset 0 0.2em 0.5em rgb(0 0 0 / 0.45), inset 0 -1px 0 rgb(255 255 255 / 0.06);
+		background: var(--color-page-pit);
+		box-shadow: inset 0 0.2em 0.5em var(--tone-recess), inset 0 -1px 0 var(--tone-pit-lip);
 	}
 
 	/* The caret between two tiles, once the speller taps back into a word. Chalk, like the active square's ring. */
 	.caret-bar {
 		transform: translateX(-50%);
 		border-radius: 999px;
-		background: var(--color-felt-ink);
+		background: var(--color-page-ink);
 		animation: caret-blink 1.1s steps(1, end) infinite;
 	}
 
@@ -244,21 +300,21 @@
 		font-family: var(--font-display);
 		font-weight: 600;
 		font-size: 1.05rem;
-		color: var(--color-felt-ink);
-		background: var(--color-felt-raised);
+		color: var(--color-page-ink);
+		background: var(--color-page-raised);
 		box-shadow:
-			inset 0 1px 0 rgb(255 255 255 / 0.08),
-			inset 0 0 0 1px rgb(255 255 255 / 0.05),
-			0 0.25em 0.5em -0.2em rgb(3 25 20 / 0.6);
+			inset 0 1px 0 var(--tone-lit),
+			inset 0 0 0 1px var(--tone-key-line),
+			0 0.25em 0.5em -0.2em var(--tone-drop-deep);
 		transition: transform 120ms var(--ease-out-expo), box-shadow 120ms var(--ease-out-expo), filter 120ms, background-color 120ms;
 	}
 	.key:hover:not(:disabled) { filter: brightness(1.08); }
 	.key:active:not(:disabled) { transform: translateY(1px); }
 	.key:disabled { opacity: 0.45; }
 	.key[data-variant="go"] {
-		color: var(--color-felt-deep);
-		background: var(--color-felt-ink);
-		box-shadow: inset 0 -0.18em 0 color-mix(in oklab, var(--color-felt-ink) 70%, var(--color-felt)), 0 0.3em 0.6em -0.2em rgb(3 25 20 / 0.6);
+		color: var(--color-page-deep);
+		background: var(--color-page-ink);
+		box-shadow: inset 0 -0.18em 0 color-mix(in oklab, var(--color-page-ink) 70%, var(--color-page)), 0 0.3em 0.6em -0.2em var(--tone-drop-deep);
 	}
 	.key[data-variant="tile"],
 	.key[data-variant="check"] {
@@ -270,7 +326,7 @@
 		box-shadow:
 			inset 0 -0.22em 0 var(--key-edge, var(--color-maple-lo)),
 			inset 0 1px 0 rgb(255 255 255 / 0.55),
-			0 0.3em 0.6em -0.15em rgb(3 25 20 / 0.55);
+			0 0.3em 0.6em -0.15em var(--tone-drop);
 	}
 	.key[data-variant="check"] {
 		background:
@@ -282,30 +338,30 @@
 	.key[data-variant="tile"]:active:not(:disabled),
 	.key[data-variant="check"]:active:not(:disabled) {
 		transform: translateY(0.12em);
-		box-shadow: inset 0 -0.08em 0 var(--key-edge, var(--color-maple-lo)), 0 0.1em 0.3em -0.1em rgb(3 25 20 / 0.55);
+		box-shadow: inset 0 -0.08em 0 var(--key-edge, var(--color-maple-lo)), 0 0.1em 0.3em -0.1em var(--tone-drop);
 	}
 	/* Check isn't earned until there's an answer: an empty recess in the felt, not a faded marigold (which reads olive). */
 	.key[data-variant="check"]:disabled {
 		opacity: 1;
-		color: var(--color-felt-muted);
-		background: color-mix(in oklab, var(--color-felt-deep) 80%, black);
-		box-shadow: inset 0 0.2em 0.5em rgb(0 0 0 / 0.45), inset 0 -1px 0 rgb(255 255 255 / 0.06);
+		color: var(--color-page-muted);
+		background: var(--color-page-pit);
+		box-shadow: inset 0 0.2em 0.5em var(--tone-recess), inset 0 -1px 0 var(--tone-pit-lip);
 	}
 	.key[data-pressed="true"] {
-		background: var(--color-felt-deep);
+		background: var(--color-page-deep);
 		box-shadow: var(--inset-shadow-recess);
 	}
 	/* A toggle that's on (a topic, a table, a list's kid, an import source) also gets a chalk bar under its label, so a row
 	   of "on" keys never reads as a row of disabled ones. Navigation keys stay plain pressed. */
 	.key[data-toggle][data-pressed="true"] {
-		box-shadow: inset 0 -0.2em 0 color-mix(in oklab, var(--color-felt-ink) 80%, transparent), var(--inset-shadow-recess);
+		box-shadow: inset 0 -0.2em 0 color-mix(in oklab, var(--color-page-ink) 80%, transparent), var(--inset-shadow-recess);
 	}
 
-	/* A calm felt panel for parent screens: a slightly raised patch of board, not a card. */
+	/* A calm printed panel on the page: a slightly raised area of the same page, not a card. */
 	.patch {
-		background: color-mix(in oklab, var(--color-felt-raised) 70%, transparent);
+		background: color-mix(in oklab, var(--color-page-raised) 70%, transparent);
 		border-radius: 1.25rem;
-		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 0 rgb(0 0 0 / 0.25);
+		box-shadow: inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 1px 0 var(--tone-recess);
 	}
 
 	.field {
@@ -313,19 +369,125 @@
 		min-height: 3rem;
 		padding: 0.7rem 0.95rem;
 		border-radius: 0.8rem;
-		background: color-mix(in oklab, var(--color-felt-deep) 85%, black);
-		color: var(--color-felt-ink);
+		background: var(--color-page-pit);
+		color: var(--color-page-ink);
 		box-shadow: var(--inset-shadow-recess);
-		border: 1px solid var(--color-felt-line);
+		border: 1px solid var(--color-page-line);
 	}
-	.field::placeholder { color: color-mix(in oklab, var(--color-felt-muted) 85%, var(--color-felt-deep)); }
+	.field::placeholder { color: var(--color-page-muted); }
 	.field:focus-visible { outline-offset: 1px; }
 	select.field {
 		appearance: none;
 		padding-right: 2.5rem;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23a3d0c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+		background-image: var(--chevron);
 		background-repeat: no-repeat;
 		background-position: right 0.9rem center;
+	}
+
+	/*
+	 * The album. A sticker is die-cut vinyl pressed onto the page: a printed face (--sticker-face, one hue per place),
+	 * a white vinyl rim, a gloss highlight across the top, a soft lift shadow and its own small tilt (--tilt).
+	 * Pressing or hovering lifts it a touch, as if a corner were being peeled.
+	 */
+	.sticker {
+		--sticker-face: var(--color-page-raised);
+		position: relative;
+		isolation: isolate;
+		border-radius: 1.5rem;
+		background: var(--sticker-face);
+		border: 0.35rem solid var(--color-vinyl);
+		box-shadow:
+			0 0.55rem 1.1rem -0.45rem var(--tone-drop-deep),
+			0 0.08rem 0.18rem var(--tone-drop);
+		transform: rotate(var(--tilt, 0deg));
+		transition: transform 180ms var(--ease-out-expo), box-shadow 180ms var(--ease-out-expo);
+	}
+	.sticker::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		border-radius: calc(1.5rem - 0.35rem);
+		background: linear-gradient(158deg, rgb(255 255 255 / 0.3) 0%, rgb(255 255 255 / 0.06) 34%, transparent 35%);
+		pointer-events: none;
+	}
+	/* Text, pips and keys printed on a place's hue read in the sticker's light ink. */
+	.sticker[data-place] {
+		--color-page-ink: var(--color-sticker-ink);
+		--color-page-muted: color-mix(in oklab, var(--color-sticker-ink) 82%, var(--sticker-face));
+		--color-page-deep: color-mix(in oklab, var(--sticker-face) 55%, black);
+	}
+	.sticker[data-place="spell"] { --sticker-face: var(--color-spell); color: var(--color-sticker-ink); }
+	.sticker[data-place="math"] { --sticker-face: var(--color-math); color: var(--color-sticker-ink); }
+	.sticker[data-place="roxy"] { --sticker-face: var(--color-roxy); color: var(--color-sticker-ink); }
+	a.sticker:hover,
+	button.sticker:hover:not(:disabled) {
+		transform: rotate(var(--tilt, 0deg)) translateY(-3px);
+		box-shadow:
+			0 0.9rem 1.5rem -0.5rem var(--tone-drop-deep),
+			0 0.1rem 0.2rem var(--tone-drop);
+	}
+	a.sticker:active,
+	button.sticker:active:not(:disabled) { transform: rotate(var(--tilt, 0deg)) translateY(1px); }
+	/* At Night the printed faces sit under the lamp, a step quieter than in daylight. */
+	:root:not([data-theme="day"]) .sticker[data-place] { filter: saturate(0.9) brightness(0.94); }
+
+	/*
+	 * Holographic foil, for stars and streaks: silver with a cool shimmer, never gold (marigold means right).
+	 */
+	.foil {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		border-radius: 999px;
+		color: #1d2430;
+		background: linear-gradient(118deg, #e6eaee 0%, #cdd7f3 24%, #ead6ef 46%, #d0efe2 68%, #eceff1 100%);
+		border: 0.2rem solid var(--color-vinyl);
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 0.3rem 0.6rem -0.25rem var(--tone-drop-deep);
+	}
+
+	/* A sticker not earned yet: its outline printed on the page, waiting. */
+	.slot {
+		display: grid;
+		place-items: center;
+		border-radius: 1.1rem;
+		border: 2px dashed var(--color-page-line);
+		background: color-mix(in oklab, var(--color-page-deep) 35%, transparent);
+		color: var(--color-page-line);
+	}
+
+	/*
+	 * The album's binding between two pages: each page darkens a little as it curves into the gutter, and a line of
+	 * stitches runs down the seam (across the page on phones, where the pages stack).
+	 */
+	.spine {
+		position: relative;
+		mask-image: linear-gradient(180deg, transparent, black 8%, black 92%, transparent);
+		background:
+			linear-gradient(90deg, transparent 0%, var(--tone-recess) 46%, transparent 50%, var(--tone-recess) 54%, transparent 100%);
+	}
+	.spine::after {
+		content: "";
+		position: absolute;
+		inset: 0 auto 0 50%;
+		width: 3px;
+		transform: translateX(-50%);
+		background: repeating-linear-gradient(180deg, transparent 0 6px, var(--color-vinyl) 6px 16px, transparent 16px 22px);
+		opacity: 0.55;
+		border-radius: 2px;
+	}
+	@media (max-width: 767px) {
+		.spine {
+			background: linear-gradient(180deg, transparent 0%, var(--tone-recess) 46%, transparent 50%, var(--tone-recess) 54%, transparent 100%);
+			mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
+		}
+		.spine::after {
+			inset: 50% 0 auto 0;
+			width: auto;
+			height: 3px;
+			transform: translateY(-50%);
+			background: repeating-linear-gradient(90deg, transparent 0 6px, var(--color-vinyl) 6px 16px, transparent 16px 22px);
+		}
 	}
 }
 

@@ -19,7 +19,7 @@ const OP_LABEL: Record<string, string> = {
 function OpMark({ v, size }: { v: string; size: number }) {
 	return (
 		<span
-			className="grid shrink-0 place-items-center font-display font-semibold text-felt-ink"
+			className="grid shrink-0 place-items-center font-display font-semibold text-page-ink"
 			style={{ width: size * 0.62, height: size, fontSize: size * (v === "of" ? 0.38 : 0.6) }}
 		>
 			{v}
@@ -70,7 +70,7 @@ function FracStack({ n, d, size, typed, law }: { n: string; d: string; size: num
 	return (
 		<span className="inline-flex shrink-0 flex-col items-center" style={{ gap: s * 0.12 }}>
 			{n === "?" ? <AnswerSlot typed={typed} size={s} law={law} /> : <NumberTiles v={n} size={s} />}
-			<span className="h-1 w-full min-w-8 rounded-full bg-felt-ink" />
+			<span className="h-1 w-full min-w-8 rounded-full bg-page-ink" />
 			<NumberTiles v={d} size={s} />
 		</span>
 	);

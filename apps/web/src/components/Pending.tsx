@@ -14,7 +14,7 @@ export function Pending() {
 					))}
 					<Square size={40} active />
 				</span>
-				<p className="text-felt-muted" role="status">
+				<p className="text-page-muted" role="status">
 					Setting up the board…
 				</p>
 			</div>

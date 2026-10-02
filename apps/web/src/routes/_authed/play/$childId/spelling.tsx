@@ -5,7 +5,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BadgeCheck, Blocks, BookOpen, Ear, Flame, Play, RotateCcw, Star } from "lucide-react";
 import { type MouseEvent, useEffect, useId, useState } from "react";
-import { BadgeIcon } from "#/components/BadgeIcon.tsx";
+import { BadgeIcon, badgeSticker } from "#/components/BadgeIcon.tsx";
 import { Confirm } from "#/components/Confirm.tsx";
 import { WordRack } from "#/components/WordRack.tsx";
 import { type ListSummary, listIsFor, newestFirst, type Progress } from "#/lib/api.ts";
@@ -95,7 +95,7 @@ function SpellingHome() {
 						<h2 id={`${headingId}-start`} className="text-3xl font-semibold">
 							Pick up where you left off
 						</h2>
-						<p className="text-lg text-felt-muted">
+						<p className="text-lg text-page-muted">
 							{unfinished.name}: {unfinished.done} of {unfinished.total} words done
 						</p>
 					</div>
@@ -128,7 +128,7 @@ function SpellingHome() {
 							<h2 id={`${headingId}-review`} className={start === "review" ? "text-3xl font-semibold" : "text-2xl font-semibold"}>
 								{due.length} {due.length === 1 ? "word wants" : "words want"} another go
 							</h2>
-							<p className="text-felt-muted">Words you missed come back until they stick.</p>
+							<p className="text-page-muted">Words you missed come back until they stick.</p>
 						</div>
 					</div>
 					<Link
@@ -182,14 +182,14 @@ function SpellingHome() {
 	);
 }
 
-/** Streak, stars and words mastered: the progress a kid can feel, on a maple plaque. */
+/** Streak, stars and words mastered: the progress a kid can feel, on a strip of holographic foil. */
 function ProgressPlaque({ progress }: { progress: Progress }) {
 	const streak = progress.stats.currentStreak;
 	return (
-		<dl className="plaque flex-wrap gap-x-4 gap-y-1 px-4 py-2">
+		<dl className="foil flex-wrap gap-x-4 gap-y-1 !rounded-2xl px-4 py-2">
 			<div className="flex items-center gap-1.5">
 				<dt>
-					<Flame className="size-5 text-ink-soft" aria-hidden />
+					<Flame className="size-5" aria-hidden />
 					<span className="sr-only">Day streak</span>
 				</dt>
 				{streak > 0 ? (
@@ -200,14 +200,14 @@ function ProgressPlaque({ progress }: { progress: Progress }) {
 			</div>
 			<div className="flex items-center gap-1.5">
 				<dt>
-					<Star className="size-5 fill-ink-soft text-ink-soft" aria-hidden />
+					<Star className="size-5 fill-current" aria-hidden />
 					<span className="sr-only">Stars</span>
 				</dt>
 				<dd className="font-display text-xl font-semibold tabular-nums">{progress.stats.totalStars}</dd>
 			</div>
 			<div className="flex items-center gap-1.5">
 				<dt>
-					<BadgeCheck className="size-5 text-ink-soft" aria-hidden />
+					<BadgeCheck className="size-5" aria-hidden />
 					<span className="sr-only">Words mastered</span>
 				</dt>
 				<dd className="flex items-baseline gap-1">
@@ -224,14 +224,14 @@ function ProgressPlaque({ progress }: { progress: Progress }) {
 /** The three ways to practice, said once and in plain words, so every key below can point back to it. */
 function ModeGuide({ idBase }: { idBase: string }) {
 	return (
-		<ul className="flex flex-wrap gap-x-6 gap-y-2 text-felt-muted">
+		<ul className="flex flex-wrap gap-x-6 gap-y-2 text-page-muted">
 			{MODE_ORDER.map((m) => {
 				const { label, icon: Icon, hint } = MODES[m];
 				return (
 					<li key={m} id={`${idBase}-${m}`} className="flex items-center gap-2">
-						<Icon className="size-5 text-felt-ink" aria-hidden />
+						<Icon className="size-5 text-page-ink" aria-hidden />
 						<span>
-							<span className="font-display font-medium text-felt-ink">{label}</span>: {hint}
+							<span className="font-display font-medium text-page-ink">{label}</span>: {hint}
 						</span>
 					</li>
 				);
@@ -285,13 +285,16 @@ function ListCard({
 	const main = carryOn ?? suggested;
 	const M = MODES[main];
 	return (
-		<li className={`patch flex flex-col gap-4 p-5 ${upNext ? "ring-2 ring-felt-ink/60" : ""}`} aria-labelledby={`${id}-name`}>
+		<li
+			className="sticker flex flex-col gap-4 p-5"
+			style={{ "--tilt": upNext ? "-1deg" : "0deg" } as React.CSSProperties}
+			aria-labelledby={`${id}-name`}
+		>
 			<div className="space-y-1">
-				{upNext && <p className="text-sm font-medium text-felt-muted">Up next</p>}
 				<h3 id={`${id}-name`} className="font-display text-xl font-medium break-words">
 					{l.name}
 				</h3>
-				<p className="text-sm text-felt-muted tabular-nums">
+				<p className="text-sm text-page-muted tabular-nums">
 					{l.wordCount} {l.wordCount === 1 ? "word" : "words"}
 					{sure > 0 && ` · ${sure} mastered`}
 				</p>
@@ -318,7 +321,7 @@ function ListCard({
 					{carryOn ? `Continue ${M.label} (${unfinished?.done} of ${unfinished?.total})` : M.label}
 				</Link>
 				<div className="flex flex-wrap items-center gap-3">
-					<span className="text-sm text-felt-muted">or</span>
+					<span className="text-sm text-page-muted">or</span>
 					{others.map((m) => {
 						const O = MODES[m];
 						return (
@@ -352,24 +355,28 @@ function ListCard({
 	);
 }
 
-/** Badges earned, and the next one to aim for as an empty square waiting to be filled. */
+/** Badges earned, stuck down as stickers, and the next one to aim for as its empty outline on the page. */
 function Badges({ badges }: { badges: Progress["badges"] }) {
 	const earned = badges.filter((b) => b.earned);
 	const next = badges.find((b) => !b.earned);
 	if (earned.length === 0 && !next) return null;
 	return (
 		<section className="mt-14 space-y-3" aria-labelledby="badges-heading">
-			<h2 id="badges-heading" className="text-lg font-semibold text-felt-muted">
+			<h2 id="badges-heading" className="text-lg font-semibold text-page-muted">
 				Your badges
 			</h2>
 			<ul className="flex flex-wrap gap-2">
 				{earned.map((b) => (
-					<li key={b.id} className="plaque px-3.5 py-1.5 text-sm">
+					<li
+						key={b.id}
+						className={`sticker flex items-center gap-2 !rounded-full !border-[3px] px-3.5 py-1.5 text-sm font-medium ${badgeSticker(b.icon).className}`}
+						data-place={badgeSticker(b.icon)["data-place"]}
+					>
 						<BadgeIcon icon={b.icon} className="size-4" /> {b.label}
 					</li>
 				))}
 				{next && (
-					<li className="square flex items-center gap-2 rounded-[0.7rem] px-3.5 py-1.5 text-sm text-felt-muted">
+					<li className="slot flex items-center gap-2 !rounded-full px-3.5 py-1.5 text-sm text-page-muted">
 						<BadgeIcon icon={next.icon} className="size-4" /> Next: {next.label}
 					</li>
 				)}

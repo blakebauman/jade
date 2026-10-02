@@ -1,7 +1,8 @@
-import { DEFAULT_PIN_RELOCK_MINUTES, PIN_RELOCK_MINUTES } from "@jade/core";
+import { type Appearance, DEFAULT_APPEARANCE, DEFAULT_PIN_RELOCK_MINUTES, PIN_RELOCK_MINUTES } from "@jade/core";
 import { HOLIDAY_LABEL, HOLIDAYS } from "@jade/core/roxy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { Moon, Sun, SunMoon } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
 import { Problem } from "#/components/Problem.tsx";
@@ -9,6 +10,7 @@ import { SignOut } from "#/components/SignOut.tsx";
 import { api } from "#/lib/api.ts";
 import { useSession } from "#/lib/auth.ts";
 import { parentQuery } from "#/lib/queries.ts";
+import { applyAppearance } from "#/lib/theme.ts";
 
 export const Route = createFileRoute("/_authed/parent/settings")({
 	// `newPin`: arrived from "Forgot the PIN?" on the gate, so lead with choosing a new one.
@@ -104,7 +106,7 @@ function Settings() {
 							You’re in. Choose a new PIN below, or remove it.
 						</p>
 					)}
-					<p className="text-felt-muted">
+					<p className="text-page-muted">
 						{parent?.hasPin
 							? "Kids need the PIN to get in here. It’s asked for again when you go back to Practice, sign out, or leave this area alone for a while. Forgot it? Your account password always works instead."
 							: "On a shared laptop or iPad, a 4-digit PIN keeps kids out of list editing. It’s a speed bump, not a password, and your account password always opens the parent area if you forget it."}
@@ -172,14 +174,75 @@ function Settings() {
 					<h2 id={`${id}-account`} className="text-2xl font-semibold">
 						Account
 					</h2>
-					<p className="text-felt-muted">
-						Signed in as <span className="text-felt-ink">{session?.user.email}</span>
+					<p className="text-page-muted">
+						Signed in as <span className="text-page-ink">{session?.user.email}</span>
 					</p>
 					<SignOut />
 				</section>
 			</div>
+			<AppearanceChoice />
 			<RoxyHolidays />
 		</div>
+	);
+}
+
+const APPEARANCE_CHOICES = [
+	{ value: "auto", label: "Auto", Icon: SunMoon },
+	{ value: "day", label: "Day", Icon: Sun },
+	{ value: "night", label: "Night", Icon: Moon },
+] as const satisfies readonly { value: Appearance; label: string; Icon: unknown }[];
+
+const APPEARANCE_NOTE: Record<Appearance, string> = {
+	auto: "Follows each device: Day when the laptop or iPad is in light mode, Night when it’s in dark mode.",
+	day: "The light page, on every device, all day and evening.",
+	night: "The dimmer page under a warm lamp, on every device. Easier on the eyes at bedtime.",
+};
+
+/** Day, Night, or follow the device. It lights the page here at once and on every device the family signs in on. */
+function AppearanceChoice() {
+	const { data: parent } = useQuery(parentQuery);
+	const qc = useQueryClient();
+	const id = useId();
+	const save = useMutation({
+		mutationFn: (appearance: Appearance) => api("/api/parent", { method: "PUT", json: { appearance } }),
+		onMutate: (appearance) => {
+			applyAppearance(appearance);
+			const before = qc.getQueryData(parentQuery.queryKey)?.appearance;
+			qc.setQueryData(parentQuery.queryKey, (old) => old && { ...old, appearance });
+			return { before };
+		},
+		onError: (_, __, ctx) => {
+			if (ctx?.before) {
+				applyAppearance(ctx.before);
+				qc.setQueryData(parentQuery.queryKey, (old) => old && { ...old, appearance: ctx.before });
+			}
+		},
+		onSettled: () => qc.invalidateQueries({ queryKey: ["parent"] }),
+	});
+	const current = parent?.appearance ?? DEFAULT_APPEARANCE;
+	return (
+		<section className="max-w-3xl space-y-4" aria-labelledby={`${id}-appearance`}>
+			<h2 id={`${id}-appearance`} className="text-2xl font-semibold">
+				Day and Night
+			</h2>
+			<div className="flex flex-wrap gap-2">
+				{APPEARANCE_CHOICES.map(({ value, label, Icon }) => (
+					<button
+						key={value}
+						type="button"
+						className="key"
+						data-pressed={current === value}
+						aria-pressed={current === value}
+						disabled={!parent}
+						onClick={() => current !== value && save.mutate(value)}
+					>
+						<Icon className="size-5" aria-hidden /> {label}
+					</button>
+				))}
+			</div>
+			<p className="text-page-muted">{APPEARANCE_NOTE[current]}</p>
+			{save.isError && <Problem>{SAVE_FAILED}</Problem>}
+		</section>
 	);
 }
 
@@ -202,7 +265,7 @@ function RoxyHolidays() {
 			<h2 id={`${id}-holidays`} className="text-2xl font-semibold">
 				Holidays in Roxy
 			</h2>
-			<p className="text-felt-muted">
+			<p className="text-page-muted">
 				In the week before each holiday, Roxy shows its collection and a free gift. Turn off any your family would rather skip; its items
 				are hidden too.
 			</p>

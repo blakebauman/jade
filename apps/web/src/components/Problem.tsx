@@ -10,7 +10,7 @@ export function Problem({ children, id, className = "" }: { children: ReactNode;
 		<p
 			id={id}
 			role="alert"
-			className={`flex items-start gap-2 rounded-[0.8rem] bg-felt-deep/80 px-3 py-2 text-sm text-felt-ink ${className}`}
+			className={`flex items-start gap-2 rounded-[0.8rem] bg-page-deep/80 px-3 py-2 text-sm text-page-ink ${className}`}
 		>
 			<AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
 			<span>{children}</span>

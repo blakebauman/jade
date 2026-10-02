@@ -180,7 +180,7 @@ export function Studio({ childId, data }: { childId: string; data: StudioData })
 						<House className="size-5" aria-hidden /> Home
 					</Link>
 					<Link to="/play/$childId/games/roxy/looks" params={{ childId }} className="key">
-						<Images className="size-5" aria-hidden /> My looks <span className="text-felt-muted">({data.looks.length})</span>
+						<Images className="size-5" aria-hidden /> My looks <span className="text-page-muted">({data.looks.length})</span>
 					</Link>
 				</div>
 			</header>
@@ -192,7 +192,7 @@ export function Studio({ childId, data }: { childId: string; data: StudioData })
 							<RoxyFigure look={shown} title={describe(shown)} className="block h-auto w-full" />
 						</div>
 					</div>
-					{shown.slots.pet && shown.petName && <p className="mt-2 text-center font-display text-lg text-felt-muted">and {shown.petName}</p>}
+					{shown.slots.pet && shown.petName && <p className="mt-2 text-center font-display text-lg text-page-muted">and {shown.petName}</p>}
 					<div className="mx-auto mt-4 flex w-full max-w-[15rem] md:max-w-[max(16rem,calc((100dvh-11rem)*0.625))] flex-wrap items-center gap-2">
 						<button type="button" className="key" onClick={draft.undo} disabled={!draft.canUndo}>
 							<Undo2 className="size-5" aria-hidden /> Undo
@@ -344,7 +344,7 @@ function PetName({ name, onName }: { name: string | undefined; onName: (name: st
 				))}
 			</fieldset>
 			<label className="mt-3 block max-w-xs space-y-1.5">
-				<span className="text-sm text-felt-muted">Or type your own</span>
+				<span className="text-sm text-page-muted">Or type your own</span>
 				<input
 					className="field"
 					value={typed}
@@ -400,7 +400,7 @@ function Swatches({
 					aria-pressed={value === k}
 					aria-label={`${label} ${i + 1}`}
 					onClick={() => onPick(k)}
-					className="size-11 rounded-full shadow-[inset_0_-3px_0_rgb(0_0_0/0.2)] transition-transform active:translate-y-px aria-pressed:ring-4 aria-pressed:ring-felt-ink aria-pressed:ring-offset-2 aria-pressed:ring-offset-felt"
+					className="size-11 rounded-full shadow-[inset_0_-3px_0_rgb(0_0_0/0.2)] transition-transform active:translate-y-px aria-pressed:ring-4 aria-pressed:ring-page-ink aria-pressed:ring-offset-2 aria-pressed:ring-offset-page"
 					style={{ background: colours[k] }}
 				/>
 			))}
@@ -434,14 +434,14 @@ function SlotPicker({
 				{SLOT_LABEL[slot]}
 			</h2>
 			{slot === "form" && (
-				<p className="text-sm text-felt-muted">The moon gem turns your Roxy into an animal. Tap it again to turn back.</p>
+				<p className="text-sm text-page-muted">The moon gem turns your Roxy into an animal. Tap it again to turn back.</p>
 			)}
-			{slot === "gem" && <p className="text-sm text-felt-muted">Each gem gives your Roxy animal ears and a tail.</p>}
+			{slot === "gem" && <p className="text-sm text-page-muted">Each gem gives your Roxy animal ears and a tail.</p>}
 			<ul className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2.5">
 				{OPTIONAL(slot) && slot !== "background" && (
 					<li>
 						<ItemButton label="None" selected={!worn} onClick={() => onPick(null)}>
-							<span className="grid size-full place-items-center text-sm text-felt-muted">None</span>
+							<span className="grid size-full place-items-center text-sm text-page-muted">None</span>
 						</ItemButton>
 					</li>
 				)}
@@ -496,7 +496,7 @@ function ItemButton({
 			aria-label={label}
 			title={label}
 			onClick={onClick}
-			className="relative block aspect-square w-full overflow-hidden rounded-xl bg-felt-deep shadow-[inset_0_0.2em_0.5em_rgb(0_0_0/0.45)] transition-transform active:translate-y-px aria-pressed:ring-4 aria-pressed:ring-felt-ink"
+			className="relative block aspect-square w-full overflow-hidden rounded-xl bg-page-deep shadow-[inset_0_0.2em_0.5em_rgb(0_0_0/0.45)] transition-transform active:translate-y-px aria-pressed:ring-4 aria-pressed:ring-page-ink"
 		>
 			{children}
 			{badge !== undefined && (
@@ -594,7 +594,7 @@ function HolidayPanel({
 					<h2 id={headingId} className="text-2xl font-semibold">
 						{holiday.label}
 					</h2>
-					<p className="text-felt-muted">{holiday.note}</p>
+					<p className="text-page-muted">{holiday.note}</p>
 				</div>
 				{holiday.claimed ? (
 					<p className="plaque gap-1.5 px-3 py-1.5 text-sm">
@@ -702,7 +702,7 @@ function SaveLook({
 				))}
 			</fieldset>
 			<label className="block space-y-1.5">
-				<span className="text-sm text-felt-muted">Or type your own</span>
+				<span className="text-sm text-page-muted">Or type your own</span>
 				<input className="field" value={name} maxLength={LOOK_NAME_MAX} onChange={(e) => setName(e.target.value)} autoComplete="off" />
 			</label>
 			{error && (
@@ -710,7 +710,7 @@ function SaveLook({
 					{error}
 				</p>
 			)}
-			{!online && <p className="text-felt-muted">Saving needs the internet. Your Roxy is kept on this device until then.</p>}
+			{!online && <p className="text-page-muted">Saving needs the internet. Your Roxy is kept on this device until then.</p>}
 			<div className="flex flex-wrap gap-2">
 				<button type="button" className="key" onClick={() => onDone(null)}>
 					Cancel

@@ -279,7 +279,7 @@ function ListEditor() {
 			<div className="space-y-6">
 				{back}
 				{isPending ? (
-					<p className="text-felt-muted" role="status">
+					<p className="text-page-muted" role="status">
 						Opening the list…
 					</p>
 				) : (
@@ -327,7 +327,7 @@ function ListEditor() {
 							aria-describedby={!name.trim() && words.length > 0 ? `${ids.name}-hint` : undefined}
 						/>
 						{!name.trim() && words.length > 0 && (
-							<span id={`${ids.name}-hint`} className="block text-sm text-felt-muted">
+							<span id={`${ids.name}-hint`} className="block text-sm text-page-muted">
 								Left blank, it’s saved as “Spelling words”.
 							</span>
 						)}
@@ -413,7 +413,7 @@ function ListEditor() {
 
 						{tab === "paste" && (
 							<div className="space-y-3">
-								<label htmlFor={ids.paste} className="text-sm text-felt-muted">
+								<label htmlFor={ids.paste} className="text-sm text-page-muted">
 									One word per line, or separated by commas. Numbering like “1.” is ignored.
 								</label>
 								<textarea
@@ -444,26 +444,26 @@ function ListEditor() {
 							</div>
 						)}
 						{tab === "file" && (
-							<div className="space-y-3 text-sm text-felt-muted">
+							<div className="space-y-3 text-sm text-page-muted">
 								<p>
-									A CSV with a <code className="text-felt-ink">word</code> column (and optional{" "}
-									<code className="text-felt-ink">sentence</code> and <code className="text-felt-ink">definition</code> columns), or any
+									A CSV with a <code className="text-page-ink">word</code> column (and optional{" "}
+									<code className="text-page-ink">sentence</code> and <code className="text-page-ink">definition</code> columns), or any
 									text file of words.
 								</p>
-								<label className="key cursor-pointer text-base has-[input:focus-visible]:outline-3 has-[input:focus-visible]:outline-offset-3 has-[input:focus-visible]:outline-felt-ink">
+								<label className="key cursor-pointer text-base has-[input:focus-visible]:outline-3 has-[input:focus-visible]:outline-offset-3 has-[input:focus-visible]:outline-page-ink">
 									<FileUp className="size-4" aria-hidden /> Choose file
 									<input type="file" accept=".csv,.txt,text/csv,text/plain" className="sr-only" onChange={onFile} />
 								</label>
 							</div>
 						)}
 						{tab === "photo" && (
-							<div className="space-y-3 text-sm text-felt-muted">
+							<div className="space-y-3 text-sm text-page-muted">
 								<p>
 									Lay the sheet flat in good light and fill the frame with the list; neat handwriting works too. We read the words, you
 									check them. The photo is not stored.
 								</p>
 								<label
-									className="key cursor-pointer text-base has-[input:focus-visible]:outline-3 has-[input:focus-visible]:outline-offset-3 has-[input:focus-visible]:outline-felt-ink"
+									className="key cursor-pointer text-base has-[input:focus-visible]:outline-3 has-[input:focus-visible]:outline-offset-3 has-[input:focus-visible]:outline-page-ink"
 									aria-disabled={ocrBusy}
 								>
 									<Camera className="size-4" aria-hidden /> {ocrBusy ? "Reading the photo…" : "Take or choose photo"}
@@ -479,14 +479,14 @@ function ListEditor() {
 									))}
 									<Square size={22} active />
 								</span>
-								<span className="text-sm text-felt-muted">Reading the words off the sheet…</span>
+								<span className="text-sm text-page-muted">Reading the words off the sheet…</span>
 							</div>
 						)}
 						{importProblem && <Problem>{importProblem}</Problem>}
 					</div>
 				)}
 				{/* Always mounted, so screen readers hear each new notice. */}
-				<p role="status" className="text-sm text-felt-ink">
+				<p role="status" className="text-sm text-page-ink">
 					{notice}
 				</p>
 			</section>
@@ -494,7 +494,7 @@ function ListEditor() {
 			<section className={`min-w-0 space-y-4 ${isNew ? "" : "order-first lg:order-none"}`}>
 				<div className="flex flex-wrap items-baseline justify-between gap-x-4">
 					<h2 className="text-2xl font-semibold">
-						Words <span className="text-felt-muted tabular-nums">({words.length})</span>
+						Words <span className="text-page-muted tabular-nums">({words.length})</span>
 					</h2>
 					{words.length > 0 && (
 						<button
@@ -570,7 +570,7 @@ function ListEditor() {
 					</button>
 				</form>
 				{words.length === 0 ? (
-					<p className="py-8 text-felt-muted">
+					<p className="py-8 text-page-muted">
 						Words you add show up here as tiles. Check the spelling of each one: this is the answer key.
 					</p>
 				) : (
@@ -603,7 +603,7 @@ function ListEditor() {
 			{/* With something to save, the save bar stays in reach at the bottom of the screen, however long the list; with
 			    nothing to save it sits at the end and leaves the words uncovered. */}
 			<div className={`-mx-2 lg:col-span-2 ${dirty || isNew ? "sticky bottom-0 z-10" : ""}`}>
-				<div className="patch flex flex-wrap items-center gap-3 p-3 [background:color-mix(in_oklab,var(--color-felt-raised)_94%,transparent)]">
+				<div className="patch flex flex-wrap items-center gap-3 p-3 [background:color-mix(in_oklab,var(--color-page-raised)_94%,transparent)]">
 					<button
 						type="button"
 						className="key"
@@ -613,7 +613,7 @@ function ListEditor() {
 					>
 						{save.isPending ? "Saving…" : "Save list"}
 					</button>
-					<span className="text-sm text-felt-muted" role="status">
+					<span className="text-sm text-page-muted" role="status">
 						{words.length === 0 ? "Add at least one word to save." : dirty ? "Unsaved changes" : isNew ? "" : "All saved"}
 					</span>
 					{dirty && !isNew && baseline && (
@@ -713,11 +713,11 @@ function WordRow({
 	return (
 		<li
 			data-check={check || undefined}
-			className={`rounded-xl px-2 py-2 ${open ? "bg-felt-raised/40" : "hover:bg-felt-raised/40"} ${check ? "outline-2 -outline-offset-2 outline-felt-muted/70 outline-dashed" : ""}`}
+			className={`rounded-xl px-2 py-2 ${open ? "bg-page-raised/40" : "hover:bg-page-raised/40"} ${check ? "outline-2 -outline-offset-2 outline-page-muted/70 outline-dashed" : ""}`}
 		>
 			<div className="flex items-center gap-3">
 				{/* The number gives its room to the word on a phone. */}
-				<span className="hidden w-6 shrink-0 text-right text-sm text-felt-muted tabular-nums sm:block">{n}</span>
+				<span className="hidden w-6 shrink-0 text-right text-sm text-page-muted tabular-nums sm:block">{n}</span>
 				<button
 					type="button"
 					className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-left"
@@ -727,14 +727,14 @@ function WordRow({
 				>
 					<WordRack word={w.word} max={26} min={10} dropDelay={dropDelay} />
 					{check && (
-						<span className="text-xs font-medium text-felt-muted" aria-hidden>
+						<span className="text-xs font-medium text-page-muted" aria-hidden>
 							check
 						</span>
 					)}
 				</button>
 				<button
 					type="button"
-					className="grid size-11 shrink-0 place-items-center rounded-lg text-felt-muted hover:bg-felt-deep hover:text-felt-ink"
+					className="grid size-11 shrink-0 place-items-center rounded-lg text-page-muted hover:bg-page-deep hover:text-page-ink"
 					aria-label={`Remove ${w.word}`}
 					onClick={onRemove}
 				>
@@ -744,7 +744,7 @@ function WordRow({
 			{open && (
 				<div className="mt-3 grid gap-3 sm:pl-9">
 					<form onSubmit={commit} className="space-y-1">
-						<label htmlFor={`${id}-spelling`} className="text-xs text-felt-muted">
+						<label htmlFor={`${id}-spelling`} className="text-xs text-page-muted">
 							Spelling <span className="opacity-80">(this is the answer key)</span>
 						</label>
 						<div className="flex gap-2">
@@ -768,7 +768,7 @@ function WordRow({
 					</form>
 					{(["sentence", "definition"] as const).map((k) => (
 						<label key={k} className="space-y-1">
-							<span className="text-xs text-felt-muted">
+							<span className="text-xs text-page-muted">
 								Your own {k} <span className="opacity-80">(optional; otherwise we look it up)</span>
 							</span>
 							<input className="field text-sm" value={w[k] ?? ""} onChange={(e) => onChange(k, e.target.value || null)} />

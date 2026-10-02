@@ -5,52 +5,31 @@ primary_target: "src/routes"
 related_targets: []
 ---
 
-# Surface: Jade Learning app (play + parent)
+# Surface: Jade's World app (play, Roxy, parent)
 
-Scope: whole SPA in apps/web. The play surfaces (/play/*) are the core; the parent area (/parent/*) and sign-in inherit the same world at lower intensity.
-Visitor mode: Operate. The speller's task is to hear the word, ask bee questions, and spell it. The parent's task is to load lists and check trouble words.
+Scope: the whole SPA in apps/web. The kid hub, profiles and Roxy carry the album most strongly. Rounds inherit the page quietly. The parent area uses the same page at lower intensity.
+
+Visitor mode: Operate.
+- Kids (8–11) start rounds, collect, and style Roxy.
+- Parents load lists and check progress.
+
 Constraints:
-- Laptop with a keyboard, or iPad with touch, the on-screen keyboard or a keyboard case.
-- iOS audio needs a tap before sound can play.
-- WCAG AA. No timers.
+- Laptop or iPad; WCAG AA; no timers.
+- Kids must not find it babyish.
+- Rounds stay quiet.
+- Day is soft daylight, never paper white. Night is a warm, dim reading lamp, never pitch black.
+- Appearance: Auto follows the device's prefers-color-scheme. Parents can force Day or Night in Settings.
 
 ## Direction contract
 
-THESIS: Every letter is a physical maple tile the speller places on a jade board, so a spelling is an object you can check piece by piece. The contract refuses the category default: a white card with a mascot and a green Check button.
+THESIS: Jade's World is a sticker album that fills up. Practice earns what goes on its pages, and Roxy lives in it. It refuses the category default of white cards with a mascot, and it refuses the old single-purpose spelling board.
 
-OWN-WORLD:
-- The ground is deep jade felt, and it owns the full viewport.
-- Letters are maple tiles with a soft bevel, a pressed dark-ink letter and a small drop shadow.
-- The only other colours are premium-square fields: marigold, coral, sky and stone. Each carries exactly one law:
-  - marigold means right;
-  - coral means the wrong letter;
-  - sky means a missing letter;
-  - stone means an extra letter.
-- Feedback colour sits on tile edges and underlines. Letter ink stays dark.
-- The type is a rounded, geometric, lowercase-friendly sans. Letterforms matter, so no condensed faces and no pixel faces.
-- Mastery appears as five pips on every word tile.
+OWN-WORLD: The ground is a glossy album page in jade. By Day it is a mint-jade liner page with a soft diagonal sheen. By Night it is the deep jade page under a warm lamp pool. The album's things are die-cut vinyl stickers: a white vinyl rim, a gloss highlight, a soft lift shadow and a slight tilt. Stars and streak are holographic silver foil, never gold, because marigold means right. Anything not yet earned is an empty sticker slot printed on the page: a dashed outline with a faint silhouette. Maple letter tiles and the four law colours are unchanged. Each subject has one sticker hue: jade for Spelling, grape for Math, berry for Roxy. None of these is a law colour.
 
-STORY: The speller sees one word slot and a big Say-it tile. They ask "Definition?", "Sentence?" or "Origin?" as tiles on a rack, type or tap letters into squares, and press Check. Each tile then lights on its edge. A miss reveals the right spelling tile by tile, in time with the voice. The round ends with a scoreboard rack of the missed words.
+STORY: A kid opens the album to their spread. The left page holds Practice: a Spelling and a Math sticker, plus "Pick up where you left off". The right page holds Roxy and their sticker collection, with slots still to fill. They tap a sticker, play a quiet round on the page, and come back to find a new sticker placed.
 
-FIRST VIEWPORT (/play/$child/$list/bee):
-- The jade board fills the screen, with a thin top rail holding the child's avatar, "word 3 of 12" as a row of tiny tile dots, and an exit.
-- Centre-top: a large round maple Say-it tile (about 120px) with a speaker glyph. A Slow tile sits beside it.
-- Below that, a rack of three bee-question tiles: Definition, Sentence, Origin. An answer appears on a maple "card" strip under the rack.
-- Centre: the answer row of tile squares, 64–88px each and scaling with word length. The primary action is a marigold Check key-tile at the right end of the row.
-- On an iPad with the keyboard up, the rail collapses and the row stays above the keyboard.
+FIRST VIEWPORT (/play/$childId): A two-page spread with a stitched spine down the middle (stacked on phones). The header has the KidTile, the name, and foil chips for streak and stars. On the left page: the resume panel, with the one go key, then large Spelling and Math stickers that carry their tile words. On the right page: a Roxy sticker showing their current look, then the badge sheet, with earned stickers tilted and placed and unearned ones as dashed slots.
 
-FORM: Letter tiles on a game board. This was candidate 3 on my ordered list, seed 9f44c190. It is code-led. Raises taken from the challengers:
-- Split-flap: the cascade reveal.
-- Cloud edge: colour on edges only.
-- Gravity rain: one colour, one law.
-- Star atlas: the fixed five-pip mastery ramp.
-- Monochrome canon: each feedback line points at its tile.
-
-Signature interaction: tiles drop into squares with a short settle (spring, about 180ms). On Check, the tiles flip in a left-to-right cascade that reveals the edge colours. When a word is missed, the correct tiles clack in one per beat while the voice spells them.
-
-Motion grammar:
-- Short, physical settles.
-- No floaty fades.
-- Everything is disabled under reduced motion.
+FORM: Sticker Album, IMPECCABLE’S PICK (candidate 1 on my ordered list; the roll assigned candidate 6, Under Jade's Sky). Seed key 646887de, code-led. Signature interaction: a sticker is placed by dropping and rotating to its tilt with a small settle, and it lifts a little on hover or press as if being peeled. Motion stays short and physical, and none of it runs under reduced motion.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

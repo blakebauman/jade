@@ -172,3 +172,8 @@ export type WordInfo = {
 export const PIN_RELOCK_MINUTES = [1, 5, 15, 30] as const;
 export const DEFAULT_PIN_RELOCK_MINUTES = 5;
 export const pinRelockMinutesSchema = z.union(PIN_RELOCK_MINUTES.map((m) => z.literal(m)));
+
+/** How the album is lit: Auto follows the device's light or dark setting; Day and Night hold whatever the device says. */
+export const APPEARANCES = ["auto", "day", "night"] as const;
+export type Appearance = (typeof APPEARANCES)[number];
+export const DEFAULT_APPEARANCE: Appearance = "auto";

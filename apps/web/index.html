@@ -4,6 +4,16 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
 		<meta name="theme-color" content="#0e4f43" />
+		<script>
+			// Light the page before anything paints: the family's Day / Night choice, or the device's own on Auto (lib/theme.ts).
+			(() => {
+				var a = "auto";
+				try { a = localStorage.getItem("jade.appearance") || "auto"; } catch (e) {}
+				var t = a === "day" || a === "night" ? a : matchMedia("(prefers-color-scheme: dark)").matches ? "night" : "day";
+				document.documentElement.dataset.theme = t;
+				document.querySelector('meta[name="theme-color"]').setAttribute("content", t === "day" ? "#d4ebe1" : "#0e4f43");
+			})();
+		</script>
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="apple-mobile-web-app-title" content="Jade's World" />

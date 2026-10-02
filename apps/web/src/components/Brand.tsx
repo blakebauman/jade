@@ -13,7 +13,7 @@ export function Brand({ size = 34 }: { size?: number }) {
 					style={i === 0 ? { transform: "translateY(-4px) rotate(-6deg)" } : c.length > 1 ? { fontSize: size * 0.46 } : undefined}
 				/>
 			))}
-			<span aria-hidden className="ml-2 font-display font-medium text-felt-muted" style={{ fontSize: size * 0.55 }}>
+			<span aria-hidden className="ml-2 font-display font-medium text-page-muted" style={{ fontSize: size * 0.55 }}>
 				world
 			</span>
 		</span>

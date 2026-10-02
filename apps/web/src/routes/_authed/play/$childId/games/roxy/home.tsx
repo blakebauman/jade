@@ -33,7 +33,7 @@ class NoWebGL extends Component<{ children: ReactNode }, { failed: boolean }> {
 	override render() {
 		if (this.state.failed)
 			return (
-				<p className="grid size-full place-items-center p-6 text-center text-felt-muted">
+				<p className="grid size-full place-items-center p-6 text-center text-page-muted">
 					This device can’t show the 3D room, but you can still decorate it below.
 				</p>
 			);
@@ -214,7 +214,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 					<div className="rack !p-2">
 						<div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-gradient-to-b from-[#cfe9f4] to-[#f4ead8]">
 							<NoWebGL>
-								<Suspense fallback={<p className="grid size-full place-items-center text-felt-muted">Opening the door…</p>}>
+								<Suspense fallback={<p className="grid size-full place-items-center text-page-muted">Opening the door…</p>}>
 									<HomeScene
 										home={home}
 										look={look}
@@ -243,7 +243,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 							</NoWebGL>
 						</div>
 					</div>
-					<p role="status" className="mt-3 text-felt-muted">
+					<p role="status" className="mt-3 text-page-muted">
 						{message ??
 							(mode === "play"
 								? "Tap the floor and Roxy walks there."
@@ -251,7 +251,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 									? "Tap the floor (or a wall) to move it there, or use the keys."
 									: "Pick something to add, or tap a piece in the room to move it.")}
 					</p>
-					{draft.saving && !online && <p className="text-sm text-felt-muted">Saved on this device. It’ll sync when you’re back online.</p>}
+					{draft.saving && !online && <p className="text-sm text-page-muted">Saved on this device. It’ll sync when you’re back online.</p>}
 				</section>
 
 				{mode === "decorate" && (
@@ -364,7 +364,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 												>
 													{f.label}
 													{!owned(f) && (
-														<span className="inline-flex items-center gap-0.5 text-sm text-felt-muted">
+														<span className="inline-flex items-center gap-0.5 text-sm text-page-muted">
 															<Lock className="size-3.5" aria-hidden /> {f.cost}
 														</span>
 													)}
@@ -457,7 +457,7 @@ function Swatches({ value, label, onPick }: { value: string | undefined; label: 
 					aria-pressed={value === k}
 					aria-label={`${label} ${i + 1}`}
 					onClick={() => onPick(k)}
-					className="size-10 rounded-full shadow-[inset_0_-3px_0_rgb(0_0_0/0.2)] transition-transform active:translate-y-px aria-pressed:ring-4 aria-pressed:ring-felt-ink aria-pressed:ring-offset-2 aria-pressed:ring-offset-felt"
+					className="size-10 rounded-full shadow-[inset_0_-3px_0_rgb(0_0_0/0.2)] transition-transform active:translate-y-px aria-pressed:ring-4 aria-pressed:ring-page-ink aria-pressed:ring-offset-2 aria-pressed:ring-offset-page"
 					style={{ background: colours[k] }}
 				/>
 			))}

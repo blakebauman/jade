@@ -60,7 +60,7 @@ export function Confirm({
 					{message}
 				</p>
 				{note && (
-					<p id={`${id}-note`} className="text-sm text-felt-muted">
+					<p id={`${id}-note`} className="text-sm text-page-muted">
 						{note}
 					</p>
 				)}

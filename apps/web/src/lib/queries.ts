@@ -1,3 +1,4 @@
+import type { Appearance } from "@jade/core";
 import { type QueryClient, queryOptions } from "@tanstack/react-query";
 import { api, type Child, type ListSummary, type Pack, type Progress, type WordInfo, type WordList } from "./api.ts";
 
@@ -34,5 +35,8 @@ export const wordQuery = (word: string) =>
 	});
 export const parentQuery = queryOptions({
 	queryKey: ["parent"],
-	queryFn: () => api<{ hasPin: boolean; pinRelockMinutes: number; timeZone: string | null; roxyHolidaysOff?: string[] }>("/api/parent"),
+	queryFn: () =>
+		api<{ hasPin: boolean; pinRelockMinutes: number; timeZone: string | null; roxyHolidaysOff?: string[]; appearance?: Appearance }>(
+			"/api/parent",
+		),
 });

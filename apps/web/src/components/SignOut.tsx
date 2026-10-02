@@ -59,7 +59,7 @@ export function SignOut({ className = "" }: { className?: string }) {
 						<h2 id={`${id}-unsaved`} className="text-xl font-semibold">
 							Practice from {notice.rounds} {notice.rounds === 1 ? "round hasn’t" : "rounds haven’t"} been saved yet
 						</h2>
-						<p className="text-sm text-felt-muted">
+						<p className="text-sm text-page-muted">
 							It uploads by itself once this device is online and signed in. Signing out now throws it away.
 						</p>
 					</div>

@@ -3,7 +3,7 @@ import { KidTile } from "@jade/ui/components/kid-tile";
 import { Pips, Tile } from "@jade/ui/components/tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BookOpenText, Brain, ChartPie, Play, RotateCcw, X as Times } from "lucide-react";
+import { ArrowLeft, BookOpenText, Brain, ChartPie, Play, RotateCcw, X as Times } from "lucide-react";
 import { useChild } from "#/lib/child.ts";
 import { progressQuery } from "#/lib/queries.ts";
 import { speaker } from "#/lib/speaker.ts";
@@ -30,22 +30,20 @@ function MathHome() {
 
 	return (
 		<main className="mx-auto min-h-dvh max-w-5xl px-5 py-6 md:px-10">
-			<header className="flex items-center justify-between gap-4">
-				<Link
-					to="/play/$childId"
-					params={{ childId: child.id }}
-					className="flex items-center gap-3 rounded-xl"
-					aria-label="Back to subjects"
-				>
+			<header className="flex flex-wrap items-center justify-between gap-4">
+				<div className="flex items-center gap-3">
+					<Link to="/play/$childId" params={{ childId: child.id }} className="key" data-variant="felt">
+						<ArrowLeft className="size-5" aria-hidden /> Subjects
+					</Link>
 					<KidTile name={child.name} avatar={child.avatar} size={48} />
 					<span className="font-display text-2xl font-medium">{child.name}</span>
-				</Link>
+				</div>
 			</header>
 
 			<h1 className="sr-only">Math</h1>
 
 			{due.length > 0 && (
-				<section className="mt-10 flex flex-wrap items-center justify-between gap-5 patch p-6">
+				<section className="sticker mt-10 flex flex-wrap items-center justify-between gap-5 p-6" data-place="math">
 					<div className="flex items-center gap-5">
 						<div className="flex -space-x-2" aria-hidden>
 							{due.slice(0, 3).map((k, i) => (
@@ -63,7 +61,7 @@ function MathHome() {
 							<h2 className="text-2xl font-semibold">
 								{due.length} {due.length === 1 ? "fact wants" : "facts want"} another go
 							</h2>
-							<p className="text-felt-muted">Facts you missed come back until they stick.</p>
+							<p>Facts you missed come back until they stick.</p>
 						</div>
 					</div>
 					<Link
@@ -80,32 +78,32 @@ function MathHome() {
 
 			<section className="mt-12 space-y-5">
 				<h2 className="text-3xl font-semibold">Math: pick a topic</h2>
-				<ul className="space-y-3">
+				<ul className="grid gap-5">
 					{topics.map((t) => {
 						const Icon = TOPIC_ICON[t];
 						const level = Math.min(...TOPIC_SKILLS[t].map((s) => levels[s] ?? 1));
 						return (
-							<li key={t} className="flex items-center justify-between gap-4 border-b border-felt-line/50 py-4">
-								<div className="flex min-w-0 items-center gap-4">
+							<li key={t} className="sticker flex flex-wrap items-center justify-between gap-4 p-4 md:px-6" data-place="math">
+								<div className="flex min-w-[13rem] flex-1 items-center gap-4">
 									<Tile size={52} aria-hidden>
 										<Icon className="size-6" strokeWidth={2.4} />
 									</Tile>
 									<div className="min-w-0">
-										<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+										<div className="flex items-center gap-x-3">
 											<h3 className="font-display text-xl font-medium">{TOPIC_LABEL[t]}</h3>
 											<span aria-hidden className="inline-flex">
 												<Pips box={level} />
 											</span>
 											<span className="sr-only">Level {level} of 5</span>
 										</div>
-										<p className="text-sm text-felt-muted">{TOPIC_HINT[t]}</p>
+										<p className="text-sm text-page-muted">{TOPIC_HINT[t]}</p>
 									</div>
 								</div>
 								<Link
 									to="/play/$childId/math/$topic"
 									params={{ childId: child.id, topic: t }}
 									onClick={() => speaker.unlock()}
-									className="key shrink-0 sm:min-w-[7rem]"
+									className="key ml-auto shrink-0 sm:min-w-[7rem]"
 									data-variant="go"
 								>
 									<Play className="size-5" aria-hidden /> Play

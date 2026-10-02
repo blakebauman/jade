@@ -128,11 +128,23 @@ Secrets:
 - **Stars:** `child_stats.total_stars` is lifetime (badges read it) and never goes down; `stars_spent` holds what Roxy has spent, and the balance is the difference. `POST …/roxy/unlock` inserts the unlock first, then charges only if the balance covers it, else removes the row (409 `stars`). It's idempotent.
 - **Holidays:** a collection opens 7 days before the first day, by the family's `day`. Lunar and lunisolar dates come from the `HOLIDAY_DATES` table, which runs to 2030; a test fails when it runs out. `POST …/roxy/claim` gives the gift free only inside the window and within a day of the server's date. Parents turn holidays off in Settings (`parent_settings.roxy_holidays_off`), which hides their items too.
 - The studio keeps the look on the device (`jade.roxy.{childId}`) and autosaves it with `PUT …/roxy/current` after 1.2s, or when back online. Unlocking, claiming and saving need a connection. `GET …/roxy?day=` is in the `jade-data` cache with `ignoreSearch`.
+- **Pets** are the `pet` and `petwear` slots (`petwear` needs a pet; `normalizeLook` drops it otherwise). `petName` is on the look but left out of the fingerprint, so renaming a pet isn't a new look.
+- **Games are built with three.js** (`three` + `@react-three/fiber`), loaded only on game screens (`lazy()`), never on Spelling, Math or parent screens.
+- **Roxy's home** (`games/roxy/home`, `world/HomeScene.tsx`): one 10×8 room seen from a fixed angle with an orthographic camera. Roxy and her pet are the studio's SVG drawn onto canvas textures (`world/texture.ts`) on upright cards that turn to face the camera, so every item works with no 3D art. Furniture is built from rounded shapes in code with toon shading (`world/Furniture.tsx`); `furniture.test.ts` checks every catalog piece has a model.
+  - The home is `HomeSchema` in `core/roxy/home.ts`: wallpaper, floor, and up to 40 placed pieces on whole squares (walls: `back`/`left`). `normalizeHome` drops pieces outside the room or on top of other furniture (rugs go under). Stored in `roxy_homes`, returned as `home` on `GET …/roxy`, saved with `PUT …/roxy/home` (403 if it holds locked furniture), kept on the device as `jade.roxyhome.{childId}` and autosaved like the look.
+  - Furniture unlocks through the same `POST …/roxy/unlock` and `roxy_unlocks` rows as clothes; a core test keeps their ids apart.
+  - Every 3D action has a DOM button too (add, turn, move by one square, put away). If WebGL can't start, the room says so and decorating still works. Reduced motion: no walking or bobbing, Roxy just appears where tapped.
 
 **Admin (Better Auth admin plugin):**
 - Endpoints live under `/api/auth/admin/*` (list, ban, set role, impersonate); the client has `adminClient()` on `authClient.admin`.
 - Promote a parent in D1: `update user set role = 'admin' where email = '…'`. The session cookie cache holds the old role for up to 5 minutes, so sign in again.
 - A banned parent can't sign in and their sessions are revoked. Impersonation sessions last 1 hour (`session.impersonated_by`).
+
+**Day and Night (`lib/theme.ts`):**
+- `parent_settings.appearance` is `auto`, `day` or `night` (Settings → Day and Night). Auto follows the device's `prefers-color-scheme`, live.
+- It's applied as `data-theme` on `<html>`. `index.css` holds Night as the default tokens and Day under `:root[data-theme="day"]`; shadows and recesses are `--tone-*` tokens so both themes own them.
+- The choice is copied to localStorage (`jade.appearance`) so an inline script in `index.html` lights the page before first paint and offline. `_authed` reads `/api/parent` on every signed-in screen and applies the account's choice.
+- `<meta name="theme-color">` follows the theme; the PWA manifest colours stay at Night's page.
 
 **SRS and streaks:**
 - SRS is driven by first-try correctness. A new word spelled right starts in box 2, due tomorrow; a miss goes to box 1, due now.
@@ -149,7 +161,7 @@ Secrets:
 
 ## Design
 
-Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any UI work. The world is **letter tiles on a jade board**.
+Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any UI work. The world is a **sticker album on jade pages**: practice happens with maple letter tiles on the page, and what a kid earns (badges, stars) and their places (Spelling, Math, Games) are die-cut stickers (`.sticker`, `.foil`, `.slot` in `packages/ui/src/styles/index.css`). Page colours are the `page-*` tokens.
 
 **Colour laws** hold everywhere and never mean anything else:
 - marigold = right

@@ -72,10 +72,10 @@ function ProgressPage() {
 					<h1 className="text-4xl font-semibold break-words">{name}’s progress</h1>
 				</div>
 				{played ? (
-					<dl className="flex flex-wrap gap-x-6 gap-y-2 text-felt-muted">
+					<dl className="flex flex-wrap gap-x-6 gap-y-2 text-page-muted">
 						{facts.map((f) => (
 							<div key={f.label} className="flex items-baseline gap-1.5">
-								<dd className="order-first font-display text-xl font-semibold text-felt-ink tabular-nums">{f.value}</dd>
+								<dd className="order-first font-display text-xl font-semibold text-page-ink tabular-nums">{f.value}</dd>
 								<dt>
 									{f.label}
 									{f.note && <span className="text-sm"> ({f.note})</span>}
@@ -99,14 +99,14 @@ function ProgressPage() {
 						</h2>
 						<h3 className="text-lg font-semibold">Trouble words</h3>
 						{p.trouble.length === 0 ? (
-							<p className="text-felt-muted">No misses yet. Words that get missed show up here with how often.</p>
+							<p className="text-page-muted">No misses yet. Words that get missed show up here with how often.</p>
 						) : (
 							<>
 								<ul className="space-y-3">
 									{p.trouble.map((t) => (
 										<li key={t.word} className="flex flex-wrap items-center gap-4">
 											<WordRack word={t.word} max={26} />
-											<span className="text-sm text-felt-muted tabular-nums">missed {t.misses}×</span>
+											<span className="text-sm text-page-muted tabular-nums">missed {t.misses}×</span>
 											<Pips box={t.box} />
 										</li>
 									))}
@@ -120,7 +120,7 @@ function ProgressPage() {
 							</>
 						)}
 						{p.reviewDue.length > 0 && (
-							<p className="text-sm text-felt-muted">
+							<p className="text-sm text-page-muted">
 								{p.reviewDue.length} {p.reviewDue.length === 1 ? "word is" : "words are"} due for review today.
 							</p>
 						)}
@@ -130,15 +130,15 @@ function ProgressPage() {
 						<h2 id="recent-heading" className="text-2xl font-semibold">
 							Recent rounds
 						</h2>
-						<ul className="divide-y divide-felt-line/60 text-sm">
+						<ul className="divide-y divide-page-line/60 text-sm">
 							{p.recent.map((r) => (
 								<li key={r.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
 									<span className="min-w-0">
 										<span className="block">
 											{MODE_LABEL[r.mode]}
-											{listName(r.listId) && <span className="text-felt-muted"> · {listName(r.listId)}</span>}
+											{listName(r.listId) && <span className="text-page-muted"> · {listName(r.listId)}</span>}
 										</span>
-										<span className="block text-felt-muted">
+										<span className="block text-page-muted">
 											{new Date(r.startedAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
 										</span>
 									</span>
@@ -148,7 +148,7 @@ function ProgressPage() {
 										</span>
 										<span className="inline-flex gap-0.5" role="img" aria-label={`${r.stars} of 3 stars`}>
 											{[1, 2, 3].map((i) => (
-												<Star key={i} aria-hidden className={i <= r.stars ? "size-4 fill-maple text-maple" : "size-4 text-felt-line"} />
+												<Star key={i} aria-hidden className={i <= r.stars ? "size-4 fill-maple text-maple" : "size-4 text-page-line"} />
 											))}
 										</span>
 									</span>
@@ -171,7 +171,7 @@ function ProgressPage() {
 								className={
 									b.earned
 										? "plaque px-4 py-2 text-sm"
-										: "flex items-center gap-2 rounded-[0.7rem] px-4 py-2 text-sm text-felt-muted ring-1 ring-felt-muted/50 ring-inset"
+										: "flex items-center gap-2 rounded-[0.7rem] px-4 py-2 text-sm text-page-muted ring-1 ring-page-muted/50 ring-inset"
 								}
 							>
 								<BadgeIcon icon={b.icon} className="size-4" />
@@ -204,9 +204,7 @@ const factLabel = (key: string) =>
 
 /** Grid ramp in chalk, the same colour as filled mastery pips: recessed felt when unpracticed, brighter per box. */
 const gridShade = (box: number) =>
-	box === 0
-		? "color-mix(in oklab, var(--color-felt-deep) 80%, black)"
-		: `color-mix(in oklab, var(--color-felt-ink) ${12 + box * 17}%, var(--color-felt-raised))`;
+	box === 0 ? "var(--color-page-pit)" : `color-mix(in oklab, var(--color-page-ink) ${12 + box * 17}%, var(--color-page-raised))`;
 
 /** Math: adaptive level per skill (parents can nudge it), the times-table grid, and facts that keep slipping. */
 function MathProgress({ childId, math, played }: { childId: string; math: Progress["math"]; played: boolean }) {
@@ -224,18 +222,18 @@ function MathProgress({ childId, math, played }: { childId: string; math: Progre
 				<div className="space-y-3">
 					<div className="flex flex-wrap items-baseline justify-between gap-3">
 						<h3 className="text-lg font-semibold">Levels</h3>
-						<Link to="/parent/kids" search={{ edit: childId }} className="text-sm underline underline-offset-4 hover:text-felt-ink">
+						<Link to="/parent/kids" search={{ edit: childId }} className="text-sm underline underline-offset-4 hover:text-page-ink">
 							Change in Kids
 						</Link>
 					</div>
-					<p className="text-sm text-felt-muted">Levels move on their own from accuracy and pace.</p>
+					<p className="text-sm text-page-muted">Levels move on their own from accuracy and pace.</p>
 					<ul className="space-y-2">
 						{MATH_SKILLS.map((skill) => {
 							const level = math.levels[skill] ?? 1;
 							return (
 								<li key={skill} className="flex items-center justify-between gap-4">
 									<span>{SKILL_LABEL[skill]}</span>
-									<span className="text-sm text-felt-muted tabular-nums">level {level} of 5</span>
+									<span className="text-sm text-page-muted tabular-nums">level {level} of 5</span>
 								</li>
 							);
 						})}
@@ -244,10 +242,10 @@ function MathProgress({ childId, math, played }: { childId: string; math: Progre
 				{played && practised && (
 					<div className="space-y-3">
 						<h3 className="text-lg font-semibold">Times-table grid</h3>
-						<p className="text-sm text-felt-muted">
+						<p className="text-sm text-page-muted">
 							Brighter squares are closer to mastered. {math.factsMastered} {math.factsMastered === 1 ? "fact" : "facts"} at 4+ pips.
 						</p>
-						<p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-felt-muted" aria-hidden>
+						<p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-page-muted" aria-hidden>
 							{[0, 1, 2, 3, 4, 5].map((b) => (
 								<span key={b} className="inline-flex items-center gap-1.5">
 									<span className="block size-3.5 rounded-[3px]" style={{ background: gridShade(b) }} />
@@ -262,11 +260,11 @@ function MathProgress({ childId, math, played }: { childId: string; math: Progre
 						<table className="border-separate border-spacing-[3px] text-xs tabular-nums" aria-hidden>
 							<thead>
 								<tr>
-									<th className="w-6 text-felt-muted font-normal" aria-label="times">
+									<th className="w-6 text-page-muted font-normal" aria-label="times">
 										×
 									</th>
 									{Array.from({ length: 12 }, (_, i) => (
-										<th key={i} className="w-6 font-normal text-felt-muted">
+										<th key={i} className="w-6 font-normal text-page-muted">
 											{i + 1}
 										</th>
 									))}
@@ -275,7 +273,7 @@ function MathProgress({ childId, math, played }: { childId: string; math: Progre
 							<tbody>
 								{Array.from({ length: 12 }, (_, r) => (
 									<tr key={r}>
-										<th className="font-normal text-felt-muted">{r + 1}</th>
+										<th className="font-normal text-page-muted">{r + 1}</th>
 										{Array.from({ length: 12 }, (_, c) => {
 											const b = box(r + 1, c + 1);
 											return (
@@ -302,7 +300,7 @@ function MathProgress({ childId, math, played }: { childId: string; math: Progre
 										</li>
 									))}
 								</ul>
-								{math.trouble.length > 8 && <p className="text-sm text-felt-muted">and {math.trouble.length - 8} more</p>}
+								{math.trouble.length > 8 && <p className="text-sm text-page-muted">and {math.trouble.length - 8} more</p>}
 							</div>
 						)}
 					</div>
