@@ -17,6 +17,9 @@ export const MODELS = {
 	"park-bench": "/models/town/park-bench.glb",
 	"park-slide": "/models/town/park-slide.glb",
 	"petshop-counter": "/models/town/petshop-counter.glb",
+	"school-desk": "/models/town/school-desk.glb",
+	"school-teacher-desk": "/models/town/school-teacher-desk.glb",
+	"school-bookshelf": "/models/town/school-bookshelf.glb",
 } as const;
 export type ModelId = keyof typeof MODELS;
 

@@ -94,15 +94,24 @@ const codeBench = (x: number, z: number, rot = 0) => (
 		))}
 	</group>
 );
-const desk = (x: number, z: number) => (
+const codeDesk = (x: number, z: number) => (
 	<group key={`d${x}${z}`} position={[x, 0, z]}>
-		<Shadow r={0.7} s={[1, 0.9, 1]} />
 		<B s={[1.2, 0.07, 0.7]} p={[0, 0.7, 0]} c={WOOD} />
 		{[-0.5, 0.5].map((dx) => (
 			<B key={dx} s={[0.07, 0.68, 0.6]} p={[dx, 0.34, 0]} c="#6b7a93" />
 		))}
 		<B s={[0.5, 0.06, 0.5]} p={[0, 0.42, 0.65]} c="#3cb6c9" />
 		<B s={[0.5, 0.45, 0.06]} p={[0, 0.65, 0.9]} c="#3cb6c9" />
+	</group>
+);
+// The generated desk has its chair at -z, so it turns round to face the chalkboard; sized so its top is at 0.74,
+// where the books and pencil pots sit, and set back so the top is centred on z.
+const desk = (x: number, z: number) => (
+	<group key={`d${x}${z}`}>
+		<group position={[x, 0, z + 0.2]}>
+			<Shadow r={0.6} s={[1, 0.9, 1]} />
+		</group>
+		<Model id="school-desk" height={0.83} at={[x, 0, z + 0.2]} rot={Math.PI} fallback={codeDesk(x, z)} />
 	</group>
 );
 const shelf = (x: number, z: number, w: number, items: ReactNode, rot = 0) => (
@@ -698,8 +707,8 @@ const PLACES: Record<PlaceId, Place> = {
 		start: { x: 6, z: 7.5 },
 		blocks: [
 			...[2.5, 5.5, 8.5].flatMap((x) => [3.2, 5.6].map((z) => ({ x0: x - 0.6, z0: z - 0.35, x1: x + 0.6, z1: z + 0.95 }))),
-			{ x0: 8.8, z0: 0.95, x1: 10.8, z1: 1.85 },
-			{ x0: 0.15, z0: 5.8, x1: 0.65, z1: 8.2 },
+			{ x0: 9.1, z0: 0.9, x1: 10.5, z1: 1.9 },
+			{ x0: 0.1, z0: 6, x1: 0.95, z1: 8 },
 			{ x0: 0.8, z0: 0.15, x1: 2.4, z1: 0.65 },
 			{ x0: 2.6, z0: 0.15, x1: 3.9, z1: 0.75 },
 			{ cx: 1.1, cz: 4.4, r: 0.35 },
@@ -707,14 +716,19 @@ const PLACES: Record<PlaceId, Place> = {
 		props: (
 			<>
 				{[2.5, 5.5, 8.5].flatMap((x) => [3.2, 5.6].map((z) => desk(x, z)))}
-				{/* The teacher's desk. */}
+				{/* The teacher's desk, its drawers to the class. */}
 				<group position={[9.8, 0, 1.4]}>
-					<Shadow r={1.15} s={[1, 0.5, 1]} />
+					<Shadow r={0.8} s={[1, 0.7, 1]} />
 				</group>
-				<B s={[2, 0.8, 0.9]} p={[9.8, 0.4, 1.4]} c={WOOD_DARK} />
+				<Model
+					id="school-teacher-desk"
+					height={0.8}
+					at={[9.8, 0, 1.4]}
+					fallback={<B s={[2, 0.8, 0.9]} p={[9.8, 0.4, 1.4]} c={WOOD_DARK} />}
+				/>
 				{/* A pile of books on the teacher's desk. */}
-				<B s={[0.4, 0.08, 0.3]} p={[10.4, 0.84, 1.4]} c="#3d74c9" />
-				<B s={[0.36, 0.08, 0.28]} p={[10.42, 0.92, 1.38]} c="#f2c94c" />
+				<B s={[0.4, 0.08, 0.3]} p={[10.15, 0.84, 1.4]} c="#3d74c9" />
+				<B s={[0.36, 0.08, 0.28]} p={[10.17, 0.92, 1.38]} c="#f2c94c" />
 				{/* Books and pencil pots on some desks. */}
 				{[
 					[2.5, 3.2],
@@ -756,13 +770,22 @@ const PLACES: Record<PlaceId, Place> = {
 						<meshBasicMaterial map={map} />
 					</mesh>
 				))}
-				{shelf(
-					0.4,
-					7,
-					2.4,
-					[0.55, 1.15].map((y) => books(2.2, y)),
-					Math.PI / 2,
-				)}
+				{/* The bookshelf against the left wall, its open side to the room. */}
+				<group position={[0.52, 0, 7]}>
+					<Shadow r={1.1} s={[0.4, 1, 1]} />
+				</group>
+				<Model
+					id="school-bookshelf"
+					height={1.08}
+					at={[0.52, 0, 7]}
+					fallback={shelf(
+						0.4,
+						7,
+						2.4,
+						[0.55, 1.15].map((y) => books(2.2, y)),
+						Math.PI / 2,
+					)}
+				/>
 				{/* A globe on the shelf by the window. */}
 				<B s={[1.6, 1, 0.5]} p={[1.6, 0.5, 0.4]} c={WOOD} />
 				<Cyl r={0.25} h={0.06} p={[1.2, 1.03, 0.4]} c={POT} />
@@ -795,7 +818,7 @@ const PLACES: Record<PlaceId, Place> = {
 				),
 			},
 			"school-apple": { at: [9.5, 0.92, 1.3], node: <Ball r={0.13} p={[0, 0, 0]} c="#d8413c" /> },
-			"school-book": { at: [0.75, 1.55, 8.1], node: <B s={[0.3, 0.06, 0.24]} p={[0, 0, 0]} c="#8a5bd1" e={0.2} /> },
+			"school-book": { at: [0.75, 1.12, 7.7], node: <B s={[0.3, 0.06, 0.24]} p={[0, 0, 0]} c="#8a5bd1" e={0.2} /> },
 			"school-globe": { at: [2.1, 1.25, 0.4], node: <Ball r={0.2} p={[0, 0, 0]} c="#3d74c9" /> },
 		},
 	},
