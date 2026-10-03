@@ -130,7 +130,7 @@ export function WorldCanvas({
  * Dev only: what the last frame cost, on `window.__THREE_GAME_DIAGNOSTICS__` for the canvas inspector. Read in the
  * frame loop, so it holds the frame before (three.js resets its counts at the start of each render).
  */
-function Diagnostics() {
+export function Diagnostics() {
 	useFrame(({ gl, scene }) => {
 		const { render, memory, programs } = gl.info;
 		// What's drawn: visible meshes, and those that also go into the shadow pass.
@@ -166,7 +166,7 @@ function Diagnostics() {
  * would leave the town at a frame a second. Asked once, on a scratch canvas.
  */
 let software: boolean | undefined;
-function softwareGl() {
+export function softwareGl() {
 	if (software !== undefined) return software;
 	software = false;
 	try {
@@ -184,7 +184,7 @@ function softwareGl() {
  * that's idling slowly on purpose doesn't count) for a run of frames, the scene drops to one pixel per point, a big
  * saving on a high-density screen. It never goes back up during a visit.
  */
-function Thrift() {
+export function Thrift() {
 	const gl = useThree((s) => s.gl);
 	const setDpr = useThree((s) => s.setDpr);
 	useEffect(() => {
