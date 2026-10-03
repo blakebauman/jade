@@ -30,9 +30,27 @@ jobs:
       - name: Test
         run: pnpm test
 
-  e2e:
+  # Split by device so the three run side by side (one job took ~13 minutes, nearly all of it the tests). Each
+  # job installs only its browser. The offline check needs a production build and Chromium, so it rides with the
+  # laptop.
+  e2e-device:
+    name: e2e (${{ matrix.device }})
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device: laptop
+            browser: chromium
+            projects: --project=laptop
+            offline: true
+          - device: ipad
+            browser: webkit
+            projects: --project=ipad --project=ipad-landscape
+          - device: phone
+            browser: webkit
+            projects: --project=phone --project=phone-landscape
     env:
       # Remote bindings off: the dev server starts without Cloudflare credentials. Workers AI is unreachable, and
       # the tests stub speech and word info in the browser, so nothing is billed.
@@ -49,16 +67,27 @@ jobs:
         run: printf 'BETTER_AUTH_SECRET=ci-only-not-a-secret-%s\nBETTER_AUTH_URL=http://localhost:5190\n' "${{ github.run_id }}" > apps/web/.dev.vars
       - name: Local D1 migrations
         run: pnpm db:migrate:local
-      - name: Playwright browsers
-        run: pnpm --filter @jade/web exec playwright install --with-deps chromium webkit
-      - name: e2e (laptop Chromium, iPad and iPhone WebKit)
-        run: pnpm test:e2e
+      - name: Playwright browser
+        run: pnpm --filter @jade/web exec playwright install --with-deps ${{ matrix.browser }}
+      - name: e2e
+        run: pnpm --filter @jade/web exec playwright test ${{ matrix.projects }}
       - name: e2e offline (production build, service worker)
+        if: matrix.offline
         run: pnpm test:e2e:offline
       - name: Upload traces and screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright
+          name: playwright-${{ matrix.device }}
           path: apps/web/test-results
           retention-days: 7
+
+  # The ruleset on main requires a check named "e2e": this one passes only when every device passed.
+  e2e:
+    if: always()
+    needs: e2e-device
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Every device passed
+        run: test "${{ needs.e2e-device.result }}" = "success"
