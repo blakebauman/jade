@@ -228,6 +228,13 @@ function World({
 	tick.current = onTick;
 	const reduced = useMemo(prefersReducedMotion, []);
 	const shake = useRef(0);
+	/**
+	 * Where each hole was before the last rule step, so it's drawn between steps: the rules move at 60 a second, an
+	 * iPad's screen draws up to 120, and drawing only at steps would make every hole judder.
+	 */
+	const prev = useMemo(() => game.holes.map((h) => ({ x: h.x, z: h.z })), [game]);
+	/** The camera's distance, eased as the hole grows (the camera itself sits right over the hole, never trailing). */
+	const camDist = useRef(0);
 	/** One stable ref callback per hole, so its parts aren't re-registered on every render. */
 	const holeRefs = useMemo(
 		() =>
@@ -269,10 +276,22 @@ function World({
 			// The camera looks north: up the screen is -z.
 			const dir = { x: s?.x ?? 0, z: -(s?.y ?? 0) };
 			while (acc.current >= STEP) {
+				game.holes.forEach((h, i) => {
+					prev[i]!.x = h.x;
+					prev[i]!.z = h.z;
+				});
 				step(game, STEP, dir);
 				acc.current -= STEP;
 			}
 		}
+		// How far into the next step this frame is; a hole that jumped (back after being gobbled) isn't swept across town.
+		const alpha = running ? acc.current / STEP : 1;
+		const at = (i: number) => {
+			const h = game.holes[i]!;
+			const was = prev[i]!;
+			if (Math.abs(h.x - was.x) + Math.abs(h.z - was.z) > 2) return seen.set(h.x, 0, h.z);
+			return seen.set(was.x + (h.x - was.x) * alpha, 0, was.z + (h.z - was.z) * alpha);
+		};
 		if (game.events.length) {
 			const happened = game.events.splice(0);
 			for (const e of happened) {
@@ -343,7 +362,7 @@ function World({
 			const parts = holes.current[i];
 			if (!parts) return;
 			parts.group.visible = isIn(h);
-			parts.group.position.set(h.x, 0, h.z);
+			parts.group.position.copy(at(i));
 			parts.disc.scale.setScalar(h.r);
 			parts.shaft.scale.set(h.r, SHAFT, h.r);
 			parts.rim.scale.setScalar(h.r);
@@ -355,15 +374,17 @@ function World({
 
 		fx.current?.update(Math.min(dt, 0.1));
 
-		// The camera follows the player's hole, pulling back as it grows.
+		// The camera sits right over the player's hole (no glide: a trailing camera makes the hole drift from the finger),
+		// pulling back smoothly as it grows. While the hole is out it stays where it was.
 		const p = game.holes[PLAYER]!;
 		const cam = state.camera as PerspectiveCamera;
+		if (isIn(p)) {
+			const me = at(PLAYER);
+			look.set(me.x, 0, me.z - p.r * 0.2);
+		}
 		const dist = viewDistance(p.r, state.size);
-		want.set(p.x, 0, p.z - p.r * 0.2);
-		const ease = reduced ? 1 : Math.min(1, dt * 4);
-		look.lerp(want, isIn(p) ? ease : 0);
-		eye.copy(look).addScaledVector(VIEW, dist);
-		cam.position.lerp(eye, ease);
+		camDist.current += (dist - camDist.current) * (reduced ? 1 : Math.min(1, dt * 3));
+		cam.position.copy(look).addScaledVector(VIEW, camDist.current);
 		if (shake.current > 0) {
 			const k = shake.current * shake.current * 0.35;
 			cam.position.x += Math.sin(t * 61) * k;
@@ -379,7 +400,8 @@ function World({
 	useLayoutEffect(() => {
 		const p = game.holes[PLAYER]!;
 		look.set(p.x, 0, p.z);
-		camera.position.copy(look).addScaledVector(VIEW, viewDistance(p.r, size));
+		camDist.current = viewDistance(p.r, size);
+		camera.position.copy(look).addScaledVector(VIEW, camDist.current);
 		camera.lookAt(look);
 	}, [camera, game]);
 
@@ -403,8 +425,8 @@ const viewDistance = (r: number, size: { width: number; height: number }) =>
 	(10 + r * 4.4) * Math.max(1, (size.height / size.width) ** 0.55);
 
 const look = new Vector3();
-const eye = new Vector3();
-const want = new Vector3();
+/** A hole where it's drawn this frame (between rule steps). */
+const seen = new Vector3();
 /** From what the camera looks at toward the camera: up and to the south, about 52° down. */
 const VIEW = new Vector3(0, Math.sin((52 * Math.PI) / 180), Math.cos((52 * Math.PI) / 180));
 
