@@ -16,7 +16,7 @@ import { warmList } from "#/lib/warm.ts";
 export const Route = createFileRoute("/_authed/parent/lists/$listId")({ component: ListEditor });
 
 type Source = "paste" | "csv" | "ocr" | "pack";
-/** `childIds`: the kids it's for; empty means everyone. */
+/** `childIds`: the kids it's for; empty means nobody yet (in a one-kid family, saving gives it to that kid). */
 type Draft = { name: string; grade: number | null; words: ListWord[]; source: Source; childIds: string[] };
 
 const EMPTY: Draft = { name: "", grade: null, words: [], source: "paste", childIds: [] };
@@ -29,7 +29,6 @@ const draftKey = (listId: string) => `jade.list-draft:${listId}`;
 function readDraft(listId: string): Draft | null {
 	try {
 		const d = JSON.parse(sessionStorage.getItem(draftKey(listId)) ?? "null") as Draft | null;
-		// Drafts kept before lists could be assigned have no kids: for everyone.
 		return d && { ...d, childIds: d.childIds ?? [] };
 	} catch {
 		return null;
@@ -139,11 +138,13 @@ function ListEditor() {
 
 	const save = useMutation({
 		mutationFn: async () => {
-			const body = { name: name.trim() || "Spelling words", grade, source, words, childIds };
+			// With one kid there's no choice to make: the list is theirs. Until the kids have loaded, who it's for is left as it was.
+			const forKids = kids.length === 1 ? [kids[0]!.id] : kids.length > 1 ? childIds : undefined;
+			const body = { name: name.trim() || "Spelling words", grade, source, words, childIds: forKids };
 			let list: WordList;
 			if (isNew) list = await api<WordList>("/api/lists", { method: "POST", json: body });
 			else {
-				await api<WordList>(`/api/lists/${listId}`, { method: "PATCH", json: { name: body.name, grade, childIds } });
+				await api<WordList>(`/api/lists/${listId}`, { method: "PATCH", json: { name: body.name, grade, childIds: forKids } });
 				list = await api<WordList>(`/api/lists/${listId}/words`, { method: "PUT", json: { words } });
 			}
 			// Fetch definitions/sentences and pre-generate the voice clips so the first round plays instantly.
@@ -168,13 +169,10 @@ function ListEditor() {
 		},
 	});
 
-	/** Toggle one kid; everyone chosen is stored as "everyone", so kids added later get it too. At least one stays on. */
-	function toggleKid(id: string) {
-		const on = childIds.length ? childIds : kids.map((k) => k.id);
-		const next = on.includes(id) ? on.filter((x) => x !== id) : [...on, id];
-		if (next.length === 0) return;
-		set({ childIds: next.length === kids.length ? [] : next });
-	}
+	/** A list is only for the kids chosen here: kids added later don't get it. */
+	const toggleKid = (id: string) => set({ childIds: childIds.includes(id) ? childIds.filter((x) => x !== id) : [...childIds, id] });
+	/** With more than one kid, the parent says who a list is for before saving it. */
+	const needsKids = kids.length > 1 && !childIds.some((id) => kids.some((k) => k.id === id));
 
 	const remove = useMutation({
 		mutationFn: () => api(`/api/lists/${listId}`, { method: "DELETE" }),
@@ -355,20 +353,8 @@ function ListEditor() {
 					<fieldset className="space-y-2 border-0 p-0">
 						<legend className="text-sm font-medium">Who it’s for</legend>
 						<div className="flex flex-wrap gap-2">
-							<button
-								type="button"
-								className="key text-base"
-								data-variant="felt"
-								data-toggle
-								data-pressed={childIds.length === 0}
-								aria-pressed={childIds.length === 0}
-								onClick={() => set({ childIds: [] })}
-							>
-								{childIds.length === 0 && <Check className="size-4" aria-hidden />}
-								Everyone
-							</button>
 							{kids.map((k) => {
-								const on = childIds.length === 0 || childIds.includes(k.id);
+								const on = childIds.includes(k.id);
 								return (
 									<button
 										key={k.id}
@@ -609,13 +595,21 @@ function ListEditor() {
 						type="button"
 						className="key"
 						data-variant="go"
-						disabled={words.length === 0 || save.isPending || (!isNew && !dirty)}
+						disabled={words.length === 0 || needsKids || save.isPending || (!isNew && !dirty)}
 						onClick={() => save.mutate()}
 					>
 						{save.isPending ? "Saving…" : "Save list"}
 					</button>
 					<span className="text-sm text-page-muted" role="status">
-						{words.length === 0 ? "Add at least one word to save." : dirty ? "Unsaved changes" : isNew ? "" : "All saved"}
+						{words.length === 0
+							? "Add at least one word to save."
+							: needsKids
+								? "Choose who it’s for to save."
+								: dirty
+									? "Unsaved changes"
+									: isNew
+										? ""
+										: "All saved"}
 					</span>
 					{dirty && !isNew && baseline && (
 						<button

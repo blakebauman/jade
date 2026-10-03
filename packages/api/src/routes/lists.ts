@@ -61,10 +61,17 @@ async function listChildrenStatements(db: Db, ownerId: string, listId: string, c
 	] as const;
 }
 
+/** Who a new list is for when nobody was chosen: the only kid in a one-kid family, else nobody until the parent picks. */
+async function defaultKids(db: Db, ownerId: string) {
+	const kids = await db.select({ id: schema.children.id }).from(schema.children).where(eq(schema.children.parentId, ownerId)).limit(2);
+	return kids.length === 1 ? [kids[0]!.id] : [];
+}
+
 async function createList(db: Db, ownerId: string, input: z.infer<typeof listInputSchema>) {
 	const id = newId();
 	const rows = prepareWords(id, input.words);
-	const [, ...assign] = await listChildrenStatements(db, ownerId, id, input.childIds ?? []);
+	const childIds = input.childIds?.length ? input.childIds : await defaultKids(db, ownerId);
+	const [, ...assign] = await listChildrenStatements(db, ownerId, id, childIds);
 	await db.batch([
 		db.insert(schema.wordLists).values({ id, ownerId, name: input.name, grade: input.grade, source: input.source }),
 		...insertWordsStatements(db, rows),
@@ -122,7 +129,7 @@ export const listRoutes = new Hono<AppEnv>()
 				.innerJoin(schema.children, eq(schema.children.id, schema.wordProgress.childId))
 				.where(and(eq(schema.wordLists.ownerId, c.var.userId), family, gte(schema.wordProgress.box, 4)))
 				.groupBy(schema.listWords.listId, schema.wordProgress.childId),
-			// Which kids each list is for (none: everyone).
+			// Which kids each list is for (none: nobody yet).
 			c.var.db
 				.select({ listId: schema.listChildren.listId, childId: schema.listChildren.childId })
 				.from(schema.listChildren)

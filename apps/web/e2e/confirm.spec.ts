@@ -14,7 +14,10 @@ async function setup(page: Page) {
 	const child = await (await page.request.post("/api/children", { headers: h, data: { name: "Maya" } })).json();
 	await page.request.post("/api/children", { headers: h, data: { name: "Theo" } });
 	const list = await (
-		await page.request.post("/api/lists", { headers: h, data: { name: "Two", words: [{ word: "cat" }, { word: "dog" }] } })
+		await page.request.post("/api/lists", {
+			headers: h,
+			data: { name: "Two", words: [{ word: "cat" }, { word: "dog" }], childIds: [child.id] },
+		})
 	).json();
 	return { childId: child.id as string, listId: list.id as string };
 }

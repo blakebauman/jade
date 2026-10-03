@@ -67,8 +67,31 @@ describe("children + lists", () => {
 		expect(await patch({ archived: true })).toMatchObject({ archived: true, childIds: [maya] });
 		const [summary] = (await (await call("/api/lists", { cookie })).json()) as { archived: boolean; childIds: string[] }[];
 		expect(summary).toMatchObject({ archived: true, childIds: [maya] });
-		// Back to "This week", now for everyone.
+		// Back to "This week", now for nobody until the parent chooses again.
 		expect(await patch({ archived: false, childIds: [] })).toMatchObject({ archived: false, childIds: [] });
+	});
+
+	it("never gives a list to every kid by default", async () => {
+		const cookie = await signUp();
+		const kid = async (name: string) =>
+			((await (await call("/api/children", { method: "POST", cookie, json: { name } })).json()) as { id: string }).id;
+		const list = async () =>
+			(
+				(await (await call("/api/lists", { method: "POST", cookie, json: { name: "W", words: [{ word: "cat" }] } })).json()) as {
+					childIds: string[];
+				}
+			).childIds;
+		// Made before there are kids: the first kid takes it.
+		const before = await list();
+		expect(before).toEqual([]);
+		const maya = await kid("Maya");
+		// With one kid, a list is theirs.
+		expect(await list()).toEqual([maya]);
+		// A second kid gets neither list, and a list made now is for nobody until the parent chooses.
+		await kid("Theo");
+		expect(await list()).toEqual([]);
+		const summaries = (await (await call("/api/lists", { cookie })).json()) as { childIds: string[] }[];
+		expect(summaries.map((l) => l.childIds)).toEqual([[maya], [maya], []]);
 	});
 
 	it("normalizes and de-duplicates list words, and copies packs", async () => {

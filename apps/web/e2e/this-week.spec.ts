@@ -22,8 +22,11 @@ test("a list can be for one kid, and moving it to past lists takes it off their 
 	await page.getByRole("button", { name: "Paste" }).click();
 	await page.getByPlaceholder("1. believe", { exact: false }).fill("believe\nreceive");
 	await page.getByRole("button", { name: "Add these words" }).click();
-	await page.getByRole("button", { name: "Theo" }).click();
-	await expect(page.getByRole("button", { name: "Everyone" })).toHaveAttribute("aria-pressed", "false");
+	// With two kids, nobody is chosen until the parent says who it's for.
+	await expect(page.getByRole("button", { name: "Theo" })).toHaveAttribute("aria-pressed", "false");
+	await expect(page.getByRole("button", { name: "Save list" })).toBeDisabled();
+	await expect(page.getByText("Choose who it’s for to save.")).toBeVisible();
+	await page.getByRole("button", { name: "Maya" }).click();
 	await page.getByRole("button", { name: "Save list" }).click();
 	await expect(page.getByText("Maya week 6 is saved. Maya can practice it now")).toBeVisible();
 

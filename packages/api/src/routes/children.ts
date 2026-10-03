@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { BADGES, buildReviewRound, childInputSchema, childPatchSchema, childSettingsSchema, DEFAULT_SETTINGS } from "@jade/core";
 import { MATH_SKILLS } from "@jade/core/math";
 import { schema } from "@jade/db";
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../env.ts";
@@ -37,6 +37,14 @@ export const childrenRoutes = new Hono<AppEnv>()
 				settingsJson: JSON.stringify(settings),
 			}),
 			c.var.db.insert(schema.childStats).values({ childId: id }),
+			// A family's first kid takes the lists made before there was anyone to give them to. Later kids start with none:
+			// a list is only ever for the kids it was given to.
+			c.var.db.insert(schema.listChildren).select(
+				sql`select ${schema.wordLists.id}, ${id} from ${schema.wordLists}
+					where ${schema.wordLists.ownerId} = ${c.var.userId}
+						and not exists (select 1 from ${schema.listChildren} where ${schema.listChildren.listId} = ${schema.wordLists.id})
+						and (select count(*) from ${schema.children} where ${schema.children.parentId} = ${c.var.userId}) = 1`,
+			),
 		]);
 		return c.json(present((await ownedChild(c.var.db, c.var.userId, id))!), 201);
 	})

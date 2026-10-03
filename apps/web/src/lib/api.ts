@@ -47,7 +47,7 @@ export type ListSummary = {
 	preview: string[];
 	/** In past lists: kids no longer see it. */
 	archived: boolean;
-	/** The kids it's for; empty means every kid. */
+	/** The kids it's for; empty means nobody yet. */
 	childIds: string[];
 	/** Each kid who has played it: when they last did, and how many of its words they've mastered (4+ pips). */
 	perChild: { childId: string; lastPlayedAt: string | number | null; mastered: number }[];
@@ -64,10 +64,10 @@ export function newestFirst<T extends Pick<ListSummary, "updatedAt">>(lists: T[]
 		.map((x) => x.l);
 }
 
-/** Whether a kid sees a list on their Spelling screen: it's current, and it's for them (or for everyone). */
+/** Whether a kid sees a list on their Spelling screen: it's current, and it was given to them. */
 export const listIsFor = (l: Partial<Pick<ListSummary, "archived" | "childIds">>, childId: string) =>
 	// A summary cached before lists could be archived or assigned has neither field: it's current and for everyone.
-	!l.archived && (!l.childIds?.length || l.childIds.includes(childId));
+	!l.archived && (l.childIds === undefined || l.childIds.includes(childId));
 export type ListWord = { word: string; sentence: string | null; definition: string | null };
 export type WordList = {
 	id: string;
