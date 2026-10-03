@@ -60,19 +60,23 @@ test("a finger held on the town keeps steering", async ({ browser, browserName }
 	const context = await browser.newContext({ viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true });
 	const page = await context.newPage();
 	const id = await setup(page);
-	await page.goto(`/play/${id}/games/gobble`);
+	// The debug panel says whether the drag is steering (and with what), not just whether the stick shows.
+	await page.goto(`/play/${id}/games/gobble?debug=touch`);
 	await page.getByRole("button", { name: "Start" }).tap();
 	// The clock shows once the countdown is over.
 	await expect(page.getByRole("timer")).toBeVisible({ timeout: 15_000 });
 	const cdp = await context.newCDPSession(page);
 	const touch = (type: "touchStart" | "touchMove" | "touchEnd", x?: number, y?: number) =>
-		cdp.send("Input.dispatchTouchEvent", { type, touchPoints: x === undefined ? [] : [{ x, y: y!, id: 1 }] });
+		// A negative identifier, as iOS can send: it once showed the stick but never moved the hole.
+		cdp.send("Input.dispatchTouchEvent", { type, touchPoints: x === undefined ? [] : [{ x, y: y!, id: -7 }] });
 	// Hold the finger off to one side: the drag must still be alive a moment later (it used to end as it began). Kept
 	// to a few events: on a runner without a graphics chip each one waits for a slow frame.
 	await touch("touchStart", 417, 850);
 	await touch("touchMove", 457, 850);
 	await page.waitForTimeout(1000);
 	await expect(page.locator(".size-\\[88px\\]")).toBeVisible();
+	// 40px right of where it went down: steering right at 40/48 of full speed.
+	await expect(page.getByText(/drag touch#-7 steer 0\.83,0\.00/)).toBeVisible();
 	await touch("touchEnd");
 	await expect(page.locator(".size-\\[88px\\]")).toBeHidden();
 	await context.close();

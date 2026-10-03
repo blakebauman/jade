@@ -33,6 +33,11 @@ export const Route = createFileRoute("/_authed/play/$childId/games/gobble")({
 
 type Phase = "ready" | "play" | "paused" | "over";
 
+/** A drag steering the hole (see `drag` in the screen). `ox`/`oy` is the stick's middle, `x`/`y` the steer (-1…1). */
+type Drag = { on: boolean; by: "touch" | "pointer" | ""; id: number; ox: number; oy: number; x: number; y: number };
+const NO_DRAG: Drag = { on: false, by: "", id: 0, ox: 0, oy: 0, x: 0, y: 0 };
+const isPointerDrag = (d: Drag, id: number) => d.on && d.by === "pointer" && d.id === id;
+
 /** What the HUD shows, refreshed a few times a second from the round. */
 type Hud = {
 	left: number;
@@ -90,16 +95,20 @@ function GobbleScreen() {
 	const lastPip = useRef(-1);
 
 	const keys = useDrive(phase === "play");
-	const drag = useRef({ id: -1, ox: 0, oy: 0, x: 0, y: 0 });
+	/**
+	 * The drag steering the hole: whether there is one, what's doing it (a finger, or a mouse or pen) and its id. Kept
+	 * apart rather than read off the id: iOS gives fingers huge identifiers, which can come through negative.
+	 */
+	const drag = useRef<Drag>({ ...NO_DRAG });
 	const [stick, setStick] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
 	// The scene reads this each frame: a drag wins over the keys.
 	const steer = useMemo(
 		() => ({
 			get x() {
-				return drag.current.id >= 0 ? drag.current.x : keys.current.x;
+				return drag.current.on ? drag.current.x : keys.current.x;
 			},
 			get y() {
-				return drag.current.id >= 0 ? drag.current.y : keys.current.y;
+				return drag.current.on ? drag.current.y : keys.current.y;
 			},
 		}),
 		[keys],
@@ -274,11 +283,11 @@ function GobbleScreen() {
 	// listeners aren't passive, so a held finger is never turned into a scroll, a bounce or the magnifier. A mouse or
 	// pen uses pointer events. Only during a round: elsewhere taps on the scene stay ordinary.
 	const sceneRef = useRef<HTMLDivElement>(null);
-	const begin = (id: number, x: number, y: number) => {
-		drag.current = { id, ox: x, oy: y, x: 0, y: 0 };
+	const begin = (by: Drag["by"], id: number, x: number, y: number) => {
+		drag.current = { on: true, by, id, ox: x, oy: y, x: 0, y: 0 };
 		sound.unlock();
 		setStick({ x, y, dx: 0, dy: 0 });
-		debugLog("begin", `${id} @${Math.round(x)},${Math.round(y)}`);
+		debugLog("begin", `${by}#${id} @${Math.round(x)},${Math.round(y)}`);
 	};
 	const moveTo = (x: number, y: number) => {
 		const d = drag.current;
@@ -298,7 +307,7 @@ function GobbleScreen() {
 		setStick({ x: d.ox, y: d.oy, dx, dy });
 	};
 	const finishDrag = (why: string) => {
-		drag.current = { id: -1, ox: 0, oy: 0, x: 0, y: 0 };
+		drag.current = { ...NO_DRAG };
 		setStick(null);
 		debugLog("end", why);
 	};
@@ -307,17 +316,17 @@ function GobbleScreen() {
 	useEffect(() => {
 		const el = sceneRef.current;
 		if (!el || phase !== "play") return;
-		/** Touch identifiers are small numbers; kept apart from pointer ids so the two never mix. */
-		const TOUCH = 1e6;
 		const find = (list: TouchList) => {
-			for (let i = 0; i < list.length; i++) if (list[i]!.identifier + TOUCH === drag.current.id) return list[i]!;
+			const d = drag.current;
+			if (!d.on || d.by !== "touch") return null;
+			for (let i = 0; i < list.length; i++) if (list[i]!.identifier === d.id) return list[i]!;
 			return null;
 		};
 		const start = (e: TouchEvent) => {
 			if (e.cancelable) e.preventDefault();
-			if (drag.current.id >= 0) return;
+			if (drag.current.on) return;
 			const t = e.changedTouches[0];
-			if (t) steering.current.begin(t.identifier + TOUCH, t.clientX, t.clientY);
+			if (t) steering.current.begin("touch", t.identifier, t.clientX, t.clientY);
 		};
 		const move = (e: TouchEvent) => {
 			if (e.cancelable) e.preventDefault();
@@ -336,23 +345,23 @@ function GobbleScreen() {
 			el.removeEventListener("touchmove", move);
 			el.removeEventListener("touchend", stop);
 			el.removeEventListener("touchcancel", stop);
-			if (drag.current.id >= 0) steering.current.finishDrag("round paused or over");
+			if (drag.current.on) steering.current.finishDrag("round paused or over");
 		};
 	}, [phase]);
 
 	// A mouse or pen: pointer events (a finger's pointer events are left to the touch listeners above).
 	function onPointerDown(e: React.PointerEvent) {
-		if (e.pointerType === "touch" || phase !== "play" || drag.current.id >= 0) return;
+		if (e.pointerType === "touch" || phase !== "play" || drag.current.on) return;
 		// No text selection or focus change while steering.
 		e.preventDefault();
 		e.currentTarget.setPointerCapture?.(e.pointerId);
-		begin(e.pointerId, e.clientX, e.clientY);
+		begin("pointer", e.pointerId, e.clientX, e.clientY);
 	}
 	function onPointerMove(e: React.PointerEvent) {
-		if (e.pointerType !== "touch" && drag.current.id === e.pointerId) moveTo(e.clientX, e.clientY);
+		if (e.pointerType !== "touch" && isPointerDrag(drag.current, e.pointerId)) moveTo(e.clientX, e.clientY);
 	}
 	function onPointerEnd(e: React.PointerEvent) {
-		if (e.pointerType === "touch" || drag.current.id !== e.pointerId) return;
+		if (e.pointerType === "touch" || !isPointerDrag(drag.current, e.pointerId)) return;
 		// Capture lost by something inside (the canvas) bubbles up here too; only this element's own loss ends it.
 		if (e.type === "lostpointercapture" && e.target !== e.currentTarget) return;
 		finishDrag(e.type);
@@ -617,7 +626,7 @@ function debugLog(kind: string, detail: string) {
 }
 
 /** The last few touch and pointer events anywhere on the page, what's under the finger, and whether steering took it. */
-function TouchDebug({ phase, drag }: { phase: Phase; drag: React.RefObject<{ id: number; x: number; y: number }> }) {
+function TouchDebug({ phase, drag }: { phase: Phase; drag: React.RefObject<Drag> }) {
 	const [on] = useState(debugOn);
 	const [, setN] = useState(0);
 	useEffect(() => {
@@ -664,7 +673,7 @@ function TouchDebug({ phase, drag }: { phase: Phase; drag: React.RefObject<{ id:
 	const d = drag.current;
 	return (
 		<pre className="pointer-events-none fixed top-24 left-2 z-40 max-w-[min(34rem,95vw)] overflow-hidden rounded-lg bg-black/75 p-2 text-[11px] leading-tight whitespace-pre-wrap text-white">
-			{`phase ${phase} · drag ${d.id >= 0 ? `#${d.id} steer ${d.x.toFixed(2)},${d.y.toFixed(2)}` : "none"}\n${debugLines.join("\n")}`}
+			{`phase ${phase} · drag ${d.on ? `${d.by}#${d.id} steer ${d.x.toFixed(2)},${d.y.toFixed(2)}` : "none"}\n${debugLines.join("\n")}`}
 		</pre>
 	);
 }
