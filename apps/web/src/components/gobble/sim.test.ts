@@ -113,6 +113,7 @@ describe("a whole round", () => {
 		expect(a.holes.map((h) => h.score)).toEqual(b.holes.map((h) => h.score));
 	});
 
+	// Twenty whole rounds: several seconds on a slow CI runner, so a longer time limit than one test usually gets.
 	it("lets a good player grow big enough for houses and win, the bots grow too, and the town lasts", () => {
 		const wins: boolean[] = [];
 		const places: number[] = [];
@@ -156,7 +157,7 @@ describe("a whole round", () => {
 		const shown = lasting.map((l) => l.toFixed(2)).join(" ");
 		expect(lasting.reduce((a, b) => a + b, 0) / lasting.length, shown).toBeGreaterThan(0.1);
 		expect(Math.min(...lasting), shown).toBeGreaterThan(0.06);
-	});
+	}, 30_000);
 
 	it("never lets a standing player sit still and win", () => {
 		const g = newGame(3, "Jade");
