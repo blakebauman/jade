@@ -269,59 +269,93 @@ function GobbleScreen() {
 	const out = hud.back > 0;
 	const won = phase === "over" && hud.rank === 1;
 
-	// iOS still turns a held finger into a scroll, a bounce or the magnifier (and cancels the drag) unless the touch
-	// itself is refused, which takes a listener that isn't passive (React's are). Only during a round: elsewhere taps
-	// on the scene stay ordinary.
+	// Steering by drag. A finger is followed with Touch Events, which every iPad and iPhone has (older iPadOS has no
+	// pointer events at all, and newer iOS can hand a finger's pointer to the canvas in ways that end a drag); the
+	// listeners aren't passive, so a held finger is never turned into a scroll, a bounce or the magnifier. A mouse or
+	// pen uses pointer events. Only during a round: elsewhere taps on the scene stay ordinary.
 	const sceneRef = useRef<HTMLDivElement>(null);
-	useEffect(() => {
-		const el = sceneRef.current;
-		if (!el || phase !== "play") return;
-		const refuse = (e: TouchEvent) => {
-			if (e.cancelable) e.preventDefault();
-		};
-		el.addEventListener("touchstart", refuse, { passive: false });
-		el.addEventListener("touchmove", refuse, { passive: false });
-		return () => {
-			el.removeEventListener("touchstart", refuse);
-			el.removeEventListener("touchmove", refuse);
-		};
-	}, [phase]);
-
-	function onPointerDown(e: React.PointerEvent) {
-		if (phase !== "play" || drag.current.id >= 0) return;
-		// No text selection or focus change while steering.
-		e.preventDefault();
+	const begin = (id: number, x: number, y: number) => {
+		drag.current = { id, ox: x, oy: y, x: 0, y: 0 };
 		sound.unlock();
-		drag.current = { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0 };
-		// A finger is already held by what it touched (the canvas), and its events reach here. Taking it over would
-		// make iOS report the canvas losing it, ending the drag as it starts; only a mouse needs holding.
-		if (e.pointerType === "mouse") e.currentTarget.setPointerCapture?.(e.pointerId);
-		setStick({ x: e.clientX, y: e.clientY, dx: 0, dy: 0 });
-	}
-	function onPointerMove(e: React.PointerEvent) {
+		setStick({ x, y, dx: 0, dy: 0 });
+		debugLog("begin", `${id} @${Math.round(x)},${Math.round(y)}`);
+	};
+	const moveTo = (x: number, y: number) => {
 		const d = drag.current;
-		if (d.id !== e.pointerId) return;
-		let dx = e.clientX - d.ox;
-		let dy = e.clientY - d.oy;
+		let dx = x - d.ox;
+		let dy = y - d.oy;
 		const len = Math.hypot(dx, dy);
 		// A floating stick: 48px out is full speed; it follows the finger if it goes further.
 		if (len > 48) {
 			d.ox += (dx * (len - 48)) / len;
 			d.oy += (dy * (len - 48)) / len;
-			dx = e.clientX - d.ox;
-			dy = e.clientY - d.oy;
+			dx = x - d.ox;
+			dy = y - d.oy;
 		}
 		const k = len < 6 ? 0 : 1 / 48;
 		d.x = dx * k;
 		d.y = -dy * k;
 		setStick({ x: d.ox, y: d.oy, dx, dy });
-	}
-	function onPointerEnd(e: React.PointerEvent) {
-		if (drag.current.id !== e.pointerId) return;
-		// Capture lost by something inside (the canvas) bubbles up here too; only this element's own loss ends it.
-		if (e.type === "lostpointercapture" && e.target !== e.currentTarget) return;
+	};
+	const finishDrag = (why: string) => {
 		drag.current = { id: -1, ox: 0, oy: 0, x: 0, y: 0 };
 		setStick(null);
+		debugLog("end", why);
+	};
+	const steering = useRef({ begin, moveTo, finishDrag });
+	steering.current = { begin, moveTo, finishDrag };
+	useEffect(() => {
+		const el = sceneRef.current;
+		if (!el || phase !== "play") return;
+		/** Touch identifiers are small numbers; kept apart from pointer ids so the two never mix. */
+		const TOUCH = 1e6;
+		const find = (list: TouchList) => {
+			for (let i = 0; i < list.length; i++) if (list[i]!.identifier + TOUCH === drag.current.id) return list[i]!;
+			return null;
+		};
+		const start = (e: TouchEvent) => {
+			if (e.cancelable) e.preventDefault();
+			if (drag.current.id >= 0) return;
+			const t = e.changedTouches[0];
+			if (t) steering.current.begin(t.identifier + TOUCH, t.clientX, t.clientY);
+		};
+		const move = (e: TouchEvent) => {
+			if (e.cancelable) e.preventDefault();
+			const t = find(e.changedTouches);
+			if (t) steering.current.moveTo(t.clientX, t.clientY);
+		};
+		const stop = (e: TouchEvent) => {
+			if (find(e.changedTouches)) steering.current.finishDrag(e.type);
+		};
+		el.addEventListener("touchstart", start, { passive: false });
+		el.addEventListener("touchmove", move, { passive: false });
+		el.addEventListener("touchend", stop);
+		el.addEventListener("touchcancel", stop);
+		return () => {
+			el.removeEventListener("touchstart", start);
+			el.removeEventListener("touchmove", move);
+			el.removeEventListener("touchend", stop);
+			el.removeEventListener("touchcancel", stop);
+			if (drag.current.id >= 0) steering.current.finishDrag("round paused or over");
+		};
+	}, [phase]);
+
+	// A mouse or pen: pointer events (a finger's pointer events are left to the touch listeners above).
+	function onPointerDown(e: React.PointerEvent) {
+		if (e.pointerType === "touch" || phase !== "play" || drag.current.id >= 0) return;
+		// No text selection or focus change while steering.
+		e.preventDefault();
+		e.currentTarget.setPointerCapture?.(e.pointerId);
+		begin(e.pointerId, e.clientX, e.clientY);
+	}
+	function onPointerMove(e: React.PointerEvent) {
+		if (e.pointerType !== "touch" && drag.current.id === e.pointerId) moveTo(e.clientX, e.clientY);
+	}
+	function onPointerEnd(e: React.PointerEvent) {
+		if (e.pointerType === "touch" || drag.current.id !== e.pointerId) return;
+		// Capture lost by something inside (the canvas) bubbles up here too; only this element's own loss ends it.
+		if (e.type === "lostpointercapture" && e.target !== e.currentTarget) return;
+		finishDrag(e.type);
 	}
 
 	return (
@@ -351,6 +385,7 @@ function GobbleScreen() {
 							/>
 						</Suspense>
 					</NoWebGL>
+					<TouchDebug phase={phase} drag={drag} />
 					{stick && (
 						<div className="pointer-events-none fixed z-30" style={{ left: stick.x - 44, top: stick.y - 44 }} aria-hidden>
 							<div className="glass size-[88px] rounded-full opacity-80" />
@@ -561,5 +596,75 @@ function Board({ board }: { board: Hud["board"] }) {
 				</li>
 			))}
 		</ol>
+	);
+}
+
+// ── ?debug=touch: what this device sends when a finger touches the town, on screen (for an iPad with no Mac to inspect it) ──
+
+const debugOn = () => {
+	try {
+		return new URLSearchParams(window.location.search).get("debug") === "touch";
+	} catch {
+		return false;
+	}
+};
+let debugLines: string[] = [];
+let debugBump: (() => void) | null = null;
+function debugLog(kind: string, detail: string) {
+	if (!debugBump) return;
+	debugLines = [`${(performance.now() / 1000).toFixed(1)} ${kind} ${detail}`, ...debugLines].slice(0, 14);
+	debugBump();
+}
+
+/** The last few touch and pointer events anywhere on the page, what's under the finger, and whether steering took it. */
+function TouchDebug({ phase, drag }: { phase: Phase; drag: React.RefObject<{ id: number; x: number; y: number }> }) {
+	const [on] = useState(debugOn);
+	const [, setN] = useState(0);
+	useEffect(() => {
+		if (!on) return;
+		debugBump = () => setN((n) => n + 1);
+		const name = (t: EventTarget | null) => {
+			if (!(t instanceof Element)) return String(t);
+			const cls = typeof t.className === "string" ? t.className.split(" ").slice(0, 2).join(".") : "";
+			return `${t.tagName.toLowerCase()}${cls ? `.${cls}` : ""}`;
+		};
+		// Moves a few times a second each, so a burst of pointer moves doesn't crowd out the touch ones.
+		const lastMove: Record<string, number> = {};
+		const log = (e: Event) => {
+			if (e.type.endsWith("move")) {
+				if (performance.now() - (lastMove[e.type] ?? 0) < 400) return;
+				lastMove[e.type] = performance.now();
+			}
+			const p = e as PointerEvent;
+			const t = e as TouchEvent;
+			const at = "clientX" in p ? p : t.changedTouches?.[0];
+			const under = at ? name(document.elementFromPoint(at.clientX, at.clientY)) : "";
+			const kind = "pointerType" in p ? `${p.pointerType}#${p.pointerId}` : `touches:${t.touches?.length ?? "?"}`;
+			debugLog(e.type, `${kind} on ${name(e.target)} under ${under}${e.defaultPrevented ? " (prevented)" : ""}`);
+		};
+		const types = [
+			"pointerdown",
+			"pointermove",
+			"pointerup",
+			"pointercancel",
+			"lostpointercapture",
+			"touchstart",
+			"touchmove",
+			"touchend",
+			"touchcancel",
+		];
+		for (const ty of types) window.addEventListener(ty, log, true);
+		debugLog("debug", `PointerEvent:${"PointerEvent" in window} touch:${"ontouchstart" in window} ${navigator.userAgent.slice(0, 90)}`);
+		return () => {
+			for (const ty of types) window.removeEventListener(ty, log, true);
+			debugBump = null;
+		};
+	}, [on]);
+	if (!on) return null;
+	const d = drag.current;
+	return (
+		<pre className="pointer-events-none fixed top-24 left-2 z-40 max-w-[min(34rem,95vw)] overflow-hidden rounded-lg bg-black/75 p-2 text-[11px] leading-tight whitespace-pre-wrap text-white">
+			{`phase ${phase} · drag ${d.id >= 0 ? `#${d.id} steer ${d.x.toFixed(2)},${d.y.toFixed(2)}` : "none"}\n${debugLines.join("\n")}`}
+		</pre>
 	);
 }
