@@ -116,8 +116,8 @@ Secrets:
 - It can never strand a family: "Forgot the PIN?" takes the account password (`POST /api/parent/verify-password`) and lands on Settings (`?newPin=true`) to choose a new one, and the gate has its own Sign out. Setting a PIN asks for it twice.
 
 **This week (parent lists):**
-- `word_lists.archived_at` marks a past list; `list_children` says which kids a list is for (no rows: everyone, including kids added later). `PATCH /api/lists/:id` takes `archived` and `childIds`; only the parent's own kids are ever attached.
-- `GET /api/lists` returns `archived`, `childIds` and `perChild` (each kid's last play and mastered count). The kids' Spelling screen filters with `listIsFor` (`lib/api.ts`), treating summaries cached before this change as current and for everyone.
+- `word_lists.archived_at` marks a past list; `list_children` says which kids a list is for, and only those kids see it (no rows: nobody yet). A new list with no `childIds` goes to the only kid in a one-kid family, else to nobody until the parent picks (the editor won't save without a pick); a family's first kid takes lists made before any kid existed; later kids start with none. Migration 0011 gave every old "everyone" list to the kids the family had then. `PATCH /api/lists/:id` takes `archived` and `childIds`; only the parent's own kids are ever attached.
+- `GET /api/lists` returns `archived`, `childIds` and `perChild` (each kid's last play and mastered count). The kids' Spelling screen filters with `listIsFor` (`lib/api.ts`), treating summaries cached before lists had `childIds` at all as current and for everyone.
 - Archiving never touches Review: review is per child from `word_progress`, not per list.
 
 **Learn and Play (`core/src/play.ts`, `routes/play.ts`, `lib/play.ts`):**

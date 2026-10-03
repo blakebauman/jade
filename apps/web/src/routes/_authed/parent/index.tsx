@@ -38,8 +38,8 @@ function when(at: string | number, now = new Date()) {
 	return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-/** The kids a list is for: its chosen kids, or everyone. */
-const kidsFor = (l: ListSummary, kids: Child[]) => (l.childIds.length ? kids.filter((k) => l.childIds.includes(k.id)) : kids);
+/** The kids a list is for: only the ones it was given to. */
+const kidsFor = (l: ListSummary, kids: Child[]) => kids.filter((k) => l.childIds.includes(k.id));
 
 /** One kid's progress on a list: when they last played it and how much of it they've mastered. */
 function kidProgress(l: ListSummary, kid: Child) {
@@ -197,7 +197,9 @@ function Lists() {
 									<ChevronRight className="size-5 shrink-0 text-page-muted group-hover:text-page-ink" aria-hidden />
 								</Link>
 								<div className="flex flex-wrap items-end justify-between gap-3 border-t border-page-line/50 px-5 py-3">
-									{kids.length > 0 ? (
+									{kids.length > 0 && kidsFor(l, kids).length === 0 ? (
+										<span className="text-sm text-page-muted">Not given to anyone yet: open it to choose who it’s for</span>
+									) : kids.length > 0 ? (
 										<ul className="min-w-0 space-y-1.5 text-sm" aria-label={`Who ${l.name} is for`}>
 											{kidsFor(l, kids).map((k) => (
 												<li key={k.id} className="flex items-center gap-2">
@@ -209,7 +211,7 @@ function Lists() {
 											))}
 										</ul>
 									) : (
-										<span className="text-sm text-page-muted">For every kid you add</span>
+										<span className="text-sm text-page-muted">For the first kid you add</span>
 									)}
 									<button
 										type="button"

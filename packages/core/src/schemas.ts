@@ -89,7 +89,7 @@ export const listInputSchema = z.object({
 	grade: z.number().int().min(0).max(8).nullable().default(null),
 	source: z.enum(LIST_SOURCES).default("paste"),
 	words: z.array(listWordInputSchema).max(300).default([]),
-	/** The kids it's for; empty or missing means every kid in the family. */
+	/** The kids it's for. Empty or missing: the only kid in a one-kid family, else nobody until the parent chooses. */
 	childIds: z.array(z.string().max(64)).max(20).optional(),
 });
 export type ListInput = z.infer<typeof listInputSchema>;
