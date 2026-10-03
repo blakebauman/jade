@@ -16,6 +16,8 @@ import { api } from "./api.ts";
 import { dayKey, prefersReducedMotion } from "./hooks.ts";
 import { permanent } from "./offline.ts";
 
+export type Wallet = { free: boolean; tickets: number; stars: number | null };
+export type Pay = "tickets" | "stars";
 export type SavedLook = { id: string; name: string; look: Look; createdAt: number };
 export type OpenHoliday = {
 	id: HolidayId;
@@ -31,8 +33,10 @@ export type Studio = {
 	current: Look;
 	wornLookId: string | null;
 	looks: SavedLook[];
+	/** Everything sold, too, while this kid's games are free. */
 	unlocked: string[];
-	balance: number;
+	/** Tickets always; stars only while a parent lets them be spent in games (null otherwise). */
+	wallet: Wallet;
 	holidays: OpenHoliday[];
 	holidaysOff: HolidayId[];
 	home: Home;
@@ -45,15 +49,16 @@ export const roxyQuery = (childId: string) =>
 
 const base = (childId: string) => `/api/children/${childId}/roxy`;
 export const roxyApi = {
-	unlock: (childId: string, itemId: string) =>
-		api<{ ok: true; balance: number }>(`${base(childId)}/unlock`, { method: "POST", json: { itemId } }),
+	unlock: (childId: string, itemId: string, pay: Pay) =>
+		api<{ ok: true; wallet: Wallet }>(`${base(childId)}/unlock`, { method: "POST", json: { itemId, pay } }),
 	claim: (childId: string, holidayId: HolidayId) =>
 		api<{ ok: true; itemId: string }>(`${base(childId)}/claim`, { method: "POST", json: { holidayId, day: dayKey() } }),
 	save: (childId: string, name: string, look: Look) => api<SavedLook>(`${base(childId)}/looks`, { method: "POST", json: { name, look } }),
 	wear: (childId: string, lookId: string) => api(`${base(childId)}/looks/${lookId}`, { method: "PATCH", json: { wear: true } }),
 	rename: (childId: string, lookId: string, name: string) => api(`${base(childId)}/looks/${lookId}`, { method: "PATCH", json: { name } }),
 	remove: (childId: string, lookId: string) => api(`${base(childId)}/looks/${lookId}`, { method: "DELETE" }),
-	find: (childId: string, findId: string) => api(`${base(childId)}/find`, { method: "POST", json: { findId } }),
+	find: (childId: string, findId: string) =>
+		api<{ ok: true; tickets: number }>(`${base(childId)}/find`, { method: "POST", json: { findId } }),
 	home: (childId: string, home: Home) => api<Home>(`${base(childId)}/home`, { method: "PUT", json: { home } }),
 	current: (childId: string, look: Look, wornLookId: string | null) =>
 		api<{ ok: true; look: Look; wornLookId: string | null }>(`${base(childId)}/current`, { method: "PUT", json: { look, wornLookId } }),

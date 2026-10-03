@@ -1,7 +1,7 @@
 import { MAX_SAVED_LOOKS } from "@jade/core/roxy";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, House, Pencil, Shirt, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, House, Pencil, Shirt, Star, Ticket, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
@@ -67,12 +67,22 @@ function MyLooks() {
 						{look.slots.pet && look.petName && <p className="text-page-muted">with {look.petName}</p>}
 					</div>
 					<dl className="flex flex-wrap gap-x-8 gap-y-2">
-						<div>
-							<dt className="text-sm text-page-muted">Stars to spend</dt>
-							<dd className="flex items-center gap-1.5 font-display text-2xl font-semibold tabular-nums">
-								<Star className="size-5 fill-current" aria-hidden /> {data.balance}
-							</dd>
-						</div>
+						{!data.wallet.free && (
+							<div>
+								<dt className="text-sm text-page-muted">Tickets</dt>
+								<dd className="flex items-center gap-1.5 font-display text-2xl font-semibold tabular-nums">
+									<Ticket className="size-5" aria-hidden /> {data.wallet.tickets}
+								</dd>
+							</div>
+						)}
+						{!data.wallet.free && data.wallet.stars !== null && (
+							<div>
+								<dt className="text-sm text-page-muted">Stars to spend</dt>
+								<dd className="flex items-center gap-1.5 font-display text-2xl font-semibold tabular-nums">
+									<Star className="size-5 fill-current" aria-hidden /> {data.wallet.stars}
+								</dd>
+							</div>
+						)}
 						<div>
 							<dt className="text-sm text-page-muted">Saved looks</dt>
 							<dd className="font-display text-2xl font-semibold tabular-nums">

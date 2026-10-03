@@ -250,6 +250,8 @@ At Night, place stickers sit under the lamp a step quieter (saturate 0.9, bright
 
 **The Silver Foil Rule.** Stars, streak and milestone badges are holographic silver foil. Nothing that rewards is ever gold or marigold, because marigold means right.
 
+**The Ticket Rule.** What games pay and spend is a ticket (`.ticket`): a berry stub with punched sides and a dotted perforation after its mark, with the count in Sticker Ink. Foil means practice and a ticket means play, so a ticket is never foil and a star is never a ticket. Free games show no wallet at all.
+
 **The Two Lights Rule.** Night and Day share every token name. New surfaces use `page-*` colours and `--tone-*` shadow tones, never a hard-coded page hex or a fixed shadow rgb, so they light correctly in both. Test: switch Settings → Day and Night; nothing disappears or inverts.
 
 ## Typography
@@ -354,6 +356,12 @@ A die-cut vinyl sticker pressed onto the page: a printed face (`--sticker-face`)
 ### Foil
 Holographic silver: a 118deg gradient through silver, periwinkle, lilac and mint, with foil-ink text, a 0.2rem vinyl rim and a bright top lip. It is a full pill by default. Uses: the hub's streak and star chips (lucide Flame and Star, Fredoka 600 1.25rem tabular number), the Spelling home's progress strip (1rem radius), the Games sticker's holiday-collection chip, and milestone badge stickers.
 
+### Ticket
+The games' money, printed in Play's berry: a stub whose sides are punched out (a mask, so it carries no outer shadow) with a gloss band and a dotted perforation between the lucide ticket mark and the count. On the hub and the Play home it sits beside a foil "stars to spend" chip only while a parent lets stars pay in games; in a game's corner it is as tall as the 48px glass keys.
+
+### Learn and Play
+The hub spread's left page is Learn ("What shall we practice?", Spelling, Math, badges); the right is Play ("What shall we play?", the wallet, one berry Play sticker with Roxy). The header's foil star counts every star ever earned. When Play is closed (practice first not met, or out of play time) the Play sticker is a `.slot` that says what opens it ("Earn 6 more stars today", "6 of 10 stars") or offers minutes for stars; the first time it opens on a day, the sticker is placed with `sticker-place`. In a game, play time is a glass pill of whole minutes ("12 min", then "1 min left", announced once), never ticking seconds; when it runs out a glass sheet ("That's your play time", "Back to Play") covers the scene over a page-deep scrim.
+
 ### Slot
 An empty sticker place printed on the page: a 2px dashed page-line outline, a faint page-deep wash, and the badge's lucide icon as a silhouette at 70% opacity. Its label sits below (or inside, on a pill slot) in Lichen, and screen readers hear "(not yet)". A slot never animates and never takes a hue.
 
@@ -454,7 +462,7 @@ Studio, home and places fill the window with the scene. Their chrome is the one 
 
 - **Glass:** chrome over a live scene is `.glass`, frosted page (`page-raised` at 72% with a 14px blur), so it re-tints with Day and Night. Never use it on album pages.
 - **Top-left:** a round back `.orb`, then the masthead: an `.eyebrow` (tiny uppercase, letter-spaced, `page-muted`) over a big Fredoka title whose second word is berry ("The **park**", "Roxy **and Mochi**").
-- **Top-right:** round 48px `.orb` icon keys (each named by its aria-label, shown as a tooltip), led by the stars in a `.glass-pill`: screen links, Go to…, Full screen, Show/Hide panel.
+- **Top-right:** round 48px `.orb` icon keys (each named by its aria-label, shown as a tooltip), led by play time (when it costs stars), the ticket and, when linked, the stars to spend: screen links, Go to…, Full screen, Show/Hide panel.
 - **Bottom-left:** keyboard hints with `.kbd` keys on a mouse-and-keyboard screen; the stick on a touch one. **Bottom-right:** the status line (a berry dot and "2 of 5 found"). **Bottom-centre:** the action row (Undo, Save look) or the prompt.
 - **Panel:** a floating glass sheet, on the right on wide screens and along the bottom on narrow ones. It starts open in the studio and when decorating, closed in places, and remembers what the kid chose.
 - **Go to…:** a dialog listing the studio, Roxy's home and every place, with "· here" on the current one.

@@ -261,6 +261,7 @@ function RoundScreen() {
 			firstTries: r.firstTries,
 		});
 		void qc.invalidateQueries({ queryKey: ["progress", child.id] });
+		void qc.invalidateQueries({ queryKey: ["play", child.id] });
 		navigate({ to: "/play/$childId/results", params: { childId: child.id }, replace: true });
 	}
 

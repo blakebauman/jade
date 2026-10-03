@@ -6,6 +6,7 @@ import {
 	attemptsBatchSchema,
 	BADGES,
 	normalizeWord,
+	ROUND_MIN_ANSWERS,
 	sessionFinishSchema,
 	sessionStartSchema,
 	starsForRound,
@@ -156,6 +157,17 @@ async function recordAttempts(db: Db, s: Session, attempts: AttemptInput[], at: 
 					wordsSpelled: sql`${schema.childStats.wordsSpelled} + ${addWords}`,
 				},
 			}),
+		// Today's practice, on the family's day, for "practice first".
+		db
+			.insert(schema.dailyPractice)
+			.values({ childId: s.childId, day, answers: fresh.length, stars: addStars })
+			.onConflictDoUpdate({
+				target: [schema.dailyPractice.childId, schema.dailyPractice.day],
+				set: {
+					answers: sql`${schema.dailyPractice.answers} + ${fresh.length}`,
+					stars: sql`${schema.dailyPractice.stars} + ${addStars}`,
+				},
+			}),
 		...progressWrites,
 	]);
 	return { recorded: fresh.length, streak: streak.current, newBadges };
@@ -237,6 +249,18 @@ export const sessionRoutes = new Hono<AppEnv>()
 				.insert(schema.childStats)
 				.values({ childId: s.childId, perfectRounds, badgesJson })
 				.onConflictDoUpdate({ target: schema.childStats.childId, set: { perfectRounds, badgesJson } }),
+			// A round with enough answers in it counts toward "practice first" on the day it's finished.
+			...(all.length >= ROUND_MIN_ANSWERS
+				? [
+						db
+							.insert(schema.dailyPractice)
+							.values({ childId: s.childId, day, rounds: 1 })
+							.onConflictDoUpdate({
+								target: [schema.dailyPractice.childId, schema.dailyPractice.day],
+								set: { rounds: sql`${schema.dailyPractice.rounds} + 1` },
+							}),
+					]
+				: []),
 		]);
 
 		return c.json({

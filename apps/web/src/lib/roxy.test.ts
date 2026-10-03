@@ -12,7 +12,7 @@ const studio = (over: Partial<Studio> = {}): Studio => ({
 	wornLookId: null,
 	looks: [],
 	unlocked: [],
-	balance: 0,
+	wallet: { free: false, tickets: 0, stars: null },
 	holidays: [],
 	holidaysOff: [],
 	home: starterHome(),

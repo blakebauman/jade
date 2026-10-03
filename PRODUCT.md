@@ -31,6 +31,7 @@ web
 **Secondary: the parent.**
 - Signs in, sets up child profiles, and loads word lists. Lists come from the school sheet (pasted, CSV, or a photo) or from built-in grade packs.
 - Chooses each child's math topics and times tables, and can nudge a math level if it feels too easy or too hard.
+- Decides, per child, how games and learning meet: games earn their own tickets or are free, and can be linked so stars pay in games, games open after today's practice, or play time costs stars.
 - Checks which words and facts are still causing trouble.
 - The parent is the account holder. The child never manages credentials.
 
@@ -92,7 +93,7 @@ Success means the child spells the week's list correctly and without help. Misse
 
 **Dictionary data:** Free Dictionary API, Merriam-Webster Elementary when a key is configured, and Workers AI for kid-friendly sentences when neither has one.
 
-**Rewards:** stars per word or problem and per round, daily streaks, and badges, shared across both subjects.
+**Rewards:** stars per word or problem and per round, daily streaks, and badges, shared across both subjects. Stars are a record of practice. Games pay their own tickets, spent only in games; stars spend there only if a parent links them.
 
 **Terminology:**
 - "subject" is spelling or math.

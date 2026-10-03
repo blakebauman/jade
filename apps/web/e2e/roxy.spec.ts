@@ -15,6 +15,11 @@ async function setup(page: Page, names = ["Ava"]) {
 	return { h, ids };
 }
 
+/** Earn tickets the real way: things found around town, 10 tickets each. */
+async function findThings(page: Page, h: Record<string, string>, childId: string, findIds: string[]) {
+	for (const findId of findIds) await page.request.post(`/api/children/${childId}/roxy/find`, { headers: h, data: { findId } });
+}
+
 /** Earn stars the real way: a few words spelled right first time (3 stars each). */
 async function earnStars(page: Page, h: Record<string, string>, childId: string, words: string[]) {
 	const id = `e2e-${crypto.randomUUID()}`;
@@ -35,7 +40,7 @@ async function earnStars(page: Page, h: Record<string, string>, childId: string,
 test("style a Roxy, add cat ears with a gem, and save it to the gallery", async ({ page }) => {
 	const { ids } = await setup(page);
 	await page.goto(`/play/${ids[0]}`);
-	await page.getByRole("link", { name: /Games/ }).click();
+	await page.getByRole("link", { name: /^Play/ }).click();
 	await page.getByRole("link", { name: /^Roxy Style your own character/ }).click();
 
 	// One primary key in the studio.
@@ -70,22 +75,37 @@ test("style a Roxy, add cat ears with a gem, and save it to the gallery", async 
 	await expect(page.getByText("On stage")).toBeVisible();
 });
 
-test("locked items cost stars, and an exact copy of someone's look can't be saved", async ({ page }) => {
+test("locked items cost tickets, stars too once a parent links them, and an exact copy of someone's look can't be saved", async ({
+	page,
+}) => {
 	const { h, ids } = await setup(page, ["Ava", "Theo"]);
 	const [ava, theo] = ids as [string, string];
 	await page.goto(`/play/${ava}/games/roxy`);
 	await page.getByRole("tab", { name: "Face" }).click();
-	await page.getByRole("button", { name: "Starry, 15 stars" }).click();
-	await expect(page.getByText("Earn 15 more in Spelling or Math!")).toBeVisible();
+	await page.getByRole("button", { name: "Starry, 15 tickets" }).click();
+	await expect(page.getByText(/Earn 15 more in Town or Gobble Town/)).toBeVisible();
 	await page.getByRole("button", { name: "OK", exact: true }).click();
 
+	// Stars from practice don't spend in games until a parent links them.
 	await earnStars(page, h, ava, ["cat", "dog", "sun", "hat", "pig"]);
+	await findThings(page, h, ava, ["park-acorn", "park-kite"]);
 	await page.reload();
 	await page.getByRole("tab", { name: "Face" }).click();
-	await page.getByRole("button", { name: "Starry, 15 stars" }).click();
-	await page.getByRole("button", { name: "Unlock" }).click();
+	await page.getByRole("button", { name: "Starry, 15 tickets" }).click();
+	await expect(page.getByRole("button", { name: "15 tickets", exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: "15 stars", exact: true })).toHaveCount(0);
+	await page.getByRole("button", { name: "Not now" }).click();
+
+	const link = { free: false, stars: true, practiceFirst: false, goal: "round", timeCosts: false, day: today() };
+	expect((await page.request.put(`/api/children/${ava}/play`, { headers: h, data: link })).ok()).toBe(true);
+	await page.reload();
+	await page.getByRole("tab", { name: "Face" }).click();
+	await page.getByRole("button", { name: "Starry, 15 tickets" }).click();
+	await expect(page.getByRole("button", { name: "15 tickets", exact: true })).toBeVisible();
+	await page.getByRole("button", { name: "15 stars", exact: true }).click();
 	await expect(page.getByRole("button", { name: "Starry", exact: true })).toHaveAttribute("aria-pressed", "true");
-	await expect(page.getByTitle("Stars to spend")).toContainText("0");
+	// Paid in stars: the tickets are all still there.
+	await expect(page.locator(".ticket").first()).toContainText("20");
 
 	// Theo's look, saved by Theo, then Ava tries the very same one. Leave the studio first so no autosave of Ava's
 	// own look lands after it.
@@ -120,13 +140,15 @@ test("a holiday's collection shows in its week, and a parent can turn it off", a
 	await page.getByRole("tab", { name: "Clothes" }).click();
 	await expect(page.getByRole("tab", { name: "Diwali" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: /^Lehenga/ })).toHaveCount(0);
-	await expect(page.getByRole("button", { name: /^Qipao, 25 stars, Lunar New Year/ })).toBeVisible();
+	await expect(page.getByRole("button", { name: /^Qipao, 25 tickets, Lunar New Year/ })).toBeVisible();
 });
 
 test("decorate Roxy's home, and it's still there after a reload", async ({ page }) => {
 	const { ids } = await setup(page);
 	await page.goto(`/play/${ids[0]}/games/roxy`);
-	await page.getByRole("link", { name: "Home" }).click();
+	// On a phone the studio's corner keeps Home in Go to….
+	if (await page.getByRole("link", { name: "Home" }).isVisible()) await page.getByRole("link", { name: "Home" }).click();
+	else await page.goto(`/play/${ids[0]}/games/roxy/home`);
 	await expect(page.getByRole("heading", { name: "Roxy’s home" })).toBeVisible();
 	await expect(page.getByText("Tap the floor and Roxy walks there.")).toBeVisible();
 
@@ -142,9 +164,9 @@ test("decorate Roxy's home, and it's still there after a reload", async ({ page 
 		(r) => r.url().endsWith("/roxy/home") && r.request().method() === "PUT" && r.ok() && (r.request().postData() ?? "").includes('"dots"'),
 	);
 	await page.getByRole("button", { name: "Dots", exact: true }).click();
-	// Locked furniture asks for stars it doesn't have yet.
-	await page.getByRole("button", { name: "Add Piano, 30 stars" }).click();
-	await expect(page.getByText("Earn 30 more in Spelling or Math!")).toBeVisible();
+	// Locked furniture asks for tickets it doesn't have yet.
+	await page.getByRole("button", { name: "Add Piano, 30 tickets" }).click();
+	await expect(page.getByText(/Earn 30 more in Town or Gobble Town/)).toBeVisible();
 
 	await saved;
 	await page.evaluate((id) => localStorage.removeItem(`jade.roxyhome.${id}`), ids[0]!);
@@ -157,11 +179,11 @@ test("decorate Roxy's home, and it's still there after a reload", async ({ page 
 
 test("unlocking a piece of furniture puts it in the room", async ({ page }) => {
 	const { h, ids } = await setup(page);
-	await earnStars(page, h, ids[0]!, ["cat", "dog", "sun", "hat", "pig", "cow", "bat", "rat", "map", "pen"]);
+	await findThings(page, h, ids[0]!, ["park-acorn", "park-kite", "school-book"]);
 	await page.goto(`/play/${ids[0]}/games/roxy/home`);
 	await page.getByRole("button", { name: "Decorate" }).click();
-	await page.getByRole("button", { name: "Add Piano, 30 stars" }).click();
-	await page.getByRole("button", { name: "Unlock" }).click();
+	await page.getByRole("button", { name: "Add Piano, 30 tickets" }).click();
+	await page.getByRole("button", { name: "30 tickets", exact: true }).click();
 	await expect(page.getByText("The piano is yours, and it’s in the room!")).toBeVisible();
 	await expect(page.getByRole("region", { name: "In the room" }).getByRole("button", { name: "Piano", exact: true })).toHaveAttribute(
 		"aria-pressed",

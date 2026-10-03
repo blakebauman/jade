@@ -1,3 +1,4 @@
+import { FIND_TICKETS } from "@jade/core";
 import { FIND_BY_ID, FINDS, PLACE_INFO, PLACES, type PlaceId } from "@jade/core/roxy";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -114,10 +115,14 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 		if (!find || found.has(findId)) return;
 		setFound((s) => new Set([...s, findId]));
 		const left = finds.filter((f) => f.id !== findId && !found.has(f.id)).length;
-		setMessage(`You found the ${find.label.toLowerCase()}! ${left === 0 ? "That’s everything here!" : `${left} more hiding here.`}`);
+		// Free games have no tickets to count.
+		const paid = data.wallet.free ? "" : ` That’s ${FIND_TICKETS} tickets.`;
+		setMessage(`You found the ${find.label.toLowerCase()}!${paid} ${left === 0 ? "That’s everything here!" : `${left} more hiding here.`}`);
 		// Kept on this device and sent now, or when the connection is back (finding twice changes nothing).
 		void recordFind(childId, findId).then((sent) => {
-			if (sent) void qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey });
+			if (!sent) return;
+			void qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey });
+			void qc.invalidateQueries({ queryKey: ["play", childId] });
 		});
 	}
 

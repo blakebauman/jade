@@ -1,3 +1,4 @@
+import { MAX_TICKETS_PER_GO } from "@jade/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Pause, Play, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
 import { Component, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -15,10 +16,12 @@ import {
 	timeLeft,
 } from "#/components/gobble/sim.ts";
 import * as sound from "#/components/gobble/sound.ts";
+import { Tickets } from "#/components/play/PlayBits.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
 import { accent, GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
 import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { useChild } from "#/lib/child.ts";
+import { earnTickets } from "#/lib/play.ts";
 
 const scene = () => import("#/components/gobble/GobbleScene.tsx");
 // three.js only loads on game screens.
@@ -79,6 +82,8 @@ function GobbleScreen() {
 	const [message, setMessage] = useState<string | null>(null);
 	const [best, setBest] = useState(() => readBest(child.id));
 	const [newBest, setNewBest] = useState(false);
+	/** Tickets this round paid (the server pays each round once, at most 30, and nothing while games are Free). */
+	const [earned, setEarned] = useState(0);
 	const [muted, setMuted] = useState(sound.isMuted);
 	const [frozen, setFrozen] = useState(false);
 	const messageTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -116,6 +121,10 @@ function GobbleScreen() {
 			const me = g.holes[PLAYER]!;
 			const won = ranking(g)[0]!.i === PLAYER;
 			sound.finish(won);
+			const tickets = Math.min(MAX_TICKETS_PER_GO, Math.round(me.score / 10) + (won ? 5 : 0));
+			setEarned(tickets);
+			// Kept on the device and sent now, or when back online.
+			if (tickets > 0) void earnTickets(child.id, `gobble:${seed}`, tickets);
 			const was = readBest(child.id);
 			setNewBest(me.score > was);
 			if (me.score > was) {
@@ -125,7 +134,7 @@ function GobbleScreen() {
 				} catch {}
 			}
 		},
-		[child.id],
+		[child.id, seed],
 	);
 
 	const onEvents = useCallback(
@@ -296,6 +305,7 @@ function GobbleScreen() {
 	return (
 		<GameScreen
 			panelLabel="How to play"
+			goInProgress={phase === "play" || phase === "paused"}
 			scene={
 				<div
 					className="relative size-full select-none"
@@ -420,6 +430,11 @@ function GobbleScreen() {
 								You gobbled <span className="font-semibold tabular-nums">{hud.score}</span>
 								{me.gobbles > 0 && ` and ${me.gobbles} ${me.gobbles === 1 ? "hole" : "holes"}`}.
 							</p>
+							{earned > 0 && (
+								<p className="mt-3 flex justify-center">
+									<Tickets count={earned} />
+								</p>
+							)}
 							<p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium">
 								<Trophy className="size-4" aria-hidden />{" "}
 								{newBest ? (

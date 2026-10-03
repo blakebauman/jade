@@ -603,6 +603,62 @@
 		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 0.3rem 0.6rem -0.25rem var(--tone-drop-deep);
 	}
 
+	/*
+	 * An arcade ticket: what games pay and what games spend, printed in Play's berry. A stub with punched sides and a
+	 * perforation after its mark. Never foil (foil is practice) and never gold (marigold means right).
+	 */
+	.ticket {
+		--punch: 0.42rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		padding: 0.375rem 0.95rem 0.375rem 0.85rem;
+		border-radius: 0.4rem;
+		color: var(--color-sticker-ink);
+		background:
+			linear-gradient(158deg, rgb(255 255 255 / 0.24) 0%, rgb(255 255 255 / 0.05) 38%, transparent 39%),
+			var(--color-roxy);
+		box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.28);
+		-webkit-mask:
+			radial-gradient(circle var(--punch) at 0 50%, transparent 96%, black) left / 51% 100% no-repeat,
+			radial-gradient(circle var(--punch) at 100% 50%, transparent 96%, black) right / 51% 100% no-repeat;
+		mask:
+			radial-gradient(circle var(--punch) at 0 50%, transparent 96%, black) left / 51% 100% no-repeat,
+			radial-gradient(circle var(--punch) at 100% 50%, transparent 96%, black) right / 51% 100% no-repeat;
+	}
+	/* The perforation, between the mark and the count. */
+	.ticket > svg + * {
+		padding-left: 0.55rem;
+		border-left: 2px dotted color-mix(in oklab, var(--color-sticker-ink) 55%, transparent);
+	}
+	:root:not([data-theme="day"]) .ticket { filter: saturate(0.9) brightness(0.94); }
+
+	/* Checkboxes in the page's own tokens, so Night never shows the browser's grey box. */
+	input[type="checkbox"]:where(:not(.sr-only)) {
+		appearance: none;
+		display: inline-grid;
+		place-items: center;
+		border-radius: 0.4rem;
+		border: 2px solid var(--color-page-line);
+		background: var(--color-page-pit);
+		cursor: pointer;
+	}
+	input[type="checkbox"]:where(:not(.sr-only)):checked {
+		border-color: var(--color-page-ink);
+		background: var(--color-page-ink);
+	}
+	/* The tick, in the page's own deep tone so it reads in both lights. */
+	input[type="checkbox"]:where(:not(.sr-only)):checked::after {
+		content: "";
+		width: 72%;
+		height: 72%;
+		background: var(--color-page-deep);
+		--tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+		-webkit-mask: var(--tick) center / contain no-repeat;
+		mask: var(--tick) center / contain no-repeat;
+	}
+	input[type="checkbox"]:where(:not(.sr-only)):disabled { opacity: 0.45; cursor: not-allowed; }
+
 	/* A sticker not earned yet: its outline printed on the page, waiting. */
 	.slot {
 		display: grid;
