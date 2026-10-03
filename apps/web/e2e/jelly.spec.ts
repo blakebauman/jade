@@ -11,7 +11,7 @@ async function setup(page: Page) {
 	return (await (await page.request.post("/api/children", { headers: h, data: { name: "Ava" } })).json()).id as string;
 }
 
-type Peek = { x: number | null; rot: number | null; pieces: number; score: number };
+type Peek = { x: number | null; rot: number | null; type: number | null; pieces: number; score: number };
 type Hooks = { setState: (name: string) => Promise<unknown>; peek: () => Peek };
 type Diagnostics = { renderer: { calls: number; triangles: number }; backend: string };
 
@@ -75,51 +75,63 @@ test("the Play home has a Jelly Blocks card", async ({ page }) => {
 
 // Real fingers, not a mouse: Playwright's mouse in the iPad project sends mouse pointer events, which once hid three
 // bugs that only a real iPad showed. Touch events through Chromium's DevTools protocol, with a negative identifier as
-// iOS can send.
+// iOS can send. Kept cheap for a runner without a graphics chip, where every event waits on a slow frame: few events, a
+// small screen, each gesture timed by its own timestamps (as a real one is), and waits until the game has caught up.
 test("a finger swipes, taps and flicks the jelly, and holds a touch key", async ({ browser, browserName }, info) => {
 	test.skip(browserName !== "chromium" || info.project.name !== "laptop", "touch events are sent through Chromium's protocol");
-	const context = await browser.newContext({ viewport: { width: 834, height: 1194 }, hasTouch: true, isMobile: true });
+	test.slow();
+	const context = await browser.newContext({ viewport: { width: 600, height: 860 }, hasTouch: true, isMobile: true });
 	const page = await context.newPage();
 	const id = await setup(page);
 	await page.goto(`/play/${id}/games/jelly`);
 	await page.getByRole("button", { name: "Start" }).tap();
+	// Playing, and the jar listening for fingers (only during a game).
+	await expect(page.locator("[data-swipes='on']")).toBeAttached({ timeout: 20_000 });
 	const cdp = await context.newCDPSession(page);
-	const finger = (type: "touchStart" | "touchMove" | "touchEnd", x?: number, y?: number) =>
-		cdp.send("Input.dispatchTouchEvent", { type, touchPoints: x === undefined ? [] : [{ x, y: y!, id: -7 }] });
+	let clock = Date.now() / 1000;
+	/** One touch event, `after` seconds after the last (the event's own time, whatever the page is doing). */
+	const finger = (type: "touchStart" | "touchMove" | "touchEnd", after: number, x?: number, y?: number) => {
+		clock += after;
+		return cdp.send("Input.dispatchTouchEvent", { type, timestamp: clock, touchPoints: x === undefined ? [] : [{ x, y: y!, id: -7 }] });
+	};
 	const peek = () => page.evaluate(() => (window as unknown as { __THREE_GAME_TEST_HOOKS__: Hooks }).__THREE_GAME_TEST_HOOKS__.peek());
-	await expect.poll(async () => (await peek()).x).not.toBeNull();
-	const jar = { x: 417, y: 560 };
+	const until = { timeout: 20_000 };
+	await expect.poll(async () => (await peek()).x, until).not.toBeNull();
+	const jar = { x: 300, y: 430 };
 
 	// A swipe to the right steps the piece across.
 	const x0 = (await peek()).x!;
-	await finger("touchStart", jar.x, jar.y);
-	for (let i = 1; i <= 8; i++) {
-		await finger("touchMove", jar.x + i * 18, jar.y + 2);
-		await page.waitForTimeout(30);
+	await finger("touchStart", 0.05, jar.x, jar.y);
+	await finger("touchMove", 0.05, jar.x + 20, jar.y);
+	await finger("touchMove", 0.1, jar.x + 110, jar.y + 2);
+	await finger("touchEnd", 0.05);
+	await expect.poll(async () => (await peek()).x!, until).toBeGreaterThanOrEqual(x0 + 2);
+
+	// A tap turns it (the square never turns: drop squares until another piece is in play).
+	for (let i = 0; i < 3 && (await peek()).type === 2; i++) {
+		const n = (await peek()).pieces;
+		await page.getByRole("button", { name: "Drop" }).tap();
+		await expect.poll(async () => (await peek()).pieces, until).toBe(n + 1);
 	}
-	await finger("touchEnd");
-	await expect.poll(async () => (await peek()).x!).toBeGreaterThanOrEqual(x0 + 2);
-
-	// A tap turns it.
+	expect((await peek()).type).not.toBe(2);
 	const rot = (await peek()).rot;
-	await finger("touchStart", jar.x, jar.y);
-	await finger("touchEnd");
-	await expect.poll(async () => (await peek()).rot).not.toBe(rot);
+	await finger("touchStart", 0.3, jar.x, jar.y);
+	await finger("touchEnd", 0.08);
+	await expect.poll(async () => (await peek()).rot, until).not.toBe(rot);
 
-	// A quick flick down drops it.
-	const pieces = (await peek()).pieces;
-	await finger("touchStart", jar.x, jar.y - 150);
-	for (let i = 1; i <= 4; i++) await finger("touchMove", jar.x + 4, jar.y - 150 + i * 70);
-	await finger("touchEnd");
-	await expect.poll(async () => (await peek()).pieces).toBe(pieces + 1);
+	// A quick flick down drops it: only a drop scores here (2 a row it falls), however slowly the page is going.
+	const score = (await peek()).score;
+	await finger("touchStart", 0.3, jar.x, jar.y - 120);
+	await finger("touchMove", 0.04, jar.x + 2, jar.y - 60);
+	await finger("touchMove", 0.04, jar.x + 4, jar.y + 120);
+	await finger("touchEnd", 0.04);
+	await expect.poll(async () => (await peek()).score, until).toBeGreaterThan(score);
 
-	// Holding Move left with a finger keeps stepping until the wall.
+	// Holding Move left with a finger keeps stepping, to the wall.
+	await expect.poll(async () => (await peek()).x, until).not.toBeNull();
 	const key = await page.getByRole("button", { name: "Move left" }).boundingBox();
-	const kx = key!.x + key!.width / 2;
-	const ky = key!.y + key!.height / 2;
-	await finger("touchStart", kx, ky);
-	await page.waitForTimeout(700);
-	await finger("touchEnd");
-	await expect.poll(async () => (await peek()).x!).toBeLessThanOrEqual(0);
+	await finger("touchStart", 0.3, key!.x + key!.width / 2, key!.y + key!.height / 2);
+	await expect.poll(async () => (await peek()).x!, until).toBeLessThanOrEqual(0);
+	await finger("touchEnd", 0.05);
 	await context.close();
 });

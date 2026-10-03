@@ -368,9 +368,10 @@ function JellyScreen() {
 		moved: false,
 		axis: "" as "" | "x" | "y",
 	});
-	const swipeStart = (by: "touch" | "pointer", id: number, x: number, y: number) => {
+	// Times are the events' own (when the finger touched and lifted), so a busy frame doesn't turn a tap into a hold.
+	const swipeStart = (by: "touch" | "pointer", id: number, x: number, y: number, time: number) => {
 		sound.unlock();
-		swipe.current = { on: true, by, id, x0: x, y0: y, t0: performance.now(), sx: x, moved: false, axis: "" };
+		swipe.current = { on: true, by, id, x0: x, y0: y, t0: time, sx: x, moved: false, axis: "" };
 	};
 	const swipeMove = (x: number, y: number) => {
 		const s = swipe.current;
@@ -399,14 +400,14 @@ function JellyScreen() {
 		}
 	};
 	/** The swipe's over: lifted (`x`, `y` where it ended), or cancelled (no position: nothing more happens). */
-	const swipeEnd = (x?: number, y?: number) => {
+	const swipeEnd = (x?: number, y?: number, time?: number) => {
 		const s = swipe.current;
 		s.on = false;
 		held.current.swipeD = false;
-		if (x === undefined || y === undefined) return;
+		if (x === undefined || y === undefined || time === undefined) return;
 		const dx = x - s.x0;
 		const dy = y - s.y0;
-		const ms = Math.max(1, performance.now() - s.t0);
+		const ms = Math.max(1, time - s.t0);
 		const fast = s.axis === "y" && Math.abs(dy) / ms > 0.8 && Math.abs(dy) > square * 2.5;
 		if (fast) tap(dy > 0 ? "drop" : "hold");
 		else if (!s.moved && Math.hypot(dx, dy) < 12 && ms < 350) tap("cw");
@@ -429,7 +430,7 @@ function JellyScreen() {
 			if (e.cancelable) e.preventDefault();
 			if (swipe.current.on) return;
 			const t = e.changedTouches[0];
-			if (t) swiping.current.swipeStart("touch", t.identifier, t.clientX, t.clientY);
+			if (t) swiping.current.swipeStart("touch", t.identifier, t.clientX, t.clientY, e.timeStamp);
 		};
 		const move = (e: TouchEvent) => {
 			if (e.cancelable) e.preventDefault();
@@ -438,7 +439,7 @@ function JellyScreen() {
 		};
 		const end = (e: TouchEvent) => {
 			const t = find(e.changedTouches);
-			if (t) swiping.current.swipeEnd(t.clientX, t.clientY);
+			if (t) swiping.current.swipeEnd(t.clientX, t.clientY, e.timeStamp);
 		};
 		const cancel = (e: TouchEvent) => {
 			if (find(e.changedTouches)) swiping.current.swipeEnd();
@@ -447,7 +448,10 @@ function JellyScreen() {
 		el.addEventListener("touchmove", move, { passive: false });
 		el.addEventListener("touchend", end);
 		el.addEventListener("touchcancel", cancel);
+		// Listening now (tests wait for this, not for the screen to say it's playing).
+		el.dataset.swipes = "on";
 		return () => {
+			delete el.dataset.swipes;
 			el.removeEventListener("touchstart", start);
 			el.removeEventListener("touchmove", move);
 			el.removeEventListener("touchend", end);
@@ -461,7 +465,7 @@ function JellyScreen() {
 		if (e.pointerType === "touch" || !playing || swipe.current.on) return;
 		e.preventDefault();
 		e.currentTarget.setPointerCapture?.(e.pointerId);
-		swipeStart("pointer", e.pointerId, e.clientX, e.clientY);
+		swipeStart("pointer", e.pointerId, e.clientX, e.clientY, e.timeStamp);
 	}
 	function onPointerMove(e: React.PointerEvent) {
 		if (e.pointerType !== "touch" && isPointerSwipe(e.pointerId)) swipeMove(e.clientX, e.clientY);
@@ -470,7 +474,7 @@ function JellyScreen() {
 		if (e.pointerType === "touch" || !isPointerSwipe(e.pointerId)) return;
 		// Capture lost by something inside (the canvas) bubbles up here too; only this element's own loss ends it.
 		if (e.type === "lostpointercapture" && e.target !== e.currentTarget) return;
-		if (e.type === "pointerup") swipeEnd(e.clientX, e.clientY);
+		if (e.type === "pointerup") swipeEnd(e.clientX, e.clientY, e.timeStamp);
 		else swipeEnd();
 	}
 
@@ -523,7 +527,7 @@ function JellyScreen() {
 			},
 			peek: () => {
 				const g = current.current;
-				return { x: g.active?.x ?? null, rot: g.active?.rot ?? null, pieces: g.pieces, score: g.score };
+				return { x: g.active?.x ?? null, rot: g.active?.rot ?? null, type: g.active?.type ?? null, pieces: g.pieces, score: g.score };
 			},
 			setAutopilot: (on: boolean) => {
 				auto.current = on;
