@@ -416,7 +416,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 													type="button"
 													className="key !min-h-11 !px-3"
 													onClick={() => add(f)}
-													aria-label={`Add ${f.label}${owned(f) ? "" : `, ${f.cost} stars`}`}
+													aria-label={`Add ${f.label}${owned(f) ? "" : `, ${f.cost} tickets`}`}
 												>
 													{f.label}
 													{!owned(f) && (

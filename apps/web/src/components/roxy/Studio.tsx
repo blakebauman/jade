@@ -105,7 +105,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	const [tab, setTab] = useState<TabId>(
 		TABS.some((t) => t.id === initialTab) ? (initialTab as TabId) : holidays.length > 0 ? "holiday" : "body",
 	);
-	/** A locked item being tried on, waiting for "Use stars?". */
+	/** A locked item being tried on, waiting for "Unlock it?". */
 	const [trying, setTrying] = useState<{ slot: Slot; item: Item } | null>(null);
 	const [saving, setSaving] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
@@ -544,7 +544,7 @@ function SlotPicker({
 					return (
 						<li key={item.id}>
 							<ItemButton
-								label={`${item.label}${owned ? "" : item.gift ? ", free gift" : `, ${item.cost} stars`}${item.holiday ? `, ${HOLIDAY_LABEL[item.holiday]}` : ""}`}
+								label={`${item.label}${owned ? "" : item.gift ? ", free gift" : `, ${item.cost} tickets`}${item.holiday ? `, ${HOLIDAY_LABEL[item.holiday]}` : ""}`}
 								selected={selected}
 								// Tapping the moon gem's form again turns the Roxy back.
 								onClick={() => onPick(slot === "form" && worn?.item === item.id ? null : item)}
@@ -580,7 +580,7 @@ function ItemButton({
 	label: string;
 	selected: boolean;
 	onClick: () => void;
-	/** Locked: its price in stars, or "gift" for a holiday's free gift. */
+	/** Locked: its price (tickets, or stars when linked), or "gift" for a holiday's free gift. */
 	badge?: number | "gift";
 	children: ReactNode;
 }) {
@@ -725,7 +725,7 @@ function HolidayPanel({
 					return (
 						<li key={item.id}>
 							<ItemButton
-								label={`${item.label}${owned ? "" : item.gift ? ", free gift" : `, ${item.cost} stars`}`}
+								label={`${item.label}${owned ? "" : item.gift ? ", free gift" : `, ${item.cost} tickets`}`}
 								selected={look.slots[item.slot]?.item === item.id}
 								onClick={() => onPick(item.slot, item)}
 								badge={owned || (item.gift && !holiday.claimed) ? undefined : item.cost}
