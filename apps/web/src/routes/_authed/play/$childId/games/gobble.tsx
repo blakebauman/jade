@@ -100,7 +100,23 @@ function GobbleScreen() {
 	 * apart rather than read off the id: iOS gives fingers huge identifiers, which can come through negative.
 	 */
 	const drag = useRef<Drag>({ ...NO_DRAG });
-	const [stick, setStick] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
+	/**
+	 * The floating stick under the finger, moved straight on the page: re-rendering the screen (HUD, leaderboard) on
+	 * every finger movement made the knob trail behind it on an iPad.
+	 */
+	const stickRef = useRef<HTMLDivElement>(null);
+	const knobRef = useRef<HTMLDivElement>(null);
+	const placeStick = (ox: number, oy: number, dx: number, dy: number) => {
+		const stick = stickRef.current;
+		const knob = knobRef.current;
+		if (!stick || !knob) return;
+		stick.style.display = "block";
+		stick.style.transform = `translate(${ox - 44}px, ${oy - 44}px)`;
+		knob.style.transform = `translate(${dx * 0.9}px, ${dy * 0.9}px)`;
+	};
+	const hideStick = () => {
+		if (stickRef.current) stickRef.current.style.display = "none";
+	};
 	// The scene reads this each frame: a drag wins over the keys.
 	const steer = useMemo(
 		() => ({
@@ -286,7 +302,7 @@ function GobbleScreen() {
 	const begin = (by: Drag["by"], id: number, x: number, y: number) => {
 		drag.current = { on: true, by, id, ox: x, oy: y, x: 0, y: 0 };
 		sound.unlock();
-		setStick({ x, y, dx: 0, dy: 0 });
+		placeStick(x, y, 0, 0);
 		debugLog("begin", `${by}#${id} @${Math.round(x)},${Math.round(y)}`);
 	};
 	const moveTo = (x: number, y: number) => {
@@ -304,11 +320,11 @@ function GobbleScreen() {
 		const k = len < 6 ? 0 : 1 / 48;
 		d.x = dx * k;
 		d.y = -dy * k;
-		setStick({ x: d.ox, y: d.oy, dx, dy });
+		placeStick(d.ox, d.oy, dx, dy);
 	};
 	const finishDrag = (why: string) => {
 		drag.current = { ...NO_DRAG };
-		setStick(null);
+		hideStick();
 		debugLog("end", why);
 	};
 	const steering = useRef({ begin, moveTo, finishDrag });
@@ -395,15 +411,10 @@ function GobbleScreen() {
 						</Suspense>
 					</NoWebGL>
 					<TouchDebug phase={phase} drag={drag} />
-					{stick && (
-						<div className="pointer-events-none fixed z-30" style={{ left: stick.x - 44, top: stick.y - 44 }} aria-hidden>
-							<div className="glass size-[88px] rounded-full opacity-80" />
-							<div
-								className="absolute top-[26px] left-[26px] size-9 rounded-full bg-roxy shadow-lg"
-								style={{ transform: `translate(${stick.dx * 0.9}px, ${stick.dy * 0.9}px)` }}
-							/>
-						</div>
-					)}
+					<div ref={stickRef} className="pointer-events-none fixed top-0 left-0 z-30" style={{ display: "none" }} aria-hidden>
+						<div className="glass size-[88px] rounded-full opacity-80" />
+						<div ref={knobRef} className="absolute top-[26px] left-[26px] size-9 rounded-full bg-roxy shadow-lg" />
+					</div>
 					{phase !== "ready" && phase !== "over" && <Timer left={hud.left} countdown={hud.countdown} />}
 					{(phase === "play" || phase === "paused") && <Board board={hud.board} />}
 					{/* What just happened, bottom centre, where a thumb steers: it never catches a touch. */}

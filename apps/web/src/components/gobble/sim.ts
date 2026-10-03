@@ -221,7 +221,9 @@ export function step(g: Game, dt: number, steer: { x: number; z: number }) {
 		}
 		const want = h.bot ? think(g, i, h.bot) : steer;
 		const speed = (3.1 + 0.4 * h.r) * (h.bot?.skill ?? 1);
-		const ease = Math.min(1, dt * 8);
+		// The player's hole answers the stick almost at once (a slow start feels like lag under a finger); the computer
+		// players turn more gently.
+		const ease = Math.min(1, dt * (h.bot ? 8 : 30));
 		h.vx += (want.x * speed - h.vx) * ease;
 		h.vz += (want.z * speed - h.vz) * ease;
 		// Kept on the board: a big hole can't hang off the edge.

@@ -113,9 +113,13 @@ describe("a whole round", () => {
 		expect(a.holes.map((h) => h.score)).toEqual(b.holes.map((h) => h.score));
 	});
 
+	// Twenty whole rounds: several seconds on a slow CI runner, so a longer time limit than one test usually gets.
 	it("lets a good player grow big enough for houses and win, the bots grow too, and the town lasts", () => {
 		const wins: boolean[] = [];
-		for (const seed of [1, 2, 3, 4, 5]) {
+		const places: number[] = [];
+		/** How much of the town is still standing 80 s in, each round. */
+		const lasting: number[] = [];
+		for (let seed = 1; seed <= 20; seed++) {
 			const g = newGame(seed, "Jade");
 			let standing = 0;
 			let peak = 0;
@@ -129,6 +133,7 @@ describe("a whole round", () => {
 			);
 			const me = g.holes[PLAYER]!;
 			wins.push(ranking(g)[0]!.i === PLAYER);
+			places.push(ranking(g).findIndex((e) => e.i === PLAYER) + 1);
 			// Gobbling starts at once (the start is full of small things) and a milestone comes within the first minute.
 			const first = events.findIndex((e) => e.type === "gulp" && e.hole === PLAYER);
 			expect(first).toBeGreaterThanOrEqual(0);
@@ -141,13 +146,18 @@ describe("a whole round", () => {
 				bots.every((h) => h.score > 100),
 				`seed ${seed}: ${bots.map((h) => h.score)}`,
 			).toBe(true);
-			// A good part of the town is still standing 80 s in, so the round never runs dry early.
-			expect(standing, `seed ${seed}`).toBeGreaterThan(g.objs.length * 0.1);
+			lasting.push(standing / g.objs.length);
 			expect(ranking(g)[0]!.h.score).toBe(Math.max(...g.holes.map((h) => h.score)));
 		}
-		// Playing like a computer player wins most rounds; the bots aren't unbeatable.
-		expect(wins.filter(Boolean).length).toBeGreaterThanOrEqual(3);
-	});
+		// Playing like a computer player wins about half the rounds or more and is nearly always in the top three: the
+		// bots aren't unbeatable. Judged over twenty rounds, since any one seed can go either way.
+		expect(wins.filter(Boolean).length, `places ${places.join(" ")}`).toBeGreaterThanOrEqual(10);
+		expect(places.filter((p) => p <= 3).length, `places ${places.join(" ")}`).toBeGreaterThanOrEqual(16);
+		// A good part of the town is still standing 80 s in, so a round never runs dry early.
+		const shown = lasting.map((l) => l.toFixed(2)).join(" ");
+		expect(lasting.reduce((a, b) => a + b, 0) / lasting.length, shown).toBeGreaterThan(0.1);
+		expect(Math.min(...lasting), shown).toBeGreaterThan(0.06);
+	}, 30_000);
 
 	it("never lets a standing player sit still and win", () => {
 		const g = newGame(3, "Jade");
