@@ -130,11 +130,15 @@
 		radial-gradient(55% 48% at 18% 0%, rgb(255 184 110 / 0.2) 0%, rgb(255 184 110 / 0.07) 45%, transparent 75%),
 		radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-page) 100%, white 4%) 0%, var(--color-page) 45%, var(--color-page-deep) 100%);
 	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23a3d0c0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
-	/* Behind a game scene: Night is a jade dusk over the town. (Not "sky": sky is a law colour.) */
-	--scene-top: #1b4250;
-	--scene-ground: #2c4a3e;
+	/* Behind a game scene: always the day's pale sky over sand, since games are lit by day in both themes. (Not "sky":
+	 * sky is a law colour.) */
+	--scene-top: #cfe9f4;
+	--scene-ground: #f4ead8;
 }
-:root[data-theme="day"] {
+/* Day, and `.scene-day`: words printed straight onto a game's (always daylit) scene, like its title and keyboard hints,
+ * which at Night would be light text on a light sky. */
+:root[data-theme="day"],
+.scene-day {
 	color-scheme: light;
 	--color-page: #d4ebe1;
 	--color-page-deep: #bcdccd;
@@ -155,8 +159,6 @@
 		linear-gradient(118deg, transparent 28%, rgb(255 255 255 / 0.32) 40%, transparent 56%),
 		radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-page) 100%, white 30%) 0%, var(--color-page) 50%, color-mix(in oklab, var(--color-page) 70%, var(--color-page-deep)) 100%);
 	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23335c4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
-	--scene-top: #cfe9f4;
-	--scene-ground: #f4ead8;
 }
 
 /*

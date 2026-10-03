@@ -1,25 +1,18 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { Box3, type DirectionalLight, type Mesh, Object3D, Vector3 } from "three";
 
 /**
  * The town's light: a low warm sun from over the viewer's right shoulder casting soft shadows back and to the left,
  * a sky-and-ground fill so nothing goes dark, and a cool rim from behind that picks out edges against the backdrop.
- * At Night (the album's Night) the sun becomes a pale moon and lamps and windows come on (places ask `useNight`).
+ * Games are always lit by day, whatever the album's Day or Night: the theme dresses the UI round a game, not the game.
+ * (The Night rigs below, a pale moon with lamps and windows lit, stay ready should a game ever want its own night.)
  * Colour stays untone-mapped (the canvas is `flat`) so palette colours read as the same paint everywhere.
  */
 
-/** Whether the album is in Night, live: Night is the default page, Day is `data-theme="day"`. */
+/** Whether a game scene is drawn at night: never. The album's Night themes the UI round a game only (see above). */
 export function useNight() {
-	const read = () => typeof document !== "undefined" && document.documentElement.dataset.theme !== "day";
-	const [night, setNight] = useState(read);
-	useEffect(() => {
-		const root = document.documentElement;
-		const o = new MutationObserver(() => setNight(root.dataset.theme !== "day"));
-		o.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-		return () => o.disconnect();
-	}, []);
-	return night;
+	return false;
 }
 
 const RIG = {

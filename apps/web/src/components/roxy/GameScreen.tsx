@@ -84,7 +84,8 @@ export function GameScreen({
 			>
 				<div className="flex min-w-0 items-start gap-3">
 					<div className="pointer-events-auto">{back}</div>
-					<div className="min-w-0 select-none pt-0.5">
+					{/* Printed on the scene itself, which is daylit in both themes: Day's ink (`.scene-day`), so it reads at Night. */}
+					<div className="scene-day min-w-0 select-none pt-0.5 text-page-ink">
 						<p className="eyebrow">{eyebrow}</p>
 						<h1 className="mt-1 font-display text-[clamp(1.6rem,4vw,2.75rem)] font-semibold leading-[0.95] tracking-tight [&>span]:text-roxy">
 							{title}
@@ -129,7 +130,7 @@ export function GameScreen({
 					{/* Hints only where there's room beside the actions (a container query on this corner). */}
 					<div className="@container flex min-w-0 items-end">
 						{hints && (
-							<div className={`${FINE_ONLY} flex-wrap items-center gap-x-3 gap-y-1.5 text-xs whitespace-nowrap text-page-muted`}>
+							<div className={`scene-day ${FINE_ONLY} flex-wrap items-center gap-x-3 gap-y-1.5 text-xs whitespace-nowrap text-page-muted`}>
 								{hints}
 							</div>
 						)}
