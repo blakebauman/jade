@@ -135,7 +135,8 @@ const STANDING = (
 
 /**
  * The lamps' glass: glows a little by day, properly at Night, when each throws a warm pool of light. The lights are
- * always there (off by day), so turning Night on doesn't recompile every material in the park.
+ * only there at Night: a light at nothing still costs every pixel, every frame (turning Night on recompiles the
+ * materials once instead).
  */
 function LampGlow() {
 	const night = useNight();
@@ -144,7 +145,7 @@ function LampGlow() {
 			{LAMPS.map(([x, , z]) => (
 				<group key={x} position={[x, 0, z]}>
 					<Ball r={0.18} p={[0, 2.3, 0]} c="#fff2b8" e={night ? 1.6 : 0.4} />
-					<pointLight position={[0, 2.1, 0]} color="#ffc86e" intensity={night ? 6 : 0} distance={3.8} decay={1.4} />
+					{night && <pointLight position={[0, 2.1, 0]} color="#ffc86e" intensity={6} distance={3.8} decay={1.4} />}
 				</group>
 			))}
 		</>

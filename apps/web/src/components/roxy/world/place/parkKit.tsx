@@ -738,8 +738,8 @@ export function LampPost({ at }: { at: V3 }) {
 			</mesh>
 			<Cyl r={0.025} r2={0.21} h={0.16} p={[0, 2.3, 0]} c="#2f3848" seg={4} rot={[0, Math.PI / 4, 0]} />
 			<Ball r={0.035} p={[0, 2.41, 0]} c="#2f3848" />
-			{/* Always there (off by day), so turning Night on doesn't recompile every material in the park. */}
-			<pointLight position={[0, 2.05, 0]} color="#ffcf80" intensity={night ? 5 : 0} distance={4.5} decay={1.6} />
+			{/* Only at Night: a light at nothing still costs every pixel, every frame. */}
+			{night && <pointLight position={[0, 2.05, 0]} color="#ffcf80" intensity={5} distance={4.5} decay={1.6} />}
 		</group>
 	);
 }

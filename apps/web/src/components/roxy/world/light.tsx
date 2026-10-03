@@ -32,6 +32,8 @@ const SUN = [7, 13, 6] as const;
 
 export function TownLights({ area }: { area: { w: number; d: number } }) {
 	const night = useNight();
+	// No shadows (a device without a real graphics chip): nothing to flag, and flagging would recompile every material.
+	const shadows = useThree((s) => s.gl.shadowMap.enabled);
 	const rig = night ? RIG.night : RIG.day;
 	const key = useRef<DirectionalLight>(null);
 	const target = useRef(new Object3D());
@@ -62,9 +64,9 @@ export function TownLights({ area }: { area: { w: number; d: number } }) {
 		<>
 			<primitive object={target.current} />
 			<hemisphereLight args={[rig.sky, rig.ground, rig.fill]} />
-			<directionalLight ref={key} position={[cx + SUN[0], SUN[1], cz + SUN[2]]} color={rig.sun} intensity={rig.key} castShadow />
+			<directionalLight ref={key} position={[cx + SUN[0], SUN[1], cz + SUN[2]]} color={rig.sun} intensity={rig.key} castShadow={shadows} />
 			<directionalLight position={[cx - 9, 6, cz - 10]} color={rig.rim} intensity={rig.rimI} />
-			<ShadowFlags />
+			{shadows && <ShadowFlags />}
 		</>
 	);
 }

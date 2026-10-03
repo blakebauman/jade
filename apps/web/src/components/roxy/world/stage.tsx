@@ -53,6 +53,7 @@ export function WorldCanvas({
 	const view = useRef<View>({ turn: 0, yaw, drag: null, idleAt: 0 });
 	const dragged = useRef(false);
 	const onCreated = useContextLoss();
+	const software = useMemo(softwareGl, []);
 	const end = (id: number) => {
 		const v = view.current;
 		if (v.drag?.id !== id) return;
@@ -93,10 +94,10 @@ export function WorldCanvas({
 			<Canvas
 				orthographic
 				flat
-				shadows={town ? "percentage" : false}
+				shadows={town && !software ? "percentage" : false}
 				frameloop="demand"
 				onCreated={onCreated}
-				dpr={[1, 2]}
+				dpr={software ? 1 : [1, 2]}
 				camera={{ position: centre(area).add(CAMERA_OFFSET).toArray(), near: 0.1, far: 200, zoom: 50 }}
 				gl={{ alpha: true, antialias: true }}
 				aria-label={label}
@@ -106,6 +107,7 @@ export function WorldCanvas({
 					<Focus.Provider value={focus}>
 						<ViewContext.Provider value={view}>
 							<CameraRig area={area} />
+							<Thrift />
 							{import.meta.env.DEV && <Diagnostics />}
 							{town ? (
 								<TownLights area={area} />
@@ -155,6 +157,54 @@ function Diagnostics() {
 			shadows: gl.shadowMap.enabled,
 		};
 	});
+	return null;
+}
+
+/**
+ * Whether WebGL is running without a real graphics chip (SwiftShader, llvmpipe: a machine with no GPU, like a test
+ * runner, or a browser that's given up on its GPU). Then there's no sun shadow and no high-density drawing, which
+ * would leave the town at a frame a second. Asked once, on a scratch canvas.
+ */
+let software: boolean | undefined;
+function softwareGl() {
+	if (software !== undefined) return software;
+	software = false;
+	try {
+		const gl = document.createElement("canvas").getContext("webgl2") ?? document.createElement("canvas").getContext("webgl");
+		const info = gl?.getExtension("WEBGL_debug_renderer_info");
+		const name = gl && info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
+		software = /swiftshader|llvmpipe|softpipe|software|basic render/i.test(name);
+		gl?.getExtension("WEBGL_lose_context")?.loseContext();
+	} catch {}
+	return software;
+}
+
+/**
+ * Keeps a slow device moving: if drawing a frame takes more than 40ms (timed round the render itself, so a scene
+ * that's idling slowly on purpose doesn't count) for a run of frames, the scene drops to one pixel per point, a big
+ * saving on a high-density screen. It never goes back up during a visit.
+ */
+function Thrift() {
+	const gl = useThree((s) => s.gl);
+	const setDpr = useThree((s) => s.setDpr);
+	useEffect(() => {
+		const render = gl.render.bind(gl);
+		let slow = 0;
+		let done = false;
+		gl.render = (scene, camera) => {
+			const t = performance.now();
+			render(scene, camera);
+			if (done) return;
+			slow = performance.now() - t > 40 ? slow + 1 : Math.max(0, slow - 1);
+			if (slow > 20 && gl.getPixelRatio() > 1) {
+				done = true;
+				setDpr(1);
+			}
+		};
+		return () => {
+			gl.render = render;
+		};
+	}, [gl, setDpr]);
 	return null;
 }
 
@@ -350,7 +400,8 @@ export function Walkers({
 		const r = roxy.current;
 		const p = petRef.current;
 		if (!r || !p) return;
-		const step = Math.min(dt, 0.05);
+		// Capped so a stall doesn't teleport her, but loosely: on a slow device she still walks at her real pace.
+		const step = Math.min(dt, 0.15);
 		const t = state.clock.elapsedTime;
 		const facing = view?.current.yaw ?? yaw;
 		const d = drive?.current;
