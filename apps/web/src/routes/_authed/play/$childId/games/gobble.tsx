@@ -269,13 +269,33 @@ function GobbleScreen() {
 	const out = hud.back > 0;
 	const won = phase === "over" && hud.rank === 1;
 
+	// iOS still turns a held finger into a scroll, a bounce or the magnifier (and cancels the drag) unless the touch
+	// itself is refused, which takes a listener that isn't passive (React's are). Only during a round: elsewhere taps
+	// on the scene stay ordinary.
+	const sceneRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const el = sceneRef.current;
+		if (!el || phase !== "play") return;
+		const refuse = (e: TouchEvent) => {
+			if (e.cancelable) e.preventDefault();
+		};
+		el.addEventListener("touchstart", refuse, { passive: false });
+		el.addEventListener("touchmove", refuse, { passive: false });
+		return () => {
+			el.removeEventListener("touchstart", refuse);
+			el.removeEventListener("touchmove", refuse);
+		};
+	}, [phase]);
+
 	function onPointerDown(e: React.PointerEvent) {
 		if (phase !== "play" || drag.current.id >= 0) return;
 		// No text selection or focus change while steering.
 		e.preventDefault();
 		sound.unlock();
 		drag.current = { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0 };
-		e.currentTarget.setPointerCapture?.(e.pointerId);
+		// A finger is already held by what it touched (the canvas), and its events reach here. Taking it over would
+		// make iOS report the canvas losing it, ending the drag as it starts; only a mouse needs holding.
+		if (e.pointerType === "mouse") e.currentTarget.setPointerCapture?.(e.pointerId);
 		setStick({ x: e.clientX, y: e.clientY, dx: 0, dy: 0 });
 	}
 	function onPointerMove(e: React.PointerEvent) {
@@ -298,6 +318,8 @@ function GobbleScreen() {
 	}
 	function onPointerEnd(e: React.PointerEvent) {
 		if (drag.current.id !== e.pointerId) return;
+		// Capture lost by something inside (the canvas) bubbles up here too; only this element's own loss ends it.
+		if (e.type === "lostpointercapture" && e.target !== e.currentTarget) return;
 		drag.current = { id: -1, ox: 0, oy: 0, x: 0, y: 0 };
 		setStick(null);
 	}
@@ -308,8 +330,9 @@ function GobbleScreen() {
 			goInProgress={phase === "play" || phase === "paused"}
 			scene={
 				<div
+					ref={sceneRef}
 					className="relative size-full select-none"
-					style={{ touchAction: "none", WebkitUserSelect: "none" }}
+					style={{ touchAction: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
 					onPointerDown={onPointerDown}
 					onPointerMove={onPointerMove}
 					onPointerUp={onPointerEnd}
