@@ -6,10 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Flame, Play, Star } from "lucide-react";
 import { BadgeIcon, badgeFace } from "#/components/BadgeIcon.tsx";
+import { PlayClosed, PlayWallet, usePlacedToday } from "#/components/play/PlayBits.tsx";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
 import type { Progress } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { resumableMath } from "#/lib/mathRound.ts";
+import { playQuery } from "#/lib/play.ts";
 import { progressQuery } from "#/lib/queries.ts";
 import { resumableRound } from "#/lib/round.ts";
 import { roxyQuery, shownLook } from "#/lib/roxy.ts";
@@ -20,6 +22,7 @@ export const Route = createFileRoute("/_authed/play/$childId/")({
 		Promise.all([
 			context.queryClient.prefetchQuery(progressQuery(params.childId)),
 			context.queryClient.prefetchQuery(roxyQuery(params.childId)),
+			context.queryClient.prefetchQuery({ ...playQuery(params.childId), staleTime: 0 }),
 		]),
 	component: SubjectHub,
 });
@@ -37,6 +40,7 @@ function PlaceSticker({
 	label,
 	note,
 	tilt,
+	placed,
 	children,
 }: {
 	to: "/play/$childId/spelling" | "/play/$childId/math" | "/play/$childId/games";
@@ -45,6 +49,8 @@ function PlaceSticker({
 	label: string;
 	note: string;
 	tilt: number;
+	/** Stuck down just now (Play opening after practice), so it's placed with the sticker's own motion. */
+	placed?: boolean;
 	children?: React.ReactNode;
 }) {
 	const child = useChild();
@@ -53,7 +59,7 @@ function PlaceSticker({
 			to={to}
 			params={{ childId: child.id }}
 			onClick={() => speaker.unlock()}
-			className={`sticker flex items-stretch gap-5 ${word ? "min-h-48 p-6 md:p-7" : "min-h-32 p-4 md:p-5"}`}
+			className={`sticker flex items-stretch gap-5 ${word ? "min-h-48 p-6 md:p-7" : "min-h-32 p-4 md:p-5"} ${placed ? "animate-sticker-place" : ""}`}
 			data-place={place}
 			style={{ "--tilt": `${tilt}deg` } as React.CSSProperties}
 		>
@@ -119,6 +125,8 @@ function SubjectHub() {
 	const child = useChild();
 	const { data: progress } = useQuery(progressQuery(child.id));
 	const { data: roxy } = useQuery(roxyQuery(child.id));
+	const { data: play } = useQuery(playQuery(child.id));
+	const placed = usePlacedToday(child.id, play);
 	const spellingLeft = resumableRound(child.id);
 	const mathLeft = resumableMath(child.id);
 	const spellingDue = progress?.reviewDue.length ?? 0;
@@ -142,14 +150,13 @@ function SubjectHub() {
 							</dt>
 							<dd className="font-display text-xl font-semibold tabular-nums">{progress.stats.currentStreak}</dd>
 						</div>
-						<div className="foil px-3.5 py-1.5" title="Stars">
+						{/* Every star ever earned: a record of practice, which games never take from. */}
+						<div className="foil px-3.5 py-1.5" title="Stars earned">
 							<dt>
 								<Star className="size-5 fill-current" aria-hidden />
-								<span className="sr-only">Stars</span>
+								<span className="sr-only">Stars earned</span>
 							</dt>
-							<dd className="font-display text-xl font-semibold tabular-nums">
-								{progress.stats.totalStars - (progress.stats.starsSpent ?? 0)}
-							</dd>
+							<dd className="font-display text-xl font-semibold tabular-nums">{progress.stats.totalStars}</dd>
 						</div>
 					</dl>
 				)}
@@ -228,24 +235,38 @@ function SubjectHub() {
 							note={factsDue > 0 ? `${factsDue} ${factsDue === 1 ? "fact" : "facts"} to review` : "Facts, fractions, puzzles"}
 						/>
 					</div>
+					{progress && progress.badges.length > 0 && <StickerSheet badges={progress.badges} />}
 				</section>
 
 				<div className="spine h-6 md:h-auto" aria-hidden />
 
-				<section className="space-y-10" aria-labelledby="play-heading">
-					<h2 id="play-heading" className="sr-only">
-						Play
-					</h2>
-					<PlaceSticker to="/play/$childId/games" place="roxy" label="Games" note="Style your Roxy" tilt={2}>
-						<span className="block w-20 shrink-0 overflow-hidden rounded-xl md:w-24" aria-hidden>
-							{roxy ? (
-								<RoxyFigure look={shownLook(child.id, roxy)} className="block h-auto w-full" />
-							) : (
-								<span className="block aspect-[5/8] bg-page-deep/40" />
-							)}
-						</span>
-					</PlaceSticker>
-					{progress && progress.badges.length > 0 && <StickerSheet badges={progress.badges} />}
+				<section className="space-y-6" aria-labelledby="play-heading">
+					<div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3">
+						<h2 id="play-heading" className="text-3xl font-semibold">
+							What shall we play?
+						</h2>
+						{play?.open && <PlayWallet status={play} />}
+					</div>
+					{play && !play.open ? (
+						<PlayClosed childId={child.id} status={play} />
+					) : (
+						<PlaceSticker
+							to="/play/$childId/games"
+							place="roxy"
+							label="Play"
+							note="Roxy, the town and Gobble Town"
+							tilt={2}
+							placed={placed}
+						>
+							<span className="block w-20 shrink-0 overflow-hidden rounded-xl md:w-24" aria-hidden>
+								{roxy ? (
+									<RoxyFigure look={shownLook(child.id, roxy)} className="block h-auto w-full" />
+								) : (
+									<span className="block aspect-[5/8] bg-page-deep/40" />
+								)}
+							</span>
+						</PlaceSticker>
+					)}
 				</section>
 			</div>
 		</main>

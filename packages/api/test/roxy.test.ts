@@ -8,7 +8,7 @@ type Studio = {
 	wornLookId: string | null;
 	looks: { id: string; name: string; look: Look }[];
 	unlocked: string[];
-	balance: number;
+	wallet: { free: boolean; tickets: number; stars: number | null };
 	holidays: { id: string; gift: string; claimed: boolean }[];
 	holidaysOff: string[];
 	home: Home;
@@ -33,6 +33,14 @@ const giveStars = (childId: string, stars: number) =>
 		.bind(childId, stars)
 		.run();
 
+/** Tickets come from games (finds around town); here they're granted straight into the table. */
+const giveTickets = (childId: string, tickets: number) =>
+	env.DB.prepare(
+		"insert into child_stats (child_id, tickets_earned) values (?, ?) on conflict(child_id) do update set tickets_earned = excluded.tickets_earned",
+	)
+		.bind(childId, tickets)
+		.run();
+
 const today = () => new Date().toISOString().slice(0, 10);
 
 describe("roxy", () => {
@@ -40,23 +48,37 @@ describe("roxy", () => {
 		const { id, studio, base } = await family();
 		const first = await studio();
 		expect(first.current).toEqual(starterLook(id));
-		expect(first).toMatchObject({ looks: [], unlocked: [], balance: 0, wornLookId: null });
+		expect(first).toMatchObject({ looks: [], unlocked: [], wallet: { free: false, tickets: 0, stars: null }, wornLookId: null });
 		expect((await call(base, { cookie: await signUp() })).status).toBe(404);
 	});
 
-	it("spends stars once per item, and never more than the child has", async () => {
-		const { id, studio, post, cookie } = await family();
+	it("spends tickets once per item, and never more than the child has", async () => {
+		const { id, studio, post } = await family();
 		expect((await post("/unlock", { itemId: "hat-crown" })).status).toBe(409);
-		await giveStars(id, 45);
+		await giveTickets(id, 45);
 		const ok = await post("/unlock", { itemId: "hat-crown" });
-		expect(await ok.json()).toEqual({ ok: true, balance: 15 });
+		expect(await ok.json()).toEqual({ ok: true, wallet: { free: false, tickets: 15, stars: null } });
 		// Again: already owned, no charge.
-		expect(await (await post("/unlock", { itemId: "hat-crown" })).json()).toEqual({ ok: true, balance: 15 });
+		expect(((await (await post("/unlock", { itemId: "hat-crown" })).json()) as Studio).wallet.tickets).toBe(15);
 		const short = await post("/unlock", { itemId: "form-fox" });
 		expect(short.status).toBe(409);
-		expect(await short.json()).toEqual({ error: "stars", balance: 15 });
+		expect(await short.json()).toMatchObject({ error: "tickets" });
 		expect((await studio()).unlocked).toEqual(["hat-crown"]);
-		// Lifetime stars (and the star badges) are untouched.
+	});
+
+	it("takes stars only while a parent lets them be spent in games, and never touches lifetime stars", async () => {
+		const { id, post, cookie } = await family();
+		await giveStars(id, 45);
+		const off = await post("/unlock", { itemId: "hat-crown", pay: "stars" });
+		expect(off.status).toBe(403);
+		expect(await off.json()).toEqual({ error: "stars-off" });
+		const link = { free: false, stars: true, practiceFirst: false, goal: "round", timeCosts: false };
+		expect((await call(`/api/children/${id}/play`, { method: "PUT", cookie, json: link })).status).toBe(200);
+		const ok = await post("/unlock", { itemId: "hat-crown", pay: "stars" });
+		expect(await ok.json()).toEqual({ ok: true, wallet: { free: false, tickets: 0, stars: 15 } });
+		const short = await post("/unlock", { itemId: "form-fox", pay: "stars" });
+		expect(short.status).toBe(409);
+		expect(await short.json()).toMatchObject({ error: "stars", wallet: { stars: 15 } });
 		const progress = (await (await call(`/api/children/${id}/progress`, { cookie })).json()) as {
 			stats: { totalStars: number; starsSpent: number };
 		};
@@ -140,19 +162,17 @@ describe("roxy", () => {
 	});
 
 	it("never sells a holiday's gift: it's only claimed, free", async () => {
-		const { id, studio, post, cookie } = await family();
-		await giveStars(id, 50);
+		const { id, studio, post } = await family();
+		await giveTickets(id, 50);
 		const res = await post("/unlock", { itemId: "hat-witch" });
 		expect(res.status).toBe(403);
 		expect(await res.json()).toEqual({ error: "gift" });
-		expect(await studio()).toMatchObject({ unlocked: [], balance: 50 });
-		const progress = (await (await call(`/api/children/${id}/progress`, { cookie })).json()) as { stats: { starsSpent: number } };
-		expect(progress.stats.starsSpent).toBe(0);
+		expect(await studio()).toMatchObject({ unlocked: [], wallet: { tickets: 50 } });
 	});
 
 	it("takes off a holiday a parent turned off instead of refusing every save", async () => {
 		const { id, studio, base, cookie, post } = await family();
-		await giveStars(id, 100);
+		await giveTickets(id, 100);
 		for (const itemId of ["outer-bat", "stage-halloween", "pumpkins"]) expect((await post("/unlock", { itemId })).status).toBe(200);
 		const putLook = (look: Look) => call(`${base}/current`, { method: "PUT", cookie, json: { look } });
 		const putHome = (home: Home) => call(`${base}/home`, { method: "PUT", cookie, json: { home } });
@@ -189,17 +209,18 @@ describe("roxy", () => {
 		expect(((await (await put(room)).json()) as Home).items.map((p) => p.uid)).not.toContain("x");
 		const piano = { ...starterHome(), items: [{ uid: "p", item: "piano", x: 4, z: 6, rot: 0 }] };
 		expect((await put(piano)).status).toBe(403);
-		await giveStars(id, 30);
+		await giveTickets(id, 30);
 		expect((await post("/unlock", { itemId: "piano" })).status).toBe(200);
 		expect((await put(piano)).status).toBe(200);
 		expect((await studio()).home.items).toEqual([{ uid: "p", item: "piano", x: 4, z: 6, rot: 0 }]);
 	});
 
-	it("remembers what a child has found around town, once each", async () => {
+	it("remembers what a child has found around town, once each, and pays tickets the first time", async () => {
 		const { studio, post } = await family();
 		expect((await studio()).finds).toEqual([]);
-		expect((await post("/find", { findId: "park-acorn" })).status).toBe(200);
-		expect((await post("/find", { findId: "park-acorn" })).status).toBe(200);
+		expect(await (await post("/find", { findId: "park-acorn" })).json()).toEqual({ ok: true, tickets: 10 });
+		expect(await (await post("/find", { findId: "park-acorn" })).json()).toEqual({ ok: true, tickets: 0 });
+		expect((await studio()).wallet.tickets).toBe(10);
 		expect((await post("/find", { findId: "moon-rock" })).status).toBe(404);
 		expect((await studio()).finds).toEqual(["park-acorn"]);
 	});

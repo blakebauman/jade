@@ -42,16 +42,17 @@ import {
 	Scissors,
 	Shirt,
 	Smile,
-	Star,
 	Undo2,
 } from "lucide-react";
 import { Component, lazy, type ReactNode, Suspense, useId, useMemo, useState } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
+import { BuyChoice, CornerWallet } from "#/components/play/BuyChoice.tsx";
 import { ApiError } from "#/lib/api.ts";
 import { useOnline } from "#/lib/hooks.ts";
 import {
 	LOOK_NAMES,
 	type OpenHoliday,
+	type Pay,
 	roxyApi,
 	roxyQuery,
 	type Studio as StudioData,
@@ -59,6 +60,7 @@ import {
 	useRevealed,
 	useRoxyDraft,
 	useSendFinds,
+	type Wallet,
 } from "#/lib/roxy.ts";
 import { Destinations } from "./Destinations.tsx";
 import { GameLoading } from "./GameLoading.tsx";
@@ -135,10 +137,10 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		draft.set(wear(draft.look, slot, { ...worn, [which]: key }));
 	}
 
-	async function unlock(item: Item, slot: Slot) {
+	async function unlock(item: Item, slot: Slot, pay: Pay) {
 		setBusy(true);
 		try {
-			await roxyApi.unlock(childId, item.id);
+			await roxyApi.unlock(childId, item.id, pay);
 			// The look as it is now, not as it was when "Unlock" was tapped.
 			draft.set((look) => tryOn(look, slot, item));
 			setTrying(null);
@@ -146,7 +148,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		} catch (err) {
 			setMessage(
 				err instanceof ApiError && err.status === 409
-					? "Not enough stars yet. Keep practicing to earn more!"
+					? "That costs a bit more than you have right now."
 					: "Couldn’t unlock that. Check the connection and try again.",
 			);
 		} finally {
@@ -207,12 +209,14 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 			title={<>Roxy{shown.slots.pet && shown.petName && <span> and {shown.petName}</span>}</>}
 			orbs={
 				<>
-					<p className="glass glass-pill" title="Stars to spend">
-						<Star className="size-5 fill-current" aria-hidden />
-						<span className="font-display text-xl font-semibold tabular-nums">{data.balance}</span>
-						<span className="sr-only">stars to spend</span>
-					</p>
-					<Link to="/play/$childId/games/roxy/home" params={{ childId }} className="orb glass" aria-label="Home" title="Roxy’s home">
+					<CornerWallet wallet={data.wallet} />
+					<Link
+						to="/play/$childId/games/roxy/home"
+						params={{ childId }}
+						className="orb glass max-md:hidden"
+						aria-label="Home"
+						title="Roxy’s home"
+					>
 						<House aria-hidden />
 					</Link>
 					<Link
@@ -342,11 +346,11 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 						<UnlockPrompt
 							key={trying.item.id}
 							item={trying.item}
-							balance={data.balance}
+							wallet={data.wallet}
 							online={online}
 							busy={busy}
 							giftOpen={holidays.find((h) => trying.item.gift && h.id === trying.item.holiday)}
-							onUnlock={() => void unlock(trying.item, trying.slot)}
+							onUnlock={(pay) => void unlock(trying.item, trying.slot, pay)}
 							onClaim={(h) => void claim(h)}
 							onCancel={() => setTrying(null)}
 						/>
@@ -607,12 +611,12 @@ function ItemButton({
 
 type UnlockProps = {
 	item: Item;
-	balance: number;
+	wallet: Wallet;
 	online: boolean;
 	busy: boolean;
 	/** For a holiday's gift: its holiday, while that's open. */
 	giftOpen: OpenHoliday | undefined;
-	onUnlock: () => void;
+	onUnlock: (pay: Pay) => void;
 	onClaim: (holiday: OpenHoliday) => void;
 	onCancel: () => void;
 };
@@ -626,7 +630,7 @@ function UnlockPrompt(props: UnlockProps) {
 	);
 }
 
-function UnlockChoice({ item, balance, online, busy, giftOpen, onUnlock, onClaim, onCancel }: UnlockProps) {
+function UnlockChoice({ item, wallet, online, busy, giftOpen, onUnlock, onClaim, onCancel }: UnlockProps) {
 	// A holiday's gift is never bought: it's opened free while the holiday is on, and waits for it otherwise.
 	if (item.gift && !giftOpen)
 		return (
@@ -654,7 +658,7 @@ function UnlockChoice({ item, balance, online, busy, giftOpen, onUnlock, onClaim
 			<Confirm
 				className="mt-6"
 				message={`Open your free ${item.label.toLowerCase()}?`}
-				note={`It’s a ${giftOpen.label} gift. No stars needed.`}
+				note={`It’s a ${giftOpen.label} gift. It’s free.`}
 				confirmLabel="Open it"
 				cancelLabel="Not now"
 				busy={busy}
@@ -662,36 +666,15 @@ function UnlockChoice({ item, balance, online, busy, giftOpen, onUnlock, onClaim
 				onCancel={onCancel}
 			/>
 		);
-	if (!online)
-		return (
-			<p role="status" className="patch mt-6 p-4">
-				Unlocking {item.label} needs the internet. You can still try everything you own.
-				<button type="button" className="key ml-3" onClick={onCancel}>
-					OK
-				</button>
-			</p>
-		);
-	if (balance < item.cost)
-		return (
-			<p role="status" className="patch mt-6 flex flex-wrap items-center justify-between gap-3 p-4">
-				<span>
-					<span className="font-display text-lg font-semibold">{item.label}</span> needs {item.cost} stars. Earn {item.cost - balance} more
-					in Spelling or Math!
-				</span>
-				<button type="button" className="key" onClick={onCancel}>
-					OK
-				</button>
-			</p>
-		);
 	return (
-		<Confirm
+		<BuyChoice
 			className="mt-6"
-			message={`Unlock ${item.label} for ${item.cost} stars?`}
-			note={`You have ${balance}. It’s yours to keep.`}
-			confirmLabel="Unlock"
-			cancelLabel="Not now"
+			name={item.label}
+			cost={item.cost}
+			wallet={wallet}
+			online={online}
 			busy={busy}
-			onConfirm={onUnlock}
+			onBuy={onUnlock}
 			onCancel={onCancel}
 		/>
 	);

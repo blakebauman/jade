@@ -4,18 +4,25 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarHeart, MapPinned } from "lucide-react";
 import { useMemo } from "react";
+import { MoreTime, PlayClosed, PlayWallet } from "#/components/play/PlayBits.tsx";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
 import { useChild } from "#/lib/child.ts";
+import { playQuery } from "#/lib/play.ts";
 import { roxyQuery, shownLook } from "#/lib/roxy.ts";
 
 export const Route = createFileRoute("/_authed/play/$childId/games/")({
-	loader: ({ context, params }) => context.queryClient.prefetchQuery(roxyQuery(params.childId)),
+	loader: ({ context, params }) =>
+		Promise.all([
+			context.queryClient.prefetchQuery(roxyQuery(params.childId)),
+			context.queryClient.prefetchQuery({ ...playQuery(params.childId), staleTime: 0 }),
+		]),
 	component: GamesHome,
 });
 
 function GamesHome() {
 	const child = useChild();
 	const { data: roxy } = useQuery(roxyQuery(child.id));
+	const { data: play } = useQuery(playQuery(child.id));
 	const holiday = roxy?.holidays[0];
 	const best = useMemo(() => {
 		try {
@@ -35,79 +42,93 @@ function GamesHome() {
 				<span className="font-display text-2xl font-medium">{child.name}</span>
 			</header>
 
-			<h1 className="mt-12 text-3xl font-semibold">Games</h1>
-			<ul className="mt-5 grid gap-6 md:grid-cols-2">
-				<li>
-					<Link
-						to="/play/$childId/games/roxy"
-						params={{ childId: child.id }}
-						className="sticker flex items-center gap-5 p-5 md:p-6"
-						data-place="roxy"
-						style={{ "--tilt": "-1.5deg" } as React.CSSProperties}
-					>
-						<span className="block w-28 shrink-0 overflow-hidden rounded-xl md:w-32" aria-hidden>
-							{roxy ? (
-								<RoxyFigure look={shownLook(child.id, roxy)} className="block h-auto w-full" />
-							) : (
-								<span className="block aspect-[5/8] bg-page-deep/40" />
-							)}
-						</span>
-						<span className="min-w-0 space-y-2">
-							<span className="block font-display text-3xl font-semibold">Roxy</span>
-							<span className="block text-sm font-medium">Style your own character, then turn them into an animal with a magic gem.</span>
-							{holiday && (
-								<span className="foil gap-1.5 px-3 py-1 text-sm">
-									<CalendarHeart className="size-4" aria-hidden /> {holiday.label} collection
-								</span>
-							)}
-						</span>
-					</Link>
-				</li>
-				<li>
-					<Link
-						to="/play/$childId/games/roxy/town"
-						params={{ childId: child.id }}
-						className="sticker flex items-center gap-5 p-5 md:p-6"
-						data-place="roxy"
-						style={{ "--tilt": "1.5deg" } as React.CSSProperties}
-					>
-						<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
-							<MapPinned className="size-14" />
-						</span>
-						<span className="min-w-0 space-y-2">
-							<span className="block font-display text-3xl font-semibold">Town</span>
-							<span className="block text-sm font-medium">
-								Take Roxy and your pet to the park, the pet shop and school, and find what’s hidden.
+			<div className="mt-12 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+				<h1 className="text-3xl font-semibold">Play</h1>
+				{play?.open && <PlayWallet status={play} />}
+			</div>
+			{play?.open && (
+				<div className="mt-4">
+					<MoreTime childId={child.id} status={play} />
+				</div>
+			)}
+			{play && !play.open ? (
+				<div className="mt-6">
+					<PlayClosed childId={child.id} status={play} level="h2" />
+				</div>
+			) : (
+				<ul className="mt-6 grid gap-6 md:grid-cols-2">
+					<li>
+						<Link
+							to="/play/$childId/games/roxy"
+							params={{ childId: child.id }}
+							className="sticker flex items-center gap-5 p-5 md:p-6"
+							data-place="roxy"
+							style={{ "--tilt": "-1.5deg" } as React.CSSProperties}
+						>
+							<span className="block w-28 shrink-0 overflow-hidden rounded-xl md:w-32" aria-hidden>
+								{roxy ? (
+									<RoxyFigure look={shownLook(child.id, roxy)} className="block h-auto w-full" />
+								) : (
+									<span className="block aspect-[5/8] bg-page-deep/40" />
+								)}
 							</span>
-							{roxy && (
-								<span className="foil gap-1.5 px-3 py-1 text-sm">
-									{roxy.finds.length} of {FINDS.length} found
-								</span>
-							)}
-						</span>
-					</Link>
-				</li>
-				<li>
-					<Link
-						to="/play/$childId/games/gobble"
-						params={{ childId: child.id }}
-						className="sticker flex items-center gap-5 p-5 md:p-6"
-						data-place="roxy"
-						style={{ "--tilt": "-1deg" } as React.CSSProperties}
-					>
-						<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
-							<HoleArt />
-						</span>
-						<span className="min-w-0 space-y-2">
-							<span className="block font-display text-3xl font-semibold">Gobble Town</span>
-							<span className="block text-sm font-medium">
-								Be a hungry hole! Gobble flowers, then cars, then whole houses, and be the biggest in town.
+							<span className="min-w-0 space-y-2">
+								<span className="block font-display text-3xl font-semibold">Roxy</span>
+								<span className="block text-sm font-medium">Style your own character, then turn them into an animal with a magic gem.</span>
+								{holiday && (
+									<span className="inline-flex items-center gap-1.5 text-sm font-medium">
+										<CalendarHeart className="size-4" aria-hidden /> {holiday.label} collection
+									</span>
+								)}
 							</span>
-							{best > 0 && <span className="block text-sm font-semibold">Your best: {best}</span>}
-						</span>
-					</Link>
-				</li>
-			</ul>
+						</Link>
+					</li>
+					<li>
+						<Link
+							to="/play/$childId/games/roxy/town"
+							params={{ childId: child.id }}
+							className="sticker flex items-center gap-5 p-5 md:p-6"
+							data-place="roxy"
+							style={{ "--tilt": "1.5deg" } as React.CSSProperties}
+						>
+							<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
+								<MapPinned className="size-14" />
+							</span>
+							<span className="min-w-0 space-y-2">
+								<span className="block font-display text-3xl font-semibold">Town</span>
+								<span className="block text-sm font-medium">
+									Take Roxy and your pet to the park, the pet shop and school, and find what’s hidden.
+								</span>
+								{roxy && (
+									<span className="inline-flex items-center gap-1.5 text-sm font-medium">
+										{roxy.finds.length} of {FINDS.length} found
+									</span>
+								)}
+							</span>
+						</Link>
+					</li>
+					<li>
+						<Link
+							to="/play/$childId/games/gobble"
+							params={{ childId: child.id }}
+							className="sticker flex items-center gap-5 p-5 md:p-6"
+							data-place="roxy"
+							style={{ "--tilt": "-1deg" } as React.CSSProperties}
+						>
+							<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
+								<HoleArt />
+							</span>
+							<span className="min-w-0 space-y-2">
+								<span className="block font-display text-3xl font-semibold">Gobble Town</span>
+								<span className="block text-sm font-medium">
+									Be a hungry hole! Gobble flowers, then cars, then whole houses, and be the biggest in town.
+								</span>
+								{best > 0 && <span className="inline-flex items-center gap-1.5 text-sm font-medium">Your best: {best}</span>}
+							</span>
+						</Link>
+					</li>
+				</ul>
+			)}
 		</main>
 	);
 }

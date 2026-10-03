@@ -1,14 +1,15 @@
-import { AVATARS, type ChildSettings, FONTS, VOICES } from "@jade/core";
+import { AVATARS, type ChildSettings, FONTS, GOAL_LABEL, minutesLeft, PLAY_GOALS, type PlaySettings, TIME_BLOCK, VOICES } from "@jade/core";
 import { generate, MATH_TOPICS, type Problem as MathProblem, type MathSkill, seeded, TOPIC_LABEL, TOPIC_SKILLS } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { Tile } from "@jade/ui/components/tile";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Check, ChevronDown, Plus, Trash2, Volume2 } from "lucide-react";
+import { Check, ChevronDown, Gift, Plus, Ticket, Trash2, Volume2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
 import { Problem } from "#/components/Problem.tsx";
 import { api, type Child, failure } from "#/lib/api.ts";
+import { playApi, playQuery } from "#/lib/play.ts";
 import { childrenQuery, listsQuery, progressQuery } from "#/lib/queries.ts";
 import { speaker } from "#/lib/speaker.ts";
 
@@ -146,7 +147,8 @@ function useChildUpdate(child: Child) {
 	return { update, status };
 }
 
-type Update = ReturnType<typeof useChildUpdate>;
+/** What a settings group shows about its own save: "Saving…" or "Saved", and what went wrong. */
+type Update = { status: string | null; update: { isError: boolean; error: unknown } };
 
 /** One part of a child's settings, with its own "Saved" and its own error, beside the change that caused them. */
 function Group({ title, save, children }: { title: string; save: Update; children: ReactNode }) {
@@ -323,11 +325,158 @@ function KidEditor({ child, onRemove }: { child: Child; onRemove: () => void }) 
 			</Group>
 
 			<div className="xl:col-span-2">
+				<LearnAndPlay child={child} />
+			</div>
+
+			<div className="xl:col-span-2">
 				<button type="button" className="key" data-variant="felt" onClick={onRemove}>
 					<Trash2 className="size-4" aria-hidden /> Remove this child…
 				</button>
 			</div>
 		</div>
+	);
+}
+
+/**
+ * How games and learning meet for one kid. Games pay their own tickets and stay apart from practice unless the parent
+ * links them: stars that spend in games, practice before play, play time bought with stars. Or games can be free.
+ */
+function LearnAndPlay({ child }: { child: Child }) {
+	const qc = useQueryClient();
+	const { data } = useQuery(playQuery(child.id));
+	const ids = { goal: useId() };
+	const [savedAt, setSavedAt] = useState(0);
+	const [kept, setKept] = useState(0);
+	const save = useMutation({
+		mutationFn: (next: PlaySettings) => playApi.set(child.id, next),
+		onMutate: (next) => {
+			const prev = qc.getQueryData(playQuery(child.id).queryKey);
+			if (prev) qc.setQueryData(playQuery(child.id).queryKey, { ...prev, settings: next });
+			return { prev };
+		},
+		onError: (_e, _n, ctx) => ctx?.prev && qc.setQueryData(playQuery(child.id).queryKey, ctx.prev),
+		onSuccess: (status) => {
+			qc.setQueryData(playQuery(child.id).queryKey, status);
+			setKept(status.kept);
+			setSavedAt(Date.now());
+		},
+	});
+	const [showSaved, setShowSaved] = useState(false);
+	useEffect(() => {
+		if (!savedAt) return;
+		setShowSaved(true);
+		const t = setTimeout(() => setShowSaved(false), 2500);
+		return () => clearTimeout(t);
+	}, [savedAt]);
+	const status = save.isPending ? "Saving…" : save.isError ? null : showSaved ? "Saved" : null;
+	if (!data) return null;
+	const s = data.settings;
+	const set = (patch: Partial<PlaySettings>) => {
+		setKept(0);
+		save.mutate({ ...s, ...patch });
+	};
+	const today =
+		s.practiceFirst || s.timeCosts
+			? [
+					`Today: ${data.today.rounds} ${data.today.rounds === 1 ? "round" : "rounds"}, ${data.today.stars} stars`,
+					...(s.timeCosts ? [`${minutesLeft(data.time.secondsLeft)} min of play time left`] : []),
+				].join(" · ")
+			: null;
+
+	return (
+		<Group title="Learn and Play" save={{ status, update: save }}>
+			<p className="max-w-[65ch] text-sm text-page-muted">
+				Games pay {child.name} tickets to spend in games. Stars from Spelling and Math stay a record of practice, unless you link them
+				below.
+			</p>
+
+			<fieldset className="space-y-2">
+				<legend className="text-sm font-medium">Things in games</legend>
+				<div className="flex flex-wrap gap-2">
+					<button
+						type="button"
+						className="key"
+						data-pressed={!s.free}
+						aria-pressed={!s.free}
+						onClick={() => s.free && set({ free: false })}
+					>
+						<Ticket className="size-5" aria-hidden /> Earn with tickets
+					</button>
+					<button type="button" className="key" data-pressed={s.free} aria-pressed={s.free} onClick={() => !s.free && set({ free: true })}>
+						<Gift className="size-5" aria-hidden /> Free
+					</button>
+				</div>
+				<p className="text-sm text-page-muted">
+					{s.free
+						? `Every outfit, piece of furniture and pet is open. If you switch back, ${child.name} keeps whatever they’re using.`
+						: "Clothes, furniture and pets cost tickets, earned by finding things around town and playing Gobble Town."}
+				</p>
+				{kept > 0 && (
+					<p className="text-sm" role="status">
+						{child.name} kept {kept} {kept === 1 ? "thing" : "things"} they were using.
+					</p>
+				)}
+			</fieldset>
+
+			<fieldset className="space-y-3 border-t border-page-line/50 pt-4">
+				<legend className="sr-only">Link games to learning</legend>
+				<p className="text-sm font-medium">Link games to learning</p>
+				<label className="flex min-h-11 cursor-pointer items-start gap-3">
+					<input
+						type="checkbox"
+						className="mt-2.5 size-6 shrink-0 accent-page-ink"
+						checked={s.stars && !s.free}
+						disabled={s.free}
+						onChange={(e) => set({ stars: e.target.checked })}
+					/>
+					<span className="pt-2 text-sm">
+						Stars can pay for things in games, as well as tickets
+						{s.free && <span className="block text-page-muted">Games are free, so there’s nothing to pay for.</span>}
+					</span>
+				</label>
+				<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+					<label className="flex min-h-11 cursor-pointer items-start gap-3">
+						<input
+							type="checkbox"
+							className="mt-2.5 size-6 shrink-0 accent-page-ink"
+							checked={s.practiceFirst}
+							onChange={(e) => set({ practiceFirst: e.target.checked })}
+						/>
+						<span className="pt-2 text-sm">Practice first: games open after today’s goal</span>
+					</label>
+					{s.practiceFirst && (
+						<label htmlFor={ids.goal} className="ml-9 flex items-center gap-2 sm:ml-0">
+							<span className="sr-only">Today’s goal</span>
+							<select
+								id={ids.goal}
+								className="field w-auto"
+								value={s.goal}
+								onChange={(e) => set({ goal: e.target.value as PlaySettings["goal"] })}
+							>
+								{PLAY_GOALS.map((g) => (
+									<option key={g} value={g}>
+										{GOAL_LABEL[g]}
+									</option>
+								))}
+							</select>
+						</label>
+					)}
+				</div>
+				<label className="flex min-h-11 cursor-pointer items-start gap-3">
+					<input
+						type="checkbox"
+						className="mt-2.5 size-6 shrink-0 accent-page-ink"
+						checked={s.timeCosts}
+						onChange={(e) => set({ timeCosts: e.target.checked })}
+					/>
+					<span className="pt-2 text-sm">
+						Play time costs stars: {TIME_BLOCK.stars} stars for {TIME_BLOCK.minutes} minutes
+						<span className="block text-page-muted">A game that’s under way finishes first, and nothing is lost.</span>
+					</span>
+				</label>
+				{today && <p className="text-sm text-page-muted tabular-nums">{today}</p>}
+			</fieldset>
+		</Group>
 	);
 }
 

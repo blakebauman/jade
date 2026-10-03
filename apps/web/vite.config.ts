@@ -66,8 +66,9 @@ export default defineConfig({
 						options: { cacheName: "jade-data", networkTimeoutSeconds: 4, cacheableResponse: { statuses: [200] } },
 					},
 					{
-						// Roxy's studio. Its `?day=` changes daily, so offline it matches whatever day was last loaded.
-						urlPattern: ({ url, request }) => request.method === "GET" && /^\/api\/children\/[^/]+\/roxy$/.test(url.pathname),
+						// Roxy's studio and the kid's Play status. Their `?day=` changes daily, so offline they match whatever day was
+						// last loaded.
+						urlPattern: ({ url, request }) => request.method === "GET" && /^\/api\/children\/[^/]+\/(roxy|play)$/.test(url.pathname),
 						handler: "NetworkFirst",
 						options: {
 							cacheName: "jade-data",

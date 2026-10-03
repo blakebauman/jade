@@ -13,19 +13,22 @@ export function Confirm({
 	confirmLabel,
 	cancelLabel = "Cancel",
 	onConfirm,
+	choices,
 	onCancel,
 	busy,
 	className = "",
 }: {
 	message: ReactNode;
 	note?: ReactNode;
-	confirmLabel: string;
 	cancelLabel?: string;
-	onConfirm: () => void;
 	onCancel: () => void;
 	busy?: boolean;
 	className?: string;
-}) {
+} & (
+	| { confirmLabel: string; onConfirm: () => void; choices?: never }
+	/** More than one way to say yes ("20 tickets", "20 stars"), each after the safe choice. */
+	| { choices: { label: ReactNode; onChoose: () => void; key: string }[]; confirmLabel?: never; onConfirm?: never }
+)) {
 	const id = useId();
 	const cancel = useRef<HTMLButtonElement>(null);
 	// Latest callback without re-running the effect: callers pass a new function each render, and re-running would
@@ -69,9 +72,17 @@ export function Confirm({
 				<button ref={cancel} type="button" className="key" onClick={onCancel}>
 					{cancelLabel}
 				</button>
-				<button type="button" className="key" disabled={busy} onClick={onConfirm}>
-					{confirmLabel}
-				</button>
+				{choices ? (
+					choices.map((c) => (
+						<button key={c.key} type="button" className="key" disabled={busy} onClick={c.onChoose}>
+							{c.label}
+						</button>
+					))
+				) : (
+					<button type="button" className="key" disabled={busy} onClick={onConfirm}>
+						{confirmLabel}
+					</button>
+				)}
 			</div>
 		</div>
 	);

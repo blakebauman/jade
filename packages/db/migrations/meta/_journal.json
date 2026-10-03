@@ -64,6 +64,20 @@
       "when": 1790913858137,
       "tag": "0008_roxy_finds",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790995446203,
+      "tag": "0009_learn_and_play",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1790995745429,
+      "tag": "0010_ticket_earnings",
+      "breakpoints": true
     }
   ]
 }

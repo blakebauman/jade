@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
+import { FIND_TICKETS } from "@jade/core";
 import {
 	activeHolidays,
 	daysBetween,
@@ -25,13 +26,14 @@ import {
 	withoutHolidays,
 } from "@jade/core/roxy";
 import { type Db, schema } from "@jade/db";
-import { and, asc, count, eq, sql } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import type { AppEnv } from "../env.ts";
 import { newId } from "../lib/ids.ts";
 import { ownedChild } from "../lib/owned.ts";
+import { charge, earnTickets, playRow, SOLD, wallets } from "../lib/play.ts";
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const today = () => new Date().toISOString().slice(0, 10);
@@ -41,17 +43,20 @@ async function holidaysOff(db: Db, parentId: string): Promise<Set<HolidayId>> {
 	return new Set(JSON.parse(row?.roxyHolidaysOff ?? "[]"));
 }
 
+/** What a kid may use: what they've unlocked, and everything sold while their games are free. */
 async function unlockedItems(db: Db, childId: string): Promise<Set<string>> {
-	const rows = await db
-		.select({ itemId: schema.roxyUnlocks.itemId })
-		.from(schema.roxyUnlocks)
-		.where(eq(schema.roxyUnlocks.childId, childId));
-	return new Set(rows.map((r) => r.itemId));
+	const [rows, play] = await Promise.all([
+		db.select({ itemId: schema.roxyUnlocks.itemId }).from(schema.roxyUnlocks).where(eq(schema.roxyUnlocks.childId, childId)),
+		playRow(db, childId),
+	]);
+	const ids = rows.map((r) => r.itemId);
+	return new Set(play.free ? [...ids, ...SOLD] : ids);
 }
 
-async function balance(db: Db, childId: string): Promise<number> {
-	const stats = await db.query.childStats.findFirst({ where: eq(schema.childStats.childId, childId) });
-	return Math.max(0, (stats?.totalStars ?? 0) - (stats?.starsSpent ?? 0));
+/** What the studio shows for paying: tickets always, stars only while a parent lets them be spent here. */
+async function walletFor(db: Db, childId: string) {
+	const [play, w] = await Promise.all([playRow(db, childId), wallets(db, childId)]);
+	return { free: play.free, tickets: w.tickets, stars: play.stars ? w.stars : null };
 }
 
 /**
@@ -68,11 +73,11 @@ function wearable(input: unknown, unlocked: Set<string>, off: Set<HolidayId>): L
 
 /** Everything the studio needs. `day` is the family's local day, for which holiday collections are open. */
 async function studio(db: Db, parentId: string, childId: string, day: string) {
-	const [current, looks, unlocked, stars, off, home, finds] = await Promise.all([
+	const [current, looks, unlocked, wallet, off, home, finds] = await Promise.all([
 		db.query.roxyCurrent.findFirst({ where: eq(schema.roxyCurrent.childId, childId) }),
 		db.select().from(schema.roxyLooks).where(eq(schema.roxyLooks.childId, childId)).orderBy(asc(schema.roxyLooks.createdAt)),
 		unlockedItems(db, childId),
-		balance(db, childId),
+		walletFor(db, childId),
 		holidaysOff(db, parentId),
 		db.query.roxyHomes.findFirst({ where: eq(schema.roxyHomes.childId, childId) }),
 		db.select({ findId: schema.roxyFinds.findId }).from(schema.roxyFinds).where(eq(schema.roxyFinds.childId, childId)),
@@ -85,7 +90,7 @@ async function studio(db: Db, parentId: string, childId: string, day: string) {
 		wornLookId: current?.wornLookId ?? null,
 		looks: looks.map((l) => ({ id: l.id, name: l.name, look: JSON.parse(l.lookJson) as Look, createdAt: l.createdAt.getTime() })),
 		unlocked: [...unlocked],
-		balance: stars,
+		wallet,
 		holidaysOff: [...off],
 		holidays: activeHolidays(day)
 			.filter((w) => !off.has(w.id))
@@ -120,44 +125,41 @@ export const roxyRoutes = new Hono<AppEnv>()
 		return c.json({ ok: true, look, wornLookId: worn });
 	})
 	/**
-	 * Spend stars on an item. Idempotent: an item already owned costs nothing again. The unlock row goes in first,
-	 * then the stars come out only if the balance covers it; if it doesn't, the row comes back out.
+	 * Buy an item with tickets, or with stars while a parent lets stars be spent in games. Idempotent: an item already
+	 * owned costs nothing again. The unlock row goes in first, then the wallet pays only if it covers it; if it doesn't,
+	 * the row comes back out. While games are free nothing is charged and nothing is stored: it's all open already.
 	 */
-	.post("/unlock", zValidator("json", z.object({ itemId: z.string().max(40) })), async (c) => {
-		const db = c.var.db;
-		const child = await ownedChild(db, c.var.userId, c.req.param("id")!);
-		const itemId = c.req.valid("json").itemId;
-		// Clothes and furniture share one set of unlocks; their ids never overlap (a core test checks).
-		const item = ITEM.get(itemId) ?? FURNITURE_BY_ID.get(itemId);
-		if (!item) throw new HTTPException(404, { message: "No such item" });
-		// A holiday's gift is only ever claimed, free, while its window is open (see /claim).
-		if ("gift" in item && item.gift) return c.json({ error: "gift" }, 403);
-		if (item.holiday && (await holidaysOff(db, c.var.userId)).has(item.holiday)) throw new HTTPException(403, { message: "Not available" });
-		if (item.cost > 0) {
-			const inserted = await db
-				.insert(schema.roxyUnlocks)
-				.values({ childId: child.id, itemId: item.id, cost: item.cost })
-				.onConflictDoNothing()
-				.returning({ itemId: schema.roxyUnlocks.itemId });
-			if (inserted.length > 0) {
-				const paid = await db
-					.update(schema.childStats)
-					.set({ starsSpent: sql`${schema.childStats.starsSpent} + ${item.cost}` })
-					.where(
-						and(
-							eq(schema.childStats.childId, child.id),
-							sql`${schema.childStats.totalStars} - ${schema.childStats.starsSpent} >= ${item.cost}`,
-						),
-					)
-					.returning({ childId: schema.childStats.childId });
-				if (paid.length === 0) {
+	.post(
+		"/unlock",
+		zValidator("json", z.object({ itemId: z.string().max(40), pay: z.enum(["tickets", "stars"]).default("tickets") })),
+		async (c) => {
+			const db = c.var.db;
+			const child = await ownedChild(db, c.var.userId, c.req.param("id")!);
+			const { itemId, pay } = c.req.valid("json");
+			// Clothes and furniture share one set of unlocks; their ids never overlap (a core test checks).
+			const item = ITEM.get(itemId) ?? FURNITURE_BY_ID.get(itemId);
+			if (!item) throw new HTTPException(404, { message: "No such item" });
+			// A holiday's gift is only ever claimed, free, while its window is open (see /claim).
+			if ("gift" in item && item.gift) return c.json({ error: "gift" }, 403);
+			if (item.holiday && (await holidaysOff(db, c.var.userId)).has(item.holiday))
+				throw new HTTPException(403, { message: "Not available" });
+			const play = await playRow(db, child.id);
+			if (play.free) return c.json({ ok: true, wallet: await walletFor(db, child.id) });
+			if (pay === "stars" && !play.stars) return c.json({ error: "stars-off" }, 403);
+			if (item.cost > 0) {
+				const inserted = await db
+					.insert(schema.roxyUnlocks)
+					.values({ childId: child.id, itemId: item.id, cost: item.cost })
+					.onConflictDoNothing()
+					.returning({ itemId: schema.roxyUnlocks.itemId });
+				if (inserted.length > 0 && !(await charge(db, child.id, pay, item.cost))) {
 					await db.delete(schema.roxyUnlocks).where(and(eq(schema.roxyUnlocks.childId, child.id), eq(schema.roxyUnlocks.itemId, item.id)));
-					return c.json({ error: "stars", balance: await balance(db, child.id) }, 409);
+					return c.json({ error: pay, wallet: await walletFor(db, child.id) }, 409);
 				}
 			}
-		}
-		return c.json({ ok: true, balance: await balance(db, child.id) });
-	})
+			return c.json({ ok: true, wallet: await walletFor(db, child.id) });
+		},
+	)
 	/** A holiday's free gift, while its window is open on the family's day (which must be close to the real one). */
 	.post("/claim", zValidator("json", z.object({ holidayId: z.enum(HOLIDAYS), day: daySchema })), async (c) => {
 		const db = c.var.db;
@@ -170,13 +172,20 @@ export const roxyRoutes = new Hono<AppEnv>()
 		await db.insert(schema.roxyUnlocks).values({ childId: child.id, itemId: gift.id, cost: 0 }).onConflictDoNothing();
 		return c.json({ ok: true, itemId: gift.id });
 	})
-	/** Something found around town. Finding it again changes nothing. */
+	/** Something found around town, worth tickets the first time. Finding it again changes nothing. */
 	.post("/find", zValidator("json", z.object({ findId: z.string().max(40) })), async (c) => {
 		const child = await ownedChild(c.var.db, c.var.userId, c.req.param("id")!);
 		const find = FIND_BY_ID.get(c.req.valid("json").findId);
 		if (!find) throw new HTTPException(404, { message: "Nothing like that here" });
-		await c.var.db.insert(schema.roxyFinds).values({ childId: child.id, findId: find.id }).onConflictDoNothing();
-		return c.json({ ok: true });
+		const db = c.var.db;
+		const fresh = await db
+			.insert(schema.roxyFinds)
+			.values({ childId: child.id, findId: find.id })
+			.onConflictDoNothing()
+			.returning({ findId: schema.roxyFinds.findId });
+		// Only the first time pays, so a replay from the device's queue never pays twice.
+		if (fresh.length > 0) await earnTickets(db, child.id, FIND_TICKETS);
+		return c.json({ ok: true, tickets: fresh.length > 0 ? FIND_TICKETS : 0 });
 	})
 	/**
 	 * Save the home. Furniture that doesn't fit, or is from a holiday the family turned off, is dropped; furniture not yet

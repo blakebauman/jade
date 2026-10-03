@@ -1,6 +1,7 @@
-import { Maximize, Minimize, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Clock, Maximize, Minimize, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { useWakeLock } from "#/lib/hooks.ts";
+import { usePlayClockValue } from "#/lib/play.ts";
 
 /**
  * A game screen: the 3D scene is the screen, and everything else floats small in its corners on frosted glass.
@@ -29,6 +30,7 @@ export function GameScreen({
 	panelKey,
 	panelOpen = true,
 	reveal,
+	goInProgress = false,
 }: {
 	scene: ReactNode;
 	/** The way back: a round `.orb.glass` link named by its aria-label ("Back to Town"). */
@@ -53,6 +55,8 @@ export function GameScreen({
 	panelOpen?: boolean;
 	/** Opens the panel whenever it changes to something new (a hotspot tapped in the scene). */
 	reveal?: string | null;
+	/** A go is under way (a Gobble round): when play time runs out it's finished first, then the screen closes. */
+	goInProgress?: boolean;
 }) {
 	const id = useId();
 	const [open, setOpen] = usePanelOpen(panelKey, panelOpen);
@@ -60,6 +64,13 @@ export function GameScreen({
 	// A game is played at arm's length with long pauses to look; the screen stays on while it's open.
 	useWakeLock(true);
 	const sheet = open && !!panel;
+	const clock = usePlayClockValue();
+	// A go under way holds off the time-up sheet until it's over.
+	const { hold } = clock;
+	useEffect(() => {
+		hold(goInProgress);
+		return () => hold(false);
+	}, [goInProgress, hold]);
 	useEffect(() => {
 		if (reveal) setOpen(true);
 	}, [reveal]);
@@ -81,6 +92,7 @@ export function GameScreen({
 					</div>
 				</div>
 				<div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
+					{clock.metered && <PlayTime minutes={clock.minutes} warn={clock.warn} />}
 					{orbs}
 					{full.supported && (
 						<button
@@ -149,6 +161,20 @@ export function GameScreen({
 				</section>
 			)}
 		</main>
+	);
+}
+
+/** Play time left, in whole minutes; never ticking seconds. The last minute says so, out loud too. */
+function PlayTime({ minutes, warn }: { minutes: number; warn: boolean }) {
+	return (
+		<p className="glass glass-pill" title="Play time left">
+			<Clock className="size-5" aria-hidden />
+			<span className="font-display text-lg font-semibold tabular-nums">{warn ? "1 min left" : `${minutes} min`}</span>
+			<span className="sr-only">{warn ? "" : " of play time left"}</span>
+			<span className="sr-only" role="status">
+				{warn ? "One minute of play time left." : ""}
+			</span>
+		</p>
 	);
 }
 

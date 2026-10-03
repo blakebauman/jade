@@ -251,8 +251,11 @@ export const childStats = sqliteTable("child_stats", {
 	lastDay: text("last_day"),
 	/** Lifetime stars earned; it never goes down, so star badges stay put. Spendable = totalStars − starsSpent. */
 	totalStars: integer("total_stars").notNull().default(0),
-	/** Stars spent unlocking Roxy items. */
+	/** Stars spent in games: Roxy items and play time (only ever while a parent lets stars be spent there). */
 	starsSpent: integer("stars_spent").notNull().default(0),
+	/** Tickets earned in games (finds around town). Spendable = ticketsEarned − ticketsSpent; never touched by practice. */
+	ticketsEarned: integer("tickets_earned").notNull().default(0),
+	ticketsSpent: integer("tickets_spent").notNull().default(0),
 	perfectRounds: integer("perfect_rounds").notNull().default(0),
 	wordsSpelled: integer("words_spelled").notNull().default(0),
 	badgesJson: text("badges_json").notNull().default("[]"),
@@ -320,4 +323,53 @@ export const roxyFinds = sqliteTable(
 		createdAt,
 	},
 	(t) => [primaryKey({ columns: [t.childId, t.findId] })],
+);
+
+/**
+ * How games and learning meet for one kid (see `PlaySettings` in @jade/core). No row means the defaults: games apart
+ * from learning, open, earning tickets. `minutesBought` and `secondsUsed` are play time, kept only while it costs stars.
+ */
+export const childPlay = sqliteTable("child_play", {
+	childId: text("child_id")
+		.primaryKey()
+		.references(() => children.id, { onDelete: "cascade" }),
+	free: integer("free", { mode: "boolean" }).notNull().default(false),
+	stars: integer("stars", { mode: "boolean" }).notNull().default(false),
+	practiceFirst: integer("practice_first", { mode: "boolean" }).notNull().default(false),
+	goal: text("goal", { enum: ["round", "stars10", "stars20"] })
+		.notNull()
+		.default("round"),
+	timeCosts: integer("time_costs", { mode: "boolean" }).notNull().default(false),
+	minutesBought: integer("minutes_bought").notNull().default(0),
+	secondsUsed: integer("seconds_used").notNull().default(0),
+	updatedAt,
+});
+
+/** Practice per kid per family day (the `day` the client sends, as for streaks): what "practice first" checks. */
+export const dailyPractice = sqliteTable(
+	"daily_practice",
+	{
+		childId: text("child_id")
+			.notNull()
+			.references(() => children.id, { onDelete: "cascade" }),
+		day: text("day").notNull(),
+		answers: integer("answers").notNull().default(0),
+		stars: integer("stars").notNull().default(0),
+		rounds: integer("rounds").notNull().default(0),
+	},
+	(t) => [primaryKey({ columns: [t.childId, t.day] })],
+);
+
+/** Tickets paid by a game, once per key (`gobble:<round id>`), so a replayed payout never pays twice. */
+export const ticketEarnings = sqliteTable(
+	"ticket_earnings",
+	{
+		childId: text("child_id")
+			.notNull()
+			.references(() => children.id, { onDelete: "cascade" }),
+		key: text("key").notNull(),
+		tickets: integer("tickets").notNull(),
+		createdAt,
+	},
+	(t) => [primaryKey({ columns: [t.childId, t.key] })],
 );

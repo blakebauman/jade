@@ -14,9 +14,9 @@ import {
 } from "@jade/core/roxy";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Footprints, Lock, Paintbrush, RotateCw, Star, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Footprints, Lock, Paintbrush, RotateCw, Trash2 } from "lucide-react";
 import { Component, lazy, type ReactNode, Suspense, useId, useState } from "react";
-import { Confirm } from "#/components/Confirm.tsx";
+import { BuyChoice, CornerWallet } from "#/components/play/BuyChoice.tsx";
 import { Destinations } from "#/components/roxy/Destinations.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
 import { GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
@@ -25,7 +25,7 @@ import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { ApiError } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { useOnline } from "#/lib/hooks.ts";
-import { roxyApi, roxyQuery, type Studio, shownLook, useHomeDraft, useRevealed, useSendFinds } from "#/lib/roxy.ts";
+import { type Pay, roxyApi, roxyQuery, type Studio, shownLook, useHomeDraft, useRevealed, useSendFinds } from "#/lib/roxy.ts";
 
 // three.js only loads here, never on the practice screens.
 const HomeScene = lazy(() => import("#/components/roxy/world/HomeScene.tsx").then((m) => ({ default: m.HomeScene })));
@@ -163,10 +163,10 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 		return true;
 	}
 
-	async function unlock(item: Furniture) {
+	async function unlock(item: Furniture, pay: Pay) {
 		setBusy(true);
 		try {
-			await roxyApi.unlock(childId, item.id);
+			await roxyApi.unlock(childId, item.id, pay);
 			await qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey });
 			await qc.invalidateQueries({ queryKey: ["progress", childId] });
 			setUnlocking(null);
@@ -175,7 +175,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 		} catch (err) {
 			setMessage(
 				err instanceof ApiError && err.status === 409
-					? "Not enough stars yet. Keep practicing to earn more!"
+					? "That costs a bit more than you have right now."
 					: "Couldn’t unlock that. Check the connection and try again.",
 			);
 		} finally {
@@ -253,11 +253,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 			}
 			orbs={
 				<>
-					<p className="glass glass-pill" title="Stars to spend">
-						<Star className="size-5 fill-current" aria-hidden />
-						<span className="font-display text-xl font-semibold tabular-nums">{data.balance}</span>
-						<span className="sr-only">stars to spend</span>
-					</p>
+					<CornerWallet wallet={data.wallet} />
 					<fieldset aria-label="What to do" className="glass flex gap-1 rounded-full p-1">
 						<button
 							type="button"
@@ -312,12 +308,13 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 					<div className="space-y-8">
 						{unlocking && (
 							<Revealed key={unlocking.id}>
-								<UnlockFurniture
-									item={unlocking}
-									balance={data.balance}
+								<BuyChoice
+									name={`the ${unlocking.label.toLowerCase()}`}
+									cost={unlocking.cost}
+									wallet={data.wallet}
 									online={online}
 									busy={busy}
-									onUnlock={() => void unlock(unlocking)}
+									onBuy={(pay) => void unlock(unlocking, pay)}
 									onCancel={() => setUnlocking(null)}
 								/>
 							</Revealed>
@@ -531,51 +528,5 @@ function Swatches({ value, label, onPick }: { value: string | undefined; label: 
 				/>
 			))}
 		</fieldset>
-	);
-}
-
-function UnlockFurniture({
-	item,
-	balance,
-	online,
-	busy,
-	onUnlock,
-	onCancel,
-}: {
-	item: Furniture;
-	balance: number;
-	online: boolean;
-	busy: boolean;
-	onUnlock: () => void;
-	onCancel: () => void;
-}) {
-	if (!online || balance < item.cost)
-		return (
-			<p role="status" className="patch flex flex-wrap items-center justify-between gap-3 p-4">
-				<span>
-					{!online ? (
-						<>Unlocking the {item.label.toLowerCase()} needs the internet.</>
-					) : (
-						<>
-							<span className="font-display text-lg font-semibold">{item.label}</span> needs {item.cost} stars. Earn {item.cost - balance}{" "}
-							more in Spelling or Math!
-						</>
-					)}
-				</span>
-				<button type="button" className="key" onClick={onCancel}>
-					OK
-				</button>
-			</p>
-		);
-	return (
-		<Confirm
-			message={`Unlock the ${item.label.toLowerCase()} for ${item.cost} stars?`}
-			note={`You have ${balance}. It’s yours to keep.`}
-			confirmLabel="Unlock"
-			cancelLabel="Not now"
-			busy={busy}
-			onConfirm={onUnlock}
-			onCancel={onCancel}
-		/>
 	);
 }
