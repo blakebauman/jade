@@ -319,11 +319,12 @@ export function Bulb({ p, light, onLeft = false }: { p: V3; light?: boolean; onL
 	return (
 		<>
 			<Ball r={0.085} p={at} c="#fff1c4" e={night ? 1.2 : 0.25} />
-			{light && (
+			{/* Only at Night: a light at nothing still costs every pixel, every frame. */}
+			{light && night && (
 				<pointLight
 					position={[at[0] + (onLeft ? 1.6 : 0), at[1] - 0.3, at[2] + (onLeft ? 0 : 1.6)]}
 					color="#ffd59a"
-					intensity={night ? 4 : 0}
+					intensity={4}
 					distance={8}
 					decay={1.2}
 				/>

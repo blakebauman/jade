@@ -57,7 +57,11 @@ function Loaded({ id, height, at, rot }: { id: ModelId; height: number; at: V3; 
 		const object: Object3D = gltf.scene.clone(true);
 		object.traverse((o) => {
 			const mesh = o as Mesh;
-			if (mesh.isMesh) mesh.material = Array.isArray(mesh.material) ? mesh.material.map(toToon) : toToon(mesh.material);
+			if (!mesh.isMesh) return;
+			mesh.material = Array.isArray(mesh.material) ? mesh.material.map(toToon) : toToon(mesh.material);
+			// Receiving shadows is part of a material's compiled shader: set it before the first draw, not after (a town
+			// place's ShadowFlags would otherwise flip it a moment later and the model would compile twice).
+			mesh.receiveShadow = true;
 		});
 		const box = new Box3().setFromObject(object);
 		const scale = height / (box.max.y - box.min.y);
