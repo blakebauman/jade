@@ -24,13 +24,8 @@ function GamesHome() {
 	const { data: roxy } = useQuery(roxyQuery(child.id));
 	const { data: play } = useQuery(playQuery(child.id));
 	const holiday = roxy?.holidays[0];
-	const best = useMemo(() => {
-		try {
-			return Number(localStorage.getItem(`jade.gobble.best.${child.id}`)) || 0;
-		} catch {
-			return 0;
-		}
-	}, [child.id]);
+	const best = useMemo(() => readBest(`jade.gobble.best.${child.id}`), [child.id]);
+	const jellyBest = useMemo(() => readBest(`jade.jelly.best.${child.id}`), [child.id]);
 
 	return (
 		<main className="mx-auto min-h-dvh max-w-5xl px-safe-5 py-safe-6 md:px-safe-10">
@@ -127,9 +122,66 @@ function GamesHome() {
 							</span>
 						</Link>
 					</li>
+					<li>
+						<Link
+							to="/play/$childId/games/jelly"
+							params={{ childId: child.id }}
+							className="sticker flex items-center gap-5 p-5 md:p-6"
+							data-place="roxy"
+							style={{ "--tilt": "1deg" } as React.CSSProperties}
+						>
+							<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
+								<JellyArt />
+							</span>
+							<span className="min-w-0 space-y-2">
+								<span className="block font-display text-3xl font-semibold">Jelly Blocks</span>
+								<span className="block text-sm font-medium">
+									Turn and drop wobbly jelly blocks to fill whole rows. Fill a row and it pops!
+								</span>
+								{jellyBest > 0 && (
+									<span className="inline-flex items-center gap-1.5 text-sm font-medium">Your best: {jellyBest.toLocaleString()}</span>
+								)}
+							</span>
+						</Link>
+					</li>
 				</ul>
 			)}
 		</main>
+	);
+}
+
+function readBest(key: string) {
+	try {
+		return Number(localStorage.getItem(key)) || 0;
+	} catch {
+		return 0;
+	}
+}
+
+/** Jelly Blocks' sticker art: a little stack of jelly cubes with a T piece dropping in. */
+function JellyArt() {
+	const cube = (x: number, y: number, fill: string) => (
+		<g key={`${x}-${y}`}>
+			<rect x={x} y={y} width="19" height="19" rx="6" fill={fill} />
+			<rect x={x + 4} y={y + 3} width="8" height="4" rx="2" fill="#fff" opacity="0.5" />
+		</g>
+	);
+	return (
+		<svg viewBox="0 0 120 120" className="size-24 md:size-28" aria-hidden="true">
+			<rect x="10" y="100" width="100" height="8" rx="4" fill="#e48bb0" />
+			{cube(14, 80, "#ff5f8f")}
+			{cube(34, 80, "#ff5f8f")}
+			{cube(54, 80, "#4f7dff")}
+			{cube(74, 80, "#2fcfc0")}
+			{cube(94, 80, "#2fcfc0")}
+			{cube(14, 60, "#ffd24d")}
+			{cube(34, 60, "#ffd24d")}
+			{cube(94, 60, "#8cd648")}
+			{cube(54, 20, "#9a6bff")}
+			{cube(34, 40, "#9a6bff")}
+			{cube(54, 40, "#9a6bff")}
+			{cube(74, 40, "#9a6bff")}
+		</svg>
 	);
 }
 

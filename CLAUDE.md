@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. **Play** sits beside them (the hub is a spread: Learn on the left page, Play on the right): Roxy's studio, the town and Gobble Town. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
+Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. **Play** sits beside them (the hub is a spread: Learn on the left page, Play on the right): Roxy's studio, the town, Gobble Town and Jelly Blocks. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
 
 Jade's World is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
@@ -185,6 +185,14 @@ Secrets:
   - **Pause and sound:** P, Escape or hiding the tab pauses. Sound is synthesised in `sound.ts` and muting is remembered (`jade.gobble.muted`).
   - **Best score and tickets:** the best score is kept on the device (`jade.gobble.best.{childId}`). Tickets are paid at the end (`earnTickets`, key `gobble:<seed>`).
   - **Test hooks:** dev builds expose `window.__THREE_GAME_TEST_HOOKS__` (`setSeed`, `setState` with `ready`, `active-play`, `late-game`, `gobbled`, `results`, `at-school`, `at-petshop`, and `setPausedForScreenshot`). `e2e/gobble.spec.ts` uses them to jump to the results.
+
+**Jelly Blocks (Play, `/play/$childId/games/jelly`):** falling blocks in a toy jar, after holtsetio's *Softbody Tetris* (threejs.org showcase). Never "Tetris" in the UI.
+- **Rules** (`components/jelly/sim.ts`, pure and seeded, `sim.test.ts`): a 10×20 jar (+2 hidden rows), 7-bag, SRS turns with wall kicks (y up), ghost, Hold once per piece, lock delay 0.5s with 15 resets, DAS 170ms / ARR 50ms in the sim, full rows pop for `CLEAR_S` before the rows above drop. Gravity `0.9·0.84^(level−1)`s a row, a level per 10 rows; the kid starts Slow, Medium or Fast (level 1/4/7, `jade.jelly.speed`). Every cube has an id (`id·8+type` in the grid) so the scene can follow it. `autopilot` plays for tests and hooks.
+- **Renderer:** the only game on `three/webgpu` `WebGPURenderer` (WebGL 2 where there's no WebGPU, the renderer picks). A lost GPU device rebuilds the canvas on WebGL 2 (`forceWebGL`); after 3 losses the screen says 3D can't be shown. Headless Playwright Chromium always loses its WebGPU device within seconds (its software adapter, not our code), so e2e and headless captures exercise the WebGL 2 rebuild; headed Chromium on a real GPU stays on WebGPU.
+- **Jelly** (`JellyScene.tsx`): all cubes are one instanced rounded box. Each copy carries spring state (squash, sideways lean) in an instanced attribute, and the TSL `positionNode` squishes the cube per vertex on the GPU: the top sinks and the middle bulges, the top lags a sideways step. Landings ripple through the stack; popped rows swell and burst into droplets in their flavour. Reduced motion: no wobble, no droplets. About 8 calls and ≤ 45k triangles a frame.
+- **Layout:** the page lays out the Hold/Next trays (beside the jar, or a strip above it on an upright phone) around an empty slot; the camera fits the jar to that slot (`setViewOffset`). Input: arrows/WASD, Space drop, C/Shift hold, Z turn back, P/Escape pause; touch keys for two thumbs (moves repeat while held); swipes on the jar (across steps, down faster, flick down drops, flick up holds, tap turns), fingers followed with Touch Events like Gobble's, the swipe's "on" kept apart from the id (iOS ids can be negative); `e2e/jelly.spec.ts` drives real CDP touch with a negative id.
+- **Tickets:** one per row popped, at the end (`jelly:<seed>`, at most 30). Best score on the device (`jade.jelly.best.{childId}`). When play time runs out mid-game, the falling piece is the last one (`game.lastPiece`: the sim ends with `over` `why: "time"` once it's down and its rows have popped; more time bought takes it back).
+- **Test hooks** (dev): `setSeed`, `setState` (`ready`, `active-play`, `late-game`, `results`), `setAutopilot`, `setPausedForScreenshot`; `e2e/jelly.spec.ts`.
 
 **Admin (Better Auth admin plugin):**
 - Endpoints live under `/api/auth/admin/*` (list, ban, set role, impersonate); the client has `adminClient()` on `authClient.admin`.
