@@ -131,10 +131,13 @@ export function PlayClosed({
 	status,
 	size = "large",
 	level = "h3",
+	next,
 }: {
 	childId: string;
 	status: PlayStatus;
 	size?: "large" | "small";
+	/** Where to go from here while practice comes first; the hub passes one key to its own waiting subject. */
+	next?: React.ReactNode;
 	/** h2 directly under a page's h1 (the Play home); h3 under the hub's "What shall we play?". */
 	level?: "h2" | "h3";
 }) {
@@ -162,12 +165,16 @@ export function PlayClosed({
 					)}
 					{/* Somewhere to go from here, not just what's missing. */}
 					<div className="flex flex-wrap justify-center gap-2.5 pt-1">
-						<Link to="/play/$childId/spelling" params={{ childId }} onClick={() => speaker.unlock()} className="key">
-							Spelling
-						</Link>
-						<Link to="/play/$childId/math" params={{ childId }} onClick={() => speaker.unlock()} className="key">
-							Math
-						</Link>
+						{next ?? (
+							<>
+								<Link to="/play/$childId/spelling" params={{ childId }} onClick={() => speaker.unlock()} className="key">
+									Spelling
+								</Link>
+								<Link to="/play/$childId/math" params={{ childId }} onClick={() => speaker.unlock()} className="key">
+									Math
+								</Link>
+							</>
+						)}
 					</div>
 				</>
 			) : (

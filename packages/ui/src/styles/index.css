@@ -602,6 +602,8 @@
 		--color-page-ink: var(--color-sticker-ink);
 		--color-page-muted: color-mix(in oklab, var(--color-sticker-ink) 82%, var(--sticker-face));
 		--color-page-deep: color-mix(in oklab, var(--sticker-face) 55%, black);
+		/* Plain keys are a darker cut of the hue in either light; the page's own raised colour vanished on Day's faces. */
+		--color-page-raised: color-mix(in oklab, var(--sticker-face) 72%, black);
 	}
 	.sticker[data-place="spell"],
 	.place-page[data-place="spell"] { --sticker-face: var(--color-spell); color: var(--color-sticker-ink); }
@@ -653,7 +655,30 @@
 			--place-inset-bottom: max(1rem, var(--safe-bottom));
 		}
 	}
-	.place-page[data-place] { --color-page-line: color-mix(in oklab, var(--color-sticker-ink) 50%, var(--sticker-face)); }
+	.place-page[data-place] {
+		--color-page-line: color-mix(in oklab, var(--color-sticker-ink) 50%, var(--sticker-face));
+		/* Small print on a whole place face reads at AA on Day's lighter hues too. */
+		--color-page-muted: color-mix(in oklab, var(--color-sticker-ink) 94%, var(--sticker-face));
+	}
+	/*
+	 * A place's one action is the biggest thing a kid can press on it: a white vinyl key with the place's own hue for ink,
+	 * peeled up off the face. Secondary keys stay the smaller dark cut beside it.
+	 */
+	.place-page .key[data-variant="go"] {
+		min-height: 4rem;
+		padding-inline: 2rem;
+		border-radius: 9999px;
+		font-size: 1.35rem;
+		color: color-mix(in oklab, var(--sticker-face) 82%, black);
+		background: radial-gradient(120% 140% at 30% 10%, #ffffff 0%, #fbfdfb 55%, #eef3f0 100%);
+		box-shadow:
+			inset 0 -0.2rem 0 rgb(18 51 44 / 0.12),
+			0 0.55rem 1.1rem -0.35rem rgb(0 0 0 / 0.38),
+			0 0.08rem 0.15rem rgb(0 0 0 / 0.2);
+	}
+	@media (hover: hover) {
+		.place-page .key[data-variant="go"]:hover:not(:disabled) { filter: none; transform: translateY(-2px); }
+	}
 	.place-face {
 		position: absolute;
 		inset: var(--place-inset-top) var(--place-inset-x) var(--place-inset-bottom);
