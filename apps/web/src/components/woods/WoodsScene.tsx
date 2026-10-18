@@ -48,9 +48,10 @@ import { useContextLoss } from "../roxy/world/pace.tsx";
 import { atlasTexture } from "./atlas.ts";
 import { camp, flicker } from "./camp.ts";
 import type { Controls } from "./controls.ts";
-import type { Buffers, ColumnMesh } from "./mesher.ts";
+import { Held } from "./held.ts";
+import { type Buffers, type ColumnMesh, tileUv } from "./mesher.ts";
 import type { FromMesher, ToMesher } from "./mesher.worker.ts";
-import { animal, deer, emoteTexture, type FigureModel, figure, swing } from "./models.ts";
+import { animal, deer, deerWalk, emoteTexture, type FigureModel, figure, swing } from "./models.ts";
 import { EYE, HALF, lost, newBody, step, TALL } from "./physics.ts";
 import { raycast } from "./raycast.ts";
 import { Sky as SkyDome } from "./sky.ts";
@@ -126,6 +127,7 @@ function Island({ world, controls, running, quality }: Omit<Props, "label"> & { 
 	);
 	useFrame(({ camera, clock }, dt) => {
 		fx.update(dt, camera, clock.elapsedTime);
+		waterTime.value = clock.elapsedTime;
 		const { sun } = phaseAt(world.elapsed());
 		const p = controls.body?.p;
 		fx.setFireflies(p ? Math.max(0, Math.min(1, (0.45 - sun) * 2.5)) : 0, p ?? [0, 0, 0]);
@@ -174,7 +176,7 @@ function Terrain({ world }: { world: IslandState }) {
 		const map = atlasTexture();
 		return {
 			solid: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.5 }),
-			clear: new MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false }),
+			clear: waterShimmer(new MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false })),
 		};
 	}, []);
 
@@ -229,6 +231,37 @@ function Terrain({ world }: { world: IslandState }) {
 	}, [world, group, materials, invalidate]);
 
 	return <primitive object={group} />;
+}
+
+/** Water's time: the shimmer below reads it. */
+const waterTime = { value: 0 };
+
+/**
+ * Still water that isn't flat: on water's own tile, the colour ripples in slow crossing waves by where it is in the
+ * world, with the odd bright glint. Glass, which shares the material, is untouched.
+ */
+function waterShimmer(m: MeshLambertMaterial) {
+	const [u0, v0, u1, v1] = tileUv("water");
+	m.onBeforeCompile = (shader) => {
+		shader.uniforms.waterTime = waterTime;
+		shader.uniforms.waterRect = { value: [u0, v0, u1, v1] };
+		shader.vertexShader = shader.vertexShader
+			.replace("#include <common>", "#include <common>\nvarying vec3 vWorld;")
+			.replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;");
+		shader.fragmentShader = shader.fragmentShader
+			.replace("#include <common>", "#include <common>\nvarying vec3 vWorld;\nuniform float waterTime;\nuniform vec4 waterRect;")
+			.replace(
+				"#include <map_fragment>",
+				`#include <map_fragment>
+				if (vMapUv.x > waterRect.x && vMapUv.x < waterRect.z && vMapUv.y > waterRect.y && vMapUv.y < waterRect.w) {
+					float w = sin(vWorld.x * 1.3 + waterTime * 1.1) * sin(vWorld.z * 1.1 - waterTime * 0.9);
+					float g = step(0.985, sin(vWorld.x * 3.7 + waterTime * 2.0) * sin(vWorld.z * 3.1 + waterTime * 1.7));
+					diffuseColor.rgb *= 0.92 + 0.12 * w;
+					diffuseColor.rgb += vec3(0.35, 0.4, 0.45) * g;
+				}`,
+			);
+	};
+	return m;
 }
 
 // ── Sky and light ──
@@ -494,14 +527,15 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 
 function NightDeer({ world }: { world: IslandState }) {
 	const model = useMemo(() => deer(), []);
-	const near = useRef(0);
+	const near = useRef(-1);
 	const fade = useRef(0);
-	useFrame((_, dt) => {
+	useFrame(({ clock }, dt) => {
 		const e = world.elapsed();
 		const p = phaseAt(e);
 		const night = p.phase === "night";
 		const low = world.clock.fuel < FUEL_MAX * FUEL_LOW ? 1 : 0;
-		near.current += (low - near.current) * Math.min(1, dt * 0.4);
+		// Arriving mid-night, she's already where she'd be; after that she drifts in and out slowly.
+		near.current = near.current < 0 ? low : near.current + (low - near.current) * Math.min(1, dt * 0.4);
 		fade.current += ((night ? 1 : 0) - fade.current) * Math.min(1, dt * 0.6);
 		model.visible = fade.current > 0.02;
 		if (!model.visible) return;
@@ -510,6 +544,7 @@ function NightDeer({ world }: { world: IslandState }) {
 		const ahead = deerAt(world.seed, p.night, t + 0.5, near.current);
 		model.position.set(at.x, groundBelow(world, at.x, at.z), at.z);
 		model.rotation.y = Math.atan2(-(ahead.x - at.x), -(ahead.z - at.z));
+		deerWalk(model, clock.elapsedTime);
 		model.traverse((o) => {
 			const m = (o as Mesh).material as MeshBasicMaterial | undefined;
 			if (m && "opacity" in m && m.transparent) m.opacity = fade.current;
@@ -537,7 +572,18 @@ const ndc = new Vector2();
 const dir = new Vector3();
 
 function Player({ world, controls, running, fx }: Omit<Props, "label"> & { fx: Effects }) {
-	const { camera } = useThree();
+	const { camera, scene } = useThree();
+	const held = useMemo(() => new Held(atlasTexture()), []);
+	useEffect(() => {
+		// The held block hangs off the camera, so the camera has to be in the scene for it to be drawn.
+		scene.add(camera);
+		camera.add(held.group);
+		return () => {
+			camera.remove(held.group);
+			scene.remove(camera);
+		};
+	}, [scene, camera, held]);
+	const still = useMemo(() => prefersReducedMotion(), []);
 	const outline = useMemo(() => {
 		const l = new LineSegments(new EdgesGeometry(new BoxGeometry(1.005, 1.005, 1.005)), new LineBasicMaterial({ color: "#1d1d1f" }));
 		l.visible = false;
@@ -551,7 +597,16 @@ function Player({ world, controls, running, fx }: Omit<Props, "label"> & { fx: E
 		m.visible = false;
 		return m;
 	}, []);
-	const state = useRef({ sent: 0, last: [0, 0, 0] as number[], mining: -1, spawned: false, walked: 0, wasGround: true, fallFrom: 0 });
+	const state = useRef({
+		sent: 0,
+		last: [0, 0, 0] as number[],
+		mining: -1,
+		spawned: false,
+		walked: 0,
+		wasGround: true,
+		fallFrom: 0,
+		stride: 0,
+	});
 
 	useEffect(() => {
 		(camera as PerspectiveCamera).rotation.order = "YXZ";
@@ -648,8 +703,18 @@ function Player({ world, controls, running, fx }: Omit<Props, "label"> & { fx: E
 			const at = aimAt(controls.place.aim);
 			controls.place = null;
 			const placed = at ? build(world, controls, at) : null;
-			if (placed) fx.pop(placed);
+			if (placed) {
+				fx.pop(placed);
+				held.built();
+			}
 		}
+
+		// What's in hand, moving with the kid.
+		const speed = body.ground ? Math.min(1, Math.hypot(body.v[0], body.v[2]) / 4.3) : 0;
+		s.stride += Math.hypot(body.v[0], body.v[2]) * dt;
+		held.hold((world.inv[controls.selected] ?? 0) > 0 ? controls.selected : 0);
+		held.group.visible = running;
+		held.update(dt, speed, s.stride, controls.progress > 0, still);
 
 		// Tell the island where we are, ten times a second while moving.
 		const now = performance.now();

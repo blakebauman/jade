@@ -3,8 +3,10 @@ import {
 	B,
 	BLOCKS,
 	blockInfo,
+	CYCLE_S,
 	canPlace,
 	DAY_S,
+	deerAt,
 	EMOTES,
 	type Emote,
 	FUEL_LOW,
@@ -19,7 +21,7 @@ import { ArrowLeft, Flame, Hand, Heart, Moon, Pause, PawPrint, Play, Star, Sun, 
 import { Component, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Tickets } from "#/components/play/PlayBits.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
-import { accent, GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
+import { GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
 import { TouchControls } from "#/components/roxy/TouchControls.tsx";
 import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { drawAtlas, tileImage } from "#/components/woods/atlas.ts";
@@ -55,6 +57,8 @@ type Hud = {
 	home: number;
 	inv: Record<number, number>;
 	others: number;
+	/** At night: the nearest lost animal nobody's found yet, and which way it is from where the kid is looking. */
+	lostNear: { label: string; blocks: number; turn: number } | null;
 	/** What E (or the Use button) would do here. */
 	use: { kind: "feed"; block: number } | { kind: "pickup"; id: string; label: string } | null;
 };
@@ -456,19 +460,36 @@ function WoodsScreen() {
 			 * just ahead).
 			 */
 			setState: async (name: string) => {
-				const at = { "active-play": 60, day: 60, dusk: DAY_S - 12, night: DAY_S + 90, "low-fire": DAY_S + 90, "lost-animal": DAY_S + 90 }[
-					name
-				];
+				const at = {
+					"active-play": 60,
+					day: 60,
+					dusk: DAY_S - 12,
+					night: DAY_S + 90,
+					"low-fire": DAY_S + 90,
+					deer: DAY_S + 90,
+					"lost-animal": DAY_S + 90,
+				}[name];
 				if (at === undefined) throw new Error(`Unknown state ${name}`);
 				for (let k = 0; k < 100 && world.status !== "open"; k++) await new Promise((r) => setTimeout(r, 100));
 				setKicked(null);
 				setPhase("play");
 				world.shift = at - world.elapsed() + world.shift;
-				world.fuelShown = name === "low-fire" ? 30 : name === "day" || name === "active-play" ? null : 220;
+				world.fuelShown = name === "low-fire" || name === "deer" ? 30 : name === "day" || name === "active-play" ? null : 220;
 				world.clock = { ...world.clock, fuel: world.fuelShown ?? world.clock.fuel };
+				// The kid's body appears on the first frame of play.
+				for (let k = 0; k < 60 && !controls.body; k++) await new Promise((r) => setTimeout(r, 50));
 				if (name === "lost-animal" && controls.body) {
 					const [x, y, z] = controls.body.p;
-					world.lost = [{ id: "dev-0", animal: "fox", at: [x + 0.5, y, z - 3.5], follows: null }];
+					world.lost = [{ id: "dev-0", animal: "fox", at: [x - 1.5, y, z - 3], follows: null }];
+				}
+				if (name === "deer" && controls.body) {
+					// Face the Night Deer where she is right now.
+					const p = phaseAt(world.elapsed());
+					const t = Math.max(0, (world.elapsed() % CYCLE_S) - DAY_S);
+					const d = deerAt(world.seed, p.night, t, 1);
+					const [x, , z] = controls.body.p;
+					controls.look.yaw = Math.atan2(-(d.x - x), -(d.z - z));
+					controls.look.pitch = 0.05;
 				}
 				await new Promise((r) => setTimeout(r, 600));
 				return { state: name };
@@ -511,10 +532,17 @@ function WoodsScreen() {
 					</NoWebGL>
 					{playing && !coarse && <Crosshair />}
 					{playing && !coarse && !captured && ready && (
-						<p className="glass glass-pill pointer-events-none absolute top-1/2 left-1/2 mt-10 -translate-x-1/2 text-sm font-medium">
+						<p className="glass glass-pill pointer-events-none absolute bottom-[calc(max(1.5rem,var(--safe-bottom))+8.5rem)] left-1/2 -translate-x-1/2 text-sm font-medium">
 							Click to look round
 						</p>
 					)}
+					{/* On a phone the corners are full: the island's status sits under the title instead. */}
+					{ready && phase !== "ready" && (
+						<div className="pointer-events-none absolute top-[calc(max(0.75rem,var(--safe-top))+5.9rem)] left-[max(0.75rem,var(--safe-left))] md:hidden">
+							<IslandStatus hud={hud} />
+						</div>
+					)}
+					{playing && hud.lostNear && <LostHint hint={hud.lostNear} />}
 					{playing && hotbar.length > 0 && <Hotbar items={hotbar} inv={hud.inv} selected={selected} onPick={setSelected} tiles={tiles} />}
 					<div className="pointer-events-none absolute inset-x-0 top-[calc(max(0.75rem,var(--safe-top))+4.2rem)] flex justify-center px-3">
 						<p role="status" className={message && playing ? "glass glass-pill text-center text-sm font-medium" : "sr-only"}>
@@ -535,7 +563,14 @@ function WoodsScreen() {
 				</Link>
 			}
 			eyebrow="Games"
-			title={accent("Campfire Woods")}
+			title={
+				// A soft halo so the title reads over leaves by day and a dark sky by night ("Woods" stays berry).
+				<b
+					className={`font-[inherit] [&>span]:text-roxy ${hud.dark ? "[text-shadow:0_2px_12px_rgb(0_0_0/0.45)]" : "[text-shadow:0_0_14px_rgb(255_255_255/0.7),0_1px_0_rgb(255_255_255/0.6)]"}`}
+				>
+					Campfire <span>Woods</span>
+				</b>
+			}
 			orbs={
 				<>
 					<button
@@ -566,29 +601,9 @@ function WoodsScreen() {
 			}
 			status={
 				ready && (
-					<GameStatus>
-						<span className="inline-flex items-center gap-1.5">
-							{hud.night ? <Moon className="size-4" aria-hidden /> : <Sun className="size-4" aria-hidden />}
-							{hud.night ? (
-								<>
-									Night {hud.nightNo}
-									<span className="max-sm:hidden"> · dawn in {hud.minutes} min</span>
-								</>
-							) : (
-								<>
-									<span className="max-sm:hidden">Night {hud.nightNo} in </span>
-									{hud.minutes} min
-								</>
-							)}
-						</span>
-						<FireMeter fuel={hud.fuel} />
-						{hud.home > 0 && (
-							<span className="inline-flex items-center gap-1" title="Animals brought home">
-								<PawPrint className="size-4" aria-hidden />
-								<span className="tabular-nums">{hud.home}</span>
-							</span>
-						)}
-					</GameStatus>
+					<div className="max-md:hidden">
+						<IslandStatus hud={hud} />
+					</div>
 				)
 			}
 			hints={
@@ -717,7 +732,25 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 			if (near) use = { kind: "pickup", id: near.id, label: ANIMAL_LABEL[near.animal] };
 		}
 	}
+	let lostNear: Hud["lostNear"] = null;
+	if (body && p.phase === "night") {
+		let best: { a: (typeof world.lost)[number]; d: number } | null = null;
+		for (const a of world.lost) {
+			if (a.follows !== null) continue;
+			const d = Math.hypot(a.at[0] - body[0], a.at[2] - body[2]);
+			if (!best || d < best.d) best = { a, d };
+		}
+		if (best && best.d > REACH_ANIMAL) {
+			const yaw = controls?.look.yaw ?? 0;
+			// Angle to the animal, measured like the camera's yaw (0 looks along -z), relative to the view.
+			const want = Math.atan2(-(best.a.at[0] - body[0]), -(best.a.at[2] - body[2]));
+			let turn = want - yaw;
+			turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+			lostNear = { label: ANIMAL_LABEL[best.a.animal], blocks: Math.round(best.d), turn: Math.round(turn * 10) / 10 };
+		}
+	}
 	return {
+		lostNear,
 		status: world.status,
 		night: p.phase === "night",
 		dark: world.status === "open" && p.sun < 0.45,
@@ -734,6 +767,53 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 
 const sceneLabel = (h: Hud) =>
 	`Campfire Woods. ${h.night ? `Night ${h.nightNo}` : "Daytime"}. The fire is ${h.fuel <= 0 ? "out" : h.fuel < FUEL_MAX / 4 ? "low" : "burning"}.${h.others ? ` ${h.others} others here.` : ""}`;
+
+/** Day or night and how long till it changes, the fire, and the animals brought home. */
+function IslandStatus({ hud }: { hud: Hud }) {
+	return (
+		<GameStatus>
+			<span className="inline-flex items-center gap-1.5">
+				{hud.night ? <Moon className="size-4" aria-hidden /> : <Sun className="size-4" aria-hidden />}
+				{hud.night ? (
+					<>
+						Night {hud.nightNo}
+						<span className="max-sm:hidden"> · dawn in {hud.minutes} min</span>
+					</>
+				) : (
+					<>
+						<span className="max-sm:hidden">Night {hud.nightNo} in </span>
+						{hud.minutes} min
+					</>
+				)}
+			</span>
+			<FireMeter fuel={hud.fuel} />
+			{hud.home > 0 && (
+				<span className="inline-flex items-center gap-1" title="Animals brought home">
+					<PawPrint className="size-4" aria-hidden />
+					<span className="tabular-nums">{hud.home}</span>
+				</span>
+			)}
+		</GameStatus>
+	);
+}
+
+/**
+ * At night, which way the nearest lost animal is: an arrow that turns as the kid does, and how far. Points ahead
+ * when it's in front, to the side when it's beside or behind.
+ */
+function LostHint({ hint }: { hint: NonNullable<Hud["lostNear"]> }) {
+	return (
+		<p
+			className="glass glass-pill pointer-events-none absolute top-[calc(max(0.75rem,var(--safe-top))+7.6rem)] left-1/2 -translate-x-1/2 text-sm font-medium max-md:top-[calc(max(0.75rem,var(--safe-top))+9rem)]"
+			aria-live="off"
+		>
+			<span className="inline-block transition-transform duration-200" style={{ transform: `rotate(${-hint.turn}rad)` }} aria-hidden>
+				<ArrowLeft className="size-4 rotate-90" />
+			</span>
+			Lost {hint.label} · {hint.blocks} steps
+		</p>
+	);
+}
 
 function FireMeter({ fuel }: { fuel: number }) {
 	const share = Math.min(1, fuel / FUEL_MAX);

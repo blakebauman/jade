@@ -497,7 +497,7 @@ export class Effects {
 			const oz = rand(0.15, 0.85);
 			const i = this.cubes.spawn(cell[0] + ox, cell[1] + oy, cell[2] + oz, rand(0.9, 1.3));
 			this.cubes.vel(i, (ox - 0.5) * 5, rand(2.5, 4.5), (oz - 0.5) * 5);
-			this.cubes.size0[i] = this.cubes.size1[i] = rand(0.12, 0.2);
+			this.cubes.size0[i] = this.cubes.size1[i] = rand(0.08, 0.14);
 			this.cubes.grav[i] = 16;
 			this.cubes.spin[i] = rand(3, 8);
 			this.cubes.floor[i] = cell[1];

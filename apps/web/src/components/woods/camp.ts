@@ -1,8 +1,6 @@
 import {
 	AdditiveBlending,
 	BoxGeometry,
-	BufferAttribute,
-	type BufferGeometry,
 	Color,
 	ConeGeometry,
 	CylinderGeometry,
@@ -13,7 +11,7 @@ import {
 	MeshLambertMaterial,
 	type Object3D,
 } from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { bake } from "./bake.ts";
 
 /**
  * The camp round the fire: the campfire itself (a teepee of split logs on a ring of stones, an ember bed and a
@@ -188,46 +186,6 @@ function lantern(): { group: Group; glass: Mesh } {
 }
 
 export type Camp = { group: Group; fire: Campfire; lantern: Mesh };
-
-/**
- * Bakes every plain shape under `root` (one-colour Lambert meshes) into one vertex-coloured mesh, so the whole camp
- * costs one draw call (and one more in the shadow pass) instead of one per log and stone. Glowing and moving parts
- * (flames, embers, the lantern's glass) are left as they are.
- */
-function bake(root: Group): Group {
-	root.updateMatrixWorld(true);
-	const parts: BufferGeometry[] = [];
-	const keep: Object3D[] = [];
-	root.traverse((o) => {
-		const m = o as Mesh;
-		if (!m.isMesh) return;
-		if (!(m.material instanceof MeshLambertMaterial)) {
-			keep.push(m);
-			return;
-		}
-		const g = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone()).applyMatrix4(m.matrixWorld);
-		const c = m.material.color;
-		const colours = new Float32Array(g.attributes.position!.count * 3);
-		for (let k = 0; k < colours.length; k += 3) colours.set([c.r, c.g, c.b], k);
-		g.setAttribute("color", new BufferAttribute(colours, 3));
-		g.deleteAttribute("uv");
-		parts.push(g);
-	});
-	const out = new Group();
-	const merged = mergeGeometries(parts);
-	if (merged) {
-		const mesh = new Mesh(merged, new MeshLambertMaterial({ vertexColors: true }));
-		mesh.castShadow = mesh.receiveShadow = true;
-		out.add(mesh);
-	}
-	for (const o of keep) {
-		const world = o.matrixWorld.clone();
-		o.removeFromParent();
-		world.decompose(o.position, o.quaternion, o.scale);
-		out.add(o);
-	}
-	return out;
-}
 
 /** The whole camp, centred on the fire (its cell's middle at the origin, ground at y 0). */
 export function camp(): Camp {
