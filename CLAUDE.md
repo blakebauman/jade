@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. **Play** sits between them (the hub shows one place at a time, full screen, in the order Spelling, Play, Math, one flick or arrow key apart, with tabs naming all three): Roxy's studio, the town, Gobble Town and Jelly Blocks. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
+Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. **Play** sits between them (the hub shows one place at a time, full screen, in the order Spelling, Play, Math, one flick or arrow key apart, with tabs naming all three): Roxy's studio, the town, Gobble Town, Jelly Blocks and Campfire Woods. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
 
 Jade's World is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
@@ -56,7 +56,8 @@ packages/tsconfig   base / worker / library / spa presets (copied from memoturn)
 | `DB` | D1 | All data |
 | `AUDIO` | R2 | TTS cache |
 | `AI` | Workers AI | Speech, OCR, sentences |
-| `RATE_LIMIT` | Rate limiter | Per-parent limits on the Workers AI calls |
+| `RATE_LIMIT` | Rate limiter | Per-parent limits on the Workers AI calls and friend codes |
+| `WOODS` | Durable Object (`WoodsWorld`, SQLite) | One Campfire Woods island per family, named by the parent's user id |
 
 Secrets:
 - `BETTER_AUTH_SECRET` is required.
@@ -195,6 +196,36 @@ Secrets:
 - **Tickets:** one per row popped, at the end (`jelly:<seed>`, at most 30). Best score on the device (`jade.jelly.best.{childId}`). When play time runs out mid-game, the falling piece is the last one (`game.lastPiece`: the sim ends with `over` `why: "time"` once it's down and its rows have popped; more time bought takes it back).
 - **Test hooks** (dev): `setSeed`, `setState` (`ready`, `active-play`, `late-game`, `results`), `setAutopilot`, `setPausedForScreenshot`; `e2e/jelly.spec.ts`.
 
+**Campfire Woods (Play, `/play/$childId/games/woods`):** a first-person block island per family. Kids dig blocks into a bag, build with them, and keep a campfire fed through the night. Family and linked friends play on it live.
+- **Rules** are pure in `packages/core/src/woods/` (`@jade/core/woods`), shared by the island and the screen:
+  - `volume.ts`: the island is 96×96×48 bytes, indexed `x + W·(z + D·y)`. An edit on the wire is one int, `packEdit(i, b)` (`i << 6 | b`).
+  - `blocks.ts`: `B`. Block ids are bytes on the wire, so never renumber one; add new ones at the end. Wool and torches refill each morning (`REFILLS`).
+  - `terrain.ts`: `generate(seed)` builds the island from the seed: a flat camp clearing round the fire, woods, hills, beach and sea, ores by depth, bedrock. Only edits are ever stored.
+  - `clock.ts`: a 6-minute day then a 4-minute night (`phaseAt`). Fire fuel burns 1/s; logs 45, planks 20, coal 60. `fireRadius` follows the fuel.
+  - `night.ts`: 3 `lostAnimals` a night, placed where a kid can walk from camp (`walkable`). `deerAt` is the Night Deer's path, the same on every screen, so it's never sent.
+  - `goals.ts`: `GOALS` pay tickets once each, keyed `woods:<id>`.
+  - `protocol.ts`: the zod `clientMsg` and the `ServerMsg` type.
+- **The island** (`packages/api/src/woods/WoodsWorld.ts`) is one Durable Object per family, with SQLite storage and hibernatable WebSockets. `apps/web/src/worker.ts` exports it.
+  - **Storage:** `meta` (seed, clock, fire, lost animals, animals home, guests' building), `edits` (one row per changed cell, with `prev` and `by_family`), `inv` and `stats` per kid.
+  - **Authority:** it judges every edit (reach, inventory, never the fire's cell, nobody walled in, 20 a second, at most 200k edits) and answers `refused`, so the screen puts the block back.
+  - **Clock:** an alarm ticks it every second, and only while a socket is open, so nights pass only while someone plays. At nightfall it places lost animals. A night counts only if the fire never went out. While fuel is under 25% at night, the deer snuffs the nearest built torch every 20s.
+  - **RPC:** `online`, `kickFamily`, `undoFamily` and `setGuestsBuild`. `tick(dt)` is public for tests.
+  - **Routes:** `GET /api/children/:id/woods/ws?island=` checks the kid is the parent's own and the island is theirs or a linked friend's, then forwards headers (`WOODS_HEADERS`, URI-encoded). `GET …/woods/islands` lists ours plus friends', each with who's on now.
+- **Friends** (`routes/friends.ts`, `/api/parent/friends`; Parent → Friends):
+  - Codes are 8 characters with no 0/O/1/I/L, single use, 48 hours, and never usable by the parent who made one. One parent makes a code, the other looks it up and accepts.
+  - A link is `friend_links` (smaller id first). `parent_settings.family_label` is what friends see. `woods_guests_build` decides whether friends can build or only look.
+  - Unlinking kicks visitors both ways at once. "Undo" puts back what a family changed on our island (today, or ever).
+  - Visitors are shown by initial (family by name). There's no chat: four emotes only.
+- **The screen** (`components/woods/`):
+  - `world.ts` `IslandState` holds the socket (reconnect with backoff, offline wait, kicked) and the screen's own copy of the volume. Edits show at once and are taken back on `refused`.
+  - `mesher.ts` (in `mesher.worker.ts`) meshes per 16×16 full-height column: visible faces only, corner occlusion, solid and see-through meshes. That's at most 72 meshes, about 30 calls and 40k triangles in view. `atlas.ts` draws the 16px tiles in code.
+  - `physics.ts` steps an AABB one axis at a time and auto-hops one-block steps. `raycast.ts` is DDA, looking through water.
+  - `WoodsScene.tsx` uses plain WebGL Lambert with vertex AO. The sky, fog and light follow `phaseAt`. The campfire and the 2 nearest torches get pointLights (each light costs every pixel); on a software renderer it draws at 0.75 resolution. It also draws figures (boxes, a name tile, emote bubbles), animals and the deer (`models.ts`).
+  - Build anything three.js should keep in one `useMemo`: React may run a memo twice, and three.js moves an object into whichever group adds it last.
+  - **Input:** on a fine pointer, pointer lock: the mouse looks, holding the left button digs, the right builds, the wheel or 1–9 picks a block. Escape lets the mouse go without pausing ("Click to look round" takes it back; headless CI browsers can't hold pointer lock at all), and P or hiding the tab pauses. On touch, Touch Events: a drag looks, a held finger (260ms) digs under it, a quick tap builds there. `TouchControls` walks, E or the Use button feeds the fire or picks up an animal.
+  - The game needs the internet: offline, it says so and starts when back. `goInProgress` is on at night. `jade.woods.nights.{childId}` feeds the Play home sticker.
+  - **Test hooks** (dev): `peek`, `block`, `lookAt`, `mine`, `place`, `select`, `setState` (`day`/`dusk`/`night`, this screen only) and `setPausedForScreenshot`. `e2e/woods.spec.ts` covers two kids on one island, two linked families, and real CDP touch.
+
 **Admin (Better Auth admin plugin):**
 - Endpoints live under `/api/auth/admin/*` (list, ban, set role, impersonate); the client has `adminClient()` on `authClient.admin`.
 - Promote a parent in D1: `update user set role = 'admin' where email = '…'`. The session cookie cache holds the old role for up to 5 minutes, so sign in again.
@@ -207,7 +238,7 @@ Secrets:
 - It's applied as `data-theme` on `<html>`. `index.css` holds Night as the default tokens and Day under `:root[data-theme="day"]`; shadows and recesses are `--tone-*` tokens so both themes own them.
 - The choice is copied to localStorage (`jade.appearance`) so an inline script in `index.html` lights the page before first paint and offline. `_authed` reads `/api/parent` on every signed-in screen and applies the account's choice.
 - `<meta name="theme-color">` follows the theme; the PWA manifest colours stay at Night's page.
-- Games aren't themed: their scenes are always daylit (`useNight()` is false, `--scene-*` is the day sky), and only the UI round them follows Day and Night.
+- Games aren't themed: their scenes are always daylit (`useNight()` is false, `--scene-*` is the day sky), and only the UI round them follows Day and Night. Campfire Woods has its own clock's night, which isn't the theme. While its sky is dark, `sceneDark` gives the words printed on the scene Night's ink.
 
 **SRS and streaks:**
 - SRS is driven by first-try correctness. A new word spelled right starts in box 2, due tomorrow; a miss goes to box 1, due now.

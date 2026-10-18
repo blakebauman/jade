@@ -163,6 +163,7 @@ function useParentUnlock(user: string, idleMs: number) {
 const NAV = [
 	{ to: "/parent", label: "Lists", match: (path: string) => path === "/parent" || path.startsWith("/parent/lists") },
 	{ to: "/parent/kids", label: "Kids", match: (path: string) => path.startsWith("/parent/kids") || path.startsWith("/parent/progress") },
+	{ to: "/parent/friends", label: "Friends", match: (path: string) => path.startsWith("/parent/friends") },
 	{ to: "/parent/settings", label: "Settings", match: (path: string) => path.startsWith("/parent/settings") },
 ] as const;
 const ADMIN_NAV = { to: "/parent/admin", label: "Admin", match: (path: string) => path.startsWith("/parent/admin") } as const;

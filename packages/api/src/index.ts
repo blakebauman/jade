@@ -4,6 +4,7 @@ import { createAuth } from "./auth.ts";
 import type { AppEnv } from "./env.ts";
 import { requireParent, withDb } from "./middleware.ts";
 import { childrenRoutes } from "./routes/children.ts";
+import { friendRoutes } from "./routes/friends.ts";
 import { importRoutes } from "./routes/import.ts";
 import { listRoutes } from "./routes/lists.ts";
 import { parentRoutes } from "./routes/parent.ts";
@@ -11,20 +12,24 @@ import { playRoutes } from "./routes/play.ts";
 import { roxyRoutes } from "./routes/roxy.ts";
 import { sessionRoutes } from "./routes/sessions.ts";
 import { ttsRoutes } from "./routes/tts.ts";
+import { woodsRoutes } from "./routes/woods.ts";
 import { wordRoutes } from "./routes/words.ts";
 
 export type { ApiBindings, AppEnv } from "./env.ts";
+export { WoodsWorld } from "./woods/WoodsWorld.ts";
 
 const authed = new Hono<AppEnv>()
 	.use(requireParent)
 	.route("/children/:id/roxy", roxyRoutes)
 	.route("/children/:id/play", playRoutes)
+	.route("/children/:id/woods", woodsRoutes)
 	.route("/children", childrenRoutes)
 	.route("/lists", listRoutes)
 	.route("/words", wordRoutes)
 	.route("/tts", ttsRoutes)
 	.route("/import", importRoutes)
 	.route("/sessions", sessionRoutes)
+	.route("/parent/friends", friendRoutes)
 	.route("/parent", parentRoutes);
 
 /** Mounted by apps/web's Worker at the root; it owns /health and /api/*. */

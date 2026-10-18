@@ -27,6 +27,7 @@ function GamesHome() {
 	const holiday = roxy?.holidays[0];
 	const best = useMemo(() => readBest(`jade.gobble.best.${child.id}`), [child.id]);
 	const jellyBest = useMemo(() => readBest(`jade.jelly.best.${child.id}`), [child.id]);
+	const woodsNights = useMemo(() => readBest(`jade.woods.nights.${child.id}`), [child.id]);
 	const roxyArt = (
 		<span className="block w-20 shrink-0 overflow-hidden rounded-xl sm:w-28 md:w-32" aria-hidden>
 			{roxy ? (
@@ -68,6 +69,9 @@ function GamesHome() {
 						</Waiting>
 						<Waiting label="Jelly Blocks">
 							<JellyArt />
+						</Waiting>
+						<Waiting label="Campfire Woods">
+							<WoodsArt />
 						</Waiting>
 					</ul>
 				</div>
@@ -135,6 +139,20 @@ function GamesHome() {
 								>
 									{jellyBest > 0 && <span className="text-sm font-semibold tabular-nums">Your best: {jellyBest.toLocaleString()}</span>}
 								</GameSticker>
+								<GameSticker
+									to="/play/$childId/games/woods"
+									childId={child.id}
+									tilt={1}
+									art={<WoodsArt />}
+									title="Campfire Woods"
+									about="Dig and build on your own island, keep the campfire burning all night, and bring lost animals home. Friends can join you."
+								>
+									{woodsNights > 0 && (
+										<span className="text-sm font-semibold tabular-nums">
+											{woodsNights} {woodsNights === 1 ? "night" : "nights"} by the fire
+										</span>
+									)}
+								</GameSticker>
 							</ul>
 						</section>
 						{/* Buying time comes after the games, so the page leads with what there is to play, not with spending. */}
@@ -150,7 +168,8 @@ type GamePath =
 	| "/play/$childId/games/roxy"
 	| "/play/$childId/games/roxy/town"
 	| "/play/$childId/games/gobble"
-	| "/play/$childId/games/jelly";
+	| "/play/$childId/games/jelly"
+	| "/play/$childId/games/woods";
 
 /**
  * One game as a berry sticker. The link is named by the game alone and described by its line and stat, so a screen
@@ -248,6 +267,29 @@ function TownArt() {
 			<rect x="62" y="79" width="3" height="6" fill="#8a5a3b" />
 			<rect x="75" y="79" width="3" height="6" fill="#8a5a3b" />
 			<path d="M100 76 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5 Z" fill="#f6f1ff" />
+		</svg>
+	);
+}
+
+/** Campfire Woods' sticker art: a blocky tree and a campfire under a night sky. */
+function WoodsArt() {
+	return (
+		<svg viewBox="0 0 120 120" className={ART} aria-hidden="true">
+			<rect x="8" y="8" width="104" height="104" rx="16" fill="#1b2a52" />
+			<circle cx="92" cy="26" r="9" fill="#f6efc8" />
+			<circle cx="28" cy="22" r="2" fill="#fff" />
+			<circle cx="52" cy="34" r="1.6" fill="#fff" />
+			<circle cx="70" cy="16" r="1.6" fill="#fff" />
+			<rect x="8" y="88" width="104" height="24" fill="#4f9a3d" />
+			<rect x="8" y="100" width="104" height="12" fill="#7a5233" />
+			<rect x="16" y="32" width="36" height="32" fill="#2f7d36" />
+			<rect x="22" y="38" width="8" height="8" fill="#4fa04a" />
+			<rect x="38" y="48" width="8" height="8" fill="#4fa04a" />
+			<rect x="28" y="64" width="12" height="24" fill="#6b4a2b" />
+			<rect x="64" y="82" width="34" height="6" fill="#6b4a2b" />
+			<rect x="72" y="66" width="18" height="16" fill="#ff8a1f" />
+			<rect x="76" y="56" width="10" height="12" fill="#ffc93c" />
+			<rect x="79" y="50" width="5" height="7" fill="#fff3b0" />
 		</svg>
 	);
 }

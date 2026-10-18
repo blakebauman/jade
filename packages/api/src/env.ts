@@ -1,4 +1,5 @@
 import type { Db } from "@jade/db";
+import type { WoodsWorld } from "./woods/WoodsWorld.ts";
 
 /** Bindings the API needs. apps/web/wrangler.jsonc declares them; this is the contract. */
 export interface ApiBindings {
@@ -7,6 +8,8 @@ export interface ApiBindings {
 	AUDIO: R2Bucket;
 	AI: Ai;
 	RATE_LIMIT?: RateLimit;
+	/** Campfire Woods: one Durable Object per family's island, named by the parent's user id. */
+	WOODS: DurableObjectNamespace<WoodsWorld>;
 	BETTER_AUTH_SECRET: string;
 	BETTER_AUTH_URL: string;
 	/** Optional Merriam-Webster Elementary Dictionary key (free for non-commercial use). */

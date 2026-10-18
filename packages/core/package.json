@@ -7,7 +7,8 @@
 		".": "./src/index.ts",
 		"./packs": "./src/packs.ts",
 		"./math": "./src/math/index.ts",
-		"./roxy": "./src/roxy/index.ts"
+		"./roxy": "./src/roxy/index.ts",
+		"./woods": "./src/woods/index.ts"
 	},
 	"scripts": {
 		"lint": "biome check .",

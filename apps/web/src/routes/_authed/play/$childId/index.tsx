@@ -1,4 +1,4 @@
-import type { SPELLING_MODES } from "@jade/core";
+import { BADGES, type SPELLING_MODES } from "@jade/core";
 import { TOPIC_LABEL } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { useQuery } from "@tanstack/react-query";
@@ -55,6 +55,9 @@ function rememberedPlace(childId: string): PlaceId | null {
 }
 
 /** The sticker sheet: every badge has its place, earned ones stuck down, the rest still a printed outline. */
+/** How to earn a badge, in the kid's words, under its empty slot. */
+const hint = (id: string) => BADGES.find((d) => d.id === id)?.hint;
+
 function StickerSheet({ badges }: { badges: Progress["badges"] }) {
 	return (
 		<ul className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4">
@@ -77,6 +80,7 @@ function StickerSheet({ badges }: { badges: Progress["badges"] }) {
 						{b.label}
 						{!b.earned && <span className="sr-only"> (not yet)</span>}
 					</span>
+					{!b.earned && hint(b.id) && <span className="text-xs leading-tight text-balance text-page-muted">{hint(b.id)}</span>}
 				</li>
 			))}
 		</ul>
@@ -391,7 +395,7 @@ function SubjectHub() {
 						</>
 					) : (
 						<>
-							<p className="text-lg font-medium">Roxy, the town, Gobble Town and Jelly Blocks</p>
+							<p className="text-lg font-medium">Roxy, the town, Gobble Town, Jelly Blocks and Campfire Woods</p>
 							<div className="flex flex-wrap items-center gap-3">
 								<Link
 									to="/play/$childId/games"
@@ -402,7 +406,7 @@ function SubjectHub() {
 								>
 									Let’s play
 								</Link>
-								{play && <PlayWallet status={play} />}
+								{play && <PlayWallet status={play} stars={false} />}
 							</div>
 						</>
 					)}

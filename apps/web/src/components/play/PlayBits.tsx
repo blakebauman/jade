@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 import { ApiError } from "#/lib/api.ts";
 import { dayKey, useOnline } from "#/lib/hooks.ts";
 import { type PlayStatus, playApi, playQuery, starsInPlay } from "#/lib/play.ts";
+import { speaker } from "#/lib/speaker.ts";
 
 /** The games' money: a berry ticket stub with the count after its perforation. */
 export function Tickets({ count, className = "", tall }: { count: number; className?: string; tall?: boolean }) {
@@ -33,14 +34,23 @@ export function SpendableStars({ count }: { count: number }) {
 	);
 }
 
-/** What a kid has to spend in Play. Free games have nothing to count, so they say so instead. */
-export function PlayWallet({ status }: { status: PlayStatus }) {
+/**
+ * What a kid has to spend in Play. Free games have nothing to count, so they say so instead. The hub passes
+ * `stars={false}`: its header already counts every star ever earned, and a second, smaller star count beside it would
+ * look like stars had gone missing.
+ */
+export function PlayWallet({ status, stars = true }: { status: PlayStatus; stars?: boolean }) {
 	const { settings, wallet, time } = status;
 	if (settings.free) return <p className="text-sm font-medium text-page-muted">Everything in games is free to use</p>;
 	return (
 		<div className="flex flex-wrap items-center gap-2.5">
-			<Tickets count={wallet.tickets} />
-			{starsInPlay(settings) && <SpendableStars count={wallet.stars} />}
+			{/* An empty stub says nothing to a kid who's never had one; say how they come instead. */}
+			{wallet.tickets > 0 ? (
+				<Tickets count={wallet.tickets} />
+			) : (
+				<span className="text-sm font-medium text-page-muted">Find things in town or play a game to earn tickets</span>
+			)}
+			{stars && starsInPlay(settings) && <SpendableStars count={wallet.stars} />}
 			{settings.timeCosts && (
 				<span className="inline-flex items-center gap-1.5 px-1 text-sm font-medium text-page-muted tabular-nums">
 					<Clock className="size-4" aria-hidden /> {minutesLeft(time.secondsLeft)} min of play time
@@ -150,6 +160,15 @@ export function PlayClosed({
 							<span className="sr-only"> for {GOAL_LABEL[settings.goal].toLowerCase()}</span>
 						</p>
 					)}
+					{/* Somewhere to go from here, not just what's missing. */}
+					<div className="flex flex-wrap justify-center gap-2.5 pt-1">
+						<Link to="/play/$childId/spelling" params={{ childId }} onClick={() => speaker.unlock()} className="key">
+							Spelling
+						</Link>
+						<Link to="/play/$childId/math" params={{ childId }} onClick={() => speaker.unlock()} className="key">
+							Math
+						</Link>
+					</div>
 				</>
 			) : (
 				<>

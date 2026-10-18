@@ -166,6 +166,20 @@
 		radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-page) 100%, white 30%) 0%, var(--color-page) 50%, color-mix(in oklab, var(--color-page) 70%, var(--color-page-deep)) 100%);
 	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23335c4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
 }
+/* A game with its own night (Campfire Woods after dark): the words printed on its scene take Night's ink again, whatever
+ * the theme, so they read on a dark sky. */
+.scene-day.scene-dark {
+	color-scheme: dark;
+	--color-page: #0e4f43;
+	--color-page-deep: #093a31;
+	--color-page-raised: #135c4e;
+	--color-page-line: #1a6a5a;
+	--color-page-ink: #e3f3ec;
+	--color-page-muted: #a3d0c0;
+	--color-page-pit: #072e27;
+	--color-vinyl: #dfe8e3;
+	--tone-key-line: rgb(227 243 236 / 0.16);
+}
 
 /*
  * The notch, the status bar and the home indicator. index.html sets viewport-fit=cover and a translucent status bar, so the
@@ -230,6 +244,14 @@
 	::selection {
 		background: var(--color-maple);
 		color: var(--color-ink);
+	}
+	/*
+	 * The page's own ink, resolved here so it survives places that re-point --color-page-ink (a place sticker's face
+	 * prints in near-white ink, which as a ring vanished on Day's mint page).
+	 */
+	:root,
+	.scene-day {
+		--focus-ring: var(--color-page-ink);
 	}
 	:focus-visible {
 		outline: 3px solid var(--color-page-ink);
@@ -598,6 +620,16 @@
 	}
 	a.sticker:active,
 	button.sticker:active:not(:disabled) { transform: rotate(var(--tilt, 0deg)) translateY(1px); }
+	/*
+	 * Keyboard focus: the chalk ring 3px off the white vinyl rim read as a slightly thicker rim at Night. Stand it further
+	 * off and peel the sticker up as a hover does, so focus shows in shape as well as line.
+	 */
+	a.sticker:focus-visible,
+	button.sticker:focus-visible {
+		outline-color: var(--focus-ring);
+		outline-offset: 6px;
+		transform: rotate(var(--tilt, 0deg)) translateY(-3px);
+	}
 	/* At Night the printed faces sit under the lamp, a step quieter than in daylight. */
 	:root:not([data-theme="day"]) .sticker[data-place] { filter: saturate(0.9) brightness(0.94); }
 
@@ -809,13 +841,14 @@
 	input[type="checkbox"]:where(:not(.sr-only)):disabled { opacity: 0.45; cursor: not-allowed; }
 
 	/* A sticker not earned yet: its outline printed on the page, waiting. */
+	/* The outline and silhouette sit halfway to Lichen: page-line alone nearly vanished on an iPad in daylight. */
 	.slot {
 		display: grid;
 		place-items: center;
 		border-radius: 1.1rem;
-		border: 2px dashed var(--color-page-line);
+		border: 2px dashed color-mix(in oklab, var(--color-page-muted) 55%, var(--color-page-line));
 		background: color-mix(in oklab, var(--color-page-deep) 35%, transparent);
-		color: var(--color-page-line);
+		color: color-mix(in oklab, var(--color-page-muted) 55%, var(--color-page-line));
 	}
 	/* Art printed into a slot as one flat shape in the slot's ink: every painted part takes it, outlines-only parts stay open. */
 	.silhouette svg,
