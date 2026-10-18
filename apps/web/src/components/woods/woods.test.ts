@@ -1,8 +1,10 @@
 import { B, generate, indexOf, spawnPoint, TILE_NAMES, Volume } from "@jade/core/woods";
+import { Matrix4, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { PAINTED } from "./atlas.ts";
 import { columnsAround, LIGHT_LEVELS, lightAround, meshColumn, showsFace, tileUv, WATER_TOP } from "./mesher.ts";
 import { newBody, overlaps, step } from "./physics.ts";
+import { Rain } from "./rain.ts";
 import { raycast } from "./raycast.ts";
 
 const faces = (m: { index: Uint32Array }) => m.index.length / 6;
@@ -141,5 +143,27 @@ describe("woods raycast", () => {
 		v.set(5, 3, 5, B.sand);
 		v.set(5, 4, 5, B.water);
 		expect(raycast(v, [5.5, 6.5, 5.5], [0, -1, 0])?.block).toBe(B.sand);
+	});
+});
+
+describe("woods rain", () => {
+	it("falls in the open, and not under a roof", () => {
+		const rain = new Rain();
+		const camera = { position: new Vector3(40, 20, 40) };
+		const visible = () => {
+			const m = new Matrix4();
+			let n = 0;
+			for (let k = 0; k < rain.mesh.count; k++) {
+				rain.mesh.getMatrixAt(k, m);
+				if (m.elements[0] !== 0) n++;
+			}
+			return n;
+		};
+		rain.update(0.016, camera, 1, () => -1);
+		expect(visible()).toBeGreaterThan(100);
+		rain.update(0.016, camera, 1, () => 100);
+		expect(visible()).toBe(0);
+		rain.update(0.016, camera, 0);
+		expect(rain.mesh.visible).toBe(false);
 	});
 });

@@ -45,7 +45,7 @@ export class Rain {
 	}
 
 	/** `amount` 0 (dry) to 1 (a proper shower). */
-	update(dt: number, camera: { position: Vector3 }, amount: number) {
+	update(dt: number, camera: { position: Vector3 }, amount: number, roofAt?: (x: number, z: number) => number) {
 		const n = Math.round(this.max * Math.min(1, Math.max(0, amount)));
 		this.mesh.count = n;
 		this.mesh.visible = n > 0;
@@ -62,8 +62,11 @@ export class Rain {
 			const z = c.z - SPAN / 2 + ((((this.drops[o + 2]! - c.z) % SPAN) + SPAN) % SPAN);
 			// Not right in front of the eye, where a drop would be a big pale bar.
 			const close = Math.abs(x - c.x) < 4 && Math.abs(z - c.z) < 4;
-			this.m.makeTranslation(x, c.y - HIGH / 2 + y, z);
-			if (close) this.m.scale(HIDDEN);
+			const dropY = c.y - HIGH / 2 + y;
+			// Under a roof, a tree or a cave's ceiling, it doesn't rain.
+			const sheltered = roofAt ? roofAt(Math.floor(x), Math.floor(z)) + 1 > dropY : false;
+			this.m.makeTranslation(x, dropY, z);
+			if (close || sheltered) this.m.scale(HIDDEN);
 			this.mesh.setMatrixAt(k, this.m);
 		}
 		this.mesh.instanceMatrix.needsUpdate = true;

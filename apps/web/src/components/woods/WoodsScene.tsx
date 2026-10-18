@@ -4,6 +4,7 @@ import {
 	CYCLE_S,
 	canMine,
 	cellOf,
+	D,
 	DAY_S,
 	deerAt,
 	FUEL_LOW,
@@ -18,6 +19,7 @@ import {
 	phaseAt,
 	rainAt,
 	spawnPoint,
+	W,
 } from "@jade/core/woods";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef } from "react";
@@ -148,6 +150,7 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 		() =>
 			world.listen((e) => {
 				if (e.t === "fed") fx.sparks(world.fire, Math.min(1, e.added / 45));
+				else if (e.t === "pat") fx.stars([Math.floor(e.at[0]), Math.floor(e.at[1]), Math.floor(e.at[2])]);
 				else if (e.t === "snuffed") fx.smokePuff(e.at);
 				else if (e.t === "home") {
 					const p = e.mine && controls.body ? controls.body.p : e.at;
@@ -157,6 +160,10 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 		[world, fx, controls],
 	);
 	const rain = useMemo(() => new Rain({ mobile: quality !== "high", reducedMotion: prefersReducedMotion() }), [quality]);
+	const roofAt = useMemo(
+		() => (x: number, z: number) => (x < 0 || z < 0 || x >= W || z >= D ? -1 : (world.tops[x + W * z] ?? -1)),
+		[world],
+	);
 	useEffect(() => {
 		scene.add(rain.mesh);
 		return () => {
@@ -166,7 +173,7 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 	}, [scene, rain]);
 	useFrame(({ camera, clock }, dt) => {
 		fx.update(dt, camera, clock.elapsedTime);
-		rain.update(dt, camera, rainAt(world.seed, world.elapsed()));
+		rain.update(dt, camera, rainAt(world.seed, world.elapsed()), roofAt);
 		waterTime.value = clock.elapsedTime;
 		torchGlow.value = 0.12 + 0.6 * (1 - phaseAt(world.elapsed()).sun);
 		const { sun } = phaseAt(world.elapsed());
@@ -433,6 +440,13 @@ function Sky({ world, quality }: { world: IslandState; quality: Quality }) {
 		rig.sun.position.copy(focus).addScaledVector(dir, 60);
 		(rig.stars.material as PointsMaterial).opacity = Math.max(0, 1 - sun * 2.5);
 		rig.stars.position.copy(camera.position);
+		// Under water: a close blue-green murk instead of the sky's haze.
+		const eye = world.volume?.get(Math.floor(camera.position.x), Math.floor(camera.position.y), Math.floor(camera.position.z));
+		if (eye === B.water) {
+			fog.color.set(night ? "#0b2a3f" : "#1f6f8f");
+			fog.near = 0.5;
+			fog.far = 12;
+		}
 	});
 	return null;
 }
@@ -610,6 +624,7 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 		// Those at home amble round the fire (the first sixteen; a big crowd would hide it).
 		const living = world.home.slice(0, 16);
 		while (home.current.length > living.length) group.remove(home.current.pop()!);
+		world.homeSpots.length = living.length;
 		living.forEach((kind, k) => {
 			let g = home.current[k];
 			if (!g || g.userData.kind !== kind) {
@@ -620,13 +635,19 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 				group.add(g);
 			}
 			const [fx, fy, fz] = world.fire;
-			const r = 3 + (k % 4) * 0.9;
+			const r = 3 + (k % 3) * 0.5;
 			const a = (k / living.length) * Math.PI * 2 + t * 0.05 * (k % 2 ? 1 : -1);
 			g.position.set(fx + 0.5 + Math.cos(a) * r, fy, fz + 0.5 + Math.sin(a) * r);
+			world.homeSpots[k] = { x: g.position.x, y: g.position.y, z: g.position.z };
 			g.rotation.y = -a + (k % 2 ? 0 : Math.PI);
-			// Just home: a few happy hops (not those already living here when the kid arrived).
+			// Just home, or just patted: a few happy hops (not those already living here when the kid arrived).
 			if (settled.current < 0 && world.volume) settled.current = world.home.length;
 			if (g.userData.arrived === undefined) g.userData.arrived = k < settled.current ? -10 : t;
+			const patted = world.patted.get(k);
+			if (patted !== undefined && patted !== g.userData.pattedAt) {
+				g.userData.pattedAt = patted;
+				g.userData.arrived = t;
+			}
 			const arrived = g.userData.arrived as number;
 			const happy = t - arrived < 2.5 ? Math.abs(Math.sin((t - arrived) * 7)) * 0.45 * (1 - (t - arrived) / 2.5) : 0;
 			g.children[0]!.position.y = Math.abs(Math.sin(t * 3 + k)) * 0.05 + happy;
@@ -783,6 +804,7 @@ function Player({ world, controls, running, playing, fx }: Omit<Props, "label"> 
 		wasGround: true,
 		fallFrom: 0,
 		stride: 0,
+		wet: false,
 	});
 
 	useEffect(() => {
@@ -822,6 +844,13 @@ function Player({ world, controls, running, playing, fx }: Omit<Props, "label"> 
 				s.fallFrom = body.p[1];
 			}
 			if (!grounded && body.ground) sound.land(Math.min(1, Math.max(0, (s.fallFrom - body.p[1]) / 6)));
+			// Into the water: a splash.
+			if (body.water && !s.wet) {
+				const cell: [number, number, number] = [Math.floor(body.p[0]), Math.floor(body.p[1] + 0.6), Math.floor(body.p[2])];
+				fx.burst(cell, B.water);
+				sound.step(B.water);
+			}
+			s.wet = body.water;
 			if (body.ground) s.fallFrom = body.p[1];
 			else s.fallFrom = Math.max(s.fallFrom, body.p[1]);
 			if (lost(body)) {

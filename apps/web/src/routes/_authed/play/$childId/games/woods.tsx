@@ -1,5 +1,7 @@
 import {
 	ANIMAL_LABEL,
+	ANIMALS,
+	type Animal,
 	B,
 	BLOCKS,
 	blockInfo,
@@ -62,7 +64,6 @@ type Hud = {
 	minutes: number;
 	fuel: number;
 	nights: number;
-	home: number;
 	inv: Record<number, number>;
 	others: number;
 	/** Standing by the lit fire: recipes that need its heat can be made. */
@@ -70,7 +71,15 @@ type Hud = {
 	/** At night: the nearest lost animal nobody's found yet, and which way it is from where the kid is looking. */
 	lostNear: { label: string; blocks: number; turn: number } | null;
 	/** What E (or the Use button) would do here. */
-	use: { kind: "feed"; block: number } | { kind: "pickup"; id: string; label: string } | null;
+	use:
+		| { kind: "feed"; block: number }
+		| { kind: "pickup"; id: string; label: string }
+		| { kind: "pat"; index: number; label: string }
+		| null;
+	/** The kid's eyes are under water. */
+	underwater: boolean;
+	/** The animals living at camp. */
+	home: Animal[];
 };
 
 const MOUSE_TURN = 0.0024;
@@ -244,6 +253,10 @@ function WoodsScreen() {
 			raining.current = wet > 0;
 			sound.ambience({
 				rain: wet,
+				underwater:
+					!!controls.body &&
+					world.volume?.get(Math.floor(controls.body.p[0]), Math.floor(controls.body.p[1] + 1.55), Math.floor(controls.body.p[2])) ===
+						B.water,
 				sun: p.sun,
 				fireDistance: body ? Math.hypot(body[0] - fx - 0.5, body[2] - fz - 0.5) : 30,
 				fireStrength: fuel <= 0 ? 0 : 0.3 + 0.7 * Math.min(1, fuel / (FUEL_MAX * 0.6)),
@@ -286,6 +299,9 @@ function WoodsScreen() {
 		if (u.kind === "feed") {
 			world.send({ t: "feed", b: u.block });
 			sound.feed();
+		} else if (u.kind === "pat") {
+			world.pat(u.index);
+			sound.home();
 		} else world.send({ t: "pickup", id: u.id });
 	}, [world, controls, report]);
 
@@ -527,6 +543,7 @@ function WoodsScreen() {
 					deer: DAY_S + 90,
 					"lost-animal": DAY_S + 90,
 					torches: DAY_S + 90,
+					"camp-animals": 90,
 				}[name];
 				if (at === undefined) throw new Error(`Unknown state ${name}`);
 				for (let k = 0; k < 100 && world.status !== "open"; k++) await new Promise((r) => setTimeout(r, 100));
@@ -552,6 +569,12 @@ function WoodsScreen() {
 						// Under the island's limit on edits a second.
 						await new Promise((r) => setTimeout(r, 120));
 					}
+				}
+				if (name === "camp-animals") {
+					// Animals living at camp, on this screen only; then pat the nearest so it hops.
+					world.home = ["bunny", "fox", "lamb", "owl", "hedgehog", "duckling"];
+					await new Promise((r) => setTimeout(r, 300));
+					world.pat(0);
 				}
 				if (name === "deer" && controls.body) {
 					// Face the Night Deer where she is right now.
@@ -601,6 +624,9 @@ function WoodsScreen() {
 							<WoodsScene world={world} controls={controls} running={running} playing={playing && ready} label={sceneLabel(hud)} />
 						</Suspense>
 					</NoWebGL>
+					{playing && hud.underwater && (
+						<div className="pointer-events-none absolute inset-0 bg-[#1f6f8f]/25 mix-blend-multiply" aria-hidden />
+					)}
 					{playing && !coarse && <Crosshair />}
 					{playing && !coarse && !captured && ready && !message && (
 						<p className="glass glass-pill pointer-events-none absolute top-[calc(max(1.5rem,var(--safe-top))+4.2rem)] left-1/2 -translate-x-1/2 text-sm font-medium">
@@ -696,6 +722,7 @@ function WoodsScreen() {
 					onPick={setSelected}
 					onEmote={emote}
 					byFire={hud.byFire}
+					home={hud.home}
 					onCraft={(recipe) => world.send({ t: "craft", recipe })}
 				/>
 			}
@@ -752,8 +779,18 @@ function WoodsScreen() {
 					running &&
 					hud.use && (
 						<button type="button" className="key" onClick={use}>
-							{hud.use.kind === "feed" ? <Flame className="size-5" aria-hidden /> : <Hand className="size-5" aria-hidden />}
-							{hud.use.kind === "feed" ? `Feed the fire (${blockInfo(hud.use.block).label.toLowerCase()})` : `Pick up the ${hud.use.label}`}
+							{hud.use.kind === "feed" ? (
+								<Flame className="size-5" aria-hidden />
+							) : hud.use.kind === "pat" ? (
+								<Heart className="size-5" aria-hidden />
+							) : (
+								<Hand className="size-5" aria-hidden />
+							)}
+							{hud.use.kind === "feed"
+								? `Feed the fire (${blockInfo(hud.use.block).label.toLowerCase()})`
+								: hud.use.kind === "pat"
+									? `Pat the ${hud.use.label}`
+									: `Pick up the ${hud.use.label}`}
 							{!coarse && <kbd className="ml-1 text-xs opacity-70">E</kbd>}
 						</button>
 					)
@@ -812,6 +849,12 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 			const near = world.lost.find((a) => a.follows === null && Math.hypot(a.at[0] - body[0], a.at[2] - body[2]) <= REACH_ANIMAL);
 			if (near) use = { kind: "pickup", id: near.id, label: ANIMAL_LABEL[near.animal] };
 		}
+		if (!use) {
+			// An animal living at camp, close enough to pat.
+			const k = world.homeSpots.findIndex((a) => Math.hypot(a.x - body[0], a.z - body[2]) <= 1.8);
+			const kind = world.home[k];
+			if (k >= 0 && kind) use = { kind: "pat", index: k, label: ANIMAL_LABEL[kind] };
+		}
 	}
 	let lostNear: Hud["lostNear"] = null;
 	if (body && p.phase === "night") {
@@ -842,12 +885,16 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 		minutes: Math.max(1, Math.ceil(p.left / 60)),
 		fuel: world.clock.fuel,
 		nights: world.clock.nights,
-		home: world.home.length,
+		home: world.home,
+		underwater: !!body && world.volume?.get(Math.floor(body[0]), Math.floor(body[1] + 1.55), Math.floor(body[2])) === B.water,
 		inv: world.inv,
 		others: world.others.size,
 		use,
 	};
 }
+
+/** "fox cub" → "fox cubs", "bunny" → "bunnies". */
+const animalPlural = (label: string) => (label.endsWith("y") ? `${label.slice(0, -1)}ies` : `${label}s`);
 
 const sceneLabel = (h: Hud) =>
 	`Campfire Woods. ${h.night ? `Night ${h.nightNo}` : "Daytime"}. The fire is ${h.fuel <= 0 ? "out" : h.fuel < FUEL_MAX / 4 ? "low" : "burning"}.${h.others ? ` ${h.others} others here.` : ""}`;
@@ -871,10 +918,10 @@ function IslandStatus({ hud }: { hud: Hud }) {
 				)}
 			</span>
 			<FireMeter fuel={hud.fuel} />
-			{hud.home > 0 && (
+			{hud.home.length > 0 && (
 				<span className="inline-flex items-center gap-1" title="Animals brought home">
 					<PawPrint className="size-4" aria-hidden />
-					<span className="tabular-nums">{hud.home}</span>
+					<span className="tabular-nums">{hud.home.length}</span>
 				</span>
 			)}
 		</GameStatus>
@@ -1004,6 +1051,7 @@ function Things({
 	onEmote,
 	byFire,
 	onCraft,
+	home,
 }: {
 	inv: Record<number, number>;
 	tiles: Map<number, string>;
@@ -1012,7 +1060,9 @@ function Things({
 	onEmote: (e: Emote) => void;
 	byFire: boolean;
 	onCraft: (recipe: string) => void;
+	home: Animal[];
 }) {
+	const living = ANIMALS.map((a) => ({ a, n: home.filter((h) => h === a).length })).filter((x) => x.n > 0);
 	const carried = BLOCKS.filter((b) => (inv[b.id] ?? 0) > 0);
 	return (
 		<div className="space-y-4">
@@ -1025,6 +1075,21 @@ function Things({
 						</button>
 					))}
 				</div>
+			</section>
+			<section aria-label="Living at camp">
+				<h3 className="text-sm font-semibold">Living at camp</h3>
+				{living.length === 0 ? (
+					<p className="mt-1 text-sm text-page-muted">Nobody yet. At night, find lost animals in the woods and lead them to the fire.</p>
+				) : (
+					<p className="mt-1 text-sm">
+						{living.map((x, k) => (
+							<span key={x.a}>
+								{k > 0 && ", "}
+								<span className="font-semibold tabular-nums">{x.n}</span> {x.n === 1 ? ANIMAL_LABEL[x.a] : animalPlural(ANIMAL_LABEL[x.a])}
+							</span>
+						))}
+					</p>
+				)}
 			</section>
 			<section aria-label="Make things">
 				<h3 className="text-sm font-semibold">Make things</h3>
