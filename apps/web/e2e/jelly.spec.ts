@@ -16,6 +16,8 @@ type Hooks = { setState: (name: string) => Promise<unknown>; peek: () => Peek };
 type Diagnostics = { renderer: { calls: number; triangles: number }; backend: string };
 
 test("play Jelly Blocks: choose a speed, move, turn and drop, pause, and see the results", async ({ page }, info) => {
+	// A runner without a graphics chip draws the jar in software, so each step waits on a slow frame.
+	test.slow();
 	const id = await setup(page);
 	await page.goto(`/play/${id}/games/jelly`);
 	await expect(page.getByRole("heading", { name: "Jelly Blocks" })).toBeVisible();
