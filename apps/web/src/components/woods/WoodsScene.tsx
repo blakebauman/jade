@@ -94,8 +94,8 @@ export const WoodsScene = memo(function WoodsScene({ world, controls, running, p
 	return (
 		<Canvas
 			flat
-			frameloop={running ? "always" : "demand"}
-			dpr={software ? 0.75 : [1, 1.5]}
+			frameloop={running && !software ? "always" : "demand"}
+			dpr={software ? 0.5 : [1, 1.5]}
 			gl={{ antialias: false, powerPreference: "high-performance" }}
 			camera={{ fov: 72, near: 0.05, far: 220 }}
 			onCreated={onCreated}
@@ -103,9 +103,23 @@ export const WoodsScene = memo(function WoodsScene({ world, controls, running, p
 			role="img"
 		>
 			<Island world={world} controls={controls} running={running} playing={playing} quality={quality} />
+			{software && running && <Steady fps={20} />}
 		</Canvas>
 	);
 });
+
+/**
+ * Without a real GPU (a software renderer), every frame costs the whole computer: draw at a steady few frames a
+ * second instead of as many as possible, so the page (and anything else running) stays responsive.
+ */
+function Steady({ fps }: { fps: number }) {
+	const { invalidate } = useThree();
+	useEffect(() => {
+		const timer = setInterval(() => invalidate(), 1000 / fps);
+		return () => clearInterval(timer);
+	}, [invalidate, fps]);
+	return null;
+}
 
 function gpuName() {
 	try {
@@ -306,6 +320,13 @@ function Sky({ world, quality }: { world: IslandState; quality: Quality }) {
 		const stars = starField();
 		return { ambient, hemi, sun, sky, stars, shadows };
 	}, [quality]);
+	const { camera } = useThree();
+	useEffect(() => {
+		// A software renderer also sees less far: the fog hides the edge, and there's less to draw.
+		const cam = camera as PerspectiveCamera;
+		cam.far = quality === "low" ? 80 : 220;
+		cam.updateProjectionMatrix();
+	}, [camera, quality]);
 	useEffect(() => {
 		gl.shadowMap.enabled = rig.shadows;
 		gl.shadowMap.type = PCFShadowMap;
@@ -328,8 +349,9 @@ function Sky({ world, quality }: { world: IslandState; quality: Quality }) {
 		rig.sky.update(camera, sun, p.progress, night, clock.elapsedTime);
 		const fog = scene.fog as Fog;
 		fog.color.copy(rig.sky.colours.horizon);
-		fog.near = 14 + 12 * sun;
-		fog.far = 38 + 36 * sun;
+		const reach = quality === "low" ? 0.6 : 1;
+		fog.near = (14 + 12 * sun) * reach;
+		fog.far = (38 + 36 * sun) * reach;
 		rig.ambient.intensity = 0.13 + 0.49 * sun;
 		rig.hemi.intensity = 0.1 + 0.54 * sun;
 		// The key light: warm sun by day (low and golden near dusk), a cool soft moon by night. Its angle moves in
