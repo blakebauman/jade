@@ -22,6 +22,8 @@ pnpm dev                 # Apply local D1 migrations, then Vite + Worker on http
                          # `wrangler login` is required and usage is billed (fractions of a cent).
 pnpm test                # All unit tests: core (vitest), api (vitest-pool-workers + miniflare D1/R2), web (jsdom)
 pnpm test:e2e            # Playwright: laptop (Chromium), iPad Pro 11 (WebKit), iPhone 15. Starts `pnpm dev` if needed.
+                          # E2E_GROUP=games runs only the 3D games' specs (one at a time), E2E_GROUP=other the rest;
+                          # CI runs the laptop as those two jobs side by side, and stops a job after 3 failures.
                           # Both on their sides too, for devices.spec.ts and the keyboard spec only.
 pnpm test:e2e:offline    # Opening the app offline, against a production build (vite preview on 4173, Chromium)
 pnpm --filter @jade/api test -- -t "tts"   # One API test by name

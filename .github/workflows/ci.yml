@@ -30,9 +30,10 @@ jobs:
       - name: Test
         run: pnpm test
 
-  # Split by device so the three run side by side (one job took ~13 minutes, nearly all of it the tests). Each
-  # job installs only its browser. The offline check needs a production build and Chromium, so it rides with the
-  # laptop.
+  # Split by device so they run side by side (one job took ~13 minutes, nearly all of it the tests). Each job
+  # installs only its browser. The laptop is split again: the 3D games, drawn without a GPU here, run one at a time
+  # in their own job so they don't starve each other or the rest of the suite. The offline check needs a production
+  # build and Chromium, so it rides with the laptop's other tests.
   e2e-device:
     name: e2e (${{ matrix.device }})
     runs-on: ubuntu-latest
@@ -44,7 +45,12 @@ jobs:
           - device: laptop
             browser: chromium
             projects: --project=laptop
+            group: other
             offline: true
+          - device: laptop-games
+            browser: chromium
+            projects: --project=laptop
+            group: games
           - device: ipad
             browser: webkit
             projects: --project=ipad --project=ipad-landscape
@@ -55,6 +61,7 @@ jobs:
       # Remote bindings off: the dev server starts without Cloudflare credentials. Workers AI is unreachable, and
       # the tests stub speech and word info in the browser, so nothing is billed.
       JADE_LOCAL_ONLY: "1"
+      E2E_GROUP: ${{ matrix.group }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
