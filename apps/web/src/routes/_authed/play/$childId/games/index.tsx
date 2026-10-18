@@ -26,6 +26,7 @@ function GamesHome() {
 	const holiday = roxy?.holidays[0];
 	const best = useMemo(() => readBest(`jade.gobble.best.${child.id}`), [child.id]);
 	const jellyBest = useMemo(() => readBest(`jade.jelly.best.${child.id}`), [child.id]);
+	const woodsNights = useMemo(() => readBest(`jade.woods.nights.${child.id}`), [child.id]);
 
 	return (
 		<main className="mx-auto min-h-dvh max-w-5xl px-safe-5 py-safe-6 md:px-safe-10">
@@ -144,6 +145,30 @@ function GamesHome() {
 							</span>
 						</Link>
 					</li>
+					<li>
+						<Link
+							to="/play/$childId/games/woods"
+							params={{ childId: child.id }}
+							className="sticker flex items-center gap-5 p-5 md:p-6"
+							data-place="roxy"
+							style={{ "--tilt": "-0.8deg" } as React.CSSProperties}
+						>
+							<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
+								<WoodsArt />
+							</span>
+							<span className="min-w-0 space-y-2">
+								<span className="block font-display text-3xl font-semibold">Campfire Woods</span>
+								<span className="block text-sm font-medium">
+									Dig and build on your own island, keep the campfire burning all night, and bring lost animals home. Friends can join you.
+								</span>
+								{woodsNights > 0 && (
+									<span className="inline-flex items-center gap-1.5 text-sm font-medium">
+										{woodsNights} {woodsNights === 1 ? "night" : "nights"} by the fire
+									</span>
+								)}
+							</span>
+						</Link>
+					</li>
 				</ul>
 			)}
 		</main>
@@ -156,6 +181,29 @@ function readBest(key: string) {
 	} catch {
 		return 0;
 	}
+}
+
+/** Campfire Woods' sticker art: a blocky tree and a campfire under a night sky. */
+function WoodsArt() {
+	return (
+		<svg viewBox="0 0 120 120" className="size-24 md:size-28" aria-hidden="true">
+			<rect x="8" y="8" width="104" height="104" rx="16" fill="#1b2a52" />
+			<circle cx="92" cy="26" r="9" fill="#f6efc8" />
+			<circle cx="28" cy="22" r="2" fill="#fff" />
+			<circle cx="52" cy="34" r="1.6" fill="#fff" />
+			<circle cx="70" cy="16" r="1.6" fill="#fff" />
+			<rect x="8" y="88" width="104" height="24" rx="0" fill="#4f9a3d" />
+			<rect x="8" y="100" width="104" height="12" fill="#7a5233" />
+			<rect x="16" y="32" width="36" height="32" fill="#2f7d36" />
+			<rect x="22" y="38" width="8" height="8" fill="#4fa04a" />
+			<rect x="38" y="48" width="8" height="8" fill="#4fa04a" />
+			<rect x="28" y="64" width="12" height="24" fill="#6b4a2b" />
+			<rect x="64" y="82" width="34" height="6" fill="#6b4a2b" />
+			<rect x="72" y="66" width="18" height="16" fill="#ff8a1f" />
+			<rect x="76" y="56" width="10" height="12" fill="#ffc93c" />
+			<rect x="79" y="50" width="5" height="7" fill="#fff3b0" />
+		</svg>
+	);
 }
 
 /** Jelly Blocks' sticker art: a little stack of jelly cubes with a T piece dropping in. */

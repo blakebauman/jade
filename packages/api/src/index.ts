@@ -4,6 +4,7 @@ import { createAuth } from "./auth.ts";
 import type { AppEnv } from "./env.ts";
 import { requireParent, withDb } from "./middleware.ts";
 import { childrenRoutes } from "./routes/children.ts";
+import { friendRoutes } from "./routes/friends.ts";
 import { importRoutes } from "./routes/import.ts";
 import { listRoutes } from "./routes/lists.ts";
 import { parentRoutes } from "./routes/parent.ts";
@@ -28,6 +29,7 @@ const authed = new Hono<AppEnv>()
 	.route("/tts", ttsRoutes)
 	.route("/import", importRoutes)
 	.route("/sessions", sessionRoutes)
+	.route("/parent/friends", friendRoutes)
 	.route("/parent", parentRoutes);
 
 /** Mounted by apps/web's Worker at the root; it owns /health and /api/*. */

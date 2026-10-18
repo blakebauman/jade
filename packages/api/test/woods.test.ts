@@ -174,3 +174,82 @@ describe("Campfire Woods islands", () => {
 		expect(await stub.online()).toBe(0);
 	});
 });
+
+describe("Campfire Woods friends", () => {
+	async function link(a: Awaited<ReturnType<typeof family>>, b: Awaited<ReturnType<typeof family>>) {
+		await call("/api/parent/friends", { method: "PUT", cookie: a.cookie, json: { label: "The Rivers" } });
+		const { code } = (await (await call("/api/parent/friends/code", { method: "POST", cookie: a.cookie })).json()) as { code: string };
+		const preview = await call(`/api/parent/friends/code/${code.toLowerCase()}`, { cookie: b.cookie });
+		expect(await preview.json()).toEqual({ label: "The Rivers" });
+		const res = await call("/api/parent/friends/accept", { method: "POST", cookie: b.cookie, json: { code } });
+		expect(res.status).toBe(200);
+		return code;
+	}
+
+	it("links two families with a code from one parent, entered by the other, once", async () => {
+		const a = await family();
+		const b = await family();
+		const code = await link(a, b);
+		// Used up, and never usable by the parent who made it.
+		expect((await call("/api/parent/friends/accept", { method: "POST", cookie: b.cookie, json: { code } })).status).toBe(404);
+		const { code: mine } = (await (await call("/api/parent/friends/code", { method: "POST", cookie: a.cookie })).json()) as {
+			code: string;
+		};
+		expect((await call("/api/parent/friends/accept", { method: "POST", cookie: a.cookie, json: { code: mine } })).status).toBe(404);
+
+		const listA = (await (await call("/api/parent/friends", { cookie: a.cookie })).json()) as { friends: { userId: string }[] };
+		const listB = (await (await call("/api/parent/friends", { cookie: b.cookie })).json()) as {
+			friends: { userId: string; label: string }[];
+		};
+		expect(listA.friends.map((f) => f.userId)).toEqual([b.userId]);
+		expect(listB.friends).toMatchObject([{ userId: a.userId, label: "The Rivers" }]);
+	});
+
+	it("turns down a code that's run out", async () => {
+		const a = await family();
+		const b = await family();
+		const { code } = (await (await call("/api/parent/friends/code", { method: "POST", cookie: a.cookie })).json()) as { code: string };
+		await env.DB.prepare("update friend_codes set expires_at = ? where code = ?")
+			.bind(Date.now() - 1000, code)
+			.run();
+		expect((await call("/api/parent/friends/accept", { method: "POST", cookie: b.cookie, json: { code } })).status).toBe(404);
+	});
+
+	it("lets a friend's kid visit, shown by initial, building only while the hosts allow it", async () => {
+		const host = await family();
+		const guest = await family();
+		await link(host, guest);
+		const jade = await connect(host.cookie, await host.kid("Jade"));
+		const islands = (await (await call(`/api/children/${await guest.kid("Theo")}/woods/islands`, { cookie: guest.cookie })).json()) as {
+			islands: { id: string; label: string; online: number }[];
+		};
+		expect(islands.islands).toMatchObject([{ label: "Our island" }, { id: host.userId, label: "The Rivers", online: 1 }]);
+
+		const theo = await connect(guest.cookie, await guest.kid("Theo"), host.userId);
+		expect(welcome(theo).island).toMatchObject({ label: "The Rivers", mine: false, build: true });
+		await until(() => find(jade, "join").length > 0);
+		expect(find(jade, "join")[0]!.figure).toMatchObject({ label: "T", guest: true });
+
+		// Theo builds; the hosts switch to "just visit"; Theo's next block is refused; the hosts take his building back.
+		const [x, y, z] = spawnPoint(generate(welcome(theo).seed));
+		const i = indexOf(Math.floor(x) + 2, Math.floor(y), Math.floor(z));
+		theo.send({ t: "place", i, b: B.woolGreen });
+		await until(() => find(jade, "edit").length > 0);
+		await call("/api/parent/friends", { method: "PUT", cookie: host.cookie, json: { guestsBuild: false } });
+		theo.send({ t: "place", i: indexOf(Math.floor(x) - 2, Math.floor(y), Math.floor(z)), b: B.woolGreen });
+		await until(() => find(theo, "refused").length > 0);
+		expect(find(theo, "refused")[0]!.why).toBe("visit");
+		const undo = await call("/api/parent/friends/undo", { method: "POST", cookie: host.cookie, json: { userId: guest.userId } });
+		expect(await undo.json()).toEqual({ undone: 1 });
+
+		// Unlinking sends Theo home, and he can't come back.
+		expect((await call(`/api/parent/friends/${guest.userId}`, { method: "DELETE", cookie: host.cookie })).status).toBe(200);
+		await until(() => find(theo, "kicked").length > 0);
+		expect(find(theo, "kicked")[0]!.why).toBe("friends");
+		const again = await call(`/api/children/${await guest.kid("Mia")}/woods/ws?island=${host.userId}`, {
+			cookie: guest.cookie,
+			headers: { Upgrade: "websocket" },
+		});
+		expect(again.status).toBe(403);
+	});
+});

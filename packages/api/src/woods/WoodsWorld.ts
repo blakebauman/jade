@@ -138,7 +138,14 @@ export class WoodsWorld extends DurableObject<unknown> {
 
 	override async fetch(request: Request): Promise<Response> {
 		if (request.headers.get("Upgrade") !== "websocket") return new Response("Expected a WebSocket", { status: 426 });
-		const h = (k: keyof typeof WOODS_HEADERS) => request.headers.get(WOODS_HEADERS[k]) ?? "";
+		const h = (k: keyof typeof WOODS_HEADERS) => {
+			const v = request.headers.get(WOODS_HEADERS[k]) ?? "";
+			try {
+				return decodeURIComponent(v);
+			} catch {
+				return v;
+			}
+		};
 		const childId = h("child");
 		const familyId = h("family");
 		if (!childId || !familyId) return new Response("Missing who", { status: 400 });
