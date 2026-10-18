@@ -21,7 +21,7 @@ import { GameLoading } from "#/components/roxy/GameLoading.tsx";
 import { accent, GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
 import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { useChild } from "#/lib/child.ts";
-import { earnTickets } from "#/lib/play.ts";
+import { earnTickets, useGamesFree } from "#/lib/play.ts";
 
 const scene = () => import("#/components/gobble/GobbleScene.tsx");
 // three.js only loads on game screens.
@@ -80,6 +80,7 @@ const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60))
 
 function GobbleScreen() {
 	const child = useChild();
+	const free = useGamesFree(child.id);
 	const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
 	const [game, setGame] = useState(() => newGame(seed, child.name));
 	const [phase, setPhase] = useState<Phase>("ready");
@@ -146,7 +147,8 @@ function GobbleScreen() {
 			const me = g.holes[PLAYER]!;
 			const won = ranking(g)[0]!.i === PLAYER;
 			sound.finish(won);
-			const tickets = Math.min(MAX_TICKETS_PER_GO, Math.round(me.score / 10) + (won ? 5 : 0));
+			// Nothing while this kid's games are Free (and nothing queued that would pay later).
+			const tickets = free.current ? 0 : Math.min(MAX_TICKETS_PER_GO, Math.round(me.score / 10) + (won ? 5 : 0));
 			setEarned(tickets);
 			// Kept on the device and sent now, or when back online.
 			if (tickets > 0) void earnTickets(child.id, `gobble:${seed}`, tickets);
