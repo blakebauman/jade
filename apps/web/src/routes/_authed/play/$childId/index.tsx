@@ -3,7 +3,7 @@ import { MATH_TOPICS, type MathTopic, TOPIC_LABEL } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, BookOpenText, Brain, ChartPie, Flame, Play, Star, X as Times, X } from "lucide-react";
+import { Award, Flame, Play, Star, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BadgeIcon, badgeFace } from "#/components/BadgeIcon.tsx";
 import { Brand } from "#/components/Brand.tsx";
@@ -54,10 +54,10 @@ function rememberedPlace(childId: string): PlaceId | null {
 	}
 }
 
-/** The sticker sheet: every badge has its place, earned ones stuck down, the rest still a printed outline. */
 /** How to earn a badge, in the kid's words, under its empty slot. */
 const hint = (id: string) => BADGES.find((d) => d.id === id)?.hint;
 
+/** The sticker sheet: every badge has its place, earned ones stuck down, the rest still a printed outline. */
 function StickerSheet({ badges }: { badges: Progress["badges"] }) {
 	return (
 		<ul className="grid grid-cols-3 gap-x-3 gap-y-5">
@@ -129,7 +129,11 @@ function PlacePage({
 /** A place's name: the caption's headline, as big as the screen allows. */
 function PlaceName({ id, children }: { id: string; children: React.ReactNode }) {
 	return (
-		<h2 id={id} className="font-display text-[clamp(3.5rem,11vw,6rem)] leading-[0.95] font-semibold tracking-[-0.02em] text-balance">
+		<h2
+			id={id}
+			tabIndex={-1}
+			className="outline-none font-display text-[clamp(3.5rem,11vw,6rem)] leading-[0.95] font-semibold tracking-[-0.02em] text-balance"
+		>
 			{children}
 		</h2>
 	);
@@ -139,7 +143,7 @@ function PlaceName({ id, children }: { id: string; children: React.ReactNode }) 
 function Print({ children }: { children: string }) {
 	return (
 		<span
-			className="place-print absolute top-[18%] -right-[4%] origin-top-right text-[min(58vh,52vw)] md:top-[9%] md:text-[min(58vh,44vw)]"
+			className="place-print absolute top-[18%] -right-[4%] origin-top-right text-[min(58vh,52vw)] md:top-[9%] md:text-[min(58vh,44vw)] md:portrait:top-[14%] md:portrait:text-[60vw]"
 			style={{ transform: "rotate(-7deg)" }}
 		>
 			{children}
@@ -150,7 +154,7 @@ function Print({ children }: { children: string }) {
 /** A rail item's words, on a small white vinyl label so they read on any hue and over the print. */
 function RailLabel({ children }: { children: React.ReactNode }) {
 	return (
-		<span aria-hidden className="word-sticker tabular-nums" style={{ fontSize: 13 }}>
+		<span aria-hidden className="word-sticker items-center gap-1 tabular-nums" style={{ fontSize: 13 }}>
 			{children}
 		</span>
 	);
@@ -163,7 +167,8 @@ const factText = (k: string) =>
 		.replace("x", "×")
 		.replace("/", "÷");
 
-const TOPIC_ICON: Record<MathTopic, typeof Times> = { facts: Times, mental: Brain, fractions: ChartPie, problems: BookOpenText };
+/** What each topic looks like, as a problem on a disc; story problems have no short face, so they lend none. */
+const TOPIC_SAMPLE: Partial<Record<MathTopic, string>> = { facts: "6×7", mental: "48−19", fractions: "¾" };
 
 function SubjectHub() {
 	const child = useChild();
@@ -184,7 +189,7 @@ function SubjectHub() {
 	const played = newest?.perChild.find((p) => p.childId === child.id && p.lastPlayedAt);
 	// A round in progress speaks for itself on its Continue key, so the line doesn't count the list over again.
 	const spellingNote: { lead: string; tail?: string } = spellingLeft
-		? { lead: "Pick up where you left off" }
+		? { lead: "Pick up where you left off", tail: `${spellingLeft.done} of ${spellingLeft.total}` }
 		: spellingDue > 0
 			? { lead: `${spellingDue} ${spellingDue === 1 ? "word" : "words"} to review` }
 			: newest
@@ -212,7 +217,10 @@ function SubjectHub() {
 
 	function go(id: PlaceId) {
 		const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-		sections.current.get(id)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+		const section = sections.current.get(id);
+		section?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+		// Focus follows to the place's name, so a screen reader says where she landed and Tab goes on to its keys.
+		section?.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
 	}
 
 	// Land on the opening place without a scroll, before anything paints.
@@ -284,7 +292,7 @@ function SubjectHub() {
 
 				<nav
 					aria-label="Places"
-					className="pointer-events-auto absolute top-[calc(max(0.625rem,var(--safe-top))+1rem)] left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-black/15 p-1 md:top-[calc(max(1rem,var(--safe-top))+1.4rem)]"
+					className="pointer-events-auto absolute top-[calc(max(0.625rem,var(--safe-top))+1rem)] left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-black/25 p-1 md:top-[calc(max(1rem,var(--safe-top))+1.4rem)]"
 				>
 					{PLACES.map((p) => (
 						<button
@@ -293,7 +301,7 @@ function SubjectHub() {
 							onClick={() => go(p.id)}
 							aria-current={p.id === current ? "location" : undefined}
 							className={`min-h-11 rounded-full px-4 font-display text-base font-semibold transition-colors duration-200 md:px-5 ${
-								p.id === current ? "bg-sticker-ink" : "text-sticker-ink/85 hover:text-sticker-ink"
+								p.id === current ? "bg-sticker-ink" : "text-sticker-ink hover:bg-black/15"
 							}`}
 							style={p.id === current ? { color: `var(--color-${hue})` } : undefined}
 						>
@@ -301,29 +309,6 @@ function SubjectHub() {
 						</button>
 					))}
 				</nav>
-
-				<div className="pointer-events-auto absolute top-1/2 right-[calc(max(0.625rem,var(--safe-right))+0.9rem)] flex -translate-y-1/2 flex-col items-center gap-5 md:right-[calc(max(1rem,var(--safe-right))+1.6rem)]">
-					<Link to="/profiles" className="flex flex-col items-center gap-1.5 rounded-full" aria-label={`Switch from ${child.name}`}>
-						<KidTile name={child.name} avatar={child.avatar} size={52} />
-						<RailLabel>Switch</RailLabel>
-					</Link>
-					{progress && progress.badges.length > 0 && (
-						<button
-							type="button"
-							className="flex flex-col items-center gap-1.5 rounded-full"
-							onClick={() => badgesDialog.current?.showModal()}
-							aria-haspopup="dialog"
-							aria-label={`Badges, stars and streak: ${earned} of ${progress.badges.length} badges`}
-						>
-							<span className="vinyl-disc size-13" aria-hidden>
-								<Award className="size-6" />
-							</span>
-							<RailLabel>
-								{earned} of {progress.badges.length}
-							</RailLabel>
-						</button>
-					)}
-				</div>
 			</div>
 
 			<main ref={scroller} className="h-dvh snap-y snap-mandatory overflow-y-auto overscroll-y-contain [scrollbar-width:none]">
@@ -335,7 +320,7 @@ function SubjectHub() {
 						<>
 							<Print>spell</Print>
 							{faceWords.length > 0 && (
-								<span className="absolute top-[46%] right-[22%] flex flex-col items-end gap-3 md:top-[50%] md:right-[16%]">
+								<span className="absolute top-[26%] right-[22%] flex origin-right flex-col items-end gap-3 md:top-[50%] md:right-[16%] md:portrait:top-[52%] md:portrait:scale-125">
 									{faceWords.map((w, i) => (
 										<span key={w} style={{ transform: `rotate(${[-4, 3, -2][i]}deg)` }}>
 											<WordRack word={w} max={i === 0 ? 46 : 34} />
@@ -358,13 +343,12 @@ function SubjectHub() {
 								params={{ childId: child.id, listId: spellingLeft.listId ?? "review", mode: spellingLeft.mode as SpellingMode }}
 								search={{ resume: true }}
 								onClick={() => speaker.unlock()}
-								className="key"
+								className="key max-w-full whitespace-nowrap"
 								data-variant={latest === "spelling" ? "go" : undefined}
 							>
-								<Play className="size-5" aria-hidden /> Continue {spellingLeft.name}
-								<span className="font-normal opacity-75 tabular-nums">
-									· {spellingLeft.done} of {spellingLeft.total}
-								</span>
+								<Play className="size-5 shrink-0" aria-hidden />
+								<span className="max-w-[17ch] truncate sm:max-w-[24ch]">Continue {spellingLeft.name}</span>
+								<span className="sr-only">{` · ${spellingLeft.done} of ${spellingLeft.total}`}</span>
 							</Link>
 							<Link to="/play/$childId/spelling" params={{ childId: child.id }} onClick={() => speaker.unlock()} className="key">
 								All lists
@@ -406,27 +390,18 @@ function SubjectHub() {
 				>
 					<PlaceName id="place-play-heading">Play</PlaceName>
 					{closed ? (
-						<>
-							<div className="w-full max-w-sm">
-								<PlayClosed
-									childId={child.id}
-									status={play}
-									size="small"
-									next={
-										<button type="button" className="key" onClick={() => go(practiceAt)}>
-											Go to {practiceAt === "math" ? "Math" : "Spelling"}
-										</button>
-									}
-								/>
-							</div>
-							<Link
-								to="/play/$childId/games"
-								params={{ childId: child.id }}
-								className="font-medium underline decoration-2 underline-offset-4"
-							>
-								See the games
-							</Link>
-						</>
+						<div className="w-full max-w-sm">
+							<PlayClosed
+								childId={child.id}
+								status={play}
+								size="small"
+								next={
+									<button type="button" className="key" data-variant="go" onClick={() => go(practiceAt)}>
+										Go to {practiceAt === "math" ? "Math" : "Spelling"}
+									</button>
+								}
+							/>
+						</div>
 					) : (
 						<>
 							<p className="text-lg font-medium md:max-w-[20rem]">Roxy, the town, Gobble Town, Jelly Blocks and Campfire Woods</p>
@@ -453,7 +428,7 @@ function SubjectHub() {
 					media={
 						<>
 							<Print>7×8</Print>
-							<span className="absolute top-[46%] right-[24%] flex -space-x-2 md:top-[50%] md:right-[16%] md:-space-x-3">
+							<span className="absolute top-[32%] right-[24%] flex origin-right -space-x-2 md:top-[50%] md:right-[16%] md:-space-x-3 md:portrait:top-[52%] md:portrait:scale-125">
 								{factsDue > 0
 									? progress?.math.factsDue.slice(0, 3).map((k, i) => (
 											<span
@@ -464,14 +439,17 @@ function SubjectHub() {
 												{factText(k)}
 											</span>
 										))
-									: topics.map((t, i) => {
-											const Icon = TOPIC_ICON[t];
-											return (
-												<span key={t} className="vinyl-disc size-16 md:size-28" style={{ transform: `rotate(${[-6, 4, -3, 5][i]}deg)` }}>
-													<Icon className="size-7 md:size-12" strokeWidth={2.25} />
+									: topics
+											.flatMap((t) => TOPIC_SAMPLE[t] ?? [])
+											.map((q, i) => (
+												<span
+													key={q}
+													className="vinyl-disc size-20 text-2xl tabular-nums md:size-32 md:text-4xl"
+													style={{ transform: `rotate(${[-6, 4, -3][i]}deg)` }}
+												>
+													{q}
 												</span>
-											);
-										})}
+											))}
 							</span>
 						</>
 					}
@@ -479,7 +457,7 @@ function SubjectHub() {
 					<PlaceName id="place-math-heading">Math</PlaceName>
 					<p className="text-lg font-medium">
 						{mathLeft
-							? "Pick up where you left off"
+							? `Pick up where you left off · ${mathLeft.done} of ${mathLeft.total}`
 							: factsDue > 0
 								? `${factsDue} ${factsDue === 1 ? "fact" : "facts"} to review`
 								: "Facts, fractions, puzzles"}
@@ -491,14 +469,14 @@ function SubjectHub() {
 								params={{ childId: child.id, topic: mathLeft.mode }}
 								search={{ resume: true }}
 								onClick={() => speaker.unlock()}
-								className="key"
+								className="key max-w-full whitespace-nowrap"
 								data-variant={latest === "math" ? "go" : undefined}
 							>
-								<Play className="size-5" aria-hidden /> Continue{" "}
-								{mathLeft.mode === "mathreview" ? "facts review" : TOPIC_LABEL[mathLeft.mode]}
-								<span className="font-normal opacity-75 tabular-nums">
-									· {mathLeft.done} of {mathLeft.total}
+								<Play className="size-5 shrink-0" aria-hidden />
+								<span className="max-w-[17ch] truncate sm:max-w-[24ch]">
+									Continue {mathLeft.mode === "mathreview" ? "facts review" : TOPIC_LABEL[mathLeft.mode]}
 								</span>
+								<span className="sr-only">{` · ${mathLeft.done} of ${mathLeft.total}`}</span>
 							</Link>
 							<Link to="/play/$childId/math" params={{ childId: child.id }} onClick={() => speaker.unlock()} className="key">
 								All topics
@@ -517,6 +495,33 @@ function SubjectHub() {
 					)}
 				</PlacePage>
 			</main>
+
+			{/* Who and what she has, after the places in reading order, so Tab goes from a place's name to its keys. */}
+			<div className="pointer-events-none fixed inset-0 z-10 text-sticker-ink">
+				<div className="pointer-events-auto absolute top-1/2 right-[calc(max(0.625rem,var(--safe-right))+0.9rem)] flex -translate-y-1/2 flex-col items-center gap-5 md:right-[calc(max(1rem,var(--safe-right))+1.6rem)]">
+					<Link to="/profiles" className="flex flex-col items-center gap-1.5 rounded-full" aria-label={`Switch from ${child.name}`}>
+						<KidTile name={child.name} avatar={child.avatar} size={52} />
+						<RailLabel>Switch</RailLabel>
+					</Link>
+					{progress && progress.badges.length > 0 && (
+						<button
+							type="button"
+							className="flex flex-col items-center gap-1.5 rounded-full"
+							onClick={() => badgesDialog.current?.showModal()}
+							aria-haspopup="dialog"
+							aria-label={`Badges, stars and streak: ${stars} ${stars === 1 ? "star" : "stars"}, ${earned} of ${progress.badges.length} badges`}
+						>
+							<span className="vinyl-disc size-13" aria-hidden>
+								<Award className="size-6" />
+							</span>
+							<RailLabel>
+								<Star className="size-3.5 fill-current" />
+								{stars}
+							</RailLabel>
+						</button>
+					)}
+				</div>
+			</div>
 
 			{progress && progress.badges.length > 0 && (
 				// biome-ignore lint/a11y/useKeyWithClickEvents: only a tap on the backdrop; the keyboard closes it with Esc or Close.
