@@ -1,5 +1,5 @@
 import { type PlaySettings, TIME_WARN_S } from "@jade/core";
-import { queryOptions, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api } from "./api.ts";
 import { dayKey } from "./hooks.ts";
@@ -36,6 +36,18 @@ export const playApi = {
 
 /** Whether this kid's Play page shows stars at all: only while stars do something in games. */
 export const starsInPlay = (s: PlaySettings) => !s.free && (s.stars || s.timeCosts);
+
+/**
+ * Whether this kid's games are Free, so a go pays no tickets. Read through a ref, as a game's end reads it: the play
+ * status refreshes during a go, which mustn't rebuild the game's callbacks. Unknown (never loaded) counts as not Free;
+ * the server still pays nothing while Free.
+ */
+export function useGamesFree(childId: string) {
+	const { data } = useQuery(playQuery(childId));
+	const free = useRef(false);
+	free.current = !!data?.settings.free;
+	return free;
+}
 
 // ── Play time ──
 
