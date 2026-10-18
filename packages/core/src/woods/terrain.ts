@@ -98,6 +98,8 @@ export function generate(seed: number, gen = TERRAIN_LATEST): Island {
 	}
 	ores(v, hs, rng);
 	if (gen >= 2) {
+		paths(v, hs, seeded(seed ^ 0x9a7f));
+		boulders(v, hs, seeded(seed ^ 0xb01d));
 		woods(v, hs, seeded(seed ^ 0x7ee5));
 		plants(v, hs, seeded(seed ^ 0xf10e));
 	} else trees(v, hs, rng);
@@ -166,6 +168,55 @@ function tree(v: Volume, x: number, y: number, z: number, tall: number, rng: Rng
 }
 
 // ── Islands from version 2 ──
+
+/**
+ * Worn paths: a ring round the camp where kids walk between the benches, and four trails winding out into the woods,
+ * so there's always a way to set off from the fire.
+ */
+function paths(v: Volume, hs: Int16Array, rng: Rng) {
+	const wear = (x: number, z: number) => {
+		const xi = Math.round(x);
+		const zi = Math.round(z);
+		const h = hs[xi + W * zi];
+		if (h === undefined || v.get(xi, h, zi) !== B.grass) return;
+		v.set(xi, h, zi, B.path);
+	};
+	for (let a = 0; a < Math.PI * 2; a += 0.05) for (const r of [4.3, 5]) wear(CAMP.x + Math.cos(a) * r, CAMP.z + Math.sin(a) * r);
+	for (let k = 0; k < 4; k++) {
+		let a = (k / 4) * Math.PI * 2 + Math.PI / 4 + (rng() - 0.5) * 0.4;
+		let x = CAMP.x + Math.cos(a) * 5;
+		let z = CAMP.z + Math.sin(a) * 5;
+		const length = 18 + Math.floor(rng() * 10);
+		for (let s = 0; s < length; s++) {
+			wear(x, z);
+			wear(x + Math.sin(a) * 0.6, z - Math.cos(a) * 0.6);
+			a += (rng() - 0.5) * 0.35;
+			x += Math.cos(a);
+			z += Math.sin(a);
+		}
+	}
+}
+
+/** A few mossy boulders out in the meadows and woods: something to climb, landmarks to steer by. */
+function boulders(v: Volume, hs: Int16Array, rng: Rng) {
+	for (let n = 0; n < 14; n++) {
+		const x = 4 + Math.floor(rng() * (W - 8));
+		const z = 4 + Math.floor(rng() * (D - 8));
+		if (fromCamp(x, z) < CLEARING + 3) continue;
+		const h = hs[x + W * z]!;
+		if (v.get(x, h, z) !== B.grass) continue;
+		const big = rng() < 0.35;
+		for (let dz = -1; dz <= 1; dz++)
+			for (let dx = -1; dx <= 1; dx++) {
+				const corner = Math.abs(dx) + Math.abs(dz) === 2;
+				if (corner && !big) continue;
+				if (corner && rng() < 0.5) continue;
+				const gh = hs[x + dx + W * (z + dz)]!;
+				const tall = (dx === 0 && dz === 0 ? 2 : 1) + (big ? 1 : 0);
+				for (let k = 1; k <= tall; k++) v.set(x + dx, gh + k, z + dz, rng() < 0.4 ? B.mossyStone : B.stone);
+			}
+	}
+}
 
 /** Which tree grows where: pines on the hills and far out, birch in patches, oak the rest. */
 function species(seed: number, x: number, z: number, d: number): "oak" | "birch" | "pine" {

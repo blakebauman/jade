@@ -17,7 +17,7 @@ import {
 } from "@jade/core/woods";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Flame, Hand, Heart, Moon, Pause, PawPrint, Play, Star, Sun, Volume2, VolumeX, WifiOff } from "lucide-react";
+import { ArrowLeft, Flame, Hand, Heart, Pause, PawPrint, Play, Star, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { Component, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Tickets } from "#/components/play/PlayBits.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
@@ -47,6 +47,8 @@ type Phase = "ready" | "play" | "paused";
 type Hud = {
 	status: IslandState["status"];
 	night: boolean;
+	/** 0–1 through this day or night: where the sun or moon is on its arc. */
+	progress: number;
 	/** The sky is dark enough that words on it need light ink. */
 	dark: boolean;
 	nightNo: number;
@@ -753,6 +755,7 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 		lostNear,
 		status: world.status,
 		night: p.phase === "night",
+		progress: Math.round(p.progress * 40) / 40,
 		dark: world.status === "open" && p.sun < 0.45,
 		nightNo: p.night,
 		minutes: Math.max(1, Math.ceil(p.left / 60)),
@@ -773,7 +776,7 @@ function IslandStatus({ hud }: { hud: Hud }) {
 	return (
 		<GameStatus>
 			<span className="inline-flex items-center gap-1.5">
-				{hud.night ? <Moon className="size-4" aria-hidden /> : <Sun className="size-4" aria-hidden />}
+				<DayDial night={hud.night} progress={hud.progress} />
 				{hud.night ? (
 					<>
 						Night {hud.nightNo}
@@ -815,15 +818,39 @@ function LostHint({ hint }: { hint: NonNullable<Hud["lostNear"]> }) {
 	);
 }
 
+/** The sun (or moon) on its way across a little arc of sky: how far through the day or night it is. */
+function DayDial({ night, progress }: { night: boolean; progress: number }) {
+	const a = Math.PI * (1 - progress);
+	const x = 14 + Math.cos(a) * 10;
+	const y = 14 - Math.sin(a) * 10;
+	return (
+		<svg viewBox="0 0 28 16" className="h-4 w-7 shrink-0" aria-hidden>
+			<path d="M4 14 A10 10 0 0 1 24 14" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.6" strokeDasharray="2 2" />
+			<line x1="2" y1="14.5" x2="26" y2="14.5" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.2" />
+			{night ? (
+				<g>
+					<circle cx={x} cy={y} r="3.6" fill="#e8eef8" />
+					<circle cx={x + 1.6} cy={y - 1} r="3" fill="#1b2a4e" />
+				</g>
+			) : (
+				<circle cx={x} cy={y} r="3.6" fill="#f6c43c" stroke="#e08a24" strokeWidth="1" />
+			)}
+		</svg>
+	);
+}
+
 function FireMeter({ fuel }: { fuel: number }) {
 	const share = Math.min(1, fuel / FUEL_MAX);
 	const low = share < 0.25;
 	return (
 		<span className="inline-flex items-center gap-1.5" title="The campfire">
-			<Flame className={`size-4 ${low ? "text-roxy" : ""}`} aria-hidden />
+			<Flame className={`size-4 ${low ? "text-roxy motion-safe:animate-pulse" : "text-[#e9761f]"}`} aria-hidden />
 			<meter className="sr-only" aria-label="Campfire" min={0} max={100} low={25} value={Math.round(share * 100)} />
 			<span className="relative h-2 w-14 overflow-hidden rounded-full bg-[color-mix(in_oklab,currentColor_18%,transparent)]" aria-hidden>
-				<span className="absolute inset-y-0 left-0 rounded-full bg-[#f08a24]" style={{ width: `${share * 100}%` }} />
+				<span
+					className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-[#e0441f] via-[#f08a24] to-[#ffd04a] transition-[width] duration-700"
+					style={{ width: `${share * 100}%` }}
+				/>
 			</span>
 			{fuel <= 0 && <span>out!</span>}
 		</span>

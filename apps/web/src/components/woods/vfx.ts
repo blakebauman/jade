@@ -67,6 +67,8 @@ export const BLOCK_COLOURS: Record<number, [string, string]> = {
 	[B.flowerYellow]: ["#f5cd32", "#4a9a3a"],
 	[B.flowerBlue]: ["#4f7fe0", "#4a9a3a"],
 	[B.mushroom]: ["#d8433a", "#f0e6d2"],
+	[B.path]: ["#97714a", "#8b5e3c"],
+	[B.mossyStone]: ["#8a8d93", "#5f8f3e"],
 };
 for (const b of BLOCKS) BLOCK_COLOURS[b.id] ??= ["#8a8d93", "#74777d"];
 

@@ -9,6 +9,7 @@ import {
 	Mesh,
 	MeshBasicMaterial,
 	MeshLambertMaterial,
+	type Object3D,
 	PlaneGeometry,
 	Sprite,
 	SpriteMaterial,
@@ -49,41 +50,77 @@ function part(material: Material, w: number, h: number, d: number, x: number, y:
 	return m;
 }
 
-export type FigureModel = { group: Group; legs: [Mesh, Mesh]; arms: [Mesh, Mesh]; bubble: Sprite };
+export type FigureModel = { group: Group; legs: [Object3D, Object3D]; arms: [Object3D, Object3D]; bubble: Sprite };
 
-/** A kid: boots, trousers, a jumper in their seat's colour, and a head. Faces -z, feet at y 0, 1.8 tall. */
+const HAIR = ["#5a3a24", "#2b2118", "#c58a3d", "#8a4a2b", "#e8c06a", "#3d2a20"];
+const SKIN = ["#f0c7a0", "#d9a77c", "#b97f55", "#8d5a3b", "#f5d2b4"];
+
+/** A number from a label, so the same kid always gets the same hair and skin. */
+const pickBy = (label: string, n: number) => [...label].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % n;
+
+/**
+ * A kid: shoes, trousers, a jumper in their seat's colour with a pale stripe, sleeves with cuffs, a face with eyes and a
+ * smile, and hair with a fringe. Faces -z, feet at y 0, about 1.9 tall. Arms swing from the shoulders and legs from the
+ * hips; each part is baked to one or two draw calls.
+ */
 export function figure(colour: string, label: string): FigureModel {
 	const g = new Group();
-	const legs: [Mesh, Mesh] = [
-		part(mat("#3b4a6b"), 0.24, 0.74, 0.26, -0.13, 0.37, 0, g),
-		part(mat("#3b4a6b"), 0.24, 0.74, 0.26, 0.13, 0.37, 0, g),
-	];
-	part(mat(colour), 0.54, 0.62, 0.3, 0, 1.05, 0, g);
-	const arms: [Mesh, Mesh] = [
-		part(mat(colour), 0.18, 0.62, 0.22, -0.36, 1.05, 0, g),
-		part(mat(colour), 0.18, 0.62, 0.22, 0.36, 1.05, 0, g),
-	];
-	part(mat("#f0c7a0"), 0.46, 0.46, 0.46, 0, 1.6, 0, g);
-	part(mat("#5a3a24"), 0.5, 0.14, 0.5, 0, 1.86, 0.02, g);
-	part(mat("#2a2a33"), 0.07, 0.07, 0.02, -0.1, 1.63, -0.235, g);
-	part(mat("#2a2a33"), 0.07, 0.07, 0.02, 0.1, 1.63, -0.235, g);
-	// Legs and arms swing from the hip and shoulder.
-	for (const m of [...legs, ...arms]) m.geometry = shifted;
-	legs[0].position.y = legs[1].position.y = 0.74;
-	arms[0].position.y = arms[1].position.y = 1.36;
+	const skin = mat(SKIN[pickBy(label, SKIN.length)]!);
+	const hair = mat(HAIR[pickBy(`${label}h`, HAIR.length)]!);
+	const jumper = mat(colour);
+	const stripe = mat("#f4ecdc");
+	const trousers = mat("#3b4a6b");
+	const shoe = mat("#2a2a33");
+
+	const limb = (x: number, y: number) => {
+		const pivot = new Group();
+		pivot.position.set(x, y, 0);
+		return pivot;
+	};
+	const legs: [Object3D, Object3D] = [limb(-0.13, 0.76), limb(0.13, 0.76)];
+	for (const leg of legs) {
+		part(trousers, 0.24, 0.62, 0.26, 0, -0.31, 0, leg as Group);
+		part(shoe, 0.26, 0.14, 0.34, 0, -0.69, -0.04, leg as Group);
+	}
+	const arms: [Object3D, Object3D] = [limb(-0.37, 1.36), limb(0.37, 1.36)];
+	for (const arm of arms) {
+		part(jumper, 0.18, 0.5, 0.22, 0, -0.25, 0, arm as Group);
+		part(stripe, 0.19, 0.06, 0.23, 0, -0.47, 0, arm as Group);
+		part(skin, 0.15, 0.12, 0.17, 0, -0.56, 0, arm as Group);
+	}
+	part(jumper, 0.56, 0.62, 0.32, 0, 1.07, 0, g);
+	part(stripe, 0.57, 0.08, 0.33, 0, 1.14, 0, g);
+	part(trousers, 0.56, 0.08, 0.33, 0, 0.78, 0, g);
+	// The head: face, eyes, cheeks and a smile, hair over the top and back with a fringe.
+	part(skin, 0.48, 0.46, 0.46, 0, 1.62, 0, g);
+	part(mat("#2a2a33"), 0.07, 0.08, 0.02, -0.11, 1.65, -0.236, g);
+	part(mat("#2a2a33"), 0.07, 0.08, 0.02, 0.11, 1.65, -0.236, g);
+	part(mat("#e8907c"), 0.07, 0.04, 0.02, -0.17, 1.56, -0.236, g);
+	part(mat("#e8907c"), 0.07, 0.04, 0.02, 0.17, 1.56, -0.236, g);
+	part(mat("#8a3b34"), 0.14, 0.03, 0.02, 0, 1.52, -0.236, g);
+	part(hair, 0.52, 0.12, 0.5, 0, 1.88, 0.01, g);
+	part(hair, 0.52, 0.36, 0.1, 0, 1.68, 0.23, g);
+	part(hair, 0.5, 0.1, 0.06, 0, 1.79, -0.24, g);
+	for (const s of [-1, 1]) part(hair, 0.06, 0.28, 0.48, 0.25 * s, 1.7, 0.01, g);
+
+	const body = bake(g);
+	const pivot = (o: Object3D) => {
+		const b = bake(o);
+		body.add(b);
+		return b;
+	};
+	const bakedLegs: [Object3D, Object3D] = [pivot(legs[0]), pivot(legs[1])];
+	const bakedArms: [Object3D, Object3D] = [pivot(arms[0]), pivot(arms[1])];
 	const tag = nameTag(label, colour);
-	tag.position.set(0, 2.3, 0);
-	g.add(tag);
+	tag.position.set(0, 2.35, 0);
+	body.add(tag);
 	const bubble = new Sprite(new SpriteMaterial({ transparent: true, depthWrite: false }));
-	bubble.position.set(0, 2.85, 0);
+	bubble.position.set(0, 2.9, 0);
 	bubble.scale.set(0.6, 0.6, 1);
 	bubble.visible = false;
-	g.add(bubble);
-	return { group: g, legs, arms, bubble };
+	body.add(bubble);
+	return { group: body, legs: bakedLegs, arms: bakedArms, bubble };
 }
-
-/** A box with its top at the origin, so a limb scaled to length hangs down and swings from its top. */
-const shifted = new BoxGeometry(1, 1, 1).translate(0, -0.5, 0);
 
 export function swing(m: FigureModel, t: number, amount: number) {
 	const a = Math.sin(t * 9) * 0.7 * amount;

@@ -144,6 +144,27 @@ const PAINT: Record<string, Painter> = {
 				px(x, y, c);
 			}
 	},
+	// Trodden earth: warm, packed, with a few pebbles.
+	path_top: (px, rng) => {
+		for (let y = 0; y < S; y++)
+			for (let x = 0; x < S; x++) {
+				const r = rng();
+				px(x, y, r < 0.05 ? "#b9ad98" : r < 0.2 ? "#a07a50" : r < 0.3 ? "#8a6542" : "#97714a");
+			}
+	},
+	path_side: (px, rng) => {
+		speckle("#8b5e3c", "#a2734d", "#704a2e")(px, rng);
+		for (let x = 0; x < S; x++) for (let y = 0; y < 2; y++) px(x, y, rng() < 0.3 ? "#a07a50" : "#97714a");
+	},
+	mossy_stone: (px, rng) => {
+		speckle("#8a8d93", "#9ea1a7", "#74777d", 0.45)(px, rng);
+		// Moss creeping over the top and down the cracks.
+		for (let k = 0; k < 40; k++) {
+			const x = Math.floor(rng() * S);
+			const y = Math.floor(rng() * rng() * S);
+			px(x, y, rng() < 0.5 ? "#5f8f3e" : "#4d7a32");
+		}
+	},
 	birch_side: (px, rng) => {
 		for (let y = 0; y < S; y++)
 			for (let x = 0; x < S; x++) {

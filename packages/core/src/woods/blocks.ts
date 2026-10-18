@@ -35,6 +35,8 @@ export const B = {
 	flowerYellow: 28,
 	flowerBlue: 29,
 	mushroom: 30,
+	path: 31,
+	mossyStone: 32,
 } as const;
 export type BlockId = (typeof B)[keyof typeof B];
 
@@ -117,6 +119,8 @@ export const BLOCKS: readonly BlockInfo[] = [
 	info(B.flowerYellow, "flower-yellow", "Buttercup", { ...plant, tiles: tiles("flower_yellow") }),
 	info(B.flowerBlue, "flower-blue", "Bluebell", { ...plant, tiles: tiles("flower_blue") }),
 	info(B.mushroom, "mushroom", "Toadstool", { ...plant, tiles: tiles("mushroom") }),
+	info(B.path, "path", "Path", { hardness: 0.5, drop: B.dirt, tiles: tiles("path_side", "path_top", "dirt") }),
+	info(B.mossyStone, "mossy-stone", "Mossy stone", { hardness: 1.2, tiles: tiles("mossy_stone") }),
 ];
 
 export const BLOCK_COUNT = BLOCKS.length;
@@ -135,7 +139,7 @@ export const canMine = (id: number) => Number.isFinite(blockInfo(id).hardness);
 export const canPlace = (id: number) => id !== B.air && blockInfo(id).drop === id;
 
 /** A plant only grows (or is planted) on soil: grass, dirt or sand. */
-export const holdsPlant = (below: number) => below === B.grass || below === B.dirt || below === B.sand;
+export const holdsPlant = (below: number) => below === B.grass || below === B.dirt || below === B.sand || below === B.path;
 
 /** Every tile name the client has to draw. */
 export const TILE_NAMES: readonly string[] = [

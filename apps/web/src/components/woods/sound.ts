@@ -145,7 +145,7 @@ function noise(dur: number, freq: number, opts: NoiseOpts = {}) {
 
 export const tap = () => noise(0.05, 1800, { gain: 0.18 });
 
-const HARD = new Set<number>([B.stone, B.coal, B.iron, B.gold, B.gem, B.brick, B.bedrock, B.glass]);
+const HARD = new Set<number>([B.stone, B.mossyStone, B.coal, B.iron, B.gold, B.gem, B.brick, B.bedrock, B.glass]);
 
 export function dig(block: number) {
 	const low = HARD.has(block) && block !== B.glass && block !== B.bedrock;
