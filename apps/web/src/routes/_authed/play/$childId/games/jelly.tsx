@@ -37,7 +37,7 @@ import { QuestsDone } from "#/components/play/QuestsDone.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
 import { accent, GameScreen, Hint } from "#/components/roxy/GameScreen.tsx";
 import { useChild } from "#/lib/child.ts";
-import { earnTickets, usePlayClockValue } from "#/lib/play.ts";
+import { earnTickets, useGamesFree, usePlayClockValue } from "#/lib/play.ts";
 import { questEvent } from "#/lib/quests.ts";
 
 const scene = () => import("#/components/jelly/JellyScene.tsx");
@@ -100,6 +100,7 @@ const CLEAR_WORDS = ["", "", "Double!", "Triple!", "Jelly jackpot!"];
 
 function JellyScreen() {
 	const child = useChild();
+	const free = useGamesFree(child.id);
 	const [speed, setSpeed] = useState(readSpeed);
 	const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
 	const [game, setGame] = useState(() => newGame(seed, START_LEVELS[speed]));
@@ -182,8 +183,8 @@ function JellyScreen() {
 			setPhase("over");
 			setEnded(why);
 			sound.full();
-			// A ticket for every row popped.
-			const tickets = Math.min(MAX_TICKETS_PER_GO, g.lines);
+			// A ticket for every row popped; none while this kid's games are Free (and nothing queued that would pay later).
+			const tickets = free.current ? 0 : Math.min(MAX_TICKETS_PER_GO, g.lines);
 			setEarned(tickets);
 			if (tickets > 0) void earnTickets(child.id, `jelly:${seed}`, tickets);
 			setQuestsDone(questEvent(child.id, { game: "jelly", rows: g.lines, score: g.score }));
