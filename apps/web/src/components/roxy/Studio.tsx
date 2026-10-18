@@ -49,6 +49,7 @@ import { Confirm } from "#/components/Confirm.tsx";
 import { BuyChoice, CornerWallet } from "#/components/play/BuyChoice.tsx";
 import { ApiError } from "#/lib/api.ts";
 import { useOnline } from "#/lib/hooks.ts";
+import { questEvent } from "#/lib/quests.ts";
 import {
 	LOOK_NAMES,
 	type OpenHoliday,
@@ -129,6 +130,13 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		}
 		setTrying(null);
 		draft.set(tryOn(draft.look, slot, item));
+		triedOn(item);
+	}
+
+	/** Trying things on counts toward today's studio quest. */
+	function triedOn(item: Item) {
+		const [done] = questEvent(childId, { game: "studio", item: item.id });
+		if (done) setMessage(`Quest done: ${done.label}!`);
 	}
 
 	function colour(slot: Slot, which: "c1" | "c2", key: string) {
@@ -144,6 +152,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 			// The look as it is now, not as it was when "Unlock" was tapped.
 			draft.set((look) => tryOn(look, slot, item));
 			setTrying(null);
+			triedOn(item);
 			await Promise.all([refresh(), progressRefresh()]);
 		} catch (err) {
 			setMessage(
