@@ -14,8 +14,8 @@ export type Controls = {
 	look: { yaw: number; pitch: number };
 	/** Holding to mine. */
 	mining: boolean;
-	/** A tap or right click asked to build, once. */
-	place: boolean;
+	/** A tap or right click asked to build, once, aimed where it was asked (null: the middle of the screen). */
+	place: { aim: [number, number] | null } | null;
 	/** Where on the screen a finger is aiming (-1…1 each way); null aims at the middle (the crosshair). */
 	aim: [number, number] | null;
 	/** The block in hand. */

@@ -21,6 +21,8 @@ type Hooks = {
 type Diagnostics = { renderer: { calls: number; triangles: number }; columns: number };
 
 const DIRT = 2;
+/** CI draws the island in software on two cores: a frame can take a while there. */
+const SLOW = { timeout: 20_000 };
 const WOOL_RED = 18;
 
 async function family(page: Page) {
@@ -35,7 +37,15 @@ async function family(page: Page) {
 	return { kid };
 }
 
+/** WOODS_SLOW=6 locally slows the CPU like a CI runner (Chromium only). */
+async function slowDown(page: Page) {
+	const rate = Number(process.env.WOODS_SLOW ?? 0);
+	if (!rate || page.context().browser()?.browserType().name() !== "chromium") return;
+	await (await page.context().newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate });
+}
+
 async function open(page: Page, childId: string, go = true) {
+	await slowDown(page);
 	if (go) await page.goto(`/play/${childId}/games/woods`);
 	await expect(page.getByRole("heading", { name: "Campfire Woods" })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Start" })).toBeEnabled();
@@ -82,9 +92,9 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	expect(await hooks(page, (h, a) => h.block(...(a as [number, number, number])), [x, y, z])).toBe(1);
 	await hooks(page, (h, a) => h.lookAt(...(a as [number, number, number])), [x, y, z]);
 	await hooks(page, (h) => h.mine(true));
-	await expect.poll(() => hooks(page, (h, d) => h.peek().inv[d as number] ?? 0, DIRT), { timeout: 5000 }).toBeGreaterThan(0);
+	await expect.poll(() => hooks(page, (h, d) => h.peek().inv[d as number] ?? 0, DIRT), SLOW).toBeGreaterThan(0);
 	await hooks(page, (h) => h.mine(false));
-	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), [x, y, z])).toBe(0);
+	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), [x, y, z]), SLOW).toBe(0);
 
 	// Build red wool back in the hole, on the dirt below it.
 	await hooks(page, (h, b) => h.select(b as number), WOOL_RED);
@@ -92,8 +102,8 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	const aim = (await hooks(page, (h) => h.peek().target))!;
 	const spot = [0, 1, 2].map((k) => aim.cell[k]! + aim.normal[k]!);
 	await hooks(page, (h) => h.place());
-	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), spot)).toBe(WOOL_RED);
-	await expect.poll(() => hooks(page, (h, b) => h.peek().inv[b as number], WOOL_RED)).toBe(63);
+	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), spot), SLOW).toBe(WOOL_RED);
+	await expect.poll(() => hooks(page, (h, b) => h.peek().inv[b as number], WOOL_RED), SLOW).toBe(63);
 	// The dug-up dirt is on the hotbar to build with (one block or more, as the dig carries on down while held).
 	await expect(page.getByRole("button", { name: /^Dirt, \d+$/ })).toBeVisible();
 	await other.close();
@@ -145,6 +155,7 @@ test("a finger drags to look round, holds to dig and taps to build", async ({ br
 	const page = await context.newPage();
 	const f = await family(page);
 	const id = await f.kid("Ava");
+	await slowDown(page);
 	await page.goto(`/play/${id}/games/woods`);
 	await expect(page.getByRole("button", { name: "Start" })).toBeEnabled();
 	await page.getByRole("button", { name: "Start" }).tap();
@@ -162,7 +173,7 @@ test("a finger drags to look round, holds to dig and taps to build", async ({ br
 	await finger("touchStart", 600, 500);
 	for (const x of [580, 540, 480, 420]) await finger("touchMove", x, 500);
 	await finger("touchEnd");
-	expect((await peek()).look.yaw).not.toBeCloseTo(yaw, 2);
+	await expect.poll(async () => Math.abs((await peek()).look.yaw - yaw), SLOW).toBeGreaterThan(0.05);
 
 	// Look down at the ground, then hold a finger on it: it's dug up.
 	await hooks(page, (h) => {
@@ -170,14 +181,14 @@ test("a finger drags to look round, holds to dig and taps to build", async ({ br
 		h.lookAt(Math.floor(p[0]), Math.floor(p[1]) - 1, Math.floor(p[2]) - 2);
 	});
 	await finger("touchStart", 410, 590);
-	await expect.poll(async () => (await peek()).inv[DIRT] ?? 0, { timeout: 8000 }).toBeGreaterThan(0);
+	await expect.poll(async () => (await peek()).inv[DIRT] ?? 0, SLOW).toBeGreaterThan(0);
 	await finger("touchEnd");
 
 	// A quick tap builds with the block in hand.
 	const wool = (await peek()).inv[WOOL_RED];
 	await finger("touchStart", 410, 640);
 	await finger("touchEnd");
-	await expect.poll(async () => (await peek()).inv[WOOL_RED]).toBe(wool! - 1);
+	await expect.poll(async () => (await peek()).inv[WOOL_RED], SLOW).toBe(wool! - 1);
 	await context.close();
 });
 

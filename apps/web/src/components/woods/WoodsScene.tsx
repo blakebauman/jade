@@ -67,7 +67,7 @@ export const WoodsScene = memo(function WoodsScene({ world, controls, running, l
 		<Canvas
 			flat
 			frameloop={running ? "always" : "demand"}
-			dpr={software ? 1 : [1, 1.5]}
+			dpr={software ? 0.75 : [1, 1.5]}
 			gl={{ antialias: false, powerPreference: "high-performance" }}
 			camera={{ fov: 72, near: 0.05, far: 140 }}
 			onCreated={onCreated}
@@ -256,8 +256,8 @@ function Camp({ world }: { world: IslandState }) {
 	const { fire, light, torches, group } = useMemo(() => {
 		const fire = campfire();
 		const light = new PointLight("#ffae55", 2, 18, 1.2);
-		/** Torches nearest the player, each with a small light (the rest just glow). */
-		const torches = Array.from({ length: 4 }, () => new PointLight("#ffc273", 0, 9, 1.4));
+		/** Torches nearest the player, each with a small light (the rest just glow on their own). */
+		const torches = Array.from({ length: TORCH_LIGHTS }, () => new PointLight("#ffc273", 0, 9, 1.4));
 		const group = new Group();
 		group.add(fire.group, light, ...torches);
 		return { fire, light, torches, group };
@@ -280,7 +280,7 @@ function Camp({ world }: { world: IslandState }) {
 		light.intensity = on ? (2.2 + 0.4 * Math.sin(t * 11) + 0.3 * Math.sin(t * 17)) * (0.5 + size) : 0;
 		light.distance = fireRadius(fuel) * 2.2 + 2;
 
-		// Torches: the nearest four of those the island knows about.
+		// Torches: the nearest of those the island knows about.
 		const now = performance.now();
 		if (now - scan.current.at > 500) {
 			scan.current.at = now;
@@ -512,12 +512,16 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 		camera.rotation.set(pitch, yaw, 0);
 
 		// What it's aiming at: under the finger, or the middle of the screen.
-		if (controls.aim) {
-			ndc.set(controls.aim[0], controls.aim[1]);
-			ray.setFromCamera(ndc, camera);
-			dir.copy(ray.ray.direction);
-		} else camera.getWorldDirection(dir);
-		const hit = running ? raycast(v, [camera.position.x, camera.position.y, camera.position.z], [dir.x, dir.y, dir.z]) : null;
+		const aimAt = (aim: [number, number] | null) => {
+			if (!running) return null;
+			if (aim) {
+				ndc.set(aim[0], aim[1]);
+				ray.setFromCamera(ndc, camera);
+				dir.copy(ray.ray.direction);
+			} else camera.getWorldDirection(dir);
+			return raycast(v, [camera.position.x, camera.position.y, camera.position.z], [dir.x, dir.y, dir.z]);
+		};
+		const hit = aimAt(controls.aim);
 		controls.target = hit;
 		outline.visible = !!hit;
 		if (hit) outline.position.set(hit.cell[0] + 0.5, hit.cell[1] + 0.5, hit.cell[2] + 0.5);
@@ -528,7 +532,8 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 				s.mining = hit.i;
 				controls.progress = 0;
 			}
-			const step = dt / (blockInfo(hit.block).hardness * DIG_SPEED);
+			// Real time, not the physics step: a slow frame still digs its share.
+			const step = Math.min(rawDt, 0.25) / (blockInfo(hit.block).hardness * DIG_SPEED);
 			controls.progress += step;
 			if (Math.floor((controls.progress - step) * 4) !== Math.floor(controls.progress * 4)) sound.tap();
 			if (controls.progress >= 1) {
@@ -547,8 +552,9 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 
 		// A tap or right click builds on the face it's aiming at.
 		if (controls.place) {
-			controls.place = false;
-			if (hit && running) build(world, controls, hit);
+			const at = aimAt(controls.place.aim);
+			controls.place = null;
+			if (at) build(world, controls, at);
 		}
 
 		// Tell the island where we are, ten times a second while moving.
@@ -568,6 +574,9 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 		</>
 	);
 }
+
+/** Torches lit with a real light at once (the nearest); each one costs every pixel a little, so only a couple. */
+const TORCH_LIGHTS = 2;
 
 /** Hardness is in seconds; digging takes this share of it, quick enough that a click feels like it does something. */
 const DIG_SPEED = 0.45;

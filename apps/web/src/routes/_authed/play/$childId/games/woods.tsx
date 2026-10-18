@@ -106,7 +106,7 @@ function WoodsScreen() {
 			drive,
 			look: { yaw: 0, pitch: -0.15 },
 			mining: false,
-			place: false,
+			place: null,
 			aim: null,
 			selected: B.woolRed,
 			body: null,
@@ -270,7 +270,7 @@ function WoodsScreen() {
 				return;
 			}
 			if (e.button === 0) controls.mining = true;
-			else if (e.button === 2) controls.place = true;
+			else if (e.button === 2) controls.place = { aim: null };
 		};
 		const up = (e: MouseEvent) => {
 			if (e.button === 0) controls.mining = false;
@@ -361,13 +361,10 @@ function WoodsScreen() {
 			if (!t || !finger) return;
 			clearTimeout(finger.timer);
 			if (!finger.dragged && !controls.mining && e.type === "touchend" && performance.now() - finger.at < HOLD_MS) {
-				controls.aim = aimAt(t.clientX, t.clientY);
-				controls.place = true;
-				// Keep aiming there for the frame that builds.
-				setTimeout(() => {
-					if (!finger) controls.aim = null;
-				}, 80);
-			} else controls.aim = null;
+				// Built where the finger tapped, whenever the next frame comes.
+				controls.place = { aim: aimAt(t.clientX, t.clientY) };
+			}
+			controls.aim = null;
 			controls.mining = false;
 			finger = null;
 		};
@@ -418,7 +415,7 @@ function WoodsScreen() {
 				controls.mining = on;
 			},
 			place: () => {
-				controls.place = true;
+				controls.place = { aim: null };
 			},
 			select: (b: number) => setSelected(b),
 			setState: async (name: string) => {
