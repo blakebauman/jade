@@ -21,6 +21,7 @@ import {
 	generate,
 	goalKey,
 	goalsMet,
+	holdsPlant,
 	type Inventory,
 	ISLAND_MAX,
 	indexOf,
@@ -286,6 +287,15 @@ export class WoodsWorld extends DurableObject<unknown> {
 		this.broadcast({ t: "edit", i, b: B.air, seat: who.seat });
 		const drop = blockInfo(b).drop;
 		if (drop !== null) this.give(who.childId, drop, 1);
+		// A plant on top comes up with the block it grew in.
+		const [x, y, z] = cellOf(i);
+		const above = this.vol.get(x, y + 1, z);
+		if (isPlant(above)) {
+			const j = indexOf(x, y + 1, z);
+			this.edit(j, B.air, who.familyId);
+			this.broadcast({ t: "edit", i: j, b: B.air, seat: who.seat });
+			this.give(who.childId, above, 1);
+		}
 		this.count(ws, who.childId, (s) => ({ ...s, logs: s.logs + (isLog(b) ? 1 : 0), gems: s.gems + (b === B.gem ? 1 : 0) }));
 	}
 
@@ -298,6 +308,8 @@ export class WoodsWorld extends DurableObject<unknown> {
 		if (who.guest && !this.guestsBuild) return refuse("visit");
 		if ((this.inventory(who.childId)[b] ?? 0) < 1) return refuse("inventory");
 		if (this.blocksSomeone(i)) return refuse("occupied");
+		const [x, y, z] = cellOf(i);
+		if (isPlant(b) && !holdsPlant(this.vol.get(x, y - 1, z))) return refuse("fixed");
 		const isNew = this.sql.exec("SELECT 1 FROM edits WHERE i = ?", i).toArray().length === 0;
 		if (isNew && this.editCount() >= EDITS_MAX) return refuse("full");
 		this.edit(i, b, who.familyId);
@@ -447,7 +459,7 @@ export class WoodsWorld extends DurableObject<unknown> {
 	// ── Helpers ──
 
 	private island() {
-		return { volume: this.vol, seed: this.seed, fire: this.fire };
+		return { volume: this.vol, seed: this.seed, gen: this.gen, fire: this.fire };
 	}
 
 	private sockets() {

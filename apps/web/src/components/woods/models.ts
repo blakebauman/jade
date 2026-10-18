@@ -319,7 +319,7 @@ export function deer(): Group {
 		ear.rotation.z = 0.35 * s;
 	}
 	// Antlers: a beam each side with three tines, all glowing softly.
-	const antler = lit("#a9ecff");
+	const antler = lit("#c4f3ff");
 	for (const s of [-1, 1]) {
 		part(antler, 0.08, 0.5, 0.08, 0.16 * s, 3.4, -1.04, g);
 		const beam = part(antler, 0.5, 0.08, 0.08, 0.38 * s, 3.62, -1.0, g);

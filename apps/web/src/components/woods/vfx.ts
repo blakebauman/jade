@@ -59,6 +59,14 @@ export const BLOCK_COLOURS: Record<number, [string, string]> = {
 	[B.woolGreen]: ["#5cae47", "#478f36"],
 	[B.woolBlue]: ["#3b7fd9", "#2c66b8"],
 	[B.woolPink]: ["#ec8fb6", "#d6739c"],
+	[B.birchLog]: ["#ece8dd", "#3b3631"],
+	[B.birchLeaves]: ["#8fbe52", "#a2c95c"],
+	[B.pineLeaves]: ["#2c6644", "#1f4f34"],
+	[B.tallGrass]: ["#62b04b", "#8fcf6a"],
+	[B.flowerRed]: ["#e0443a", "#4a9a3a"],
+	[B.flowerYellow]: ["#f5cd32", "#4a9a3a"],
+	[B.flowerBlue]: ["#4f7fe0", "#4a9a3a"],
+	[B.mushroom]: ["#d8433a", "#f0e6d2"],
 };
 for (const b of BLOCKS) BLOCK_COLOURS[b.id] ??= ["#8a8d93", "#74777d"];
 
@@ -770,7 +778,7 @@ export class Effects {
 		this.softLayer.geometry.dispose();
 		this.softLayer.material.dispose();
 		this.sheet.dispose();
+		// Leaves the group as it is: three uploads the disposed resources again if it's shown again (a remount).
 		this.group.removeFromParent();
-		this.group.clear();
 	}
 }

@@ -16,6 +16,8 @@ export const CLEARING = 8;
 export type Island = {
 	volume: Volume;
 	seed: number;
+	/** How it was made (`generate`'s `gen`). */
+	gen?: number;
 	/** The cell the fire burns in (air, never built on). */
 	fire: [number, number, number];
 };
@@ -100,7 +102,7 @@ export function generate(seed: number, gen = TERRAIN_LATEST): Island {
 		plants(v, hs, seeded(seed ^ 0xf10e));
 	} else trees(v, hs, rng);
 	const fireY = hs[CAMP.x + W * CAMP.z]! + 1;
-	return { volume: v, seed, fire: [CAMP.x, fireY, CAMP.z] };
+	return { volume: v, seed, gen, fire: [CAMP.x, fireY, CAMP.z] };
 }
 
 const VEINS: readonly { block: number; count: number; maxY: number; size: number }[] = [
@@ -250,15 +252,16 @@ function bush(v: Volume, x: number, y: number, z: number, rng: Rng) {
 }
 
 /**
- * Tall grass in the meadows, flowers in sunny patches, toadstools in the shade under trees. Never right by the fire,
- * where kids gather.
+ * Tall grass in the meadows, flowers in sunny patches, toadstools in the shade under trees. Never in the camp, where
+ * kids gather.
  */
 function plants(v: Volume, hs: Int16Array, rng: Rng) {
 	const flowersSeed = Math.floor(rng() * 1e6);
 	for (let z = 1; z < D - 1; z++) {
 		for (let x = 1; x < W - 1; x++) {
 			const d = fromCamp(x, z);
-			if (d < 4) continue;
+			// The camp itself (the fire, benches, tent, woodpile, lantern and where kids arrive) stays mown.
+			if (d < 7) continue;
 			const h = hs[x + W * z]!;
 			if (v.get(x, h, z) !== B.grass || v.get(x, h + 1, z) !== B.air) continue;
 			const shade = isLeaves(v.get(x, h + 4, z)) || isLeaves(v.get(x, h + 5, z)) || isLeaves(v.get(x, h + 6, z));
@@ -286,9 +289,13 @@ export function groundAt(v: Volume, x: number, z: number): number {
 	return -1;
 }
 
-/** Where kids arrive: a few steps south of the fire, facing it across the camp. */
+/**
+ * Where kids arrive: a few steps south of the fire, facing it across the camp. Older islands keep their old spot (three
+ * steps), where kids may have built round it.
+ */
 export function spawnPoint(island: Island): [number, number, number] {
 	const [x, , z] = island.fire;
-	const g = groundAt(island.volume, x, z + 5);
-	return [x + 0.5, Math.max(g, island.fire[1] - 1) + 1, z + 5.5];
+	const back = (island.gen ?? 1) >= 2 ? 5 : 3;
+	const g = groundAt(island.volume, x, z + back);
+	return [x + 0.5, Math.max(g, island.fire[1] - 1) + 1, z + back + 0.5];
 }

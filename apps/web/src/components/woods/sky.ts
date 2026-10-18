@@ -180,7 +180,8 @@ export class Sky {
 		// Clouds: white by day, warm at dusk, faint blue-grey at night; they drift east and wrap round.
 		const cm = this.clouds.material as MeshBasicMaterial;
 		cm.color.copy(this.colours.horizon).lerp(CLOUD_WHITE, sun * 0.8);
-		cm.opacity = 0.35 + 0.5 * sun;
+		// Barely there at night, so they never cover the stars.
+		cm.opacity = 0.08 + 0.77 * sun;
 		for (let k = 0; k < CLOUDS; k++) {
 			const b = this.cloudBase[k]!;
 			let x = b.x + time * 1.2;

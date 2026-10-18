@@ -76,6 +76,7 @@ export function campfire(): Campfire {
 	}
 	const embers = new Mesh(new CylinderGeometry(0.34, 0.38, 0.05, 10), new MeshBasicMaterial({ color: "#ff7a2a" }));
 	embers.position.y = 0.03;
+	embers.userData.keep = true;
 	g.add(embers);
 	// Split logs leaning in to a point: a teepee.
 	const bark = mat("#6b4a2b");
@@ -100,7 +101,7 @@ export function campfire(): Campfire {
 	// A soft warm halo round the flame (additive, never casts).
 	const halo = new Mesh(
 		new ConeGeometry(0.42, 1.2, 8, 1, true),
-		new MeshBasicMaterial({ color: "#ff9a40", transparent: true, opacity: 0.12, blending: AdditiveBlending, depthWrite: false }),
+		new MeshBasicMaterial({ color: "#ff9a40", transparent: true, opacity: 0.05, blending: AdditiveBlending, depthWrite: false }),
 	);
 	halo.position.y = 0.55;
 	halo.userData.halo = true;
@@ -181,6 +182,7 @@ function lantern(): { group: Group; glass: Mesh } {
 	const glass = new Mesh(unit, new MeshBasicMaterial({ color: "#ffd27a" }));
 	glass.scale.set(0.18, 0.26, 0.18);
 	glass.position.set(0.4, 1.27, 0);
+	glass.userData.keep = true;
 	g.add(glass);
 	return { group: g, glass };
 }
@@ -211,7 +213,7 @@ export function camp(): Camp {
 	w.rotation.y = -0.5;
 	g.add(w);
 	const l = lantern();
-	l.group.position.set(-2.6, 0, 3.4);
+	l.group.position.set(-3.6, 0, 1.4);
 	g.add(l.group);
 	// The fire stays its own group (its flames move); everything else round it bakes into one mesh.
 	g.remove(fire.group);

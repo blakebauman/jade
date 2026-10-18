@@ -5,7 +5,7 @@ import { tileUv } from "./mesher.ts";
 /**
  * What the kid is holding, seen in the bottom-right corner in first person: the block in hand (with its own pixel
  * faces), or a hand when it's empty. It bobs with each step, swings while digging and dips when it builds, and is
- * drawn over the world so it never pokes into a wall.
+ * drawn last, over the world and anything see-through, so it never pokes into a wall or under a cloud.
  */
 
 /** BoxGeometry's faces in order (+x, -x, +y, -y, +z, -z) and which tile each takes. */
@@ -36,12 +36,12 @@ export class Held {
 	private geometries = new Map<number, BoxGeometry>();
 
 	constructor(atlas: Texture) {
-		const mat = new MeshLambertMaterial({ map: atlas, alphaTest: 0.5, depthTest: false, depthWrite: false });
+		const mat = new MeshLambertMaterial({ map: atlas, alphaTest: 0.5, transparent: true, depthTest: false, depthWrite: false });
 		this.block = new Mesh(new BoxGeometry(1, 1, 1), mat);
 		this.block.scale.setScalar(0.15);
 		this.hand = new Mesh(
 			new BoxGeometry(0.1, 0.1, 0.34),
-			new MeshLambertMaterial({ color: "#f0c7a0", depthTest: false, depthWrite: false }),
+			new MeshLambertMaterial({ color: "#f0c7a0", transparent: true, depthTest: false, depthWrite: false }),
 		);
 		for (const m of [this.block, this.hand]) {
 			m.renderOrder = 1000;

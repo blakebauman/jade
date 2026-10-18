@@ -4,7 +4,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 /**
  * Bakes every plain one-colour shape under `root` into at most two vertex-coloured meshes (one lit, one glowing), so a
  * model built from dozens of boxes costs two draw calls instead of dozens. See-through or textured parts are left as
- * they are, moved under the new group in place. The returned group replaces `root` (which is emptied).
+ * they are, moved under the new group in place, as is anything marked `userData.keep` (a part that changes colour). The returned group replaces `root` (which is emptied).
  */
 export function bake(
 	root: Object3D,

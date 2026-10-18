@@ -99,7 +99,8 @@ export function deerAt(seed: number, night: number, t: number, near: number): { 
 	const start = seeded((seed ^ Math.imul(night, 0x85ebca6b)) >>> 0)() * Math.PI * 2;
 	const speed = 0.045;
 	const a = start + t * speed;
-	const r = 28 - 16 * Math.min(1, Math.max(0, near)) + 2.5 * Math.sin(t * 0.21);
+	// Low fire: right at the edge of the clearing, between the first trees.
+	const r = 28 - 18 * Math.min(1, Math.max(0, near)) + 1.5 * Math.sin(t * 0.21);
 	return { x: CAMP.x + Math.cos(a) * r, z: CAMP.z + Math.sin(a) * r, heading: a + Math.PI / 2 };
 }
 

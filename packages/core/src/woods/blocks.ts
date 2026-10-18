@@ -134,6 +134,9 @@ export const canMine = (id: number) => Number.isFinite(blockInfo(id).hardness);
 /** Placeable from the inventory: anything that drops as itself. */
 export const canPlace = (id: number) => id !== B.air && blockInfo(id).drop === id;
 
+/** A plant only grows (or is planted) on soil: grass, dirt or sand. */
+export const holdsPlant = (below: number) => below === B.grass || below === B.dirt || below === B.sand;
+
 /** Every tile name the client has to draw. */
 export const TILE_NAMES: readonly string[] = [
 	...new Set(BLOCKS.flatMap((b) => [b.tiles.top, b.tiles.side, b.tiles.bottom]).filter(Boolean)),

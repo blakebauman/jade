@@ -1,6 +1,6 @@
 import { seeded } from "@jade/core/math";
 import { TILE_NAMES } from "@jade/core/woods";
-import { CanvasTexture, NearestFilter, SRGBColorSpace } from "three";
+import { CanvasTexture, NearestFilter, NearestMipmapLinearFilter, SRGBColorSpace } from "three";
 import { ATLAS_COLS, ATLAS_ROWS } from "./mesher.ts";
 
 /**
@@ -233,8 +233,10 @@ export function drawAtlas(): HTMLCanvasElement {
 export function atlasTexture() {
 	const t = new CanvasTexture(drawAtlas());
 	t.magFilter = NearestFilter;
-	t.minFilter = NearestFilter;
-	t.generateMipmaps = false;
+	// Crisp pixels up close; far off, mipmaps blend each tile down so distant leaves read as soft colour, not noise.
+	t.minFilter = NearestMipmapLinearFilter;
+	t.generateMipmaps = true;
+	t.anisotropy = 4;
 	t.colorSpace = SRGBColorSpace;
 	return t;
 }

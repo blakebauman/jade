@@ -527,12 +527,12 @@ function WoodsScreen() {
 				>
 					<NoWebGL>
 						<Suspense fallback={<GameLoading label="Lighting the campfire…" />}>
-							<WoodsScene world={world} controls={controls} running={running} label={sceneLabel(hud)} />
+							<WoodsScene world={world} controls={controls} running={running} playing={playing && ready} label={sceneLabel(hud)} />
 						</Suspense>
 					</NoWebGL>
 					{playing && !coarse && <Crosshair />}
-					{playing && !coarse && !captured && ready && (
-						<p className="glass glass-pill pointer-events-none absolute bottom-[calc(max(1.5rem,var(--safe-bottom))+8.5rem)] left-1/2 -translate-x-1/2 text-sm font-medium">
+					{playing && !coarse && !captured && ready && !message && (
+						<p className="glass glass-pill pointer-events-none absolute top-[calc(max(1.5rem,var(--safe-top))+4.2rem)] left-1/2 -translate-x-1/2 text-sm font-medium">
 							Click to look round
 						</p>
 					)}
@@ -544,7 +544,7 @@ function WoodsScreen() {
 					)}
 					{playing && hud.lostNear && <LostHint hint={hud.lostNear} />}
 					{playing && hotbar.length > 0 && <Hotbar items={hotbar} inv={hud.inv} selected={selected} onPick={setSelected} tiles={tiles} />}
-					<div className="pointer-events-none absolute inset-x-0 top-[calc(max(0.75rem,var(--safe-top))+4.2rem)] flex justify-center px-3">
+					<div className="pointer-events-none absolute inset-x-0 top-[calc(max(0.75rem,var(--safe-top))+4.2rem)] flex justify-center px-3 max-md:top-[calc(max(0.75rem,var(--safe-top))+8.6rem)]">
 						<p role="status" className={message && playing ? "glass glass-pill text-center text-sm font-medium" : "sr-only"}>
 							{message ?? ""}
 						</p>
@@ -607,14 +607,14 @@ function WoodsScreen() {
 				)
 			}
 			hints={
-				<>
+				<span className={`contents ${hud.dark ? "" : "[&_span]:[text-shadow:0_0_8px_rgb(255_255_255/0.85)]"}`}>
 					<Hint keys={["W", "A", "S", "D"]}>walk</Hint>
 					<Hint keys={["Space"]}>jump</Hint>
 					<Hint keys={["Click"]}>hold to dig</Hint>
 					<Hint keys={["Right click"]}>build</Hint>
 					<Hint keys={["E"]}>use</Hint>
 					<Hint keys={["1–9"]}>block</Hint>
-				</>
+				</span>
 			}
 			touch={playing && <TouchControls drive={drive} />}
 			panel={<Things inv={hud.inv} tiles={tiles} selected={selected} onPick={setSelected} onEmote={emote} />}
@@ -804,7 +804,7 @@ function IslandStatus({ hud }: { hud: Hud }) {
 function LostHint({ hint }: { hint: NonNullable<Hud["lostNear"]> }) {
 	return (
 		<p
-			className="glass glass-pill pointer-events-none absolute top-[calc(max(0.75rem,var(--safe-top))+7.6rem)] left-1/2 -translate-x-1/2 text-sm font-medium max-md:top-[calc(max(0.75rem,var(--safe-top))+9rem)]"
+			className="glass glass-pill pointer-events-none absolute top-[calc(max(0.75rem,var(--safe-top))+7.6rem)] left-1/2 -translate-x-1/2 text-sm font-medium max-md:top-[calc(max(0.75rem,var(--safe-top))+11.6rem)]"
 			aria-live="off"
 		>
 			<span className="inline-block transition-transform duration-200" style={{ transform: `rotate(${-hint.turn}rad)` }} aria-hidden>

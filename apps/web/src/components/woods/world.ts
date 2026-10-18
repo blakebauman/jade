@@ -49,6 +49,8 @@ export type WorldEvent =
 
 export class IslandState {
 	seed = 0;
+	/** How the island was made from its seed (older islands: 1). */
+	gen = 1;
 	volume: Volume | null = null;
 	fire: [number, number, number] = [48, 20, 48];
 	seat = -1;
@@ -174,7 +176,8 @@ export class IslandState {
 		if (this.welcome) {
 			const w = this.welcome;
 			this.welcome = null;
-			const island = generate(w.seed, w.gen ?? 1);
+			this.gen = w.gen ?? 1;
+			const island = generate(w.seed, this.gen);
 			island.volume.apply(packed);
 			this.volume = island.volume;
 			this.torches.clear();

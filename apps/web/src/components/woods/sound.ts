@@ -1,4 +1,4 @@
-import { B } from "@jade/core/woods";
+import { B, isLeaves, isLog, isPlant } from "@jade/core/woods";
 
 /**
  * Campfire Woods' sounds, made on the spot with Web Audio: taps while mining, a crunch when a block gives (lower for
@@ -149,7 +149,7 @@ const HARD = new Set<number>([B.stone, B.coal, B.iron, B.gold, B.gem, B.brick, B
 
 export function dig(block: number) {
 	const low = HARD.has(block) && block !== B.glass && block !== B.bedrock;
-	const soft = block === B.leaves || block === B.sand;
+	const soft = isLeaves(block) || isPlant(block) || block === B.sand;
 	noise(soft ? 0.12 : 0.18, low ? 700 : soft ? 2600 : 1200, { gain: 0.45 });
 	if (block === B.gem) chime();
 }
@@ -197,14 +197,14 @@ export function step(surface: number) {
 	if (surface === B.water) {
 		noise(0.16, 1400 * v, { gain: 0.12, q: 0.8, attack: 0.02, sweep: 700 });
 		tone(900 * v, 500 * v, 0.08, { gain: 0.04 });
-	} else if (surface === B.planks || surface === B.log) {
+	} else if (surface === B.planks || isLog(surface)) {
 		tone(190 * v, 150 * v, 0.07, { type: "triangle", gain: 0.1 });
 		noise(0.04, 700 * v, { gain: 0.08, q: 3 });
 	} else if (HARD.has(surface)) {
 		noise(0.035, 2600 * v, { gain: 0.1, q: 2 });
 		noise(0.05, 500 * v, { gain: 0.06, type: "lowpass" });
 	} else {
-		const crisp = surface === B.leaves || surface === B.sand;
+		const crisp = isLeaves(surface) || isPlant(surface) || surface === B.sand;
 		noise(0.08, (crisp ? 1500 : 450) * v, { gain: rand(0.09, 0.13), type: crisp ? "bandpass" : "lowpass", q: 0.9 });
 	}
 }
