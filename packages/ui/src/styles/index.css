@@ -669,6 +669,7 @@
 		padding-inline: 2rem;
 		border-radius: 9999px;
 		font-size: 1.35rem;
+		white-space: nowrap;
 		color: color-mix(in oklab, var(--sticker-face) 82%, black);
 		background: radial-gradient(120% 140% at 30% 10%, #ffffff 0%, #fbfdfb 55%, #eef3f0 100%);
 		box-shadow:
@@ -676,6 +677,8 @@
 			0 0.55rem 1.1rem -0.35rem rgb(0 0 0 / 0.38),
 			0 0.08rem 0.15rem rgb(0 0 0 / 0.2);
 	}
+	/* Inside a slot (Play closed) it keeps its one line in a phone-width box. */
+	.place-page .slot .key[data-variant="go"] { padding-inline: 1.5rem; font-size: 1.2rem; }
 	@media (hover: hover) {
 		.place-page .key[data-variant="go"]:hover:not(:disabled) { filter: none; transform: translateY(-2px); }
 	}
