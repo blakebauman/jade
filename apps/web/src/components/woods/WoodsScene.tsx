@@ -27,20 +27,26 @@ import {
 	BufferGeometry,
 	Color,
 	DirectionalLight,
+	DoubleSide,
 	EdgesGeometry,
+	Euler,
 	Fog,
 	Group,
 	HemisphereLight,
+	InstancedMesh,
 	LineBasicMaterial,
 	LineSegments,
+	Matrix4,
 	Mesh,
 	MeshBasicMaterial,
 	MeshLambertMaterial,
 	PCFShadowMap,
 	type PerspectiveCamera,
+	PlaneGeometry,
 	PointLight,
 	Points,
 	PointsMaterial,
+	Quaternion,
 	Raycaster,
 	Vector2,
 	Vector3,
@@ -167,6 +173,7 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 			<Others world={world} />
 			<Animals world={world} controls={controls} />
 			<NightDeer world={world} />
+			<WatchingEyes world={world} controls={controls} />
 			<Player world={world} controls={controls} running={running} playing={playing} fx={fx} />
 		</>
 	);
@@ -488,6 +495,8 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 	const group = useMemo(() => new Group(), []);
 	const lost = useRef(new Map<string, Group>());
 	const home = useRef<Group[]>([]);
+	/** How many animals were already at camp when this screen opened. */
+	const settled = useRef(-1);
 	useFrame(({ clock }) => {
 		const t = clock.elapsedTime;
 		const seen = new Set<string>();
@@ -539,7 +548,12 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 			const a = (k / living.length) * Math.PI * 2 + t * 0.05 * (k % 2 ? 1 : -1);
 			g.position.set(fx + 0.5 + Math.cos(a) * r, fy, fz + 0.5 + Math.sin(a) * r);
 			g.rotation.y = -a + (k % 2 ? 0 : Math.PI);
-			g.children[0]!.position.y = Math.abs(Math.sin(t * 3 + k)) * 0.05;
+			// Just home: a few happy hops (not those already living here when the kid arrived).
+			if (settled.current < 0 && world.volume) settled.current = world.home.length;
+			if (g.userData.arrived === undefined) g.userData.arrived = k < settled.current ? -10 : t;
+			const arrived = g.userData.arrived as number;
+			const happy = t - arrived < 2.5 ? Math.abs(Math.sin((t - arrived) * 7)) * 0.45 * (1 - (t - arrived) / 2.5) : 0;
+			g.children[0]!.position.y = Math.abs(Math.sin(t * 3 + k)) * 0.05 + happy;
 		});
 	});
 	return <primitive object={group} />;
@@ -574,6 +588,75 @@ function NightDeer({ world }: { world: IslandState }) {
 	});
 	return <primitive object={model} />;
 }
+
+const EYES = 7;
+
+/**
+ * Shy eyes in the woods at night: pairs of soft glints between the trees round the clearing, blinking now and then,
+ * that slip away when a kid comes close. Cozy-spooky, never more. One instanced draw call.
+ */
+function WatchingEyes({ world, controls }: { world: IslandState; controls: Controls }) {
+	const { mesh, spots } = useMemo(() => {
+		const mesh = new InstancedMesh(
+			new PlaneGeometry(0.2, 0.14),
+			new MeshBasicMaterial({ color: "#d9f7ff", transparent: true, depthWrite: false, fog: false, side: DoubleSide }),
+			EYES * 2,
+		);
+		mesh.frustumCulled = false;
+		mesh.userData.noCast = true;
+		return { mesh, spots: [] as { x: number; y: number; z: number; face: number; phase: number }[] };
+	}, []);
+	const placed = useRef(-1);
+	const m = useMemo(() => new Matrix4(), []);
+	const q = useMemo(() => new Quaternion(), []);
+	const e = useMemo(() => new Euler(), []);
+	const pos = useMemo(() => new Vector3(), []);
+	const one = useMemo(() => new Vector3(1, 1, 1), []);
+	useFrame(({ clock, camera }) => {
+		const p = phaseAt(world.elapsed());
+		const deep = p.phase === "night" ? Math.min(1, p.progress * 6, (1 - p.progress) * 6) : 0;
+		mesh.visible = deep > 0.05 && !!world.volume;
+		if (!mesh.visible) return;
+		// New places each night, from the seed, so every screen sees the same eyes.
+		if (placed.current !== p.night) {
+			placed.current = p.night;
+			spots.length = 0;
+			let s = (world.seed ^ (p.night * 2654435761)) >>> 0;
+			const r = () => {
+				s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+				return s / 4294967296;
+			};
+			for (let k = 0; k < EYES; k++) {
+				const a = r() * Math.PI * 2;
+				const d = 13 + r() * 9;
+				const x = world.fire[0] + 0.5 + Math.cos(a) * d;
+				const z = world.fire[2] + 0.5 + Math.sin(a) * d;
+				spots.push({ x, y: groundBelow(world, x, z) + 0.9 + r() * 0.8, z, face: a + Math.PI, phase: r() * 10 });
+			}
+		}
+		const t = clock.elapsedTime;
+		const body = controls.body?.p;
+		(mesh.material as MeshBasicMaterial).opacity = deep;
+		spots.forEach((spot, k) => {
+			// A slow blink every few seconds; gone when a kid gets near (they're shy).
+			const blink = Math.sin(t * 0.9 + spot.phase) > 0.97 ? 0 : 1;
+			const near = body ? Math.hypot(body[0] - spot.x, body[2] - spot.z) < 7 : false;
+			const shown = blink && !near ? 1 : 0;
+			const face = Math.atan2(camera.position.x - spot.x, camera.position.z - spot.z);
+			e.set(0, face, 0);
+			q.setFromEuler(e);
+			for (const side of [-1, 1]) {
+				pos.set(spot.x + Math.cos(face) * 0.17 * side, spot.y, spot.z - Math.sin(face) * 0.17 * side);
+				m.compose(pos, q, shown ? one : ZERO);
+				mesh.setMatrixAt(k * 2 + (side > 0 ? 1 : 0), m);
+			}
+		});
+		mesh.instanceMatrix.needsUpdate = true;
+	});
+	return <primitive object={mesh} />;
+}
+
+const ZERO = new Vector3(0, 0, 0);
 
 function groundBelow(world: IslandState, x: number, z: number) {
 	const v = world.volume;
