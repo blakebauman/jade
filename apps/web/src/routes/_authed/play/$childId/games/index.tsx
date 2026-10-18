@@ -5,6 +5,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CalendarHeart, MapPinned } from "lucide-react";
 import { useMemo } from "react";
 import { MoreTime, PlayClosed, PlayWallet } from "#/components/play/PlayBits.tsx";
+import { QuestBoard } from "#/components/play/QuestBoard.tsx";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
 import { useChild } from "#/lib/child.ts";
 import { playQuery } from "#/lib/play.ts";
@@ -51,100 +52,105 @@ function GamesHome() {
 					<PlayClosed childId={child.id} status={play} level="h2" />
 				</div>
 			) : (
-				<ul className="mt-6 grid gap-6 md:grid-cols-2">
-					<li>
-						<Link
-							to="/play/$childId/games/roxy"
-							params={{ childId: child.id }}
-							className="sticker flex items-center gap-5 p-5 md:p-6"
-							data-place="roxy"
-							style={{ "--tilt": "-1.5deg" } as React.CSSProperties}
-						>
-							<span className="block w-28 shrink-0 overflow-hidden rounded-xl md:w-32" aria-hidden>
-								{roxy ? (
-									<RoxyFigure look={shownLook(child.id, roxy)} className="block h-auto w-full" />
-								) : (
-									<span className="block aspect-[5/8] bg-page-deep/40" />
-								)}
-							</span>
-							<span className="min-w-0 space-y-2">
-								<span className="block font-display text-3xl font-semibold">Roxy</span>
-								<span className="block text-sm font-medium">Style your own character, then turn them into an animal with a magic gem.</span>
-								{holiday && (
-									<span className="inline-flex items-center gap-1.5 text-sm font-medium">
-										<CalendarHeart className="size-4" aria-hidden /> {holiday.label} collection
+				<>
+					{play && <QuestBoard childId={child.id} status={play} />}
+					<ul className="mt-8 grid gap-6 md:grid-cols-2">
+						<li>
+							<Link
+								to="/play/$childId/games/roxy"
+								params={{ childId: child.id }}
+								className="sticker flex items-center gap-5 p-5 md:p-6"
+								data-place="roxy"
+								style={{ "--tilt": "-1.5deg" } as React.CSSProperties}
+							>
+								<span className="block w-28 shrink-0 overflow-hidden rounded-xl md:w-32" aria-hidden>
+									{roxy ? (
+										<RoxyFigure look={shownLook(child.id, roxy)} className="block h-auto w-full" />
+									) : (
+										<span className="block aspect-[5/8] bg-page-deep/40" />
+									)}
+								</span>
+								<span className="min-w-0 space-y-2">
+									<span className="block font-display text-3xl font-semibold">Roxy</span>
+									<span className="block text-sm font-medium">
+										Style your own character, then turn them into an animal with a magic gem.
 									</span>
-								)}
-							</span>
-						</Link>
-					</li>
-					<li>
-						<Link
-							to="/play/$childId/games/roxy/town"
-							params={{ childId: child.id }}
-							className="sticker flex items-center gap-5 p-5 md:p-6"
-							data-place="roxy"
-							style={{ "--tilt": "1.5deg" } as React.CSSProperties}
-						>
-							<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
-								<MapPinned className="size-14" />
-							</span>
-							<span className="min-w-0 space-y-2">
-								<span className="block font-display text-3xl font-semibold">Town</span>
-								<span className="block text-sm font-medium">
-									Take Roxy and your pet to the park, the pet shop and school, and find what’s hidden.
+									{holiday && (
+										<span className="inline-flex items-center gap-1.5 text-sm font-medium">
+											<CalendarHeart className="size-4" aria-hidden /> {holiday.label} collection
+										</span>
+									)}
 								</span>
-								{roxy && (
-									<span className="inline-flex items-center gap-1.5 text-sm font-medium">
-										{roxy.finds.length} of {FINDS.length} found
+							</Link>
+						</li>
+						<li>
+							<Link
+								to="/play/$childId/games/roxy/town"
+								params={{ childId: child.id }}
+								className="sticker flex items-center gap-5 p-5 md:p-6"
+								data-place="roxy"
+								style={{ "--tilt": "1.5deg" } as React.CSSProperties}
+							>
+								<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
+									<MapPinned className="size-14" />
+								</span>
+								<span className="min-w-0 space-y-2">
+									<span className="block font-display text-3xl font-semibold">Town</span>
+									<span className="block text-sm font-medium">
+										Take Roxy and your pet to the park, the pet shop and school, and find what’s hidden.
 									</span>
-								)}
-							</span>
-						</Link>
-					</li>
-					<li>
-						<Link
-							to="/play/$childId/games/gobble"
-							params={{ childId: child.id }}
-							className="sticker flex items-center gap-5 p-5 md:p-6"
-							data-place="roxy"
-							style={{ "--tilt": "-1deg" } as React.CSSProperties}
-						>
-							<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
-								<HoleArt />
-							</span>
-							<span className="min-w-0 space-y-2">
-								<span className="block font-display text-3xl font-semibold">Gobble Town</span>
-								<span className="block text-sm font-medium">
-									Be a hungry hole! Gobble flowers, then cars, then whole houses, and be the biggest in town.
+									{roxy && (
+										<span className="inline-flex items-center gap-1.5 text-sm font-medium">
+											{roxy.finds.length} of {FINDS.length} found
+										</span>
+									)}
 								</span>
-								{best > 0 && <span className="inline-flex items-center gap-1.5 text-sm font-medium">Your best: {best}</span>}
-							</span>
-						</Link>
-					</li>
-					<li>
-						<Link
-							to="/play/$childId/games/jelly"
-							params={{ childId: child.id }}
-							className="sticker flex items-center gap-5 p-5 md:p-6"
-							data-place="roxy"
-							style={{ "--tilt": "1deg" } as React.CSSProperties}
-						>
-							<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
-								<JellyArt />
-							</span>
-							<span className="min-w-0 space-y-2">
-								<span className="block font-display text-3xl font-semibold">Jelly Blocks</span>
-								<span className="block text-sm font-medium">
-									Turn and drop wobbly jelly blocks to fill whole rows. Fill a row and it pops!
+							</Link>
+						</li>
+						<li>
+							<Link
+								to="/play/$childId/games/gobble"
+								params={{ childId: child.id }}
+								className="sticker flex items-center gap-5 p-5 md:p-6"
+								data-place="roxy"
+								style={{ "--tilt": "-1deg" } as React.CSSProperties}
+							>
+								<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
+									<HoleArt />
 								</span>
-								{jellyBest > 0 && (
-									<span className="inline-flex items-center gap-1.5 text-sm font-medium">Your best: {jellyBest.toLocaleString()}</span>
-								)}
-							</span>
-						</Link>
-					</li>
-				</ul>
+								<span className="min-w-0 space-y-2">
+									<span className="block font-display text-3xl font-semibold">Gobble Town</span>
+									<span className="block text-sm font-medium">
+										Be a hungry hole! Gobble flowers, then cars, then whole houses, and be the biggest in town.
+									</span>
+									{best > 0 && <span className="inline-flex items-center gap-1.5 text-sm font-medium">Your best: {best}</span>}
+								</span>
+							</Link>
+						</li>
+						<li>
+							<Link
+								to="/play/$childId/games/jelly"
+								params={{ childId: child.id }}
+								className="sticker flex items-center gap-5 p-5 md:p-6"
+								data-place="roxy"
+								style={{ "--tilt": "1deg" } as React.CSSProperties}
+							>
+								<span className="grid size-28 shrink-0 place-items-center rounded-xl bg-page-deep/20 md:size-32" aria-hidden>
+									<JellyArt />
+								</span>
+								<span className="min-w-0 space-y-2">
+									<span className="block font-display text-3xl font-semibold">Jelly Blocks</span>
+									<span className="block text-sm font-medium">
+										Turn and drop wobbly jelly blocks to fill whole rows. Fill a row and it pops!
+									</span>
+									{jellyBest > 0 && (
+										<span className="inline-flex items-center gap-1.5 text-sm font-medium">Your best: {jellyBest.toLocaleString()}</span>
+									)}
+								</span>
+							</Link>
+						</li>
+					</ul>
+				</>
 			)}
 		</main>
 	);
