@@ -7,6 +7,7 @@ import {
 	DAY_S,
 	EMOTES,
 	type Emote,
+	FUEL_LOW,
 	FUEL_MAX,
 	phaseAt,
 	REACH_ANIMAL,
@@ -89,6 +90,8 @@ function WoodsScreen() {
 	const [island, setIsland] = useState<string | undefined>(undefined);
 	const world = useMemo(() => new IslandState(woodsUrl(child.id, island)), [child.id, island]);
 	const [phase, setPhase] = useState<Phase>("ready");
+	const phaseRef = useRef(phase);
+	phaseRef.current = phase;
 	const [hud, setHud] = useState<Hud>(() => readHud(world, null));
 	const [muted, setMuted] = useState(sound.isMuted);
 	const [message, setMessage] = useState<ReactNode>(null);
@@ -104,7 +107,7 @@ function WoodsScreen() {
 	const controls = useMemo<Controls>(
 		() => ({
 			drive,
-			look: { yaw: 0, pitch: -0.15 },
+			look: { yaw: 0, pitch: -0.12 },
 			mining: false,
 			place: null,
 			aim: null,
@@ -183,9 +186,27 @@ function WoodsScreen() {
 		[world, say, free, child.id],
 	);
 
-	// The HUD, a few times a second.
+	// The HUD and the island's sounds, a few times a second.
+	const lowWarned = useRef(false);
 	useEffect(() => {
 		const timer = setInterval(() => {
+			const p = phaseAt(world.elapsed());
+			const body = controls.body?.p;
+			const [fx, , fz] = world.fire;
+			const fuel = world.clock.fuel;
+			sound.ambience({
+				sun: p.sun,
+				fireDistance: body ? Math.hypot(body[0] - fx - 0.5, body[2] - fz - 0.5) : 30,
+				fireStrength: fuel <= 0 ? 0 : 0.3 + 0.7 * Math.min(1, fuel / (FUEL_MAX * 0.6)),
+				running: phaseRef.current === "play" && world.status === "open" && !document.hidden,
+			});
+			// A gentle nudge, once, when the fire runs low at night.
+			const low = p.phase === "night" && fuel > 0 && fuel < FUEL_MAX * FUEL_LOW;
+			if (low && !lowWarned.current && phaseRef.current === "play") {
+				sound.lowFire();
+				say("The fire’s getting low! Feed it a log.", 4000);
+			}
+			lowWarned.current = low;
 			const next = readHud(world, controls);
 			// The Play home shows how many nights this kid has kept the fire going.
 			if (world.stats.nights > 0)
@@ -194,8 +215,11 @@ function WoodsScreen() {
 				} catch {}
 			setHud((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
 		}, 250);
-		return () => clearInterval(timer);
-	}, [world, controls, child.id]);
+		return () => {
+			clearInterval(timer);
+			sound.stopAmbience();
+		};
+	}, [world, controls, child.id, say]);
 
 	// The hotbar: whatever can be built with, in block order. Keeps a block in hand while there's any.
 	const hotbar = useMemo(() => BLOCKS.filter((b) => canPlace(b.id) && (hud.inv[b.id] ?? 0) > 0).map((b) => b.id), [hud.inv]);
@@ -426,12 +450,27 @@ function WoodsScreen() {
 				controls.place = { aim: null };
 			},
 			select: (b: number) => setSelected(b),
+			/**
+			 * Into play at a time of day, on this screen only (the island's own clock carries on): `active-play` (morning),
+			 * `dusk`, `night`, `low-fire` (night, the fire nearly out, the deer close) and `lost-animal` (night, one waiting
+			 * just ahead).
+			 */
 			setState: async (name: string) => {
-				// The look of a time of day, on this screen only (the island's own clock carries on).
-				const at = { day: 60, dusk: DAY_S - 10, night: DAY_S + 90 }[name];
+				const at = { "active-play": 60, day: 60, dusk: DAY_S - 12, night: DAY_S + 90, "low-fire": DAY_S + 90, "lost-animal": DAY_S + 90 }[
+					name
+				];
 				if (at === undefined) throw new Error(`Unknown state ${name}`);
+				for (let k = 0; k < 100 && world.status !== "open"; k++) await new Promise((r) => setTimeout(r, 100));
+				setKicked(null);
+				setPhase("play");
 				world.shift = at - world.elapsed() + world.shift;
-				await new Promise((r) => setTimeout(r, 300));
+				world.fuelShown = name === "low-fire" ? 30 : name === "day" || name === "active-play" ? null : 220;
+				world.clock = { ...world.clock, fuel: world.fuelShown ?? world.clock.fuel };
+				if (name === "lost-animal" && controls.body) {
+					const [x, y, z] = controls.body.p;
+					world.lost = [{ id: "dev-0", animal: "fox", at: [x + 0.5, y, z - 3.5], follows: null }];
+				}
+				await new Promise((r) => setTimeout(r, 600));
 				return { state: name };
 			},
 			setPausedForScreenshot: (paused: boolean) => {

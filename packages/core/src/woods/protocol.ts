@@ -56,6 +56,8 @@ export type ServerMsg =
 			t: "welcome";
 			seat: number;
 			seed: number;
+			/** How the island was made from its seed (`generate(seed, gen)`). */
+			gen: number;
 			island: { label: string; mine: boolean; build: boolean };
 			figures: Figure[];
 			inv: Inventory;

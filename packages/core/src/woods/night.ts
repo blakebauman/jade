@@ -1,5 +1,5 @@
 import { seeded } from "../math/rng.ts";
-import { B } from "./blocks.ts";
+import { B, isPlant } from "./blocks.ts";
 import { CAMP, groundAt } from "./terrain.ts";
 import { D, SEA, type Volume, W } from "./volume.ts";
 
@@ -55,8 +55,9 @@ export function walkable(v: Volume): Uint8Array {
 			const g = ground[j]!;
 			if (g < SEA || Math.abs(g - ground[i]!) > 1) continue;
 			// Two cubes of room to stand in.
-			if (v.get(nx, g + 1, nz) !== B.air && v.get(nx, g + 1, nz) !== B.torch) continue;
-			if (v.get(nx, g + 2, nz) !== B.air) continue;
+			const above = v.get(nx, g + 1, nz);
+			if (above !== B.air && above !== B.torch && !isPlant(above)) continue;
+			if (v.get(nx, g + 2, nz) !== B.air && !isPlant(v.get(nx, g + 2, nz))) continue;
 			seen[j] = 1;
 			queue.push(j);
 		}

@@ -24,6 +24,8 @@ import {
 	type Inventory,
 	ISLAND_MAX,
 	indexOf,
+	isLog,
+	isPlant,
 	type Lost,
 	lostAnimals,
 	NO_STATS,
@@ -38,6 +40,7 @@ import {
 	SNUFF_RANGE,
 	STACK_MAX,
 	spawnPoint,
+	TERRAIN_LATEST,
 	type Volume,
 	type WoodsStats,
 } from "@jade/core/woods";
@@ -83,6 +86,8 @@ export const WOODS_HEADERS = {
 export class WoodsWorld extends DurableObject<unknown> {
 	private sql = this.ctx.storage.sql;
 	private seed = 0;
+	/** How this island was made from its seed; older islands keep the older way. */
+	private gen = 1;
 	private vol!: Volume;
 	/** The island as made, before anyone changed it (to tell an undo back to it from one back to another edit). */
 	private base!: Uint8Array;
@@ -116,11 +121,15 @@ export class WoodsWorld extends DurableObject<unknown> {
 					.map((r) => [r.k, r.v]),
 			);
 			this.seed = Number(meta.get("seed") ?? 0);
+			// Islands from before there was more than one way have no `gen`: they're the first way.
+			this.gen = Number(meta.get("gen") ?? 1);
 			if (!this.seed) {
 				this.seed = 1 + Math.floor(Math.random() * 2 ** 30);
+				this.gen = TERRAIN_LATEST;
 				this.setMeta("seed", this.seed);
+				this.setMeta("gen", this.gen);
 			}
-			const island = generate(this.seed);
+			const island = generate(this.seed, this.gen);
 			this.vol = island.volume;
 			this.base = island.volume.data.slice();
 			this.fire = island.fire;
@@ -178,6 +187,7 @@ export class WoodsWorld extends DurableObject<unknown> {
 				t: "welcome",
 				seat,
 				seed: this.seed,
+				gen: this.gen,
 				island: { label: this.label, mine: !guest, build: !guest || this.guestsBuild },
 				figures: this.figures(),
 				inv: this.inventory(childId),
@@ -276,14 +286,14 @@ export class WoodsWorld extends DurableObject<unknown> {
 		this.broadcast({ t: "edit", i, b: B.air, seat: who.seat });
 		const drop = blockInfo(b).drop;
 		if (drop !== null) this.give(who.childId, drop, 1);
-		this.count(ws, who.childId, (s) => ({ ...s, logs: s.logs + (b === B.log ? 1 : 0), gems: s.gems + (b === B.gem ? 1 : 0) }));
+		this.count(ws, who.childId, (s) => ({ ...s, logs: s.logs + (isLog(b) ? 1 : 0), gems: s.gems + (b === B.gem ? 1 : 0) }));
 	}
 
 	private place(ws: WebSocket, who: Who, i: number, b: number) {
 		const was = this.vol.data[i]!;
 		const refuse = (why: Extract<ServerMsg, { t: "refused" }>["why"]) => ws.send(json({ t: "refused", i, b: was, why }));
 		if (this.tooFast(ws)) return refuse("fast");
-		if (!canPlace(b) || (was !== B.air && was !== B.water) || this.atFire(i)) return refuse("fixed");
+		if (!canPlace(b) || (was !== B.air && was !== B.water && !isPlant(was)) || this.atFire(i)) return refuse("fixed");
 		if (!this.reaches(who, i)) return refuse("reach");
 		if (who.guest && !this.guestsBuild) return refuse("visit");
 		if ((this.inventory(who.childId)[b] ?? 0) < 1) return refuse("inventory");
