@@ -1,5 +1,6 @@
 import type { Animal, Emote } from "@jade/core/woods";
 import {
+	AdditiveBlending,
 	BoxGeometry,
 	CanvasTexture,
 	Color,
@@ -8,10 +9,13 @@ import {
 	Mesh,
 	MeshBasicMaterial,
 	MeshLambertMaterial,
+	type Object3D,
+	PlaneGeometry,
 	Sprite,
 	SpriteMaterial,
 	SRGBColorSpace,
 } from "three";
+import { bake } from "./bake.ts";
 
 /**
  * Everything that walks the island, built from boxes so it sits with the blocks: kids' figures, the lost animals and
@@ -46,41 +50,77 @@ function part(material: Material, w: number, h: number, d: number, x: number, y:
 	return m;
 }
 
-export type FigureModel = { group: Group; legs: [Mesh, Mesh]; arms: [Mesh, Mesh]; bubble: Sprite };
+export type FigureModel = { group: Group; legs: [Object3D, Object3D]; arms: [Object3D, Object3D]; bubble: Sprite };
 
-/** A kid: boots, trousers, a jumper in their seat's colour, and a head. Faces -z, feet at y 0, 1.8 tall. */
+const HAIR = ["#5a3a24", "#2b2118", "#c58a3d", "#8a4a2b", "#e8c06a", "#3d2a20"];
+const SKIN = ["#f0c7a0", "#d9a77c", "#b97f55", "#8d5a3b", "#f5d2b4"];
+
+/** A number from a label, so the same kid always gets the same hair and skin. */
+const pickBy = (label: string, n: number) => [...label].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % n;
+
+/**
+ * A kid: shoes, trousers, a jumper in their seat's colour with a pale stripe, sleeves with cuffs, a face with eyes and a
+ * smile, and hair with a fringe. Faces -z, feet at y 0, about 1.9 tall. Arms swing from the shoulders and legs from the
+ * hips; each part is baked to one or two draw calls.
+ */
 export function figure(colour: string, label: string): FigureModel {
 	const g = new Group();
-	const legs: [Mesh, Mesh] = [
-		part(mat("#3b4a6b"), 0.24, 0.74, 0.26, -0.13, 0.37, 0, g),
-		part(mat("#3b4a6b"), 0.24, 0.74, 0.26, 0.13, 0.37, 0, g),
-	];
-	part(mat(colour), 0.54, 0.62, 0.3, 0, 1.05, 0, g);
-	const arms: [Mesh, Mesh] = [
-		part(mat(colour), 0.18, 0.62, 0.22, -0.36, 1.05, 0, g),
-		part(mat(colour), 0.18, 0.62, 0.22, 0.36, 1.05, 0, g),
-	];
-	part(mat("#f0c7a0"), 0.46, 0.46, 0.46, 0, 1.6, 0, g);
-	part(mat("#5a3a24"), 0.5, 0.14, 0.5, 0, 1.86, 0.02, g);
-	part(mat("#2a2a33"), 0.07, 0.07, 0.02, -0.1, 1.63, -0.235, g);
-	part(mat("#2a2a33"), 0.07, 0.07, 0.02, 0.1, 1.63, -0.235, g);
-	// Legs and arms swing from the hip and shoulder.
-	for (const m of [...legs, ...arms]) m.geometry = shifted;
-	legs[0].position.y = legs[1].position.y = 0.74;
-	arms[0].position.y = arms[1].position.y = 1.36;
+	const skin = mat(SKIN[pickBy(label, SKIN.length)]!);
+	const hair = mat(HAIR[pickBy(`${label}h`, HAIR.length)]!);
+	const jumper = mat(colour);
+	const stripe = mat("#f4ecdc");
+	const trousers = mat("#3b4a6b");
+	const shoe = mat("#2a2a33");
+
+	const limb = (x: number, y: number) => {
+		const pivot = new Group();
+		pivot.position.set(x, y, 0);
+		return pivot;
+	};
+	const legs: [Object3D, Object3D] = [limb(-0.13, 0.76), limb(0.13, 0.76)];
+	for (const leg of legs) {
+		part(trousers, 0.24, 0.62, 0.26, 0, -0.31, 0, leg as Group);
+		part(shoe, 0.26, 0.14, 0.34, 0, -0.69, -0.04, leg as Group);
+	}
+	const arms: [Object3D, Object3D] = [limb(-0.37, 1.36), limb(0.37, 1.36)];
+	for (const arm of arms) {
+		part(jumper, 0.18, 0.5, 0.22, 0, -0.25, 0, arm as Group);
+		part(stripe, 0.19, 0.06, 0.23, 0, -0.47, 0, arm as Group);
+		part(skin, 0.15, 0.12, 0.17, 0, -0.56, 0, arm as Group);
+	}
+	part(jumper, 0.56, 0.62, 0.32, 0, 1.07, 0, g);
+	part(stripe, 0.57, 0.08, 0.33, 0, 1.14, 0, g);
+	part(trousers, 0.56, 0.08, 0.33, 0, 0.78, 0, g);
+	// The head: face, eyes, cheeks and a smile, hair over the top and back with a fringe.
+	part(skin, 0.48, 0.46, 0.46, 0, 1.62, 0, g);
+	part(mat("#2a2a33"), 0.07, 0.08, 0.02, -0.11, 1.65, -0.236, g);
+	part(mat("#2a2a33"), 0.07, 0.08, 0.02, 0.11, 1.65, -0.236, g);
+	part(mat("#e8907c"), 0.07, 0.04, 0.02, -0.17, 1.56, -0.236, g);
+	part(mat("#e8907c"), 0.07, 0.04, 0.02, 0.17, 1.56, -0.236, g);
+	part(mat("#8a3b34"), 0.14, 0.03, 0.02, 0, 1.52, -0.236, g);
+	part(hair, 0.52, 0.12, 0.5, 0, 1.88, 0.01, g);
+	part(hair, 0.52, 0.36, 0.1, 0, 1.68, 0.23, g);
+	part(hair, 0.5, 0.1, 0.06, 0, 1.79, -0.24, g);
+	for (const s of [-1, 1]) part(hair, 0.06, 0.28, 0.48, 0.25 * s, 1.7, 0.01, g);
+
+	const body = bake(g);
+	const pivot = (o: Object3D) => {
+		const b = bake(o);
+		body.add(b);
+		return b;
+	};
+	const bakedLegs: [Object3D, Object3D] = [pivot(legs[0]), pivot(legs[1])];
+	const bakedArms: [Object3D, Object3D] = [pivot(arms[0]), pivot(arms[1])];
 	const tag = nameTag(label, colour);
-	tag.position.set(0, 2.3, 0);
-	g.add(tag);
+	tag.position.set(0, 2.35, 0);
+	body.add(tag);
 	const bubble = new Sprite(new SpriteMaterial({ transparent: true, depthWrite: false }));
-	bubble.position.set(0, 2.85, 0);
+	bubble.position.set(0, 2.9, 0);
 	bubble.scale.set(0.6, 0.6, 1);
 	bubble.visible = false;
-	g.add(bubble);
-	return { group: g, legs, arms, bubble };
+	body.add(bubble);
+	return { group: body, legs: bakedLegs, arms: bakedArms, bubble };
 }
-
-/** A box with its top at the origin, so a limb scaled to length hangs down and swings from its top. */
-const shifted = new BoxGeometry(1, 1, 1).translate(0, -0.5, 0);
 
 export function swing(m: FigureModel, t: number, amount: number) {
 	const a = Math.sin(t * 9) * 0.7 * amount;
@@ -232,6 +272,27 @@ const ANIMAL_LOOK: Record<Animal, { body: string; head: string; extra: (g: Group
 	},
 };
 
+const haloGeometry = new PlaneGeometry(2.2, 2.2);
+let halo: MeshBasicMaterial | null = null;
+function haloMaterial() {
+	if (halo) return halo;
+	const c = document.createElement("canvas");
+	c.width = c.height = 64;
+	const ctx = c.getContext("2d");
+	if (ctx) {
+		const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+		g.addColorStop(0, "rgba(255,240,180,0.85)");
+		g.addColorStop(0.45, "rgba(255,226,150,0.35)");
+		g.addColorStop(1, "rgba(255,220,140,0)");
+		ctx.fillStyle = g;
+		ctx.fillRect(0, 0, 64, 64);
+	}
+	const t = new CanvasTexture(c);
+	t.colorSpace = SRGBColorSpace;
+	halo = new MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false });
+	return halo;
+}
+
 /** A lost (or found) animal, about knee high, facing -z, with a soft glow under it so it can be found in the dark. */
 export function animal(kind: Animal, glowing = true): Group {
 	const look = ANIMAL_LOOK[kind];
@@ -245,40 +306,88 @@ export function animal(kind: Animal, glowing = true): Group {
 	inner.scale.setScalar(look.size / 0.5);
 	g.add(inner);
 	if (glowing) {
-		const halo = part(lit("#fff1b8"), 0.9, 0.02, 0.9, 0, 0.02, 0, g);
-		(halo.material as MeshBasicMaterial).opacity = 0.35;
+		// A soft round pool of light round its feet, so it can be found in the dark.
+		const halo = new Mesh(haloGeometry, haloMaterial());
+		halo.rotation.x = -Math.PI / 2;
+		halo.position.y = 0.03;
+		halo.renderOrder = 2;
 		halo.name = "halo";
+		g.add(halo);
 	}
 	return g;
 }
 
-/** The Night Deer: tall, dark and shy, with glowing antlers and eyes. Faces -z. */
+/**
+ * The Night Deer: tall, dark and shy, with branching antlers that glow like moonlight and two soft bright eyes. Built
+ * facing -z; its four legs hang from the hips and shoulders (in `userData.legs`) so it can walk.
+ */
 export function deer(): Group {
 	const g = new Group();
-	const coat = mat("#26304a");
+	const coat = mat("#2a3554");
+	const dark = mat("#1b2238");
+	const pale = mat("#c9d2e6");
+	const hoof = mat("#12151f");
+	const legs: Group[] = [];
 	for (const [x, z] of [
-		[-0.35, -0.75],
-		[0.35, -0.75],
-		[-0.35, 0.75],
-		[0.35, 0.75],
-	] as const)
-		part(coat, 0.22, 1.4, 0.22, x, 0.7, z, g);
-	part(coat, 0.95, 0.85, 2, 0, 1.8, 0, g);
-	part(coat, 0.45, 0.9, 0.45, 0, 2.5, -0.85, g);
-	part(coat, 0.5, 0.45, 0.8, 0, 2.95, -1.15, g);
-	const antler = lit("#9fe8ff");
-	for (const s of [-1, 1]) {
-		part(antler, 0.08, 0.6, 0.08, 0.18 * s, 3.45, -1.0, g);
-		part(antler, 0.4, 0.08, 0.08, 0.36 * s, 3.65, -1.0, g);
-		part(antler, 0.08, 0.4, 0.08, 0.52 * s, 3.9, -1.0, g);
-		part(antler, 0.08, 0.3, 0.08, 0.3 * s, 3.85, -1.05, g);
+		[-0.32, -0.72],
+		[0.32, -0.72],
+		[-0.3, 0.74],
+		[0.3, 0.74],
+	] as const) {
+		const hip = new Group();
+		hip.position.set(x, 1.5, z);
+		part(dark, 0.2, 0.8, 0.22, 0, -0.4, 0, hip);
+		part(coat, 0.15, 0.62, 0.16, 0, -1.08, 0, hip);
+		part(hoof, 0.17, 0.12, 0.2, 0, -1.44, -0.02, hip);
+		g.add(hip);
+		legs.push(hip);
 	}
-	part(lit("#c8f4ff"), 0.1, 0.08, 0.04, -0.16, 3.02, -1.56, g);
-	part(lit("#c8f4ff"), 0.1, 0.08, 0.04, 0.16, 3.02, -1.56, g);
-	g.traverse((o) => {
-		o.userData.deer = true;
+	part(coat, 0.86, 0.72, 1.9, 0, 1.78, 0, g);
+	part(dark, 0.92, 0.3, 0.6, 0, 1.6, -0.62, g);
+	part(pale, 0.36, 0.22, 0.2, 0, 2.02, 0.98, g);
+	const neck = part(coat, 0.4, 0.95, 0.42, 0, 2.38, -0.86, g);
+	neck.rotation.x = 0.35;
+	part(pale, 0.3, 0.5, 0.06, 0, 2.3, -1.08, g);
+	part(coat, 0.46, 0.44, 0.62, 0, 2.95, -1.18, g);
+	part(dark, 0.3, 0.26, 0.34, 0, 2.86, -1.58, g);
+	part(hoof, 0.14, 0.08, 0.06, 0, 2.9, -1.76, g);
+	for (const s of [-1, 1]) {
+		const ear = part(coat, 0.32, 0.12, 0.08, 0.32 * s, 3.12, -1.06, g);
+		ear.rotation.z = 0.35 * s;
+	}
+	// Antlers: a beam each side with three tines, all glowing softly.
+	const antler = lit("#c4f3ff");
+	for (const s of [-1, 1]) {
+		part(antler, 0.08, 0.5, 0.08, 0.16 * s, 3.4, -1.04, g);
+		const beam = part(antler, 0.5, 0.08, 0.08, 0.38 * s, 3.62, -1.0, g);
+		beam.rotation.z = 0.3 * s;
+		part(antler, 0.07, 0.36, 0.07, 0.3 * s, 3.82, -1.02, g);
+		part(antler, 0.07, 0.44, 0.07, 0.56 * s, 3.9, -0.98, g);
+		part(antler, 0.07, 0.3, 0.07, 0.68 * s, 3.66, -1.1, g);
+	}
+	part(lit("#d6f6ff"), 0.1, 0.08, 0.04, -0.17, 3.0, -1.5, g);
+	part(lit("#d6f6ff"), 0.1, 0.08, 0.04, 0.17, 3.0, -1.5, g);
+	// Bake the body, and each leg on its own (they swing), to a few draw calls.
+	for (const leg of legs) g.remove(leg);
+	const body = bake(g, { shadows: false, glowThroughFog: true });
+	body.scale.setScalar(1.2);
+	const baked = legs.map((leg) => {
+		const b = bake(leg, { shadows: false });
+		body.add(b);
+		return b;
 	});
-	return g;
+	body.userData.legs = baked;
+	return body;
+}
+
+/** Walks the deer's legs: diagonal pairs together, like a real deer's gentle walk. */
+export function deerWalk(model: Group, t: number) {
+	const legs = model.userData.legs as Group[];
+	const a = Math.sin(t * 3.2) * 0.32;
+	legs[0]!.rotation.x = a;
+	legs[3]!.rotation.x = a;
+	legs[1]!.rotation.x = -a;
+	legs[2]!.rotation.x = -a;
 }
 
 /** The campfire: crossed logs, a ring of stones, and a flame of stacked glowing blocks that flicker. */

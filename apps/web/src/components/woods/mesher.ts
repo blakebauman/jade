@@ -1,4 +1,4 @@
-import { B, BLOCKS, blockInfo, CHUNK, CX, CZ, H, TILE_NAMES, type Volume } from "@jade/core/woods";
+import { B, BLOCKS, blockInfo, CHUNK, CX, CZ, H, isLeaves, TILE_NAMES, type Volume } from "@jade/core/woods";
 
 /**
  * Turns the island into meshes, one per 16×16 column of it (full height, so the whole island is at most 36 solid
@@ -99,7 +99,7 @@ const opaque = (b: number) => draws[b] === "solid" || draws[b] === "cutout";
 export function showsFace(b: number, n: number): boolean {
 	const self = draws[b];
 	const other = draws[n];
-	if (self === "none" || self === "torch") return false;
+	if (self === "none" || self === "torch" || self === "plant") return false;
 	if (other === "solid") return false;
 	if (self === "water") return n !== B.water && other !== "cutout" && other !== "glass";
 	if (self === "glass" || self === "cutout") return n !== b;
@@ -112,14 +112,14 @@ class Builder {
 	uv: number[] = [];
 	color: number[] = [];
 	index: number[] = [];
-	quad(pts: [number, number, number][], n: [number, number, number], uvs: [number, number][], shades: number[]) {
+	quad(pts: [number, number, number][], n: [number, number, number], uvs: [number, number][], shades: number[], tint: Tint = WHITE) {
 		const base = this.position.length / 3;
 		for (let k = 0; k < 4; k++) {
 			this.position.push(...pts[k]!);
 			this.normal.push(...n);
 			this.uv.push(...uvs[k]!);
 			const s = shades[k]!;
-			this.color.push(s, s, s);
+			this.color.push(s * tint[0], s * tint[1], s * tint[2]);
 		}
 		// Split along the brighter diagonal, so occlusion shades evenly.
 		if (shades[0]! + shades[2]! < shades[1]! + shades[3]!) this.index.push(base + 1, base + 2, base + 3, base + 1, base + 3, base);
@@ -151,6 +151,11 @@ export function meshColumn(vol: Volume, cx: number, cz: number): ColumnMesh {
 					torch(solid, x, y, z);
 					continue;
 				}
+				if (info.draw === "plant") {
+					plant(solid, x, y, z, info.tiles.side, b === B.tallGrass ? tintAt(x, z) : WHITE);
+					continue;
+				}
+				const tinted = b === B.grass || isLeaves(b) ? tintAt(x, z) : WHITE;
 				const into = info.draw === "glass" || info.draw === "water" ? clear : solid;
 				for (const f of FACES) {
 					const nb = vol.get(x + f.n[0], y + f.n[1], z + f.n[2]);
@@ -160,7 +165,8 @@ export function meshColumn(vol: Volume, cx: number, cz: number): ColumnMesh {
 					const lowered = info.draw === "water" && vol.get(x, y + 1, z) !== B.water;
 					const pts = f.corners.map(([a, c, d]) => [x + a, y + (lowered && c === 1 ? WATER_TOP : c), z + d] as [number, number, number]);
 					const shades = f.corners.map((corner) => f.shade * (info.draw === "water" ? 1 : occlusion(vol, x, y, z, f, corner)));
-					into.quad(pts, f.n, uvs, shades);
+					// Grass only takes the meadow's colour on top (its sides are mostly soil).
+					into.quad(pts, f.n, uvs, shades, b === B.grass && f.tile !== "top" ? WHITE : tinted);
 				}
 			}
 		}
@@ -181,6 +187,73 @@ function occlusion(vol: Volume, x: number, y: number, z: number, f: Face, corner
 	const s2 = opaque(at(0, sv)) ? 1 : 0;
 	const c = opaque(at(su, sv)) ? 1 : 0;
 	return AO[s1 && s2 ? 3 : s1 + s2 + c]!;
+}
+
+type Tint = readonly [number, number, number];
+const WHITE: Tint = [1, 1, 1];
+
+function hash2(x: number, z: number) {
+	let h = Math.imul(x, 374761393) ^ Math.imul(z, 668265263);
+	h = Math.imul(h ^ (h >>> 13), 1274126177);
+	return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+function smoothNoise(x: number, z: number) {
+	const x0 = Math.floor(x);
+	const z0 = Math.floor(z);
+	const fx = x - x0;
+	const fz = z - z0;
+	const sx = fx * fx * (3 - 2 * fx);
+	const sz = fz * fz * (3 - 2 * fz);
+	const a = hash2(x0, z0);
+	const b = hash2(x0 + 1, z0);
+	const c = hash2(x0, z0 + 1);
+	const d = hash2(x0 + 1, z0 + 1);
+	return a + (b - a) * sx + (c - a) * sz + (a - b - c + d) * sx * sz;
+}
+
+/**
+ * The meadow's colour where a column stands: grass and leaves drift from a cool green to a sunny yellow-green across
+ * the island, in patches about twenty blocks wide, so the ground never reads as one repeated tile.
+ */
+export function tintAt(x: number, z: number): Tint {
+	const n = smoothNoise(x / 19, z / 19) * 0.7 + smoothNoise(x / 6 + 40, z / 6) * 0.3;
+	const warm = Math.min(1, Math.max(0, (n - 0.25) / 0.6));
+	return [0.9 + 0.16 * warm, 1.02 - 0.02 * warm, 0.92 - 0.14 * warm];
+}
+
+/** A plant: two pictures crossed corner to corner, each drawn from both sides (no lighting tricks, nothing to cull). */
+function plant(into: Builder, x: number, y: number, z: number, tile: string, tint: Tint) {
+	const [u0, v0, u1, v1] = tileUv(tile);
+	const uvs: [number, number][] = [
+		[u0, v0],
+		[u1, v0],
+		[u1, v1],
+		[u0, v1],
+	];
+	const back: [number, number][] = [uvs[1]!, uvs[0]!, uvs[3]!, uvs[2]!];
+	const i = 0.15;
+	const o = 0.85;
+	const up: [number, number, number] = [0, 1, 0];
+	const diagonals: [[number, number], [number, number]][] = [
+		[
+			[i, i],
+			[o, o],
+		],
+		[
+			[i, o],
+			[o, i],
+		],
+	];
+	for (const [[ax, az], [bx, bz]] of diagonals) {
+		const front: [number, number, number][] = [
+			[x + ax, y, z + az],
+			[x + bx, y, z + bz],
+			[x + bx, y + 1, z + bz],
+			[x + ax, y + 1, z + az],
+		];
+		into.quad(front, up, uvs, [0.95, 0.95, 1.05, 1.05], tint);
+		into.quad([front[1]!, front[0]!, front[3]!, front[2]!], up, back, [0.95, 0.95, 1.05, 1.05], tint);
+	}
 }
 
 /** A torch: a thin stick, its tile's middle mapped onto each side and its flame on top. */

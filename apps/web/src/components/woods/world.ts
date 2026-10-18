@@ -3,6 +3,7 @@ import {
 	B,
 	type ClientMsg,
 	type Clock,
+	cellOf,
 	type Emote,
 	type Figure,
 	generate,
@@ -37,7 +38,9 @@ export type WorldEvent =
 	| { t: "leave"; label: string }
 	| { t: "night"; night: number }
 	| { t: "dawn"; night: number; kept: boolean }
-	| { t: "home"; animal: Animal; mine: boolean }
+	| { t: "home"; animal: Animal; mine: boolean; at: [number, number, number] }
+	| { t: "fed"; added: number }
+	| { t: "snuffed"; at: [number, number, number] }
 	| { t: "follow"; animal: Animal }
 	| { t: "goal"; key: string; tickets: number; label: string }
 	| { t: "refused"; why: Extract<ServerMsg, { t: "refused" }>["why"] }
@@ -46,6 +49,8 @@ export type WorldEvent =
 
 export class IslandState {
 	seed = 0;
+	/** How the island was made from its seed (older islands: 1). */
+	gen = 1;
 	volume: Volume | null = null;
 	fire: [number, number, number] = [48, 20, 48];
 	seat = -1;
@@ -63,6 +68,8 @@ export class IslandState {
 	torches = new Set<number>();
 	/** Dev and test only: seconds added to the island's clock on this screen, to see another time of day. */
 	shift = 0;
+	/** Dev and test only: the fire's fuel as this screen shows it, whatever the island says. */
+	fuelShown: number | null = null;
 	/** This kid's own figure is drawn by the player controller; its spawn point comes from here. */
 	myEmote: { e: Emote; until: number } | null = null;
 	/** Edits shown before the island agreed: cell → what was there, to put back if refused. */
@@ -169,7 +176,8 @@ export class IslandState {
 		if (this.welcome) {
 			const w = this.welcome;
 			this.welcome = null;
-			const island = generate(w.seed);
+			this.gen = w.gen ?? 1;
+			const island = generate(w.seed, this.gen);
 			island.volume.apply(packed);
 			this.volume = island.volume;
 			this.torches.clear();
@@ -233,6 +241,7 @@ export class IslandState {
 					return;
 				}
 				this.pending.delete(m.i);
+				if (m.seat === -1) this.emit({ t: "snuffed", at: cellOf(m.i) });
 				return this.set(m.i, m.b);
 			case "refused":
 				this.pending.delete(m.i);
@@ -242,10 +251,14 @@ export class IslandState {
 				this.inv = m.inv;
 				this.stats = m.stats;
 				return;
-			case "tick":
-				this.clock = m.clock;
+			case "tick": {
+				const was = this.clock.fuel;
+				this.clock = this.fuelShown === null ? m.clock : { ...m.clock, fuel: this.fuelShown };
 				this.clockAt = performance.now();
+				// More fuel than a second's burning took: someone fed the fire.
+				if (this.clock.fuel > was + 2) this.emit({ t: "fed", added: this.clock.fuel - was });
 				return;
+			}
 			case "night":
 				this.lost = m.lost.map((l) => ({ ...l, follows: null }));
 				return this.emit({ t: "night", night: m.night });
@@ -264,10 +277,14 @@ export class IslandState {
 				if (m.follows === this.seat) this.emit({ t: "follow", animal: a.animal });
 				return;
 			}
-			case "home":
+			case "home": {
+				const a = this.lost.find((l) => l.id === m.id);
+				const by = m.seat === this.seat ? null : this.others.get(m.seat);
+				const at: [number, number, number] = by ? [...by.p] : a ? [...a.at] : [this.fire[0], this.fire[1], this.fire[2]];
 				this.lost = this.lost.filter((l) => l.id !== m.id);
 				this.home = [...this.home, m.animal];
-				return this.emit({ t: "home", animal: m.animal, mine: m.seat === this.seat });
+				return this.emit({ t: "home", animal: m.animal, mine: m.seat === this.seat, at });
+			}
 			case "goal":
 				return this.emit({ t: "goal", key: m.key, tickets: m.tickets, label: m.label });
 			case "emote": {

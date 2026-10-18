@@ -1,5 +1,5 @@
 import { seeded } from "../math/rng.ts";
-import { B } from "./blocks.ts";
+import { B, isPlant } from "./blocks.ts";
 import { CAMP, groundAt } from "./terrain.ts";
 import { D, SEA, type Volume, W } from "./volume.ts";
 
@@ -55,8 +55,9 @@ export function walkable(v: Volume): Uint8Array {
 			const g = ground[j]!;
 			if (g < SEA || Math.abs(g - ground[i]!) > 1) continue;
 			// Two cubes of room to stand in.
-			if (v.get(nx, g + 1, nz) !== B.air && v.get(nx, g + 1, nz) !== B.torch) continue;
-			if (v.get(nx, g + 2, nz) !== B.air) continue;
+			const above = v.get(nx, g + 1, nz);
+			if (above !== B.air && above !== B.torch && !isPlant(above)) continue;
+			if (v.get(nx, g + 2, nz) !== B.air && !isPlant(v.get(nx, g + 2, nz))) continue;
 			seen[j] = 1;
 			queue.push(j);
 		}
@@ -98,7 +99,8 @@ export function deerAt(seed: number, night: number, t: number, near: number): { 
 	const start = seeded((seed ^ Math.imul(night, 0x85ebca6b)) >>> 0)() * Math.PI * 2;
 	const speed = 0.045;
 	const a = start + t * speed;
-	const r = 28 - 16 * Math.min(1, Math.max(0, near)) + 2.5 * Math.sin(t * 0.21);
+	// Low fire: right at the edge of the clearing, between the first trees.
+	const r = 28 - 18 * Math.min(1, Math.max(0, near)) + 1.5 * Math.sin(t * 0.21);
 	return { x: CAMP.x + Math.cos(a) * r, z: CAMP.z + Math.sin(a) * r, heading: a + Math.PI / 2 };
 }
 

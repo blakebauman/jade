@@ -1,5 +1,5 @@
 import { type Rng, seeded } from "../math/rng.ts";
-import { B } from "./blocks.ts";
+import { B, isLeaves, isLog, isPlant } from "./blocks.ts";
 import { D, H, SEA, Volume, W } from "./volume.ts";
 
 /**
@@ -16,6 +16,8 @@ export const CLEARING = 8;
 export type Island = {
 	volume: Volume;
 	seed: number;
+	/** How it was made (`generate`'s `gen`). */
+	gen?: number;
 	/** The cell the fire burns in (air, never built on). */
 	fire: [number, number, number];
 };
@@ -68,7 +70,14 @@ export function heights(seed: number): Int16Array {
 	return out;
 }
 
-export function generate(seed: number): Island {
+/**
+ * Which way of making islands. An island keeps the one it was made with forever (its stored edits are cell by cell on
+ * top of it), so a new way only ever applies to islands made after it. 1: oaks only. 2: oaks, birches and pines,
+ * bushes, tall grass, flowers and toadstools.
+ */
+export const TERRAIN_LATEST = 2;
+
+export function generate(seed: number, gen = TERRAIN_LATEST): Island {
 	const v = new Volume();
 	const hs = heights(seed);
 	const rng = seeded(seed ^ 0x5eed);
@@ -88,9 +97,14 @@ export function generate(seed: number): Island {
 		}
 	}
 	ores(v, hs, rng);
-	trees(v, hs, rng);
+	if (gen >= 2) {
+		paths(v, hs, seeded(seed ^ 0x9a7f));
+		boulders(v, hs, seeded(seed ^ 0xb01d));
+		woods(v, hs, seeded(seed ^ 0x7ee5));
+		plants(v, hs, seeded(seed ^ 0xf10e));
+	} else trees(v, hs, rng);
 	const fireY = hs[CAMP.x + W * CAMP.z]! + 1;
-	return { volume: v, seed, fire: [CAMP.x, fireY, CAMP.z] };
+	return { volume: v, seed, gen, fire: [CAMP.x, fireY, CAMP.z] };
 }
 
 const VEINS: readonly { block: number; count: number; maxY: number; size: number }[] = [
@@ -153,20 +167,186 @@ function tree(v: Volume, x: number, y: number, z: number, tall: number, rng: Rng
 	for (let k = 0; k < tall; k++) v.set(x, y + k, z, B.log);
 }
 
+// ── Islands from version 2 ──
+
+/**
+ * Worn paths: a ring round the camp where kids walk between the benches, and four trails winding out into the woods,
+ * so there's always a way to set off from the fire.
+ */
+function paths(v: Volume, hs: Int16Array, rng: Rng) {
+	const wear = (x: number, z: number) => {
+		const xi = Math.round(x);
+		const zi = Math.round(z);
+		const h = hs[xi + W * zi];
+		if (h === undefined || v.get(xi, h, zi) !== B.grass) return;
+		v.set(xi, h, zi, B.path);
+	};
+	for (let a = 0; a < Math.PI * 2; a += 0.05) for (const r of [4.3, 5]) wear(CAMP.x + Math.cos(a) * r, CAMP.z + Math.sin(a) * r);
+	for (let k = 0; k < 4; k++) {
+		let a = (k / 4) * Math.PI * 2 + Math.PI / 4 + (rng() - 0.5) * 0.4;
+		let x = CAMP.x + Math.cos(a) * 5;
+		let z = CAMP.z + Math.sin(a) * 5;
+		const length = 18 + Math.floor(rng() * 10);
+		for (let s = 0; s < length; s++) {
+			wear(x, z);
+			wear(x + Math.sin(a) * 0.6, z - Math.cos(a) * 0.6);
+			a += (rng() - 0.5) * 0.35;
+			x += Math.cos(a);
+			z += Math.sin(a);
+		}
+	}
+}
+
+/** A few mossy boulders out in the meadows and woods: something to climb, landmarks to steer by. */
+function boulders(v: Volume, hs: Int16Array, rng: Rng) {
+	for (let n = 0; n < 14; n++) {
+		const x = 4 + Math.floor(rng() * (W - 8));
+		const z = 4 + Math.floor(rng() * (D - 8));
+		if (fromCamp(x, z) < CLEARING + 3) continue;
+		const h = hs[x + W * z]!;
+		if (v.get(x, h, z) !== B.grass) continue;
+		const big = rng() < 0.35;
+		for (let dz = -1; dz <= 1; dz++)
+			for (let dx = -1; dx <= 1; dx++) {
+				const corner = Math.abs(dx) + Math.abs(dz) === 2;
+				if (corner && !big) continue;
+				if (corner && rng() < 0.5) continue;
+				const gh = hs[x + dx + W * (z + dz)]!;
+				const tall = (dx === 0 && dz === 0 ? 2 : 1) + (big ? 1 : 0);
+				for (let k = 1; k <= tall; k++) v.set(x + dx, gh + k, z + dz, rng() < 0.4 ? B.mossyStone : B.stone);
+			}
+	}
+}
+
+/** Which tree grows where: pines on the hills and far out, birch in patches, oak the rest. */
+function species(seed: number, x: number, z: number, d: number): "oak" | "birch" | "pine" {
+	if (d > 30 || noise(seed + 11, x / 9, z / 9) > 0.72) return "pine";
+	return noise(seed + 13, x / 7, z / 7) > 0.58 ? "birch" : "oak";
+}
+
+/** The woods: three kinds of tree, a few bushes between them. Trunks keep two squares apart. */
+function woods(v: Volume, hs: Int16Array, rng: Rng) {
+	const trunks: [number, number][] = [];
+	const seedish = Math.floor(rng() * 1e6);
+	for (let z = 3; z < D - 3; z++) {
+		for (let x = 3; x < W - 3; x++) {
+			const d = fromCamp(x, z);
+			if (d < CLEARING + 1) continue;
+			const h = hs[x + W * z]!;
+			if (v.get(x, h, z) !== B.grass) continue;
+			const chance = d < 30 ? 0.05 : 0.014;
+			const roll = rng();
+			if (roll >= chance) {
+				// Now and then a bush instead, low and round.
+				if (d < 34 && roll > 0.985 && v.get(x, h + 1, z) === B.air) bush(v, x, h + 1, z, rng);
+				continue;
+			}
+			if (trunks.some(([tx, tz]) => Math.abs(tx - x) <= 2 && Math.abs(tz - z) <= 2)) continue;
+			trunks.push([x, z]);
+			const kind = species(seedish, x, z, d);
+			if (kind === "pine") pine(v, x, h + 1, z, 6 + Math.floor(rng() * 3), rng);
+			else if (kind === "birch") roundTree(v, x, h + 1, z, 5 + Math.floor(rng() * 2), B.birchLog, B.birchLeaves, rng);
+			else roundTree(v, x, h + 1, z, 4 + Math.floor(rng() * 3), B.log, B.leaves, rng);
+		}
+	}
+}
+
+function roundTree(v: Volume, x: number, y: number, z: number, tall: number, trunk: number, leaf: number, rng: Rng) {
+	const top = y + tall - 1;
+	for (let dy = -2; dy <= 1; dy++) {
+		const r = dy === 1 ? 1 : 2;
+		for (let dz = -r; dz <= r; dz++) {
+			for (let dx = -r; dx <= r; dx++) {
+				if (r === 2 && Math.abs(dx) === 2 && Math.abs(dz) === 2 && rng() < 0.7) continue;
+				// A ragged edge, so no two canopies are the same box.
+				if (r === 2 && (Math.abs(dx) === 2 || Math.abs(dz) === 2) && rng() < 0.12) continue;
+				if (v.get(x + dx, top + dy, z + dz) === B.air) v.set(x + dx, top + dy, z + dz, leaf);
+			}
+		}
+	}
+	for (let k = 0; k < tall; k++) v.set(x, y + k, z, trunk);
+}
+
+/** A pine: a tall trunk and a cone of needles in tiers, with a point on top. */
+function pine(v: Volume, x: number, y: number, z: number, tall: number, rng: Rng) {
+	const top = y + tall;
+	for (let dy = 0; dy <= tall - 2; dy++) {
+		const yy = top - dy;
+		const r = dy === 0 ? 0 : Math.min(3, Math.floor((dy + 1) / 2));
+		// Tiers: every other layer pulls in a step.
+		const rr = dy > 1 && dy % 2 === 0 ? Math.max(1, r - 1) : r;
+		for (let dz = -rr; dz <= rr; dz++) {
+			for (let dx = -rr; dx <= rr; dx++) {
+				if (Math.abs(dx) + Math.abs(dz) > rr + (rr > 1 ? 1 : 0)) continue;
+				if (rr > 1 && Math.abs(dx) === rr && Math.abs(dz) === rr) continue;
+				if (rr > 1 && rng() < 0.06) continue;
+				if (v.get(x + dx, yy, z + dz) === B.air) v.set(x + dx, yy, z + dz, B.pineLeaves);
+			}
+		}
+	}
+	for (let k = 0; k < tall; k++) v.set(x, y + k, z, B.log);
+}
+
+function bush(v: Volume, x: number, y: number, z: number, rng: Rng) {
+	for (const [dx, dy, dz] of [
+		[0, 0, 0],
+		[1, 0, 0],
+		[-1, 0, 0],
+		[0, 0, 1],
+		[0, 0, -1],
+		[0, 1, 0],
+	] as const) {
+		if (dy === 1 && rng() < 0.4) continue;
+		if (v.get(x + dx, y + dy, z + dz) === B.air && (dy === 1 || v.get(x + dx, y - 1, z + dz) !== B.air))
+			v.set(x + dx, y + dy, z + dz, B.leaves);
+	}
+}
+
+/**
+ * Tall grass in the meadows, flowers in sunny patches, toadstools in the shade under trees. Never in the camp, where
+ * kids gather.
+ */
+function plants(v: Volume, hs: Int16Array, rng: Rng) {
+	const flowersSeed = Math.floor(rng() * 1e6);
+	for (let z = 1; z < D - 1; z++) {
+		for (let x = 1; x < W - 1; x++) {
+			const d = fromCamp(x, z);
+			// The camp itself (the fire, benches, tent, woodpile, lantern and where kids arrive) stays mown.
+			if (d < 7) continue;
+			const h = hs[x + W * z]!;
+			if (v.get(x, h, z) !== B.grass || v.get(x, h + 1, z) !== B.air) continue;
+			const shade = isLeaves(v.get(x, h + 4, z)) || isLeaves(v.get(x, h + 5, z)) || isLeaves(v.get(x, h + 6, z));
+			const r = rng();
+			if (shade) {
+				if (r < 0.05) v.set(x, h + 1, z, B.mushroom);
+				else if (r < 0.2) v.set(x, h + 1, z, B.tallGrass);
+				continue;
+			}
+			const patch = noise(flowersSeed, x / 6, z / 6);
+			if (patch > 0.68 && r < 0.3) v.set(x, h + 1, z, patch > 0.82 ? B.flowerBlue : r < 0.15 ? B.flowerRed : B.flowerYellow);
+			else if (r < (d < CLEARING ? 0.06 : 0.16)) v.set(x, h + 1, z, B.tallGrass);
+		}
+	}
+}
+
 /** The ground a figure stands on in a column: the top block that isn't a tree, water or air (-1 if under the sea). */
 export function groundAt(v: Volume, x: number, z: number): number {
 	for (let y = H - 1; y > 0; y--) {
 		const b = v.get(x, y, z);
-		if (b === B.air || b === B.leaves || b === B.torch) continue;
-		if (b === B.water || b === B.log) return -1;
+		if (b === B.air || isLeaves(b) || b === B.torch || isPlant(b)) continue;
+		if (b === B.water || isLog(b)) return -1;
 		return y;
 	}
 	return -1;
 }
 
-/** Where kids arrive: just south of the fire, standing on the clearing. */
+/**
+ * Where kids arrive: a few steps south of the fire, facing it across the camp. Older islands keep their old spot (three
+ * steps), where kids may have built round it.
+ */
 export function spawnPoint(island: Island): [number, number, number] {
 	const [x, , z] = island.fire;
-	const g = groundAt(island.volume, x, z + 3);
-	return [x + 0.5, Math.max(g, island.fire[1] - 1) + 1, z + 3.5];
+	const back = (island.gen ?? 1) >= 2 ? 5 : 3;
+	const g = groundAt(island.volume, x, z + back);
+	return [x + 0.5, Math.max(g, island.fire[1] - 1) + 1, z + back + 0.5];
 }

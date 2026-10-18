@@ -115,6 +115,29 @@ describe("Campfire Woods islands", () => {
 		expect([...a.frames[1]!].map(unpackEdit)).toEqual([[i, B.air]]);
 	});
 
+	it("brings a flower up with the ground it grew in, and only plants one on soil", async () => {
+		const f = await family();
+		const a = await connect(f.cookie, await f.kid("Jade"));
+		const [x, y, z] = spawnPoint(generate(welcome(a).seed));
+		const ground = indexOf(Math.floor(x) + 2, Math.floor(y) - 1, Math.floor(z));
+		const flower = indexOf(Math.floor(x) + 2, Math.floor(y), Math.floor(z));
+		await runInDurableObject(f.island(), (o: WoodsWorld) => {
+			(o as unknown as { edit: (i: number, b: number, by: string) => void }).edit(flower, B.flowerRed, "test");
+		});
+		a.send({ t: "mine", i: ground });
+		await until(() => find(a, "edit").filter((e) => e.i === flower).length > 0);
+		await until(() => (find(a, "inv").at(-1)?.inv[B.flowerRed] ?? 0) > 0);
+		expect(find(a, "inv").at(-1)!.inv[B.flowerRed]).toBe(1);
+
+		// On wool it won't grow: refused, and the screen puts it back.
+		const wool = indexOf(Math.floor(x) - 2, Math.floor(y), Math.floor(z));
+		a.send({ t: "place", i: wool, b: B.woolRed });
+		await until(() => find(a, "edit").some((e) => e.i === wool));
+		a.send({ t: "place", i: indexOf(Math.floor(x) - 2, Math.floor(y) + 1, Math.floor(z)), b: B.flowerRed });
+		await until(() => find(a, "refused").length > 0);
+		expect(find(a, "refused")[0]!.why).toBe("fixed");
+	});
+
 	it("only lets a kid onto their own family's island", async () => {
 		const f = await family();
 		const other = await family();

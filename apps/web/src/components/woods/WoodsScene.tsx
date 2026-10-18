@@ -9,8 +9,11 @@ import {
 	FUEL_LOW,
 	FUEL_MAX,
 	fireRadius,
+	groundAt,
+	holdsPlant,
 	inBounds,
 	indexOf,
+	isPlant,
 	MOVE_HZ,
 	phaseAt,
 	spawnPoint,
@@ -24,32 +27,44 @@ import {
 	BufferGeometry,
 	Color,
 	DirectionalLight,
+	DoubleSide,
 	EdgesGeometry,
+	Euler,
 	Fog,
 	Group,
 	HemisphereLight,
+	InstancedMesh,
 	LineBasicMaterial,
 	LineSegments,
+	Matrix4,
 	Mesh,
 	MeshBasicMaterial,
 	MeshLambertMaterial,
+	PCFShadowMap,
 	type PerspectiveCamera,
+	PlaneGeometry,
 	PointLight,
 	Points,
 	PointsMaterial,
+	Quaternion,
 	Raycaster,
 	Vector2,
 	Vector3,
 } from "three";
+import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { useContextLoss } from "../roxy/world/pace.tsx";
 import { atlasTexture } from "./atlas.ts";
+import { camp, flicker } from "./camp.ts";
 import type { Controls } from "./controls.ts";
-import type { Buffers, ColumnMesh } from "./mesher.ts";
+import { Held } from "./held.ts";
+import { type Buffers, type ColumnMesh, tileUv } from "./mesher.ts";
 import type { FromMesher, ToMesher } from "./mesher.worker.ts";
-import { animal, campfire, deer, emoteTexture, type FigureModel, figure, swing } from "./models.ts";
+import { animal, deer, deerWalk, emoteTexture, type FigureModel, figure, swing } from "./models.ts";
 import { EYE, HALF, lost, newBody, step, TALL } from "./physics.ts";
 import { raycast } from "./raycast.ts";
+import { Sky as SkyDome } from "./sky.ts";
 import * as sound from "./sound.ts";
+import { Effects } from "./vfx.ts";
 import type { IslandState } from "./world.ts";
 
 /**
@@ -58,26 +73,53 @@ import type { IslandState } from "./world.ts";
  * own eyes: walking, looking, aiming, mining and building.
  */
 
-type Props = { world: IslandState; controls: Controls; running: boolean; label: string };
+type Props = {
+	world: IslandState;
+	controls: Controls;
+	running: boolean;
+	/** In play (running, or held still for a moment): the block in hand shows. */
+	playing: boolean;
+	label: string;
+};
 
-export const WoodsScene = memo(function WoodsScene({ world, controls, running, label }: Props) {
+export const WoodsScene = memo(function WoodsScene({ world, controls, running, playing, label }: Props) {
 	const onCreated = useContextLoss();
 	const software = useMemo(() => /swiftshader|llvmpipe/i.test(gpuName()), []);
+	const quality = useMemo<Quality>(() => {
+		if (software) return "low";
+		const phone =
+			typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 900;
+		return phone ? "medium" : "high";
+	}, [software]);
 	return (
 		<Canvas
 			flat
-			frameloop={running ? "always" : "demand"}
-			dpr={software ? 0.75 : [1, 1.5]}
+			frameloop={running && !software ? "always" : "demand"}
+			dpr={software ? 0.5 : [1, 1.5]}
 			gl={{ antialias: false, powerPreference: "high-performance" }}
-			camera={{ fov: 72, near: 0.05, far: 140 }}
+			camera={{ fov: 72, near: 0.05, far: 220 }}
 			onCreated={onCreated}
 			aria-label={label}
 			role="img"
 		>
-			<Island world={world} controls={controls} running={running} />
+			<Island world={world} controls={controls} running={running} playing={playing} quality={quality} />
+			{software && running && <Steady fps={20} />}
 		</Canvas>
 	);
 });
+
+/**
+ * Without a real GPU (a software renderer), every frame costs the whole computer: draw at a steady few frames a
+ * second instead of as many as possible, so the page (and anything else running) stays responsive.
+ */
+function Steady({ fps }: { fps: number }) {
+	const { invalidate } = useThree();
+	useEffect(() => {
+		const timer = setInterval(() => invalidate(), 1000 / fps);
+		return () => clearInterval(timer);
+	}, [invalidate, fps]);
+	return null;
+}
 
 function gpuName() {
 	try {
@@ -89,8 +131,36 @@ function gpuName() {
 	}
 }
 
-function Island({ world, controls, running }: Omit<Props, "label">) {
+function Island({ world, controls, running, playing, quality }: Omit<Props, "label"> & { quality: Quality }) {
 	const { scene, gl, invalidate } = useThree();
+	// Sparks, chips, embers, smoke, stars and fireflies: one pooled set for the whole island.
+	const fx = useMemo(() => new Effects({ reducedMotion: prefersReducedMotion(), mobile: quality !== "high" }), [quality]);
+	useEffect(() => {
+		scene.add(fx.group);
+		return () => {
+			scene.remove(fx.group);
+			fx.dispose();
+		};
+	}, [scene, fx]);
+	useEffect(
+		() =>
+			world.listen((e) => {
+				if (e.t === "fed") fx.sparks(world.fire, Math.min(1, e.added / 45));
+				else if (e.t === "snuffed") fx.smokePuff(e.at);
+				else if (e.t === "home") {
+					const p = e.mine && controls.body ? controls.body.p : e.at;
+					fx.stars([Math.floor(p[0]), Math.floor(p[1]), Math.floor(p[2])]);
+				}
+			}),
+		[world, fx, controls],
+	);
+	useFrame(({ camera, clock }, dt) => {
+		fx.update(dt, camera, clock.elapsedTime);
+		waterTime.value = clock.elapsedTime;
+		const { sun } = phaseAt(world.elapsed());
+		const p = controls.body?.p;
+		fx.setFireflies(p ? Math.max(0, Math.min(1, (0.45 - sun) * 2.5)) : 0, p ?? ORIGIN);
+	});
 	useEffect(() => {
 		const report = () => {
 			if (!import.meta.env.DEV) return;
@@ -111,13 +181,14 @@ function Island({ world, controls, running }: Omit<Props, "label">) {
 	}, [world, invalidate]);
 	return (
 		<>
-			<Sky world={world} />
+			<Sky world={world} quality={quality} />
 			<Terrain world={world} />
-			<Camp world={world} />
+			<Camp world={world} fx={fx} />
 			<Others world={world} />
 			<Animals world={world} controls={controls} />
 			<NightDeer world={world} />
-			<Player world={world} controls={controls} running={running} />
+			<WatchingEyes world={world} controls={controls} />
+			<Player world={world} controls={controls} running={running} playing={playing} fx={fx} />
 		</>
 	);
 }
@@ -135,7 +206,7 @@ function Terrain({ world }: { world: IslandState }) {
 		const map = atlasTexture();
 		return {
 			solid: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.5 }),
-			clear: new MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false }),
+			clear: waterShimmer(new MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false })),
 		};
 	}, []);
 
@@ -157,6 +228,8 @@ function Terrain({ world }: { world: IslandState }) {
 			if (!pair) {
 				pair = { solid: new Mesh(undefined, materials.solid), clear: new Mesh(undefined, materials.clear) };
 				pair.clear.renderOrder = 1;
+				pair.solid.castShadow = pair.solid.receiveShadow = true;
+				pair.clear.receiveShadow = true;
 				meshes.set(m.key, pair);
 				group.add(pair.solid, pair.clear);
 			}
@@ -190,48 +263,134 @@ function Terrain({ world }: { world: IslandState }) {
 	return <primitive object={group} />;
 }
 
+/** Water's time: the shimmer below reads it. */
+const waterTime = { value: 0 };
+
+/**
+ * Still water that isn't flat: on water's own tile, the colour ripples in slow crossing waves by where it is in the
+ * world, with the odd bright glint. Glass, which shares the material, is untouched.
+ */
+function waterShimmer(m: MeshLambertMaterial) {
+	const [u0, v0, u1, v1] = tileUv("water");
+	m.onBeforeCompile = (shader) => {
+		shader.uniforms.waterTime = waterTime;
+		shader.uniforms.waterRect = { value: [u0, v0, u1, v1] };
+		shader.vertexShader = shader.vertexShader
+			.replace("#include <common>", "#include <common>\nvarying vec3 vWorld;")
+			.replace("#include <worldpos_vertex>", "#include <worldpos_vertex>\nvWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;");
+		shader.fragmentShader = shader.fragmentShader
+			.replace("#include <common>", "#include <common>\nvarying vec3 vWorld;\nuniform float waterTime;\nuniform vec4 waterRect;")
+			.replace(
+				"#include <map_fragment>",
+				`#include <map_fragment>
+				if (vMapUv.x > waterRect.x && vMapUv.x < waterRect.z && vMapUv.y > waterRect.y && vMapUv.y < waterRect.w) {
+					float w = sin(vWorld.x * 1.3 + waterTime * 1.1) * sin(vWorld.z * 1.1 - waterTime * 0.9);
+					float g = step(0.985, sin(vWorld.x * 3.7 + waterTime * 2.0) * sin(vWorld.z * 3.1 + waterTime * 1.7));
+					diffuseColor.rgb *= 0.92 + 0.12 * w;
+					diffuseColor.rgb += vec3(0.35, 0.4, 0.45) * g;
+				}`,
+			);
+	};
+	return m;
+}
+
 // ── Sky and light ──
 
-const NIGHT = new Color("#0b1530");
-const DUSK = new Color("#e3a07c");
-const DAY = new Color("#9ed4f5");
-
-function Sky({ world }: { world: IslandState }) {
-	const { scene } = useThree();
+function Sky({ world, quality }: { world: IslandState; quality: Quality }) {
+	const { scene, gl } = useThree();
 	const rig = useMemo(() => {
 		const ambient = new AmbientLight("#ffffff", 0.6);
-		const hemi = new HemisphereLight("#cfe8ff", "#5b4a33", 0.5);
-		const sun = new DirectionalLight("#fff4dc", 1);
-		sun.position.set(30, 60, 20);
+		const hemi = new HemisphereLight("#d6ecff", "#6b5536", 0.5);
+		// One light is the sun by day and the moon by night, and it casts the island's shadows.
+		const sun = new DirectionalLight("#fff1d6", 1);
+		const shadows = quality !== "low";
+		sun.castShadow = shadows;
+		if (shadows) {
+			const size = quality === "high" ? 2048 : 1024;
+			sun.shadow.mapSize.set(size, size);
+			const cam = sun.shadow.camera;
+			cam.left = cam.bottom = -SHADOW_SPAN;
+			cam.right = cam.top = SHADOW_SPAN;
+			cam.near = 1;
+			cam.far = 140;
+			sun.shadow.bias = -0.0006;
+			sun.shadow.normalBias = 0.04;
+		}
+		const sky = new SkyDome();
 		const stars = starField();
-		return { ambient, hemi, sun, stars };
-	}, []);
+		return { ambient, hemi, sun, sky, stars, shadows };
+	}, [quality]);
+	const { camera } = useThree();
 	useEffect(() => {
-		scene.fog = new Fog(DAY.clone(), 24, 70);
-		scene.background = DAY.clone();
-		scene.add(rig.ambient, rig.hemi, rig.sun, rig.stars);
+		// A software renderer also sees less far: the fog hides the edge, and there's less to draw.
+		const cam = camera as PerspectiveCamera;
+		cam.far = quality === "low" ? 80 : 220;
+		cam.updateProjectionMatrix();
+	}, [camera, quality]);
+	useEffect(() => {
+		gl.shadowMap.enabled = rig.shadows;
+		gl.shadowMap.type = PCFShadowMap;
+		scene.fog = new Fog(new Color(), 24, 70);
+		scene.background = null;
+		scene.add(rig.ambient, rig.hemi, rig.sun, rig.sun.target, rig.sky.group, rig.stars);
 		return () => {
-			scene.remove(rig.ambient, rig.hemi, rig.sun, rig.stars);
+			scene.remove(rig.ambient, rig.hemi, rig.sun, rig.sun.target, rig.sky.group, rig.stars);
 			scene.fog = null;
 		};
-	}, [scene, rig]);
-	useFrame(({ camera }) => {
-		const { sun } = phaseAt(world.elapsed());
-		const sky = scene.background as Color;
-		if (sun >= 0.5) sky.copy(DUSK).lerp(DAY, (sun - 0.5) * 2);
-		else sky.copy(NIGHT).lerp(DUSK, sun * 2);
+	}, [scene, gl, rig]);
+	const { dir, right, up, focus } = useMemo(
+		() => ({ dir: new Vector3(), right: new Vector3(), up: new Vector3(), focus: new Vector3() }),
+		[],
+	);
+	useFrame(({ camera, clock }) => {
+		const p = phaseAt(world.elapsed());
+		const { sun } = p;
+		const night = p.phase === "night";
+		rig.sky.update(camera, sun, p.progress, night, clock.elapsedTime);
 		const fog = scene.fog as Fog;
-		fog.color.copy(sky);
-		fog.near = 12 + 12 * sun;
-		fog.far = 34 + 36 * sun;
-		rig.ambient.intensity = 0.22 + 0.5 * sun;
-		rig.hemi.intensity = 0.12 + 0.45 * sun;
-		rig.sun.intensity = 1.1 * Math.max(0, sun - 0.25);
+		fog.color.copy(rig.sky.colours.horizon);
+		const reach = quality === "low" ? 0.6 : 1;
+		fog.near = (14 + 12 * sun) * reach;
+		fog.far = (38 + 36 * sun) * reach;
+		rig.ambient.intensity = 0.13 + 0.49 * sun;
+		rig.hemi.intensity = 0.1 + 0.54 * sun;
+		// The key light: warm sun by day (low and golden near dusk), a cool soft moon by night. Its angle moves in
+		// small steps, so the shadows don't creep every frame.
+		const a = Math.PI * (0.12 + (0.76 * Math.round(p.progress * 90)) / 90);
+		dir.set(Math.cos(a) * 0.8, Math.max(0.35, Math.sin(a)), 0.45).normalize();
+		if (night) {
+			rig.sun.color.set("#9fb6ff");
+			rig.sun.intensity = 0.28;
+		} else {
+			rig.sun.color.setRGB(1, 0.86 + 0.12 * sun, 0.7 + 0.25 * sun);
+			rig.sun.intensity = 1.25 * Math.max(0, sun - 0.2);
+		}
+		// Shadows follow the kid, snapped to whole shadow-map texels across the light's own view (not the world's), so
+		// they hold still while walking.
+		const texel = (SHADOW_SPAN * 2) / rig.sun.shadow.mapSize.x;
+		right.crossVectors(UP, dir).normalize();
+		up.crossVectors(dir, right);
+		focus.set(camera.position.x, camera.position.y - 2, camera.position.z);
+		const r = Math.round(focus.dot(right) / texel) * texel;
+		const u = Math.round(focus.dot(up) / texel) * texel;
+		const f = focus.dot(dir);
+		focus.copy(right).multiplyScalar(r).addScaledVector(up, u).addScaledVector(dir, f);
+		rig.sun.target.position.copy(focus);
+		rig.sun.position.copy(focus).addScaledVector(dir, 60);
 		(rig.stars.material as PointsMaterial).opacity = Math.max(0, 1 - sun * 2.5);
 		rig.stars.position.copy(camera.position);
 	});
 	return null;
 }
+
+const UP = new Vector3(0, 1, 0);
+const ORIGIN: [number, number, number] = [0, 0, 0];
+
+/** Half the width of the area round the kid that gets real shadows, in blocks. */
+const SHADOW_SPAN = 30;
+
+/** How much the device can draw: shadows and resolution follow it. */
+export type Quality = "high" | "medium" | "low";
 
 function starField() {
 	const pts: number[] = [];
@@ -244,40 +403,36 @@ function starField() {
 	const g = new BufferGeometry();
 	g.setAttribute("position", new BufferAttribute(new Float32Array(pts), 3));
 	const p = new Points(g, new PointsMaterial({ color: "#ffffff", size: 1.4, sizeAttenuation: false, transparent: true, fog: false }));
-	p.renderOrder = -1;
+	p.renderOrder = -9;
 	return p;
 }
 
 // ── The camp ──
 
-function Camp({ world }: { world: IslandState }) {
+function Camp({ world, fx }: { world: IslandState; fx: Effects }) {
 	// Built in one go: three.js moves an object into whichever group adds it last, so pieces made in separate memos
 	// (which React may run twice) could end up in a group that's thrown away.
-	const { fire, light, torches, group } = useMemo(() => {
-		const fire = campfire();
+	const { kit, light, torches, group } = useMemo(() => {
+		const kit = camp();
 		const light = new PointLight("#ffae55", 2, 18, 1.2);
 		/** Torches nearest the player, each with a small light (the rest just glow on their own). */
 		const torches = Array.from({ length: TORCH_LIGHTS }, () => new PointLight("#ffc273", 0, 9, 1.4));
 		const group = new Group();
-		group.add(fire.group, light, ...torches);
-		return { fire, light, torches, group };
+		group.add(kit.group, light, ...torches);
+		return { kit, light, torches, group };
 	}, []);
 	const scan = useRef({ at: 0, list: [] as [number, number, number][] });
 
 	useFrame(({ clock, camera }) => {
-		const [fx, fy, fz] = world.fire;
-		fire.group.position.set(fx + 0.5, fy, fz + 0.5);
+		const [fx0, fy, fz] = world.fire;
+		kit.group.position.set(fx0 + 0.5, fy, fz + 0.5);
 		const fuel = world.clock.fuel;
-		const on = fuel > 0;
+		const strength = fuel <= 0 ? 0 : 0.25 + 0.75 * Math.min(1, fuel / (FUEL_MAX * 0.6));
 		const t = clock.elapsedTime;
-		const size = on ? 0.45 + 0.55 * Math.min(1, fuel / (FUEL_MAX * 0.6)) : 0;
-		fire.flames.forEach((f, k) => {
-			f.visible = on;
-			f.scale.copy(f.userData.size).multiplyScalar(size * (1 + 0.12 * Math.sin(t * (7 + k * 3) + k)));
-			f.position.y = (0.36 + k * 0.22) * size;
-		});
-		light.position.set(fx + 0.5, fy + 1, fz + 0.5);
-		light.intensity = on ? (2.2 + 0.4 * Math.sin(t * 11) + 0.3 * Math.sin(t * 17)) * (0.5 + size) : 0;
+		flicker(kit.fire, t, strength);
+		fx.setFire(world.fire, fuel <= 0 ? 0 : strength);
+		light.position.set(fx0 + 0.5, fy + 1.1, fz + 0.5);
+		light.intensity = strength > 0 ? (2.2 + 0.45 * Math.sin(t * 11) + 0.3 * Math.sin(t * 17.3)) * (0.4 + strength) : 0;
 		light.distance = fireRadius(fuel) * 2.2 + 2;
 
 		// Torches: the nearest of those the island knows about.
@@ -292,6 +447,7 @@ function Camp({ world }: { world: IslandState }) {
 			l.intensity = c ? 1.6 * (1.2 - sun) : 0;
 			if (c) l.position.set(c[0] + 0.5, c[1] + 0.7, c[2] + 0.5);
 		});
+		(kit.lantern.material as MeshBasicMaterial).color.setRGB(1, 0.78 + 0.1 * (1 - sun), 0.42);
 	});
 	return <primitive object={group} />;
 }
@@ -361,6 +517,8 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 	const group = useMemo(() => new Group(), []);
 	const lost = useRef(new Map<string, Group>());
 	const home = useRef<Group[]>([]);
+	/** How many animals were already at camp when this screen opened. */
+	const settled = useRef(-1);
 	useFrame(({ clock }) => {
 		const t = clock.elapsedTime;
 		const seen = new Set<string>();
@@ -412,7 +570,12 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 			const a = (k / living.length) * Math.PI * 2 + t * 0.05 * (k % 2 ? 1 : -1);
 			g.position.set(fx + 0.5 + Math.cos(a) * r, fy, fz + 0.5 + Math.sin(a) * r);
 			g.rotation.y = -a + (k % 2 ? 0 : Math.PI);
-			g.children[0]!.position.y = Math.abs(Math.sin(t * 3 + k)) * 0.05;
+			// Just home: a few happy hops (not those already living here when the kid arrived).
+			if (settled.current < 0 && world.volume) settled.current = world.home.length;
+			if (g.userData.arrived === undefined) g.userData.arrived = k < settled.current ? -10 : t;
+			const arrived = g.userData.arrived as number;
+			const happy = t - arrived < 2.5 ? Math.abs(Math.sin((t - arrived) * 7)) * 0.45 * (1 - (t - arrived) / 2.5) : 0;
+			g.children[0]!.position.y = Math.abs(Math.sin(t * 3 + k)) * 0.05 + happy;
 		});
 	});
 	return <primitive object={group} />;
@@ -422,14 +585,15 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 
 function NightDeer({ world }: { world: IslandState }) {
 	const model = useMemo(() => deer(), []);
-	const near = useRef(0);
+	const near = useRef(-1);
 	const fade = useRef(0);
-	useFrame((_, dt) => {
+	useFrame(({ clock }, dt) => {
 		const e = world.elapsed();
 		const p = phaseAt(e);
 		const night = p.phase === "night";
 		const low = world.clock.fuel < FUEL_MAX * FUEL_LOW ? 1 : 0;
-		near.current += (low - near.current) * Math.min(1, dt * 0.4);
+		// Arriving mid-night, she's already where she'd be; after that she drifts in and out slowly.
+		near.current = near.current < 0 ? low : near.current + (low - near.current) * Math.min(1, dt * 0.4);
 		fade.current += ((night ? 1 : 0) - fade.current) * Math.min(1, dt * 0.6);
 		model.visible = fade.current > 0.02;
 		if (!model.visible) return;
@@ -438,6 +602,7 @@ function NightDeer({ world }: { world: IslandState }) {
 		const ahead = deerAt(world.seed, p.night, t + 0.5, near.current);
 		model.position.set(at.x, groundBelow(world, at.x, at.z), at.z);
 		model.rotation.y = Math.atan2(-(ahead.x - at.x), -(ahead.z - at.z));
+		deerWalk(model, clock.elapsedTime);
 		model.traverse((o) => {
 			const m = (o as Mesh).material as MeshBasicMaterial | undefined;
 			if (m && "opacity" in m && m.transparent) m.opacity = fade.current;
@@ -446,16 +611,81 @@ function NightDeer({ world }: { world: IslandState }) {
 	return <primitive object={model} />;
 }
 
+const EYES = 7;
+
+/**
+ * Shy eyes in the woods at night: pairs of soft glints between the trees round the clearing, blinking now and then,
+ * that slip away when a kid comes close. Cozy-spooky, never more. One instanced draw call.
+ */
+function WatchingEyes({ world, controls }: { world: IslandState; controls: Controls }) {
+	const { mesh, spots } = useMemo(() => {
+		const mesh = new InstancedMesh(
+			new PlaneGeometry(0.2, 0.14),
+			new MeshBasicMaterial({ color: "#d9f7ff", transparent: true, depthWrite: false, fog: false, side: DoubleSide }),
+			EYES * 2,
+		);
+		mesh.frustumCulled = false;
+		mesh.userData.noCast = true;
+		return { mesh, spots: [] as { x: number; y: number; z: number; face: number; phase: number }[] };
+	}, []);
+	const placed = useRef(-1);
+	const m = useMemo(() => new Matrix4(), []);
+	const q = useMemo(() => new Quaternion(), []);
+	const e = useMemo(() => new Euler(), []);
+	const pos = useMemo(() => new Vector3(), []);
+	const one = useMemo(() => new Vector3(1, 1, 1), []);
+	useFrame(({ clock, camera }) => {
+		const p = phaseAt(world.elapsed());
+		const deep = p.phase === "night" ? Math.min(1, p.progress * 6, (1 - p.progress) * 6) : 0;
+		mesh.visible = deep > 0.05 && !!world.volume;
+		if (!mesh.visible) return;
+		// New places each night, from the seed, so every screen sees the same eyes.
+		if (placed.current !== p.night) {
+			placed.current = p.night;
+			spots.length = 0;
+			let s = (world.seed ^ (p.night * 2654435761)) >>> 0;
+			const r = () => {
+				s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+				return s / 4294967296;
+			};
+			for (let k = 0; k < EYES; k++) {
+				const a = r() * Math.PI * 2;
+				const d = 13 + r() * 9;
+				const x = world.fire[0] + 0.5 + Math.cos(a) * d;
+				const z = world.fire[2] + 0.5 + Math.sin(a) * d;
+				spots.push({ x, y: groundBelow(world, x, z) + 0.9 + r() * 0.8, z, face: a + Math.PI, phase: r() * 10 });
+			}
+		}
+		const t = clock.elapsedTime;
+		const body = controls.body?.p;
+		(mesh.material as MeshBasicMaterial).opacity = deep;
+		spots.forEach((spot, k) => {
+			// A slow blink every few seconds; gone when a kid gets near (they're shy).
+			const blink = Math.sin(t * 0.9 + spot.phase) > 0.97 ? 0 : 1;
+			const near = body ? Math.hypot(body[0] - spot.x, body[2] - spot.z) < 7 : false;
+			const shown = blink && !near ? 1 : 0;
+			const face = Math.atan2(camera.position.x - spot.x, camera.position.z - spot.z);
+			e.set(0, face, 0);
+			q.setFromEuler(e);
+			for (const side of [-1, 1]) {
+				pos.set(spot.x + Math.cos(face) * 0.17 * side, spot.y, spot.z - Math.sin(face) * 0.17 * side);
+				m.compose(pos, q, shown ? one : ZERO);
+				mesh.setMatrixAt(k * 2 + (side > 0 ? 1 : 0), m);
+			}
+		});
+		mesh.instanceMatrix.needsUpdate = true;
+	});
+	return <primitive object={mesh} />;
+}
+
+const ZERO = new Vector3(0, 0, 0);
+
 function groundBelow(world: IslandState, x: number, z: number) {
 	const v = world.volume;
 	if (!v) return 20;
-	const xi = Math.floor(x);
-	const zi = Math.floor(z);
-	for (let y = 47; y > 0; y--) {
-		const b = v.get(xi, y, zi);
-		if (b !== B.air && b !== B.leaves && b !== B.torch) return y + 1;
-	}
-	return 0;
+	// The ground under trees and grass, never their tops; where a trunk stands, the sea level will do.
+	const g = groundAt(v, Math.floor(x), Math.floor(z));
+	return g < 0 ? world.fire[1] : g + 1;
 }
 
 // ── The kid's own eyes ──
@@ -464,8 +694,19 @@ const ray = new Raycaster();
 const ndc = new Vector2();
 const dir = new Vector3();
 
-function Player({ world, controls, running }: Omit<Props, "label">) {
-	const { camera } = useThree();
+function Player({ world, controls, running, playing, fx }: Omit<Props, "label"> & { fx: Effects }) {
+	const { camera, scene } = useThree();
+	const held = useMemo(() => new Held(atlasTexture()), []);
+	useEffect(() => {
+		// The held block hangs off the camera, so the camera has to be in the scene for it to be drawn.
+		scene.add(camera);
+		camera.add(held.group);
+		return () => {
+			camera.remove(held.group);
+			scene.remove(camera);
+		};
+	}, [scene, camera, held]);
+	const still = useMemo(() => prefersReducedMotion(), []);
 	const outline = useMemo(() => {
 		const l = new LineSegments(new EdgesGeometry(new BoxGeometry(1.005, 1.005, 1.005)), new LineBasicMaterial({ color: "#1d1d1f" }));
 		l.visible = false;
@@ -479,7 +720,16 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 		m.visible = false;
 		return m;
 	}, []);
-	const state = useRef({ sent: 0, last: [0, 0, 0] as number[], mining: -1, spawned: false });
+	const state = useRef({
+		sent: 0,
+		last: [0, 0, 0] as number[],
+		mining: -1,
+		spawned: false,
+		walked: 0,
+		wasGround: true,
+		fallFrom: 0,
+		stride: 0,
+	});
 
 	useEffect(() => {
 		(camera as PerspectiveCamera).rotation.order = "YXZ";
@@ -490,7 +740,7 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 		if (!v) return;
 		const s = state.current;
 		if (!controls.body || !s.spawned) {
-			controls.body = newBody(spawnPoint({ volume: v, seed: world.seed, fire: world.fire }));
+			controls.body = newBody(spawnPoint({ volume: v, seed: world.seed, gen: world.gen, fire: world.fire }));
 			s.spawned = true;
 		}
 		const body = controls.body;
@@ -502,9 +752,26 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 			const ang = Math.atan2(d.x, d.y);
 			const wx = len ? -Math.sin(yaw - ang) * len : 0;
 			const wz = len ? -Math.cos(yaw - ang) * len : 0;
+			const before = [body.p[0], body.p[2]];
+			const grounded = body.ground;
 			step(v, body, { x: wx, z: wz, jump: d.hop }, dt);
+			// Footsteps on whatever's underfoot, about two a block; a jump whooshes and a landing thumps.
+			if (body.ground) {
+				s.walked += Math.hypot(body.p[0] - before[0]!, body.p[2] - before[1]!);
+				if (s.walked > 0.55) {
+					s.walked = 0;
+					sound.step(v.get(Math.floor(body.p[0]), Math.floor(body.p[1] - 0.05), Math.floor(body.p[2])));
+				}
+			}
+			if (grounded && !body.ground && body.v[1] > 0) {
+				sound.jump();
+				s.fallFrom = body.p[1];
+			}
+			if (!grounded && body.ground) sound.land(Math.min(1, Math.max(0, (s.fallFrom - body.p[1]) / 6)));
+			if (body.ground) s.fallFrom = body.p[1];
+			else s.fallFrom = Math.max(s.fallFrom, body.p[1]);
 			if (lost(body)) {
-				body.p = spawnPoint({ volume: v, seed: world.seed, fire: world.fire });
+				body.p = spawnPoint({ volume: v, seed: world.seed, gen: world.gen, fire: world.fire });
 				body.v = [0, 0, 0];
 			}
 		}
@@ -535,10 +802,14 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 			// Real time, not the physics step: a slow frame still digs its share.
 			const step = Math.min(rawDt, 0.25) / (blockInfo(hit.block).hardness * DIG_SPEED);
 			controls.progress += step;
-			if (Math.floor((controls.progress - step) * 4) !== Math.floor(controls.progress * 4)) sound.tap();
+			if (Math.floor((controls.progress - step) * 4) !== Math.floor(controls.progress * 4)) {
+				sound.tap();
+				fx.chips(hit.cell, hit.block, hit.normal);
+			}
 			if (controls.progress >= 1) {
 				world.edit(hit.i, B.air);
 				sound.dig(hit.block);
+				fx.burst(hit.cell, hit.block);
 				controls.progress = 0;
 				s.mining = -1;
 			}
@@ -554,8 +825,19 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 		if (controls.place) {
 			const at = aimAt(controls.place.aim);
 			controls.place = null;
-			if (at) build(world, controls, at);
+			const placed = at ? build(world, controls, at) : null;
+			if (placed) {
+				fx.pop(placed);
+				held.built();
+			}
 		}
+
+		// What's in hand, moving with the kid.
+		const speed = body.ground ? Math.min(1, Math.hypot(body.v[0], body.v[2]) / 4.3) : 0;
+		s.stride += Math.hypot(body.v[0], body.v[2]) * dt;
+		held.hold((world.inv[controls.selected] ?? 0) > 0 ? controls.selected : 0);
+		held.group.visible = playing;
+		held.update(dt, speed, s.stride, controls.progress > 0, still);
 
 		// Tell the island where we are, ten times a second while moving.
 		const now = performance.now();
@@ -583,15 +865,19 @@ const DIG_SPEED = 0.45;
 
 const round = (n: number) => Math.round(n * 100) / 100;
 
-function build(world: IslandState, controls: Controls, hit: NonNullable<Controls["target"]>) {
+/** Builds on the face aimed at, if it can; returns the cell built in. */
+function build(world: IslandState, controls: Controls, hit: NonNullable<Controls["target"]>): [number, number, number] | null {
 	const b = controls.selected;
-	if (!b || (world.inv[b] ?? 0) < 1) return;
-	const [x, y, z] = [hit.cell[0] + hit.normal[0], hit.cell[1] + hit.normal[1], hit.cell[2] + hit.normal[2]];
-	if (!inBounds(x, y, z) || !world.volume) return;
+	if (!b || (world.inv[b] ?? 0) < 1) return null;
+	// Aimed at grass or a flower: build where it grows, not on top of it.
+	const into = isPlant(hit.block);
+	const [x, y, z] = into ? hit.cell : [hit.cell[0] + hit.normal[0], hit.cell[1] + hit.normal[1], hit.cell[2] + hit.normal[2]];
+	if (!inBounds(x, y, z) || !world.volume) return null;
 	const there = world.volume.get(x, y, z);
-	if (there !== B.air && there !== B.water) return;
+	if (there !== B.air && there !== B.water && !isPlant(there)) return null;
 	const [fx, fy, fz] = world.fire;
-	if (x === fx && z === fz && (y === fy || y === fy + 1)) return;
+	if (x === fx && z === fz && (y === fy || y === fy + 1)) return null;
+	if (isPlant(b) && !holdsPlant(world.volume.get(x, y - 1, z))) return null;
 	// Never inside the kid themselves.
 	const p = controls.body?.p;
 	if (
@@ -602,7 +888,8 @@ function build(world: IslandState, controls: Controls, hit: NonNullable<Controls
 		p[1] < y + 1 &&
 		p[1] + TALL > y
 	)
-		return;
+		return null;
 	world.edit(indexOf(x, y, z), b);
 	sound.place();
+	return [x, y, z];
 }

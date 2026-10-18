@@ -3,10 +3,13 @@ import {
 	B,
 	BLOCKS,
 	blockInfo,
+	CYCLE_S,
 	canPlace,
 	DAY_S,
+	deerAt,
 	EMOTES,
 	type Emote,
+	FUEL_LOW,
 	FUEL_MAX,
 	phaseAt,
 	REACH_ANIMAL,
@@ -14,11 +17,11 @@ import {
 } from "@jade/core/woods";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Flame, Hand, Heart, Moon, Pause, PawPrint, Play, Star, Sun, Volume2, VolumeX, WifiOff } from "lucide-react";
+import { ArrowLeft, Flame, Hand, Heart, Pause, PawPrint, Play, Star, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { Component, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Tickets } from "#/components/play/PlayBits.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
-import { accent, GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
+import { GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
 import { TouchControls } from "#/components/roxy/TouchControls.tsx";
 import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { drawAtlas, tileImage } from "#/components/woods/atlas.ts";
@@ -44,6 +47,8 @@ type Phase = "ready" | "play" | "paused";
 type Hud = {
 	status: IslandState["status"];
 	night: boolean;
+	/** 0–1 through this day or night: where the sun or moon is on its arc. */
+	progress: number;
 	/** The sky is dark enough that words on it need light ink. */
 	dark: boolean;
 	nightNo: number;
@@ -54,6 +59,8 @@ type Hud = {
 	home: number;
 	inv: Record<number, number>;
 	others: number;
+	/** At night: the nearest lost animal nobody's found yet, and which way it is from where the kid is looking. */
+	lostNear: { label: string; blocks: number; turn: number } | null;
 	/** What E (or the Use button) would do here. */
 	use: { kind: "feed"; block: number } | { kind: "pickup"; id: string; label: string } | null;
 };
@@ -89,6 +96,8 @@ function WoodsScreen() {
 	const [island, setIsland] = useState<string | undefined>(undefined);
 	const world = useMemo(() => new IslandState(woodsUrl(child.id, island)), [child.id, island]);
 	const [phase, setPhase] = useState<Phase>("ready");
+	const phaseRef = useRef(phase);
+	phaseRef.current = phase;
 	const [hud, setHud] = useState<Hud>(() => readHud(world, null));
 	const [muted, setMuted] = useState(sound.isMuted);
 	const [message, setMessage] = useState<ReactNode>(null);
@@ -104,7 +113,7 @@ function WoodsScreen() {
 	const controls = useMemo<Controls>(
 		() => ({
 			drive,
-			look: { yaw: 0, pitch: -0.15 },
+			look: { yaw: 0, pitch: -0.12 },
 			mining: false,
 			place: null,
 			aim: null,
@@ -124,6 +133,19 @@ function WoodsScreen() {
 	}, []);
 	useEffect(() => () => clearTimeout(messageTimer.current), []);
 
+	/** Once per go, on a friend's island: whose it is, and whether visitors can build. */
+	const greeted = useRef(false);
+	const greet = useCallback(() => {
+		if (greeted.current || world.island.mine) return;
+		greeted.current = true;
+		say(
+			world.island.build
+				? `You’re visiting ${world.island.label}!`
+				: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
+			4500,
+		);
+	}, [world, say]);
+
 	// The island: connect while this screen is open.
 	useEffect(() => {
 		world.connect();
@@ -140,6 +162,8 @@ function WoodsScreen() {
 							: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
 						4500,
 					);
+				// A friend's island that finished loading after Start: say whose it is now.
+				else if (e.t === "ready" && phaseRef.current === "play") greet();
 				else if (e.t === "join") say(`${e.label} is here!`);
 				else if (e.t === "leave") say(`${e.label} went home.`);
 				else if (e.t === "night") {
@@ -180,12 +204,30 @@ function WoodsScreen() {
 					);
 				}
 			}),
-		[world, say, free, child.id],
+		[world, say, free, child.id, greet],
 	);
 
-	// The HUD, a few times a second.
+	// The HUD and the island's sounds, a few times a second.
+	const lowWarned = useRef(false);
 	useEffect(() => {
 		const timer = setInterval(() => {
+			const p = phaseAt(world.elapsed());
+			const body = controls.body?.p;
+			const [fx, , fz] = world.fire;
+			const fuel = world.clock.fuel;
+			sound.ambience({
+				sun: p.sun,
+				fireDistance: body ? Math.hypot(body[0] - fx - 0.5, body[2] - fz - 0.5) : 30,
+				fireStrength: fuel <= 0 ? 0 : 0.3 + 0.7 * Math.min(1, fuel / (FUEL_MAX * 0.6)),
+				running: phaseRef.current === "play" && world.status === "open" && !document.hidden,
+			});
+			// A gentle nudge, once, when the fire runs low at night.
+			const low = p.phase === "night" && fuel > 0 && fuel < FUEL_MAX * FUEL_LOW;
+			if (low && !lowWarned.current && phaseRef.current === "play") {
+				sound.lowFire();
+				say("The fire’s getting low! Feed it a log.", 4000);
+			}
+			lowWarned.current = low;
 			const next = readHud(world, controls);
 			// The Play home shows how many nights this kid has kept the fire going.
 			if (world.stats.nights > 0)
@@ -194,8 +236,11 @@ function WoodsScreen() {
 				} catch {}
 			setHud((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
 		}, 250);
-		return () => clearInterval(timer);
-	}, [world, controls, child.id]);
+		return () => {
+			clearInterval(timer);
+			sound.stopAmbience();
+		};
+	}, [world, controls, child.id, say]);
 
 	// The hotbar: whatever can be built with, in block order. Keeps a block in hand while there's any.
 	const hotbar = useMemo(() => BLOCKS.filter((b) => canPlace(b.id) && (hud.inv[b.id] ?? 0) > 0).map((b) => b.id), [hud.inv]);
@@ -223,14 +268,10 @@ function WoodsScreen() {
 		setKicked(null);
 		if (world.status === "kicked") world.connect();
 		setPhase("play");
-		if (!world.island.mine)
-			say(
-				world.island.build
-					? `You’re visiting ${world.island.label}!`
-					: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
-				4500,
-			);
-		if (!coarse) Promise.resolve(sceneRef.current?.requestPointerLock?.()).catch(() => {});
+		greeted.current = false;
+		if (world.status === "open") greet();
+		// A mouse looks round with the pointer held; a touch screen (even a laptop's) looks by dragging instead.
+		if (!coarse && navigator.maxTouchPoints === 0) Promise.resolve(sceneRef.current?.requestPointerLock?.()).catch(() => {});
 	}
 
 	const togglePause = useCallback(() => {
@@ -328,6 +369,8 @@ function WoodsScreen() {
 		};
 		const startTouch = (e: TouchEvent) => {
 			if (e.cancelable) e.preventDefault();
+			// A finger on the scene: this is a touch screen now, so let go of the mouse pointer.
+			if (document.pointerLockElement) document.exitPointerLock();
 			if (finger) return;
 			const t = e.changedTouches[0];
 			if (!t) return;
@@ -426,12 +469,44 @@ function WoodsScreen() {
 				controls.place = { aim: null };
 			},
 			select: (b: number) => setSelected(b),
+			/**
+			 * Into play at a time of day, on this screen only (the island's own clock carries on): `active-play` (morning),
+			 * `dusk`, `night`, `low-fire` (night, the fire nearly out, the deer close) and `lost-animal` (night, one waiting
+			 * just ahead).
+			 */
 			setState: async (name: string) => {
-				// The look of a time of day, on this screen only (the island's own clock carries on).
-				const at = { day: 60, dusk: DAY_S - 10, night: DAY_S + 90 }[name];
+				const at = {
+					"active-play": 60,
+					day: 60,
+					dusk: DAY_S - 12,
+					night: DAY_S + 90,
+					"low-fire": DAY_S + 90,
+					deer: DAY_S + 90,
+					"lost-animal": DAY_S + 90,
+				}[name];
 				if (at === undefined) throw new Error(`Unknown state ${name}`);
+				for (let k = 0; k < 100 && world.status !== "open"; k++) await new Promise((r) => setTimeout(r, 100));
+				setKicked(null);
+				setPhase("play");
 				world.shift = at - world.elapsed() + world.shift;
-				await new Promise((r) => setTimeout(r, 300));
+				world.fuelShown = name === "low-fire" || name === "deer" ? 30 : name === "day" || name === "active-play" ? null : 220;
+				world.clock = { ...world.clock, fuel: world.fuelShown ?? world.clock.fuel };
+				// The kid's body appears on the first frame of play.
+				for (let k = 0; k < 60 && !controls.body; k++) await new Promise((r) => setTimeout(r, 50));
+				if (name === "lost-animal" && controls.body) {
+					const [x, y, z] = controls.body.p;
+					world.lost = [{ id: "dev-0", animal: "fox", at: [x - 1.5, y, z - 3], follows: null }];
+				}
+				if (name === "deer" && controls.body) {
+					// Face the Night Deer where she is right now.
+					const p = phaseAt(world.elapsed());
+					const t = Math.max(0, (world.elapsed() % CYCLE_S) - DAY_S);
+					const d = deerAt(world.seed, p.night, t, 1);
+					const [x, , z] = controls.body.p;
+					controls.look.yaw = Math.atan2(-(d.x - x), -(d.z - z));
+					controls.look.pitch = 0.05;
+				}
+				await new Promise((r) => setTimeout(r, 600));
 				return { state: name };
 			},
 			setPausedForScreenshot: (paused: boolean) => {
@@ -467,17 +542,24 @@ function WoodsScreen() {
 				>
 					<NoWebGL>
 						<Suspense fallback={<GameLoading label="Lighting the campfire…" />}>
-							<WoodsScene world={world} controls={controls} running={running} label={sceneLabel(hud)} />
+							<WoodsScene world={world} controls={controls} running={running} playing={playing && ready} label={sceneLabel(hud)} />
 						</Suspense>
 					</NoWebGL>
 					{playing && !coarse && <Crosshair />}
-					{playing && !coarse && !captured && ready && (
-						<p className="glass glass-pill pointer-events-none absolute top-1/2 left-1/2 mt-10 -translate-x-1/2 text-sm font-medium">
+					{playing && !coarse && !captured && ready && !message && (
+						<p className="glass glass-pill pointer-events-none absolute top-[calc(max(1.5rem,var(--safe-top))+4.2rem)] left-1/2 -translate-x-1/2 text-sm font-medium">
 							Click to look round
 						</p>
 					)}
+					{/* On a phone the corners are full: the island's status sits under the title instead. */}
+					{ready && phase !== "ready" && (
+						<div className="pointer-events-none absolute top-[calc(max(0.75rem,var(--safe-top))+5.9rem)] left-[max(0.75rem,var(--safe-left))] md:hidden">
+							<IslandStatus hud={hud} />
+						</div>
+					)}
+					{playing && hud.lostNear && <LostHint hint={hud.lostNear} />}
 					{playing && hotbar.length > 0 && <Hotbar items={hotbar} inv={hud.inv} selected={selected} onPick={setSelected} tiles={tiles} />}
-					<div className="pointer-events-none absolute inset-x-0 top-[calc(max(0.75rem,var(--safe-top))+4.2rem)] flex justify-center px-3">
+					<div className="pointer-events-none absolute inset-x-0 top-[calc(max(0.75rem,var(--safe-top))+4.2rem)] flex justify-center px-3 max-md:top-[calc(max(0.75rem,var(--safe-top))+8.6rem)]">
 						<p role="status" className={message && playing ? "glass glass-pill text-center text-sm font-medium" : "sr-only"}>
 							{message ?? ""}
 						</p>
@@ -496,7 +578,14 @@ function WoodsScreen() {
 				</Link>
 			}
 			eyebrow="Games"
-			title={accent("Campfire Woods")}
+			title={
+				// A soft halo so the title reads over leaves by day and a dark sky by night ("Woods" stays berry).
+				<b
+					className={`font-[inherit] [&>span]:text-roxy ${hud.dark ? "[text-shadow:0_2px_12px_rgb(0_0_0/0.45)]" : "[text-shadow:0_0_14px_rgb(255_255_255/0.7),0_1px_0_rgb(255_255_255/0.6)]"}`}
+				>
+					Campfire <span>Woods</span>
+				</b>
+			}
 			orbs={
 				<>
 					<button
@@ -527,40 +616,20 @@ function WoodsScreen() {
 			}
 			status={
 				ready && (
-					<GameStatus>
-						<span className="inline-flex items-center gap-1.5">
-							{hud.night ? <Moon className="size-4" aria-hidden /> : <Sun className="size-4" aria-hidden />}
-							{hud.night ? (
-								<>
-									Night {hud.nightNo}
-									<span className="max-sm:hidden"> · dawn in {hud.minutes} min</span>
-								</>
-							) : (
-								<>
-									<span className="max-sm:hidden">Night {hud.nightNo} in </span>
-									{hud.minutes} min
-								</>
-							)}
-						</span>
-						<FireMeter fuel={hud.fuel} />
-						{hud.home > 0 && (
-							<span className="inline-flex items-center gap-1" title="Animals brought home">
-								<PawPrint className="size-4" aria-hidden />
-								<span className="tabular-nums">{hud.home}</span>
-							</span>
-						)}
-					</GameStatus>
+					<div className="max-md:hidden">
+						<IslandStatus hud={hud} />
+					</div>
 				)
 			}
 			hints={
-				<>
+				<span className={`contents ${hud.dark ? "" : "[&_span]:[text-shadow:0_0_8px_rgb(255_255_255/0.85)]"}`}>
 					<Hint keys={["W", "A", "S", "D"]}>walk</Hint>
 					<Hint keys={["Space"]}>jump</Hint>
 					<Hint keys={["Click"]}>hold to dig</Hint>
 					<Hint keys={["Right click"]}>build</Hint>
 					<Hint keys={["E"]}>use</Hint>
 					<Hint keys={["1–9"]}>block</Hint>
-				</>
+				</span>
 			}
 			touch={playing && <TouchControls drive={drive} />}
 			panel={<Things inv={hud.inv} tiles={tiles} selected={selected} onPick={setSelected} onEmote={emote} />}
@@ -678,9 +747,28 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 			if (near) use = { kind: "pickup", id: near.id, label: ANIMAL_LABEL[near.animal] };
 		}
 	}
+	let lostNear: Hud["lostNear"] = null;
+	if (body && p.phase === "night") {
+		let best: { a: (typeof world.lost)[number]; d: number } | null = null;
+		for (const a of world.lost) {
+			if (a.follows !== null) continue;
+			const d = Math.hypot(a.at[0] - body[0], a.at[2] - body[2]);
+			if (!best || d < best.d) best = { a, d };
+		}
+		if (best && best.d > REACH_ANIMAL) {
+			const yaw = controls?.look.yaw ?? 0;
+			// Angle to the animal, measured like the camera's yaw (0 looks along -z), relative to the view.
+			const want = Math.atan2(-(best.a.at[0] - body[0]), -(best.a.at[2] - body[2]));
+			let turn = want - yaw;
+			turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+			lostNear = { label: ANIMAL_LABEL[best.a.animal], blocks: Math.round(best.d), turn: Math.round(turn * 10) / 10 };
+		}
+	}
 	return {
+		lostNear,
 		status: world.status,
 		night: p.phase === "night",
+		progress: Math.round(p.progress * 40) / 40,
 		dark: world.status === "open" && p.sun < 0.45,
 		nightNo: p.night,
 		minutes: Math.max(1, Math.ceil(p.left / 60)),
@@ -696,15 +784,86 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 const sceneLabel = (h: Hud) =>
 	`Campfire Woods. ${h.night ? `Night ${h.nightNo}` : "Daytime"}. The fire is ${h.fuel <= 0 ? "out" : h.fuel < FUEL_MAX / 4 ? "low" : "burning"}.${h.others ? ` ${h.others} others here.` : ""}`;
 
+/** Day or night and how long till it changes, the fire, and the animals brought home. */
+function IslandStatus({ hud }: { hud: Hud }) {
+	return (
+		<GameStatus>
+			<span className="inline-flex items-center gap-1.5">
+				<DayDial night={hud.night} progress={hud.progress} />
+				{hud.night ? (
+					<>
+						Night {hud.nightNo}
+						<span className="max-sm:hidden"> · dawn in {hud.minutes} min</span>
+					</>
+				) : (
+					<>
+						<span className="max-sm:hidden">Night {hud.nightNo} in </span>
+						{hud.minutes} min
+					</>
+				)}
+			</span>
+			<FireMeter fuel={hud.fuel} />
+			{hud.home > 0 && (
+				<span className="inline-flex items-center gap-1" title="Animals brought home">
+					<PawPrint className="size-4" aria-hidden />
+					<span className="tabular-nums">{hud.home}</span>
+				</span>
+			)}
+		</GameStatus>
+	);
+}
+
+/**
+ * At night, which way the nearest lost animal is: an arrow that turns as the kid does, and how far. Points ahead
+ * when it's in front, to the side when it's beside or behind.
+ */
+function LostHint({ hint }: { hint: NonNullable<Hud["lostNear"]> }) {
+	return (
+		<p
+			className="glass glass-pill pointer-events-none absolute top-[calc(max(0.75rem,var(--safe-top))+7.6rem)] left-1/2 -translate-x-1/2 text-sm font-medium max-md:top-[calc(max(0.75rem,var(--safe-top))+11.6rem)]"
+			aria-live="off"
+		>
+			<span className="inline-block transition-transform duration-200" style={{ transform: `rotate(${-hint.turn}rad)` }} aria-hidden>
+				<ArrowLeft className="size-4 rotate-90" />
+			</span>
+			Lost {hint.label} · {hint.blocks} steps
+		</p>
+	);
+}
+
+/** The sun (or moon) on its way across a little arc of sky: how far through the day or night it is. */
+function DayDial({ night, progress }: { night: boolean; progress: number }) {
+	const a = Math.PI * (1 - progress);
+	const x = 14 + Math.cos(a) * 10;
+	const y = 14 - Math.sin(a) * 10;
+	return (
+		<svg viewBox="0 0 28 16" className="h-4 w-7 shrink-0" aria-hidden>
+			<path d="M4 14 A10 10 0 0 1 24 14" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.6" strokeDasharray="2 2" />
+			<line x1="2" y1="14.5" x2="26" y2="14.5" stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.2" />
+			{night ? (
+				<g>
+					<circle cx={x} cy={y} r="3.6" fill="#e8eef8" />
+					<circle cx={x + 1.6} cy={y - 1} r="3" fill="#1b2a4e" />
+				</g>
+			) : (
+				<circle cx={x} cy={y} r="3.6" fill="#f6c43c" stroke="#e08a24" strokeWidth="1" />
+			)}
+		</svg>
+	);
+}
+
 function FireMeter({ fuel }: { fuel: number }) {
 	const share = Math.min(1, fuel / FUEL_MAX);
 	const low = share < 0.25;
 	return (
 		<span className="inline-flex items-center gap-1.5" title="The campfire">
-			<Flame className={`size-4 ${low ? "text-roxy" : ""}`} aria-hidden />
+			<Flame className={`size-4 ${low ? "text-roxy motion-safe:animate-pulse" : "text-[#e9761f]"}`} aria-hidden />
 			<meter className="sr-only" aria-label="Campfire" min={0} max={100} low={25} value={Math.round(share * 100)} />
 			<span className="relative h-2 w-14 overflow-hidden rounded-full bg-[color-mix(in_oklab,currentColor_18%,transparent)]" aria-hidden>
-				<span className="absolute inset-y-0 left-0 rounded-full bg-[#f08a24]" style={{ width: `${share * 100}%` }} />
+				<span
+					className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-[#e0441f] via-[#f08a24] to-[#ffd04a] transition-[width] duration-700"
+					style={{ width: `${share * 100}%` }}
+				/>
 			</span>
 			{fuel <= 0 && <span>out!</span>}
 		</span>

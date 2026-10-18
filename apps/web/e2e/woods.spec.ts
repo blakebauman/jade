@@ -115,8 +115,14 @@ test("the island grows dark at night, with the fire still on the status", async 
 	const f = await family(page);
 	await open(page, await f.kid("Ava"));
 	await hooks(page, (h) => h.setState("night"));
-	await expect(page.getByText(/Night 1 · dawn in \d min/)).toBeVisible();
-	await expect(page.getByRole("meter", { name: "Campfire" })).toBeVisible();
+	// The full line on wide screens; just "Night 1" on a phone.
+	await expect(
+		page
+			.getByText(/^Night 1/)
+			.filter({ visible: true })
+			.first(),
+	).toBeVisible();
+	await expect(page.getByRole("meter", { name: "Campfire" }).first()).toBeAttached();
 });
 
 test("a parent links with a friend's family, and their kid visits our island", async ({ page, browser }) => {

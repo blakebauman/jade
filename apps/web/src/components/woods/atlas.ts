@@ -1,6 +1,6 @@
 import { seeded } from "@jade/core/math";
 import { TILE_NAMES } from "@jade/core/woods";
-import { CanvasTexture, NearestFilter, SRGBColorSpace } from "three";
+import { CanvasTexture, NearestFilter, NearestMipmapLinearFilter, SRGBColorSpace } from "three";
 import { ATLAS_COLS, ATLAS_ROWS } from "./mesher.ts";
 
 /**
@@ -43,8 +43,44 @@ const wool =
 			for (let x = 0; x < S; x++) px(x, y, (x + y) % 4 === 0 ? dark : (x * 3 + y) % 7 === 0 ? light : rng() < 0.1 ? light : base);
 	};
 
+/** A flower: a thin stem with two leaves and a five-petal head. */
+const flower =
+	(petal: string, middle: string): Painter =>
+	(px) => {
+		for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) px(x, y, "rgba(0,0,0,0)");
+		for (let y = 7; y < S; y++) px(7, y, "#4a9a3a");
+		px(6, 11, "#5fb04a");
+		px(5, 10, "#5fb04a");
+		px(8, 12, "#5fb04a");
+		px(9, 11, "#5fb04a");
+		for (const [dx, dy] of [
+			[0, -2],
+			[-2, 0],
+			[2, 0],
+			[-1, 2],
+			[1, 2],
+			[-1, -1],
+			[1, -1],
+			[0, 1],
+			[-1, 1],
+			[1, 1],
+			[-2, -1],
+			[2, -1],
+		] as const)
+			px(7 + dx, 4 + dy, petal);
+		px(7, 4, middle);
+		px(7, 5, middle);
+	};
+
 const PAINT: Record<string, Painter> = {
-	grass_top: speckle("#5fae4a", "#77c35d", "#4b9539", 0.5),
+	// Soft and close in tone: grass covers most of the view, so it has to sit back.
+	grass_top: (px, rng) => {
+		for (let y = 0; y < S; y++)
+			for (let x = 0; x < S; x++) {
+				const r = rng();
+				px(x, y, r < 0.1 ? "#58a645" : r < 0.22 ? "#6cba55" : r < 0.26 ? "#7cc663" : "#63b04d");
+			}
+	},
 	grass_side: (px, rng) => {
 		speckle("#8b5e3c", "#a2734d", "#704a2e")(px, rng);
 		for (let x = 0; x < S; x++) {
@@ -108,6 +144,83 @@ const PAINT: Record<string, Painter> = {
 				px(x, y, c);
 			}
 	},
+	// Trodden earth: warm, packed, with a few pebbles.
+	path_top: (px, rng) => {
+		for (let y = 0; y < S; y++)
+			for (let x = 0; x < S; x++) {
+				const r = rng();
+				px(x, y, r < 0.05 ? "#b9ad98" : r < 0.2 ? "#a07a50" : r < 0.3 ? "#8a6542" : "#97714a");
+			}
+	},
+	path_side: (px, rng) => {
+		speckle("#8b5e3c", "#a2734d", "#704a2e")(px, rng);
+		for (let x = 0; x < S; x++) for (let y = 0; y < 2; y++) px(x, y, rng() < 0.3 ? "#a07a50" : "#97714a");
+	},
+	mossy_stone: (px, rng) => {
+		speckle("#8a8d93", "#9ea1a7", "#74777d", 0.45)(px, rng);
+		// Moss creeping over the top and down the cracks.
+		for (let k = 0; k < 40; k++) {
+			const x = Math.floor(rng() * S);
+			const y = Math.floor(rng() * rng() * S);
+			px(x, y, rng() < 0.5 ? "#5f8f3e" : "#4d7a32");
+		}
+	},
+	birch_side: (px, rng) => {
+		for (let y = 0; y < S; y++)
+			for (let x = 0; x < S; x++) {
+				const band = (y * 7 + Math.floor(x / 5) * 5) % 11 === 0 && rng() < 0.85;
+				px(x, y, band ? "#3b3631" : rng() < 0.2 ? "#d9d4c7" : "#ece8dd");
+			}
+	},
+	birch_top: (px) => {
+		for (let y = 0; y < S; y++)
+			for (let x = 0; x < S; x++) {
+				const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5));
+				px(x, y, d > 6.5 ? "#ece8dd" : Math.floor(d) % 2 === 0 ? "#e2c992" : "#d1b47a");
+			}
+	},
+	birch_leaves: (px, rng) => {
+		for (let y = 0; y < S; y++)
+			for (let x = 0; x < S; x++) {
+				const r = rng();
+				px(x, y, r < 0.12 ? "rgba(0,0,0,0)" : r < 0.4 ? "#7fb24a" : r < 0.6 ? "#a2c95c" : "#8fbe52");
+			}
+	},
+	pine_leaves: (px, rng) => {
+		for (let y = 0; y < S; y++)
+			for (let x = 0; x < S; x++) {
+				const r = rng();
+				// Needles: short dark streaks, slanting.
+				const needle = (x + y * 2) % 5 === 0;
+				px(x, y, r < 0.1 ? "rgba(0,0,0,0)" : needle ? "#1f4f34" : r < 0.5 ? "#2c6644" : "#367653");
+			}
+	},
+	tall_grass: (px, rng) => {
+		for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) px(x, y, "rgba(0,0,0,0)");
+		for (let k = 0; k < 7; k++) {
+			const x0 = 1 + Math.floor(rng() * 14);
+			const tall = 7 + Math.floor(rng() * 8);
+			const lean = rng() < 0.5 ? -1 : 1;
+			for (let t = 0; t < tall; t++) {
+				const x = Math.min(15, Math.max(0, x0 + (t > tall * 0.6 ? lean : 0)));
+				px(x, S - 1 - t, t > tall - 3 ? "#8fcf6a" : rng() < 0.3 ? "#4e9a3c" : "#62b04b");
+			}
+		}
+	},
+	flower_red: flower("#e0443a", "#f6d04d"),
+	flower_yellow: flower("#f5cd32", "#e08a24"),
+	flower_blue: flower("#4f7fe0", "#f2f0e6"),
+	mushroom: (px) => {
+		for (let y = 0; y < S; y++)
+			for (let x = 0; x < S; x++) {
+				let c = "rgba(0,0,0,0)";
+				const capY = y >= 5 && y <= 9;
+				const capX = Math.abs(x - 7.5) <= 6 - (9 - y) * 0.8;
+				if (capY && capX) c = (x === 5 && y === 6) || (x === 9 && y === 7) || (x === 7 && y === 5) ? "#fff6ea" : "#d8433a";
+				if (y > 9 && x >= 6 && x <= 9) c = "#f0e6d2";
+				px(x, y, c);
+			}
+	},
 	water: speckle("rgba(52,128,206,0.72)", "rgba(96,168,232,0.72)", "rgba(40,108,186,0.72)", 0.3),
 	bedrock: speckle("#44464b", "#5c5f65", "#2e3034", 0.6),
 	wool_white: wool("#efeeea", "#ffffff", "#d9d7d0"),
@@ -141,8 +254,10 @@ export function drawAtlas(): HTMLCanvasElement {
 export function atlasTexture() {
 	const t = new CanvasTexture(drawAtlas());
 	t.magFilter = NearestFilter;
-	t.minFilter = NearestFilter;
-	t.generateMipmaps = false;
+	// Crisp pixels up close; far off, mipmaps blend each tile down so distant leaves read as soft colour, not noise.
+	t.minFilter = NearestMipmapLinearFilter;
+	t.generateMipmaps = true;
+	t.anisotropy = 4;
 	t.colorSpace = SRGBColorSpace;
 	return t;
 }

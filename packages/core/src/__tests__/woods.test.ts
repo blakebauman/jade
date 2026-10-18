@@ -99,6 +99,35 @@ describe("woods terrain", () => {
 	});
 });
 
+describe("woods islands made the newer way", () => {
+	const fnv = (d: Uint8Array) => {
+		let h = 2166136261;
+		for (const b of d) {
+			h ^= b;
+			h = Math.imul(h, 16777619);
+		}
+		return h >>> 0;
+	};
+
+	it("still makes an older island exactly as it was, so its edits still line up", () => {
+		expect(fnv(generate(12345, 1).volume.data)).toBe(1767047353);
+	});
+
+	it("grows oaks, birches and pines, with grass, flowers and toadstools", () => {
+		const { volume } = generate(4242);
+		const count = (b: number) => volume.data.reduce((n, c) => n + (c === b ? 1 : 0), 0);
+		for (const b of [B.leaves, B.birchLeaves, B.pineLeaves, B.birchLog, B.tallGrass, B.flowerRed, B.mushroom])
+			expect(count(b)).toBeGreaterThan(20);
+	});
+
+	it("keeps plants off the spot by the fire", () => {
+		const island = generate(4242);
+		const [fx, fy, fz] = island.fire;
+		for (let dz = -3; dz <= 3; dz++)
+			for (let dx = -3; dx <= 3; dx++) if (Math.hypot(dx, dz) <= 3) expect(island.volume.get(fx + dx, fy, fz + dz)).toBe(B.air);
+	});
+});
+
 describe("woods clock", () => {
 	it("runs a day, then a night, then the next day", () => {
 		expect(phaseAt(0)).toMatchObject({ phase: "day", night: 1, sun: 1 });

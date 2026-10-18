@@ -27,11 +27,24 @@ export const B = {
 	woolGreen: 20,
 	woolBlue: 21,
 	woolPink: 22,
+	birchLog: 23,
+	birchLeaves: 24,
+	pineLeaves: 25,
+	tallGrass: 26,
+	flowerRed: 27,
+	flowerYellow: 28,
+	flowerBlue: 29,
+	mushroom: 30,
+	path: 31,
+	mossyStone: 32,
 } as const;
 export type BlockId = (typeof B)[keyof typeof B];
 
-/** How a block is drawn: solid cubes, cubes you can see through the gaps of, clear glass, still water, or a small torch. */
-export type BlockDraw = "none" | "solid" | "cutout" | "glass" | "water" | "torch";
+/**
+ * How a block is drawn: solid cubes, cubes you can see through the gaps of, clear glass, still water, a small torch,
+ * or a plant (two crossed pictures, walked through).
+ */
+export type BlockDraw = "none" | "solid" | "cutout" | "glass" | "water" | "torch" | "plant";
 
 export type BlockInfo = {
 	id: number;
@@ -52,6 +65,8 @@ export type BlockInfo = {
 };
 
 const tiles = (all: string, top = all, bottom = all) => ({ top, side: all, bottom });
+/** Grass, flowers and toadstools: walked through, picked in a moment. */
+const plant = { draw: "plant", solid: false, hardness: 0.05 } as const;
 
 const info = (id: number, key: string, label: string, rest: Partial<BlockInfo> & Pick<BlockInfo, "tiles">): BlockInfo => ({
 	id,
@@ -96,17 +111,35 @@ export const BLOCKS: readonly BlockInfo[] = [
 	info(B.woolGreen, "wool-green", "Green wool", { hardness: 0.3, tiles: tiles("wool_green") }),
 	info(B.woolBlue, "wool-blue", "Blue wool", { hardness: 0.3, tiles: tiles("wool_blue") }),
 	info(B.woolPink, "wool-pink", "Pink wool", { hardness: 0.3, tiles: tiles("wool_pink") }),
+	info(B.birchLog, "birch-log", "Birch log", { hardness: 0.9, fuel: 45, tiles: tiles("birch_side", "birch_top", "birch_top") }),
+	info(B.birchLeaves, "birch-leaves", "Birch leaves", { draw: "cutout", hardness: 0.2, tiles: tiles("birch_leaves") }),
+	info(B.pineLeaves, "pine-leaves", "Pine needles", { draw: "cutout", hardness: 0.2, tiles: tiles("pine_leaves") }),
+	info(B.tallGrass, "tall-grass", "Tall grass", { ...plant, tiles: tiles("tall_grass") }),
+	info(B.flowerRed, "flower-red", "Poppy", { ...plant, tiles: tiles("flower_red") }),
+	info(B.flowerYellow, "flower-yellow", "Buttercup", { ...plant, tiles: tiles("flower_yellow") }),
+	info(B.flowerBlue, "flower-blue", "Bluebell", { ...plant, tiles: tiles("flower_blue") }),
+	info(B.mushroom, "mushroom", "Toadstool", { ...plant, tiles: tiles("mushroom") }),
+	info(B.path, "path", "Path", { hardness: 0.5, drop: B.dirt, tiles: tiles("path_side", "path_top", "dirt") }),
+	info(B.mossyStone, "mossy-stone", "Mossy stone", { hardness: 1.2, tiles: tiles("mossy_stone") }),
 ];
 
 export const BLOCK_COUNT = BLOCKS.length;
 
 export const blockInfo = (id: number): BlockInfo => BLOCKS[id] ?? BLOCKS[B.air]!;
 export const isSolid = (id: number) => blockInfo(id).solid;
+export const isPlant = (id: number) => blockInfo(id).draw === "plant";
+/** Leaves of any tree. */
+export const isLeaves = (id: number) => id === B.leaves || id === B.birchLeaves || id === B.pineLeaves;
+/** A trunk of any tree. */
+export const isLog = (id: number) => id === B.log || id === B.birchLog;
 /** Faces next to this block are drawn (it doesn't hide what's behind it). */
 export const showsThrough = (id: number) => blockInfo(id).draw !== "solid";
 export const canMine = (id: number) => Number.isFinite(blockInfo(id).hardness);
 /** Placeable from the inventory: anything that drops as itself. */
 export const canPlace = (id: number) => id !== B.air && blockInfo(id).drop === id;
+
+/** A plant only grows (or is planted) on soil: grass, dirt or sand. */
+export const holdsPlant = (below: number) => below === B.grass || below === B.dirt || below === B.sand || below === B.path;
 
 /** Every tile name the client has to draw. */
 export const TILE_NAMES: readonly string[] = [
