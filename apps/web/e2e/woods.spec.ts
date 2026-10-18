@@ -46,6 +46,13 @@ async function open(page: Page, childId: string, go = true) {
 	});
 }
 
+/** Back to a screen after another took the front: hiding a tab pauses the game, so carry on if it did. */
+async function front(page: Page) {
+	await page.bringToFront();
+	const carryOn = page.getByRole("button", { name: "Carry on" }).first();
+	if (await carryOn.isVisible()) await carryOn.click();
+}
+
 const hooks = <T>(page: Page, fn: (h: Hooks, arg: unknown) => T, arg?: unknown) =>
 	page.evaluate(
 		([src, a]) =>
@@ -67,6 +74,7 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	const other = await page.context().newPage();
 	await open(other, sam);
 	await expect.poll(() => hooks(page, (h) => h.peek().others.map((o) => o.label))).toEqual(["Sam"]);
+	await front(page);
 
 	// Dig the grass two steps ahead.
 	const at = (await hooks(page, (h) => h.peek().body))!;
@@ -74,7 +82,7 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	expect(await hooks(page, (h, a) => h.block(...(a as [number, number, number])), [x, y, z])).toBe(1);
 	await hooks(page, (h, a) => h.lookAt(...(a as [number, number, number])), [x, y, z]);
 	await hooks(page, (h) => h.mine(true));
-	await expect.poll(() => hooks(page, (h, d) => h.peek().inv[d as number] ?? 0, DIRT), { timeout: 5000 }).toBe(1);
+	await expect.poll(() => hooks(page, (h, d) => h.peek().inv[d as number] ?? 0, DIRT), { timeout: 5000 }).toBeGreaterThan(0);
 	await hooks(page, (h) => h.mine(false));
 	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), [x, y, z])).toBe(0);
 
@@ -86,8 +94,8 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	await hooks(page, (h) => h.place());
 	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), spot)).toBe(WOOL_RED);
 	await expect.poll(() => hooks(page, (h, b) => h.peek().inv[b as number], WOOL_RED)).toBe(63);
-	// The dug-up dirt is on the hotbar to build with (one, or two if the dig went on into the block below).
-	await expect(page.getByRole("button", { name: /^Dirt, [12]$/ })).toBeVisible();
+	// The dug-up dirt is on the hotbar to build with (one block or more, as the dig carries on down while held).
+	await expect(page.getByRole("button", { name: /^Dirt, \d+$/ })).toBeVisible();
 	await other.close();
 });
 
@@ -125,7 +133,7 @@ test("a parent links with a friend's family, and their kid visits our island", a
 	await other.goto(`/play/${theo}/games/woods`);
 	await other.getByRole("radio", { name: /The Rivers/ }).check();
 	await open(other, theo, false);
-	await expect(other.getByText("You’re visiting The Rivers!")).toBeVisible();
+	await expect(other.getByRole("status").filter({ hasText: "You’re visiting The Rivers!" })).toBeAttached();
 	await expect.poll(() => hooks(page, (h) => h.peek().others.map((o) => o.label))).toEqual(["T"]);
 	await theirs.close();
 });

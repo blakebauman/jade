@@ -95,6 +95,8 @@ function WoodsScreen() {
 	const [kicked, setKicked] = useState<string | null>(null);
 	const [selected, setSelected] = useState<number>(B.woolRed);
 	const [frozen, setFrozen] = useState(false);
+	/** The mouse is captured for looking round (a laptop). Escape lets it go; a click on the scene takes it back. */
+	const [captured, setCaptured] = useState(false);
 	const messageTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 	const sceneRef = useRef<HTMLDivElement>(null);
 
@@ -254,7 +256,7 @@ function WoodsScreen() {
 	}, [togglePause, use, phase, hotbar]);
 
 	// A mouse: pointer lock while playing. Moving looks, holding the left button mines, the right button builds, the
-	// wheel changes block. Escape gives the pointer back, which pauses.
+	// wheel changes block. Escape gives the pointer back (the game carries on; P pauses), and a click takes it again.
 	useEffect(() => {
 		const el = sceneRef.current;
 		if (!el || coarse) return;
@@ -263,7 +265,10 @@ function WoodsScreen() {
 			if (locked()) turn(controls, e.movementX, e.movementY, MOUSE_TURN);
 		};
 		const down = (e: MouseEvent) => {
-			if (!locked()) return;
+			if (!locked()) {
+				if (e.button === 0) Promise.resolve(el.requestPointerLock?.()).catch(() => {});
+				return;
+			}
 			if (e.button === 0) controls.mining = true;
 			else if (e.button === 2) controls.place = true;
 		};
@@ -276,10 +281,8 @@ function WoodsScreen() {
 			setSelected(hotbar[(k + (e.deltaY > 0 ? 1 : -1) + hotbar.length) % hotbar.length]!);
 		};
 		const change = () => {
-			if (!locked()) {
-				controls.mining = false;
-				setPhase((p) => (p === "play" ? "paused" : p));
-			}
+			setCaptured(locked());
+			if (!locked()) controls.mining = false;
 		};
 		const menu = (e: Event) => e.preventDefault();
 		document.addEventListener("mousemove", move);
@@ -463,6 +466,11 @@ function WoodsScreen() {
 						</Suspense>
 					</NoWebGL>
 					{playing && !coarse && <Crosshair />}
+					{playing && !coarse && !captured && ready && (
+						<p className="glass glass-pill pointer-events-none absolute top-1/2 left-1/2 mt-10 -translate-x-1/2 text-sm font-medium">
+							Click to look round
+						</p>
+					)}
 					{playing && hotbar.length > 0 && <Hotbar items={hotbar} inv={hud.inv} selected={selected} onPick={setSelected} tiles={tiles} />}
 					<div className="pointer-events-none absolute inset-x-0 top-[calc(max(0.75rem,var(--safe-top))+4.2rem)] flex justify-center px-3">
 						<p role="status" className={message && playing ? "glass glass-pill text-center text-sm font-medium" : "sr-only"}>
