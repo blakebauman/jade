@@ -225,6 +225,14 @@
 		background: var(--color-maple);
 		color: var(--color-ink);
 	}
+	/*
+	 * The page's own ink, resolved here so it survives places that re-point --color-page-ink (a place sticker's face
+	 * prints in near-white ink, which as a ring vanished on Day's mint page).
+	 */
+	:root,
+	.scene-day {
+		--focus-ring: var(--color-page-ink);
+	}
 	:focus-visible {
 		outline: 3px solid var(--color-page-ink);
 		outline-offset: 3px;
@@ -588,6 +596,16 @@
 	}
 	a.sticker:active,
 	button.sticker:active:not(:disabled) { transform: rotate(var(--tilt, 0deg)) translateY(1px); }
+	/*
+	 * Keyboard focus: the chalk ring 3px off the white vinyl rim read as a slightly thicker rim at Night. Stand it further
+	 * off and peel the sticker up as a hover does, so focus shows in shape as well as line.
+	 */
+	a.sticker:focus-visible,
+	button.sticker:focus-visible {
+		outline-color: var(--focus-ring);
+		outline-offset: 6px;
+		transform: rotate(var(--tilt, 0deg)) translateY(-3px);
+	}
 	/* At Night the printed faces sit under the lamp, a step quieter than in daylight. */
 	:root:not([data-theme="day"]) .sticker[data-place] { filter: saturate(0.9) brightness(0.94); }
 
@@ -662,13 +680,14 @@
 	input[type="checkbox"]:where(:not(.sr-only)):disabled { opacity: 0.45; cursor: not-allowed; }
 
 	/* A sticker not earned yet: its outline printed on the page, waiting. */
+	/* The outline and silhouette sit halfway to Lichen: page-line alone nearly vanished on an iPad in daylight. */
 	.slot {
 		display: grid;
 		place-items: center;
 		border-radius: 1.1rem;
-		border: 2px dashed var(--color-page-line);
+		border: 2px dashed color-mix(in oklab, var(--color-page-muted) 55%, var(--color-page-line));
 		background: color-mix(in oklab, var(--color-page-deep) 35%, transparent);
-		color: var(--color-page-line);
+		color: color-mix(in oklab, var(--color-page-muted) 55%, var(--color-page-line));
 	}
 
 	/*
