@@ -11,14 +11,17 @@ import { playRoutes } from "./routes/play.ts";
 import { roxyRoutes } from "./routes/roxy.ts";
 import { sessionRoutes } from "./routes/sessions.ts";
 import { ttsRoutes } from "./routes/tts.ts";
+import { woodsRoutes } from "./routes/woods.ts";
 import { wordRoutes } from "./routes/words.ts";
 
 export type { ApiBindings, AppEnv } from "./env.ts";
+export { WoodsWorld } from "./woods/WoodsWorld.ts";
 
 const authed = new Hono<AppEnv>()
 	.use(requireParent)
 	.route("/children/:id/roxy", roxyRoutes)
 	.route("/children/:id/play", playRoutes)
+	.route("/children/:id/woods", woodsRoutes)
 	.route("/children", childrenRoutes)
 	.route("/lists", listRoutes)
 	.route("/words", wordRoutes)

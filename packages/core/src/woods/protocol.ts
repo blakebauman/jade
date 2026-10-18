@@ -47,7 +47,7 @@ export type Inventory = Record<number, number>;
 export type Clock = {
 	elapsed: number;
 	fuel: number;
-	/** Nights in a row the fire stayed lit. */
+	/** Nights the fire stayed lit all night, on this island, ever. */
 	nights: number;
 };
 
