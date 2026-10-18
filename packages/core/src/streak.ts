@@ -36,7 +36,7 @@ export type BadgeStats = {
 
 /** `hint` says how to earn it, in the kid's words, under its empty slot. */
 export const BADGES: (Badge & { hint: string; earned: (s: BadgeStats) => boolean })[] = [
-	{ id: "first-round", label: "First round!", icon: "sprout", hint: "Get your first answer right", earned: (s) => s.words > 0 },
+	{ id: "first-round", label: "First round!", icon: "sprout", hint: "Get one right in your first round", earned: (s) => s.words > 0 },
 	{
 		id: "perfect",
 		label: "Perfect round",

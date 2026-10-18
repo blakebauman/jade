@@ -1,9 +1,9 @@
 import { BADGES, type SPELLING_MODES } from "@jade/core";
-import { TOPIC_LABEL } from "@jade/core/math";
+import { MATH_TOPICS, type MathTopic, TOPIC_LABEL } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Flame, Gamepad2, Play, Star, X } from "lucide-react";
+import { Award, BookOpenText, Brain, ChartPie, Flame, Play, Star, X as Times, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BadgeIcon, badgeFace } from "#/components/BadgeIcon.tsx";
 import { Brand } from "#/components/Brand.tsx";
@@ -60,7 +60,7 @@ const hint = (id: string) => BADGES.find((d) => d.id === id)?.hint;
 
 function StickerSheet({ badges }: { badges: Progress["badges"] }) {
 	return (
-		<ul className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4">
+		<ul className="grid grid-cols-3 gap-x-3 gap-y-5">
 			{badges.map((b, i) => (
 				<li key={b.id} className="flex flex-col items-center gap-2 text-center">
 					{b.earned ? (
@@ -147,20 +147,23 @@ function Print({ children }: { children: string }) {
 	);
 }
 
-/** A white glyph on the rail with its count underneath, as on any feed. Foil when it counts practice. */
-function RailItem({ icon, count, label, foil }: { icon: React.ReactNode; count: React.ReactNode; label: string; foil?: boolean }) {
+/** A rail item's words, on a small white vinyl label so they read on any hue and over the print. */
+function RailLabel({ children }: { children: React.ReactNode }) {
 	return (
-		<>
-			<span className={`grid size-12 place-items-center rounded-full ${foil ? "foil" : "bg-sticker-ink/95 text-[#1d2430]"}`} aria-hidden>
-				{icon}
-			</span>
-			<span className="font-display text-base leading-none font-semibold tabular-nums [text-shadow:0_1px_2px_rgb(0_0_0/0.35)]">
-				{count}
-				<span className="sr-only"> {label}</span>
-			</span>
-		</>
+		<span aria-hidden className="word-sticker tabular-nums" style={{ fontSize: 13 }}>
+			{children}
+		</span>
 	);
 }
+
+/** How a fact key reads on a disc: "m:mul:7x8" is 7×8. */
+const factText = (k: string) =>
+	k
+		.replace(/^m:(mul|div):/, "")
+		.replace("x", "×")
+		.replace("/", "÷");
+
+const TOPIC_ICON: Record<MathTopic, typeof Times> = { facts: Times, mental: Brain, fractions: ChartPie, problems: BookOpenText };
 
 function SubjectHub() {
 	const child = useChild();
@@ -179,14 +182,27 @@ function SubjectHub() {
 	const { data: lists } = useQuery(listsQuery);
 	const newest = lists && newestFirst(lists.filter((l) => listIsFor(l, child.id)))[0];
 	const played = newest?.perChild.find((p) => p.childId === child.id && p.lastPlayedAt);
-	const spellingNote =
-		spellingDue > 0
-			? `${spellingDue} ${spellingDue === 1 ? "word" : "words"} to review`
+	// A round in progress speaks for itself on its Continue key, so the line doesn't count the list over again.
+	const spellingNote: { lead: string; tail?: string } = spellingLeft
+		? { lead: "Pick up where you left off" }
+		: spellingDue > 0
+			? { lead: `${spellingDue} ${spellingDue === 1 ? "word" : "words"} to review` }
 			: newest
-				? played
-					? `${newest.name} · ${played.mastered} of ${newest.wordCount} mastered`
-					: `${newest.name} · ${newest.wordCount} new ${newest.wordCount === 1 ? "word" : "words"}`
-				: "Hear it, spell it";
+				? {
+						lead: newest.name,
+						tail: played
+							? `${played.mastered} of ${newest.wordCount} mastered`
+							: `${newest.wordCount} new ${newest.wordCount === 1 ? "word" : "words"}`,
+					}
+				: { lead: "Hear it, spell it" };
+	// The words on Spelling's face are the ones waiting for her: review first, else this week's newest list.
+	const faceWords = spellingDue > 0 ? (progress?.reviewDue ?? []).slice(0, 3) : (newest?.preview ?? []).slice(0, 3);
+	const topics = MATH_TOPICS.filter((t) => child.settings.math.topics.includes(t));
+	const stars = progress?.stats.totalStars ?? 0;
+	const closed = !!play && !play.open;
+	// Where closed Play sends her: the subject with something waiting, else Spelling.
+	const practiceAt: PlaceId = mathLeft || (factsDue > 0 && !spellingLeft && spellingDue === 0) ? "math" : "spelling";
+	const streak = progress?.stats.currentStreak ?? 0;
 
 	// Open where she was last on this visit, else where a round is waiting, else at Spelling.
 	const [current, setCurrent] = useState<PlaceId>(() => rememberedPlace(child.id) ?? (spellingLeft || mathLeft ? latest : "spelling"));
@@ -224,14 +240,25 @@ function SubjectHub() {
 		} catch {}
 	}, [child.id, current]);
 
-	// Arrows and Page Up/Down move a whole place, wherever focus is on the page.
+	// Arrows and Page Up/Down move a whole place, Home and End go to the first and last, unless something that takes
+	// keys of its own (a field, a slider, a list) has focus.
 	useEffect(() => {
 		function onKey(e: KeyboardEvent) {
 			if (e.altKey || e.ctrlKey || e.metaKey || badgesDialog.current?.open) return;
-			const step = e.key === "ArrowDown" || e.key === "PageDown" ? 1 : e.key === "ArrowUp" || e.key === "PageUp" ? -1 : 0;
-			if (!step) return;
-			const i = PLACES.findIndex((p) => p.id === current) + step;
-			if (i < 0 || i >= PLACES.length) return;
+			const t = e.target as HTMLElement | null;
+			if (t?.closest("input, textarea, select, [contenteditable], [role=slider], [role=listbox], [role=menu], [role=tablist]")) return;
+			const at = PLACES.findIndex((p) => p.id === current);
+			const i =
+				e.key === "Home"
+					? 0
+					: e.key === "End"
+						? PLACES.length - 1
+						: e.key === "ArrowDown" || e.key === "PageDown"
+							? at + 1
+							: e.key === "ArrowUp" || e.key === "PageUp"
+								? at - 1
+								: -2;
+			if (i === -2 || i < 0 || i >= PLACES.length || i === at) return;
 			e.preventDefault();
 			go(PLACES[i]?.id ?? current);
 		}
@@ -276,37 +303,25 @@ function SubjectHub() {
 				</nav>
 
 				<div className="pointer-events-auto absolute top-1/2 right-[calc(max(0.625rem,var(--safe-right))+0.9rem)] flex -translate-y-1/2 flex-col items-center gap-5 md:right-[calc(max(1rem,var(--safe-right))+1.6rem)]">
-					<Link
-						to="/profiles"
-						className="flex flex-col items-center gap-1.5 rounded-full"
-						aria-label={`${child.name}: change who’s practicing`}
-					>
+					<Link to="/profiles" className="flex flex-col items-center gap-1.5 rounded-full" aria-label={`Switch from ${child.name}`}>
 						<KidTile name={child.name} avatar={child.avatar} size={52} />
+						<RailLabel>Switch</RailLabel>
 					</Link>
-					{progress && (
-						<>
-							<div className="flex flex-col items-center gap-1.5" title="Day streak">
-								<RailItem foil icon={<Flame className="size-5" />} count={progress.stats.currentStreak} label="day streak" />
-							</div>
-							{/* Every star ever earned: a record of practice, which games never take from. */}
-							<div className="flex flex-col items-center gap-1.5" title="Stars earned">
-								<RailItem foil icon={<Star className="size-5 fill-current" />} count={progress.stats.totalStars} label="stars earned" />
-							</div>
-							{progress.badges.length > 0 && (
-								<button
-									type="button"
-									className="flex flex-col items-center gap-1.5 rounded-full"
-									onClick={() => badgesDialog.current?.showModal()}
-									aria-haspopup="dialog"
-								>
-									<RailItem
-										icon={<Award className="size-5" />}
-										count={`${earned}/${progress.badges.length}`}
-										label={`badges earned. See your badges`}
-									/>
-								</button>
-							)}
-						</>
+					{progress && progress.badges.length > 0 && (
+						<button
+							type="button"
+							className="flex flex-col items-center gap-1.5 rounded-full"
+							onClick={() => badgesDialog.current?.showModal()}
+							aria-haspopup="dialog"
+							aria-label={`Badges, stars and streak: ${earned} of ${progress.badges.length} badges`}
+						>
+							<span className="vinyl-disc size-13" aria-hidden>
+								<Award className="size-6" />
+							</span>
+							<RailLabel>
+								{earned} of {progress.badges.length}
+							</RailLabel>
+						</button>
 					)}
 				</div>
 			</div>
@@ -319,9 +334,9 @@ function SubjectHub() {
 					media={
 						<>
 							<Print>spell</Print>
-							{newest && (
+							{faceWords.length > 0 && (
 								<span className="absolute top-[46%] right-[22%] flex flex-col items-end gap-3 md:top-[50%] md:right-[16%]">
-									{newest.preview.slice(0, 3).map((w, i) => (
+									{faceWords.map((w, i) => (
 										<span key={w} style={{ transform: `rotate(${[-4, 3, -2][i]}deg)` }}>
 											<WordRack word={w} max={i === 0 ? 46 : 34} />
 										</span>
@@ -332,7 +347,10 @@ function SubjectHub() {
 					}
 				>
 					<PlaceName id="place-spelling-heading">Spelling</PlaceName>
-					<p className="text-lg font-medium">{spellingNote}</p>
+					<p className="text-lg font-medium">
+						{spellingNote.lead}
+						{spellingNote.tail && <span className="whitespace-nowrap"> · {spellingNote.tail}</span>}
+					</p>
 					{spellingLeft ? (
 						<div className="flex flex-wrap items-center gap-3">
 							<Link
@@ -373,29 +391,45 @@ function SubjectHub() {
 					media={
 						roxy && (
 							<>
-								<span className="absolute right-[30%] bottom-[39%] h-[3%] w-[34%] rounded-[50%] bg-black/25 blur-md md:right-[17%] md:bottom-[8%] md:h-[3.5%] md:w-[20%]" />
+								{/* Closed, the caption grows by the slot, so on a phone she steps up and back out of its way. */}
+								<span
+									className={`absolute h-[3%] rounded-[50%] bg-black/25 blur-md md:right-[17%] md:bottom-[8%] md:h-[3.5%] md:w-[20%] ${closed ? "right-[12%] bottom-[57%] w-[24%]" : "right-[30%] bottom-[39%] w-[34%]"}`}
+								/>
 								<RoxyFigure
 									look={shownLook(child.id, roxy)}
 									omit={["background"]}
-									className="absolute right-[26%] bottom-[40%] h-[42%] w-auto drop-shadow-[0_0.6rem_0.8rem_rgb(0_0_0/0.18)] md:right-[14%] md:bottom-[9%] md:h-[min(74%,42rem)]"
+									className={`absolute w-auto drop-shadow-[0_0.6rem_0.8rem_rgb(0_0_0/0.18)] md:right-[14%] md:bottom-[9%] md:h-[min(74%,42rem)] ${closed ? "right-[10%] bottom-[58%] h-[27%]" : "right-[26%] bottom-[40%] h-[42%]"}`}
 								/>
 							</>
 						)
 					}
 				>
 					<PlaceName id="place-play-heading">Play</PlaceName>
-					{play && !play.open ? (
+					{closed ? (
 						<>
 							<div className="w-full max-w-sm">
-								<PlayClosed childId={child.id} status={play} size="small" />
+								<PlayClosed
+									childId={child.id}
+									status={play}
+									size="small"
+									next={
+										<button type="button" className="key" onClick={() => go(practiceAt)}>
+											Go to {practiceAt === "math" ? "Math" : "Spelling"}
+										</button>
+									}
+								/>
 							</div>
-							<Link to="/play/$childId/games" params={{ childId: child.id }} className="key">
-								<Gamepad2 className="size-5" aria-hidden /> See the games
+							<Link
+								to="/play/$childId/games"
+								params={{ childId: child.id }}
+								className="font-medium underline decoration-2 underline-offset-4"
+							>
+								See the games
 							</Link>
 						</>
 					) : (
 						<>
-							<p className="text-lg font-medium">Roxy, the town, Gobble Town, Jelly Blocks and Campfire Woods</p>
+							<p className="text-lg font-medium md:max-w-[20rem]">Roxy, the town, Gobble Town, Jelly Blocks and Campfire Woods</p>
 							<div className="flex flex-wrap items-center gap-3">
 								<Link
 									to="/play/$childId/games"
@@ -412,10 +446,43 @@ function SubjectHub() {
 					)}
 				</PlacePage>
 
-				<PlacePage place={PLACES[2]} current={current === "math"} sectionRef={register("math")} media={<Print>7×8</Print>}>
+				<PlacePage
+					place={PLACES[2]}
+					current={current === "math"}
+					sectionRef={register("math")}
+					media={
+						<>
+							<Print>7×8</Print>
+							<span className="absolute top-[46%] right-[24%] flex -space-x-2 md:top-[50%] md:right-[16%] md:-space-x-3">
+								{factsDue > 0
+									? progress?.math.factsDue.slice(0, 3).map((k, i) => (
+											<span
+												key={k}
+												className="vinyl-disc size-20 text-2xl tabular-nums md:size-32 md:text-4xl"
+												style={{ transform: `rotate(${[-6, 4, -3][i]}deg)` }}
+											>
+												{factText(k)}
+											</span>
+										))
+									: topics.map((t, i) => {
+											const Icon = TOPIC_ICON[t];
+											return (
+												<span key={t} className="vinyl-disc size-16 md:size-28" style={{ transform: `rotate(${[-6, 4, -3, 5][i]}deg)` }}>
+													<Icon className="size-7 md:size-12" strokeWidth={2.25} />
+												</span>
+											);
+										})}
+							</span>
+						</>
+					}
+				>
 					<PlaceName id="place-math-heading">Math</PlaceName>
 					<p className="text-lg font-medium">
-						{factsDue > 0 ? `${factsDue} ${factsDue === 1 ? "fact" : "facts"} to review` : "Facts, fractions, puzzles"}
+						{mathLeft
+							? "Pick up where you left off"
+							: factsDue > 0
+								? `${factsDue} ${factsDue === 1 ? "fact" : "facts"} to review`
+								: "Facts, fractions, puzzles"}
 					</p>
 					{mathLeft ? (
 						<div className="flex flex-wrap items-center gap-3">
@@ -456,7 +523,7 @@ function SubjectHub() {
 				<dialog
 					ref={badgesDialog}
 					aria-labelledby="badges-heading"
-					className="scene-day m-auto w-[min(34rem,calc(100vw-2rem))] rounded-[1.75rem] border-[0.35rem] border-vinyl bg-page-raised p-6 text-page-ink shadow-2xl backdrop:bg-black/55 md:p-8"
+					className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-[1.75rem] border-[0.35rem] border-vinyl bg-page-raised p-6 text-page-ink shadow-2xl backdrop:bg-black/55 md:p-8"
 					onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
 				>
 					<div className="mb-6 flex items-center justify-between gap-4">
@@ -470,6 +537,25 @@ function SubjectHub() {
 							<X className="size-5" aria-hidden />
 						</button>
 					</div>
+					{/* Her record of practice: every star ever earned (games never take from it) and the days in a row. */}
+					{stars > 0 ? (
+						<div className="mb-6 flex flex-wrap gap-2.5">
+							<span className="foil inline-flex items-center gap-2 px-4 py-2">
+								<Star className="size-5 fill-current" aria-hidden />
+								<span className="font-display text-xl font-semibold tabular-nums">{stars}</span>
+								<span className="text-sm font-medium">{stars === 1 ? "star" : "stars"}</span>
+							</span>
+							{streak > 0 && (
+								<span className="foil inline-flex items-center gap-2 px-4 py-2">
+									<Flame className="size-5" aria-hidden />
+									<span className="font-display text-xl font-semibold tabular-nums">{streak}</span>
+									<span className="text-sm font-medium">{streak === 1 ? "day" : "days in a row"}</span>
+								</span>
+							)}
+						</div>
+					) : (
+						<p className="mb-6 text-page-muted">Your first round starts your stars and your streak.</p>
+					)}
 					<StickerSheet badges={progress.badges} />
 				</dialog>
 			)}
