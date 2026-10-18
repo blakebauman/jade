@@ -3,6 +3,7 @@ import {
 	blockInfo,
 	CYCLE_S,
 	canMine,
+	cellOf,
 	DAY_S,
 	deerAt,
 	FUEL_LOW,
@@ -13,7 +14,6 @@ import {
 	MOVE_HZ,
 	phaseAt,
 	spawnPoint,
-	W,
 } from "@jade/core/woods";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef } from "react";
@@ -280,11 +280,11 @@ function Camp({ world }: { world: IslandState }) {
 		light.intensity = on ? (2.2 + 0.4 * Math.sin(t * 11) + 0.3 * Math.sin(t * 17)) * (0.5 + size) : 0;
 		light.distance = fireRadius(fuel) * 2.2 + 2;
 
-		// Torches: look for them now and then, light the nearest four.
+		// Torches: the nearest four of those the island knows about.
 		const now = performance.now();
-		if (world.volume && now - scan.current.at > 1500) {
+		if (now - scan.current.at > 500) {
 			scan.current.at = now;
-			scan.current.list = torchesNear(world, camera.position, 24);
+			scan.current.list = nearest(world.torches, camera.position, 24);
 		}
 		const { sun } = phaseAt(world.elapsed());
 		torches.forEach((l, k) => {
@@ -296,17 +296,13 @@ function Camp({ world }: { world: IslandState }) {
 	return <primitive object={group} />;
 }
 
-function torchesNear(world: IslandState, at: Vector3, r: number): [number, number, number][] {
-	const v = world.volume!;
+function nearest(torches: Set<number>, at: Vector3, r: number): [number, number, number][] {
 	const out: { c: [number, number, number]; d: number }[] = [];
-	const x0 = Math.max(0, Math.floor(at.x - r));
-	const z0 = Math.max(0, Math.floor(at.z - r));
-	for (let y = 1; y < 48; y++)
-		for (let z = z0; z < Math.min(W, at.z + r); z++)
-			for (let x = x0; x < Math.min(W, at.x + r); x++) {
-				if (v.data[indexOf(x, y, z)] !== B.torch) continue;
-				out.push({ c: [x, y, z], d: Math.hypot(x - at.x, y - at.y, z - at.z) });
-			}
+	for (const i of torches) {
+		const c = cellOf(i);
+		const d = Math.hypot(c[0] - at.x, c[1] - at.y, c[2] - at.z);
+		if (d <= r) out.push({ c, d });
+	}
 	return out.sort((a, b) => a.d - b.d).map((o) => o.c);
 }
 
@@ -532,8 +528,9 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 				s.mining = hit.i;
 				controls.progress = 0;
 			}
-			controls.progress += dt / blockInfo(hit.block).hardness;
-			if (Math.floor((controls.progress - dt / blockInfo(hit.block).hardness) * 4) !== Math.floor(controls.progress * 4)) sound.tap();
+			const step = dt / (blockInfo(hit.block).hardness * DIG_SPEED);
+			controls.progress += step;
+			if (Math.floor((controls.progress - step) * 4) !== Math.floor(controls.progress * 4)) sound.tap();
 			if (controls.progress >= 1) {
 				world.edit(hit.i, B.air);
 				sound.dig(hit.block);
@@ -546,7 +543,7 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 		}
 		crack.visible = controls.progress > 0 && !!hit;
 		if (hit) crack.position.copy(outline.position);
-		(crack.material as MeshBasicMaterial).opacity = Math.floor(controls.progress * 4) * 0.12;
+		(crack.material as MeshBasicMaterial).opacity = 0.08 + Math.floor(controls.progress * 4) * 0.12;
 
 		// A tap or right click builds on the face it's aiming at.
 		if (controls.place) {
@@ -571,6 +568,9 @@ function Player({ world, controls, running }: Omit<Props, "label">) {
 		</>
 	);
 }
+
+/** Hardness is in seconds; digging takes this share of it, quick enough that a click feels like it does something. */
+const DIG_SPEED = 0.45;
 
 const round = (n: number) => Math.round(n * 100) / 100;
 

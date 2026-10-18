@@ -59,6 +59,8 @@ export class IslandState {
 	inv: Inventory = {};
 	stats: WoodsStats = { ...NO_STATS };
 	status: Status = "connecting";
+	/** Every torch cell on the island, kept as edits arrive (the scene lights the nearest few). */
+	torches = new Set<number>();
 	/** Dev and test only: seconds added to the island's clock on this screen, to see another time of day. */
 	shift = 0;
 	/** This kid's own figure is drawn by the player controller; its spawn point comes from here. */
@@ -153,7 +155,13 @@ export class IslandState {
 	private set(i: number, b: number) {
 		if (!this.volume) return;
 		this.volume.data[i] = b;
+		this.track(i, b);
 		this.onEdits?.(Int32Array.of(packEdit(i, b)));
+	}
+
+	private track(i: number, b: number) {
+		if (b === B.torch) this.torches.add(i);
+		else this.torches.delete(i);
 	}
 
 	private edits(packed: Int32Array) {
@@ -164,6 +172,8 @@ export class IslandState {
 			const island = generate(w.seed);
 			island.volume.apply(packed);
 			this.volume = island.volume;
+			this.torches.clear();
+			for (let i = 0; i < island.volume.data.length; i++) if (island.volume.data[i] === B.torch) this.torches.add(i);
 			this.fire = island.fire;
 			this.pending.clear();
 			this.onIsland?.(island.volume.data);
@@ -177,6 +187,7 @@ export class IslandState {
 		for (const e of packed) {
 			const [i, b] = unpackEdit(e);
 			this.volume.data[i] = b;
+			this.track(i, b);
 			this.pending.delete(i);
 		}
 		this.onEdits?.(packed);

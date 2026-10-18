@@ -44,8 +44,8 @@ function tick(vol: Volume, body: Body, wish: Wish, dt: number) {
 	const { p, v } = body;
 	body.water = vol.get(Math.floor(p[0]), Math.floor(p[1] + 0.6), Math.floor(p[2])) === B.water;
 	const speed = body.water ? SWIM_SPEED : SPEED;
-	// Quick to start and stop, so it feels direct, but not instant.
-	const k = Math.min(1, dt * (body.ground || body.water ? 18 : 6));
+	// Starts and stops almost at once on the ground (a key held is a step taken), a little looser in the air.
+	const k = Math.min(1, dt * (body.ground || body.water ? 45 : 10));
 	v[0] += (wish.x * speed - v[0]) * k;
 	v[2] += (wish.z * speed - v[2]) * k;
 	if (body.water) {
