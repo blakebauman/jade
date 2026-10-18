@@ -1,7 +1,7 @@
 import { B, generate, indexOf, spawnPoint, TILE_NAMES, Volume } from "@jade/core/woods";
 import { describe, expect, it } from "vitest";
 import { PAINTED } from "./atlas.ts";
-import { columnsAround, meshColumn, showsFace, tileUv, WATER_TOP } from "./mesher.ts";
+import { columnsAround, LIGHT_LEVELS, lightAround, meshColumn, showsFace, tileUv, WATER_TOP } from "./mesher.ts";
 import { newBody, overlaps, step } from "./physics.ts";
 import { raycast } from "./raycast.ts";
 
@@ -46,6 +46,19 @@ describe("woods mesher", () => {
 
 	it("paints every tile a block uses", () => {
 		for (const name of TILE_NAMES) expect(PAINTED).toContain(name);
+	});
+
+	it("spreads torchlight a level a block, and never through a wall", () => {
+		const v = new Volume();
+		v.set(8, 5, 8, B.torch);
+		const lit = lightAround(v, 0, 0);
+		expect(lit.at(8, 5, 8)).toBeCloseTo(LIGHT_LEVELS.torch / 15);
+		expect(lit.at(11, 5, 8)).toBeCloseTo((LIGHT_LEVELS.torch - 3) / 15);
+		expect(lit.at(8 + LIGHT_LEVELS.torch, 5, 8)).toBe(0);
+		// A sealed stone room next door stays dark.
+		for (let y = 3; y <= 7; y++) for (let z = 6; z <= 10; z++) for (let x = 12; x <= 16; x++) v.set(x, y, z, B.stone);
+		for (let y = 4; y <= 6; y++) for (let z = 7; z <= 9; z++) for (let x = 13; x <= 15; x++) v.set(x, y, z, B.air);
+		expect(lightAround(v, 0, 0).at(14, 5, 8)).toBe(0);
 	});
 
 	it("maps each tile inside the atlas", () => {

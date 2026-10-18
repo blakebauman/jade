@@ -237,6 +237,8 @@ export type AmbienceState = {
 	fireDistance: number;
 	/** 0 (out) to 1 (roaring). */
 	fireStrength: number;
+	/** Rain, 0 (dry) to 1: a soft hiss of drops, and the birds go quiet. */
+	rain?: number;
 	/** Muffles the bed. */
 	underwater?: boolean;
 	/** False while paused or hidden: everything fades out, and fades back in when it's true again. */
@@ -249,6 +251,7 @@ type Bed = {
 	master: GainNode;
 	muffle: BiquadFilterNode;
 	wind: GainNode;
+	rain: GainNode;
 	birds: GainNode;
 	night: GainNode;
 	crickets: GainNode[];
@@ -303,6 +306,17 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 	sources.push(windSrc, sway);
 	nodes.push(windSrc, windFilter, sway);
 
+	// Rain: bright noise, gently band-limited, so it patters rather than roars.
+	const rainSrc = loop(c, nb);
+	const rainFilter = c.createBiquadFilter();
+	rainFilter.type = "bandpass";
+	rainFilter.frequency.value = 3200;
+	rainFilter.Q.value = 0.4;
+	const rain = gain(0);
+	rainSrc.connect(rainFilter).connect(rain).connect(master);
+	sources.push(rainSrc);
+	nodes.push(rainSrc, rainFilter);
+
 	// Birds: one-shots land here, so day/night can fade them as a group.
 	const birds = gain(0);
 	birds.connect(master);
@@ -346,7 +360,20 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 		else s.start(c.currentTime);
 	}
 	const now = c.currentTime;
-	return { sources, nodes, master, muffle, wind, birds, night, crickets, fire, nextBird: now + rand(1, 3), nextOwl: now + rand(20, 40) };
+	return {
+		sources,
+		nodes,
+		master,
+		muffle,
+		wind,
+		rain,
+		birds,
+		night,
+		crickets,
+		fire,
+		nextBird: now + rand(1, 3),
+		nextOwl: now + rand(20, 40),
+	};
 }
 
 /** A cricket's chirp: three quick pulses, eased on and off so they don't click. */
@@ -396,7 +423,9 @@ export function ambience(state: AmbienceState) {
 	const nightness = 1 - day;
 	b.muffle.frequency.setTargetAtTime(state.underwater ? 500 : 18000, now, 0.15);
 	b.wind.gain.setTargetAtTime(0.02 + 0.025 * day, now, EASE);
-	b.birds.gain.setTargetAtTime(day, now, EASE);
+	const wet = clamp01(state.rain ?? 0);
+	b.rain.gain.setTargetAtTime(wet * 0.09, now, EASE);
+	b.birds.gain.setTargetAtTime(day * (1 - wet), now, EASE);
 	b.night.gain.setTargetAtTime(nightness, now, EASE);
 
 	const near = clamp01(1 - state.fireDistance / FIRE_RANGE);

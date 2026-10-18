@@ -6,7 +6,7 @@ type Peek = {
 	inv: Record<number, number>;
 	others: { label: string; p: number[] }[];
 	body?: [number, number, number];
-	target: { cell: number[]; normal: number[] } | null;
+	target: { cell: number[]; normal: number[]; block: number } | null;
 	look: { yaw: number; pitch: number };
 };
 type Hooks = {
@@ -102,7 +102,9 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	// What it aims at is worked out each frame: let a couple go by.
 	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 	const aim = (await hooks(page, (h) => h.peek().target))!;
-	const spot = [0, 1, 2].map((k) => aim.cell[k]! + aim.normal[k]!);
+	// Aimed at grass or a flower, the block goes where it grows; otherwise on the face aimed at.
+	const plant = aim.block >= 26 && aim.block <= 30;
+	const spot = [0, 1, 2].map((k) => aim.cell[k]! + (plant ? 0 : aim.normal[k]!));
 	await hooks(page, (h) => h.place());
 	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), spot), SLOW).toBe(WOOL_RED);
 	await expect.poll(() => hooks(page, (h, b) => h.peek().inv[b as number], WOOL_RED), SLOW).toBe(63);
@@ -123,6 +125,11 @@ test("the island grows dark at night, with the fire still on the status", async 
 			.first(),
 	).toBeVisible();
 	await expect(page.getByRole("meter", { name: "Campfire" }).first()).toBeAttached();
+
+	// The panel can make things, once there's something to make them from.
+	await page.getByRole("button", { name: /Show your things/ }).click();
+	await expect(page.getByRole("button", { name: "Make planks" })).toBeDisabled();
+	await expect(page.getByRole("button", { name: /Make glass/ })).toBeDisabled();
 });
 
 test("a parent links with a friend's family, and their kid visits our island", async ({ page, browser }) => {

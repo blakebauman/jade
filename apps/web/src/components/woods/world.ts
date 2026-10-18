@@ -40,6 +40,9 @@ export type WorldEvent =
 	| { t: "dawn"; night: number; kept: boolean }
 	| { t: "home"; animal: Animal; mine: boolean; at: [number, number, number] }
 	| { t: "fed"; added: number }
+	/** Something this kid did, now the island has agreed. */
+	| { t: "did"; what: "dug" | "built" }
+	| { t: "crafted"; recipe: string; ok: boolean; why?: "inventory" | "fire" }
 	| { t: "snuffed"; at: [number, number, number] }
 	| { t: "follow"; animal: Animal }
 	| { t: "goal"; key: string; tickets: number; label: string }
@@ -236,6 +239,7 @@ export class IslandState {
 				return;
 			}
 			case "edit":
+				if (m.seat === this.seat) this.emit({ t: "did", what: m.b === B.air ? "dug" : "built" });
 				if (m.seat === this.seat && this.pending.has(m.i)) {
 					this.pending.delete(m.i);
 					return;
@@ -294,6 +298,8 @@ export class IslandState {
 				if (o) o.emote = { e: m.e, until };
 				return;
 			}
+			case "crafted":
+				return this.emit({ t: "crafted", recipe: m.recipe, ok: m.ok, why: m.why });
 			case "kicked":
 				this.status = "kicked";
 				this.emit({ t: "kicked", why: m.why });

@@ -23,7 +23,15 @@ export function tileUv(name: string): [number, number, number, number] {
 	return [col * du + e, 1 - (row + 1) * dv + e, (col + 1) * du - e, 1 - row * dv - e];
 }
 
-export type Buffers = { position: Float32Array; normal: Float32Array; uv: Float32Array; color: Float32Array; index: Uint32Array };
+export type Buffers = {
+	position: Float32Array;
+	normal: Float32Array;
+	uv: Float32Array;
+	color: Float32Array;
+	/** Firelight reaching each corner, 0 to 1 (torches, the campfire, gems): the scene adds it as a warm glow. */
+	light: Float32Array;
+	index: Uint32Array;
+};
 export type ColumnMesh = { key: number; solid: Buffers; clear: Buffers };
 
 export const columnKey = (cx: number, cz: number) => cx + CX * cz;
@@ -111,8 +119,16 @@ class Builder {
 	normal: number[] = [];
 	uv: number[] = [];
 	color: number[] = [];
+	light: number[] = [];
 	index: number[] = [];
-	quad(pts: [number, number, number][], n: [number, number, number], uvs: [number, number][], shades: number[], tint: Tint = WHITE) {
+	quad(
+		pts: [number, number, number][],
+		n: [number, number, number],
+		uvs: [number, number][],
+		shades: number[],
+		tint: Tint = WHITE,
+		glow = 0,
+	) {
 		const base = this.position.length / 3;
 		for (let k = 0; k < 4; k++) {
 			this.position.push(...pts[k]!);
@@ -120,6 +136,7 @@ class Builder {
 			this.uv.push(...uvs[k]!);
 			const s = shades[k]!;
 			this.color.push(s * tint[0], s * tint[1], s * tint[2]);
+			this.light.push(glow);
 		}
 		// Split along the brighter diagonal, so occlusion shades evenly.
 		if (shades[0]! + shades[2]! < shades[1]! + shades[3]!) this.index.push(base + 1, base + 2, base + 3, base + 1, base + 3, base);
@@ -131,16 +148,18 @@ class Builder {
 			normal: new Float32Array(this.normal),
 			uv: new Float32Array(this.uv),
 			color: new Float32Array(this.color),
+			light: new Float32Array(this.light),
 			index: new Uint32Array(this.index),
 		};
 	}
 }
 
-export function meshColumn(vol: Volume, cx: number, cz: number): ColumnMesh {
+export function meshColumn(vol: Volume, cx: number, cz: number, fire?: readonly [number, number, number]): ColumnMesh {
 	const solid = new Builder();
 	const clear = new Builder();
 	const x0 = cx * CHUNK;
 	const z0 = cz * CHUNK;
+	const lit = lightAround(vol, x0, z0, fire);
 	for (let y = 0; y < H; y++) {
 		for (let z = z0; z < z0 + CHUNK; z++) {
 			for (let x = x0; x < x0 + CHUNK; x++) {
@@ -152,9 +171,11 @@ export function meshColumn(vol: Volume, cx: number, cz: number): ColumnMesh {
 					continue;
 				}
 				if (info.draw === "plant") {
-					plant(solid, x, y, z, info.tiles.side, b === B.tallGrass ? tintAt(x, z) : WHITE);
+					plant(solid, x, y, z, info.tiles.side, b === B.tallGrass ? tintAt(x, z) : WHITE, lit.at(x, y, z));
 					continue;
 				}
+				// Each block a shade lighter or darker than its neighbours, so a wall of one kind isn't a flat repeat.
+				const jitter = info.draw === "solid" ? 0.95 + 0.08 * hash3(x, y, z) : 1;
 				const tinted = b === B.grass || isLeaves(b) ? tintAt(x, z) : WHITE;
 				const into = info.draw === "glass" || info.draw === "water" ? clear : solid;
 				for (const f of FACES) {
@@ -164,9 +185,11 @@ export function meshColumn(vol: Volume, cx: number, cz: number): ColumnMesh {
 					const uvs = f.uvs.map(([a, c]) => [u0 + (u1 - u0) * a, v0 + (v1 - v0) * c] as [number, number]);
 					const lowered = info.draw === "water" && vol.get(x, y + 1, z) !== B.water;
 					const pts = f.corners.map(([a, c, d]) => [x + a, y + (lowered && c === 1 ? WATER_TOP : c), z + d] as [number, number, number]);
-					const shades = f.corners.map((corner) => f.shade * (info.draw === "water" ? 1 : occlusion(vol, x, y, z, f, corner)));
+					const shades = f.corners.map((corner) => jitter * f.shade * (info.draw === "water" ? 1 : occlusion(vol, x, y, z, f, corner)));
+					// Light reaching a face is the light in the open cell it faces.
+					const glow = lit.at(x + f.n[0], y + f.n[1], z + f.n[2]);
 					// Grass only takes the meadow's colour on top (its sides are mostly soil).
-					into.quad(pts, f.n, uvs, shades, b === B.grass && f.tile !== "top" ? WHITE : tinted);
+					into.quad(pts, f.n, uvs, shades, b === B.grass && f.tile !== "top" ? WHITE : tinted, glow);
 				}
 			}
 		}
@@ -187,6 +210,75 @@ function occlusion(vol: Volume, x: number, y: number, z: number, f: Face, corner
 	const s2 = opaque(at(0, sv)) ? 1 : 0;
 	const c = opaque(at(su, sv)) ? 1 : 0;
 	return AO[s1 && s2 ? 3 : s1 + s2 + c]!;
+}
+
+/** Light levels, as blocks count it: a source starts at its level and loses one a block through open space. */
+export const LIGHT_LEVELS = { torch: 11, fire: 12, gem: 5 } as const;
+const MAX_LIGHT = 15;
+
+/**
+ * How much firelight reaches each open cell round one column: spread out from every torch, gem and the campfire within
+ * reach, a level less each block, through air, water, glass, leaves and plants but not solid blocks (so it never leaks
+ * through a wall). Worked out over the column and a margin wide enough for the farthest light to reach in.
+ */
+export function lightAround(vol: Volume, x0: number, z0: number, fire?: readonly [number, number, number]) {
+	const m = MAX_LIGHT;
+	const ox = x0 - m;
+	const oz = z0 - m;
+	const w = CHUNK + m * 2;
+	const size = w * w * H;
+	const level = new Uint8Array(size);
+	const queue = new Int32Array(size);
+	let head = 0;
+	let tail = 0;
+	const idx = (x: number, y: number, z: number) => x - ox + w * (z - oz + w * y);
+	const seed = (x: number, y: number, z: number, l: number) => {
+		if (x < ox || z < oz || x >= ox + w || z >= oz + w || y < 0 || y >= H) return;
+		const i = idx(x, y, z);
+		if (level[i]! >= l) return;
+		level[i] = l;
+		queue[tail++] = i;
+	};
+	for (let y = 0; y < H; y++)
+		for (let z = oz; z < oz + w; z++)
+			for (let x = ox; x < ox + w; x++) {
+				const b = vol.get(x, y, z);
+				if (b === B.torch) seed(x, y, z, LIGHT_LEVELS.torch);
+				else if (b === B.gem) seed(x, y, z, LIGHT_LEVELS.gem);
+			}
+	if (fire) seed(fire[0], fire[1], fire[2], LIGHT_LEVELS.fire);
+	const steps = [1, -1, w, -w, w * w, -w * w];
+	while (head < tail) {
+		const i = queue[head++]!;
+		const l = level[i]! - 1;
+		if (l <= 0) continue;
+		const x = (i % w) + ox;
+		const z = (Math.floor(i / w) % w) + oz;
+		const y = Math.floor(i / (w * w));
+		for (let k = 0; k < 6; k++) {
+			const nx = x + (k === 0 ? 1 : k === 1 ? -1 : 0);
+			const nz = z + (k === 2 ? 1 : k === 3 ? -1 : 0);
+			const ny = y + (k === 4 ? 1 : k === 5 ? -1 : 0);
+			if (nx < ox || nz < oz || nx >= ox + w || nz >= oz + w || ny < 0 || ny >= H) continue;
+			const j = i + steps[k]!;
+			if (level[j]! >= l) continue;
+			if (draws[vol.get(nx, ny, nz)] === "solid") continue;
+			level[j] = l;
+			queue[tail++] = j;
+		}
+	}
+	return {
+		at(x: number, y: number, z: number) {
+			if (x < ox || z < oz || x >= ox + w || z >= oz + w || y < 0 || y >= H) return 0;
+			return level[idx(x, y, z)]! / MAX_LIGHT;
+		},
+	};
+}
+
+function hash3(x: number, y: number, z: number) {
+	let h = Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ Math.imul(z, 83492791);
+	h = Math.imul(h ^ (h >>> 13), 1274126177);
+	return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
 type Tint = readonly [number, number, number];
@@ -222,7 +314,7 @@ export function tintAt(x: number, z: number): Tint {
 }
 
 /** A plant: two pictures crossed corner to corner, each drawn from both sides (no lighting tricks, nothing to cull). */
-function plant(into: Builder, x: number, y: number, z: number, tile: string, tint: Tint) {
+function plant(into: Builder, x: number, y: number, z: number, tile: string, tint: Tint, glow: number) {
 	const [u0, v0, u1, v1] = tileUv(tile);
 	const uvs: [number, number][] = [
 		[u0, v0],
@@ -251,8 +343,8 @@ function plant(into: Builder, x: number, y: number, z: number, tile: string, tin
 			[x + bx, y + 1, z + bz],
 			[x + ax, y + 1, z + az],
 		];
-		into.quad(front, up, uvs, [0.95, 0.95, 1.05, 1.05], tint);
-		into.quad([front[1]!, front[0]!, front[3]!, front[2]!], up, back, [0.95, 0.95, 1.05, 1.05], tint);
+		into.quad(front, up, uvs, [0.95, 0.95, 1.05, 1.05], tint, glow);
+		into.quad([front[1]!, front[0]!, front[3]!, front[2]!], up, back, [0.95, 0.95, 1.05, 1.05], tint, glow);
 	}
 }
 
@@ -271,7 +363,7 @@ function torch(into: Builder, x: number, y: number, z: number) {
 				? ([su(lo + (hi - lo) * a), sv(top * c)] as [number, number])
 				: ([su(lo + (hi - lo) * a), sv(top - 2 / 16 + (2 / 16) * c)] as [number, number]),
 		);
-		into.quad(pts, f.n, uvs, [1, 1, 1, 1]);
+		into.quad(pts, f.n, uvs, [1, 1, 1, 1], WHITE, 1);
 	}
 }
 

@@ -16,6 +16,7 @@ import {
 	isPlant,
 	MOVE_HZ,
 	phaseAt,
+	rainAt,
 	spawnPoint,
 } from "@jade/core/woods";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -61,6 +62,7 @@ import { type Buffers, type ColumnMesh, tileUv } from "./mesher.ts";
 import type { FromMesher, ToMesher } from "./mesher.worker.ts";
 import { animal, deer, deerWalk, emoteTexture, type FigureModel, figure, swing } from "./models.ts";
 import { EYE, HALF, lost, newBody, step, TALL } from "./physics.ts";
+import { Rain } from "./rain.ts";
 import { raycast } from "./raycast.ts";
 import { Sky as SkyDome } from "./sky.ts";
 import * as sound from "./sound.ts";
@@ -154,9 +156,18 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 			}),
 		[world, fx, controls],
 	);
+	const rain = useMemo(() => new Rain({ mobile: quality !== "high", reducedMotion: prefersReducedMotion() }), [quality]);
+	useEffect(() => {
+		scene.add(rain.mesh);
+		return () => {
+			scene.remove(rain.mesh);
+		};
+	}, [scene, rain]);
 	useFrame(({ camera, clock }, dt) => {
 		fx.update(dt, camera, clock.elapsedTime);
+		rain.update(dt, camera, rainAt(world.seed, world.elapsed()));
 		waterTime.value = clock.elapsedTime;
+		torchGlow.value = 0.12 + 0.6 * (1 - phaseAt(world.elapsed()).sun);
 		const { sun } = phaseAt(world.elapsed());
 		const p = controls.body?.p;
 		fx.setFireflies(p ? Math.max(0, Math.min(1, (0.45 - sun) * 2.5)) : 0, p ?? ORIGIN);
@@ -205,8 +216,8 @@ function Terrain({ world }: { world: IslandState }) {
 	const materials = useMemo(() => {
 		const map = atlasTexture();
 		return {
-			solid: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.5 }),
-			clear: waterShimmer(new MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false })),
+			solid: blockLight(new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.5 })),
+			clear: blockLight(waterShimmer(new MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false }))),
 		};
 	}, []);
 
@@ -219,6 +230,7 @@ function Terrain({ world }: { world: IslandState }) {
 			g.setAttribute("normal", new BufferAttribute(b.normal, 3));
 			g.setAttribute("uv", new BufferAttribute(b.uv, 2));
 			g.setAttribute("color", new BufferAttribute(b.color, 3));
+			g.setAttribute("blockLight", new BufferAttribute(b.light, 1));
 			g.setIndex(new BufferAttribute(b.index, 1));
 			g.computeBoundingSphere();
 			return g;
@@ -245,7 +257,7 @@ function Terrain({ world }: { world: IslandState }) {
 			invalidate();
 		};
 		const send = (m: ToMesher, transfer: Transferable[] = []) => worker.postMessage(m, transfer);
-		world.onIsland = (data) => send({ t: "load", data: data.slice() });
+		world.onIsland = (data) => send({ t: "load", data: data.slice(), fire: [...world.fire] });
 		world.onEdits = (edits) => send({ t: "edits", edits: edits.slice() });
 		if (world.volume) world.onIsland(world.volume.data);
 		return () => {
@@ -261,6 +273,32 @@ function Terrain({ world }: { world: IslandState }) {
 	}, [world, group, materials, invalidate]);
 
 	return <primitive object={group} />;
+}
+
+/** How strongly firelight shows: a little by day, fully at night. The terrain's shader reads it. */
+const torchGlow = { value: 0.3 };
+
+/**
+ * Adds the firelight the mesher worked out (`blockLight`, 0–1 per corner) as a warm glow, falling off with the square
+ * so it pools round each torch, and stronger as the night deepens.
+ */
+function blockLight(m: MeshLambertMaterial) {
+	const before = m.onBeforeCompile.bind(m);
+	m.onBeforeCompile = (shader, renderer) => {
+		before(shader, renderer);
+		shader.uniforms.torchGlow = torchGlow;
+		shader.vertexShader = shader.vertexShader
+			.replace("#include <common>", "#include <common>\nattribute float blockLight;\nvarying float vBlockLight;")
+			.replace("#include <begin_vertex>", "#include <begin_vertex>\nvBlockLight = blockLight;");
+		shader.fragmentShader = shader.fragmentShader
+			.replace("#include <common>", "#include <common>\nvarying float vBlockLight;\nuniform float torchGlow;")
+			.replace(
+				"#include <opaque_fragment>",
+				"outgoingLight += diffuseColor.rgb * vec3(1.0, 0.56, 0.26) * vBlockLight * vBlockLight * torchGlow;\n#include <opaque_fragment>",
+			);
+	};
+	m.customProgramCacheKey = () => `woods-${m.transparent ? "clear" : "solid"}`;
+	return m;
 }
 
 /** Water's time: the shimmer below reads it. */
@@ -344,12 +382,14 @@ function Sky({ world, quality }: { world: IslandState; quality: Quality }) {
 	);
 	useFrame(({ camera, clock }) => {
 		const p = phaseAt(world.elapsed());
-		const { sun } = p;
+		const wet = rainAt(world.seed, world.elapsed());
+		// A shower greys the day a little.
+		const sun = p.sun * (1 - 0.42 * wet);
 		const night = p.phase === "night";
 		rig.sky.update(camera, sun, p.progress, night, clock.elapsedTime);
 		const fog = scene.fog as Fog;
 		fog.color.copy(rig.sky.colours.horizon);
-		const reach = quality === "low" ? 0.6 : 1;
+		const reach = (quality === "low" ? 0.6 : 1) * (1 - 0.35 * wet);
 		fog.near = (14 + 12 * sun) * reach;
 		fog.far = (38 + 36 * sun) * reach;
 		rig.ambient.intensity = 0.13 + 0.49 * sun;

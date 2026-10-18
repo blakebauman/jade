@@ -10,6 +10,7 @@ import {
 	canPlace,
 	cellOf,
 	clientMsg,
+	craftUses,
 	EDITS_MAX,
 	EDITS_PER_S,
 	type Figure,
@@ -35,6 +36,7 @@ import {
 	REACH,
 	REACH_ANIMAL,
 	REACH_FIRE,
+	RECIPE_BY_ID,
 	REFILLS,
 	type ServerMsg,
 	SNUFF_EVERY_S,
@@ -226,6 +228,8 @@ export class WoodsWorld extends DurableObject<unknown> {
 				return this.feedFire(ws, who, msg.b);
 			case "pickup":
 				return this.pickup(who, msg.id);
+			case "craft":
+				return this.craft(ws, who, msg.recipe);
 			case "emote":
 				if (this.tooFast(ws, 2)) return;
 				return this.broadcast({ t: "emote", seat: who.seat, e: msg.e });
@@ -327,6 +331,23 @@ export class WoodsWorld extends DurableObject<unknown> {
 		this.saveClock();
 		this.sendInv(ws, who.childId);
 		this.broadcast({ t: "tick", clock: this.clock });
+	}
+
+	/** Makes something from the bag: anywhere, or by the lit fire for the recipes that need its heat. */
+	private craft(ws: WebSocket, who: Who, id: string) {
+		const r = RECIPE_BY_ID[id];
+		if (!r || this.tooFast(ws)) return;
+		const send = (ok: boolean, why?: "inventory" | "fire") => ws.send(json({ t: "crafted", recipe: id, ok, ...(why && { why }) }));
+		if (r.fire) {
+			const near = Math.hypot(who.p[0] - this.fire[0] - 0.5, who.p[2] - this.fire[2] - 0.5) <= REACH_FIRE + 1;
+			if (!near || this.clock.fuel <= 0) return send(false, "fire");
+		}
+		const uses = craftUses(r, this.inventory(who.childId));
+		if (!uses) return send(false, "inventory");
+		for (const u of uses) this.give(who.childId, u.b, -u.n);
+		this.give(who.childId, r.gives.b, r.gives.n);
+		send(true);
+		this.sendInv(ws, who.childId);
 	}
 
 	private pickup(who: Who, id: string) {
