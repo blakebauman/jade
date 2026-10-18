@@ -196,7 +196,6 @@ function SubjectHub() {
 	}
 
 	// Land on the opening place without a scroll, before anything paints.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: only on arrival
 	useEffect(() => {
 		sections.current.get(current)?.scrollIntoView({ behavior: "instant", block: "start" });
 	}, []);
