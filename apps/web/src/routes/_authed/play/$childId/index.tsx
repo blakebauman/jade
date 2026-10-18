@@ -417,7 +417,7 @@ function SubjectHub() {
 									to="/play/$childId/games"
 									place="roxy"
 									label="Play"
-									note="Roxy, the town, Gobble Town and Jelly Blocks"
+									note="Roxy, Roxy’s town, Gobble Town and Jelly Blocks"
 									tilt={2}
 									placed={placed}
 								>
