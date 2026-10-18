@@ -19,7 +19,7 @@ export const GOALS: readonly Goal[] = [
 	{ id: "night-10", label: "10 nights by the fire", tickets: 15, stat: "nights", need: 10 },
 	{ id: "night-25", label: "25 nights by the fire", tickets: 20, stat: "nights", need: 25 },
 	{ id: "night-50", label: "50 nights by the fire", tickets: 25, stat: "nights", need: 50 },
-	{ id: "night-99", label: "99 nights by the fire", tickets: 30, stat: "nights", need: 99 },
+	{ id: "night-100", label: "100 nights by the fire", tickets: 30, stat: "nights", need: 100 },
 ];
 
 /** Goals newly met going from `before` to `after`. */
