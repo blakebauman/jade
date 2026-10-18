@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { MAX_TICKETS_PER_GO } from "../play.ts";
-import { emptyQuestDay, QUEST_BY_ID, QUEST_GAMES, QUESTS, questDone, questHave, questKey, questsFor, recordQuestEvent } from "../quests.ts";
+import {
+	emptyQuestDay,
+	QUEST_BY_ID,
+	QUEST_GAMES,
+	QUESTS,
+	questCollectable,
+	questDone,
+	questHave,
+	questKey,
+	questsFor,
+	recordQuestEvent,
+} from "../quests.ts";
 import { PLACES } from "../roxy/places.ts";
 
 const q = (id: string) => QUEST_BY_ID[id]!;
@@ -65,5 +76,17 @@ describe("quests", () => {
 		// Another place doesn't count for the park.
 		expect(recordQuestEvent(s, quests, { game: "town", place: "school" }).done).toEqual([]);
 		expect(recordQuestEvent(s, quests, { game: "town", place: "park" }).done.map((x) => x.id)).toEqual(["town-park"]);
+	});
+
+	it("never pays a quest finished while games were Free", () => {
+		const quests = [q("jelly-play"), q("town-park")];
+		let s = recordQuestEvent(emptyQuestDay("2026-10-18"), quests, { game: "jelly", rows: 0, score: 0 }, { free: true }).state;
+		expect(questDone(q("jelly-play"), s)).toBe(true);
+		expect(questCollectable(q("jelly-play"), s)).toBe(false);
+		// Free turned off: what's finished from now on pays, what was finished on Free still doesn't.
+		s = recordQuestEvent(s, quests, { game: "town", place: "park" }).state;
+		expect(questCollectable(q("town-park"), s)).toBe(true);
+		expect(questCollectable(q("jelly-play"), s)).toBe(false);
+		expect(questCollectable(q("town-park"), { ...s, collected: ["town-park"] })).toBe(false);
 	});
 });

@@ -1,4 +1,13 @@
-import { emptyQuestDay, type Quest, type QuestDay, type QuestEvent, questKey, questsFor, recordQuestEvent } from "@jade/core";
+import {
+	emptyQuestDay,
+	type Quest,
+	type QuestDay,
+	type QuestEvent,
+	questCollectable,
+	questKey,
+	questsFor,
+	recordQuestEvent,
+} from "@jade/core";
 import { useCallback, useSyncExternalStore } from "react";
 import { dayKey } from "./hooks.ts";
 import { earnTickets, type PlayStatus } from "./play.ts";
@@ -31,19 +40,23 @@ function write(childId: string, state: QuestDay) {
 	window.dispatchEvent(new Event(CHANGED));
 }
 
-/** A game reports something; returns the quests it just finished, for the game to say so. */
-export function questEvent(childId: string, e: QuestEvent): Quest[] {
+/**
+ * A game reports something; returns the quests it just finished, for the game to say so. Pass whether games are Free
+ * now: a quest finished on Free never pays, as a go played on Free never does.
+ */
+export function questEvent(childId: string, e: QuestEvent, free: boolean): Quest[] {
 	const day = dayKey();
-	const { state, done } = recordQuestEvent(read(childId, day), questsFor(childId, day), e);
+	const { state, done } = recordQuestEvent(read(childId, day), questsFor(childId, day), e, { free });
 	write(childId, state);
 	return done;
 }
 
 /** Collect a finished quest's tickets. Resolves to the play status when the server heard it. */
-export function collectQuest(childId: string, q: Quest): Promise<PlayStatus | null> {
+export async function collectQuest(childId: string, q: Quest): Promise<PlayStatus | null> {
 	const day = dayKey();
 	const state = read(childId, day);
-	if (!state.collected.includes(q.id)) write(childId, { ...state, collected: [...state.collected, q.id] });
+	if (!questCollectable(q, state)) return null;
+	write(childId, { ...state, collected: [...state.collected, q.id] });
 	return earnTickets(childId, questKey(day, q), q.tickets);
 }
 

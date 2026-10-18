@@ -94,8 +94,13 @@ export function questsFor(childId: string, day: string): Quest[] {
 }
 
 /** A day's quest progress, as the device keeps it. */
-export type QuestDay = { day: string; progress: Record<string, number | string[]>; collected: string[] };
+/** `unpaid` are quests finished while games were Free: done, and never paid, even if Free is turned off later. */
+export type QuestDay = { day: string; progress: Record<string, number | string[]>; collected: string[]; unpaid?: string[] };
 export const emptyQuestDay = (day: string): QuestDay => ({ day, progress: {}, collected: [] });
+
+/** Whether a finished quest can still be collected: not yet collected, and not finished while games were Free. */
+export const questCollectable = (q: Quest, state: QuestDay) =>
+	questDone(q, state) && !state.collected.includes(q.id) && !state.unpaid?.includes(q.id);
 
 /** How far along a quest is, never past done. */
 export function questHave(q: Quest, state: QuestDay): number {
@@ -105,8 +110,16 @@ export function questHave(q: Quest, state: QuestDay): number {
 }
 export const questDone = (q: Quest, state: QuestDay) => questHave(q, state) >= q.need;
 
-/** Counts an event toward today's quests. Returns the new state and the quests this event finished. */
-export function recordQuestEvent(state: QuestDay, quests: readonly Quest[], e: QuestEvent): { state: QuestDay; done: Quest[] } {
+/**
+ * Counts an event toward today's quests. Returns the new state and the quests this event finished. While games are
+ * `free`, what it finishes is marked unpaid, so it never pays later.
+ */
+export function recordQuestEvent(
+	state: QuestDay,
+	quests: readonly Quest[],
+	e: QuestEvent,
+	{ free = false }: { free?: boolean } = {},
+): { state: QuestDay; done: Quest[] } {
 	const progress = { ...state.progress };
 	const done: Quest[] = [];
 	for (const q of quests) {
@@ -124,7 +137,8 @@ export function recordQuestEvent(state: QuestDay, quests: readonly Quest[], e: Q
 		const next = { ...state, progress };
 		if (questDone(q, next)) done.push(q);
 	}
-	return { state: { ...state, progress }, done };
+	const unpaid = free && done.length > 0 ? [...(state.unpaid ?? []), ...done.map((q) => q.id)] : state.unpaid;
+	return { state: { ...state, progress, ...(unpaid && { unpaid }) }, done };
 }
 
 /** The ticket key a quest pays under: once per kid per day per quest. */

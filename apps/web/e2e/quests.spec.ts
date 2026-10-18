@@ -66,3 +66,22 @@ test("visiting a place in town counts toward today's town quests", async ({ page
 		expect(value).toEqual(["park"]);
 	}
 });
+
+test("a quest finished while games were Free shows Done and never offers to collect", async ({ page }) => {
+	const id = await setup(page);
+	await page.goto(`/play/${id}/games`);
+	const board = page.getByRole("region", { name: "Today’s quests" });
+	await expect(board).toBeVisible();
+	const day = await today(page);
+	const progress = Object.fromEntries(
+		QUESTS.map((q) => [q.id, q.mode === "distinct" ? Array.from({ length: q.need }, (_, i) => `x${i}`) : q.need]),
+	);
+	await page.evaluate(
+		([key, value]) => localStorage.setItem(key!, value!),
+		[`jade.quests.${id}`, JSON.stringify({ day, progress, collected: [], unpaid: QUESTS.map((q) => q.id) })],
+	);
+	await page.reload();
+	await expect(board.getByText("3 of 3 done")).toBeVisible();
+	await expect(board.getByText("Done!", { exact: true })).toHaveCount(3);
+	await expect(board.getByRole("button", { name: /^Collect/ })).toHaveCount(0);
+});

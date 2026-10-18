@@ -49,6 +49,7 @@ import { Confirm } from "#/components/Confirm.tsx";
 import { BuyChoice, CornerWallet } from "#/components/play/BuyChoice.tsx";
 import { ApiError } from "#/lib/api.ts";
 import { useOnline } from "#/lib/hooks.ts";
+import { useGamesFree } from "#/lib/play.ts";
 import { questEvent } from "#/lib/quests.ts";
 import {
 	LOOK_NAMES,
@@ -108,6 +109,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	);
 	/** A locked item being tried on, waiting for "Unlock it?". */
 	const [trying, setTrying] = useState<{ slot: Slot; item: Item } | null>(null);
+	const gamesFree = useGamesFree(childId);
 	const [saving, setSaving] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
@@ -135,7 +137,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 
 	/** Trying things on counts toward today's studio quest. */
 	function triedOn(item: Item) {
-		const [done] = questEvent(childId, { game: "studio", item: item.id });
+		const [done] = questEvent(childId, { game: "studio", item: item.id }, gamesFree.current);
 		if (done) setMessage(`Quest done: ${done.label}!`);
 	}
 

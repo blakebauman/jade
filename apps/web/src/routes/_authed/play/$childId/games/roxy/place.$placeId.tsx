@@ -14,6 +14,7 @@ import type { Hotspot } from "#/components/roxy/world/PlaceScene.tsx";
 import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { useChild } from "#/lib/child.ts";
 import { useOnline } from "#/lib/hooks.ts";
+import { useGamesFree } from "#/lib/play.ts";
 import { questEvent } from "#/lib/quests.ts";
 import { pendingFinds, recordFind, roxyQuery, type Studio, shownLook, useSendFinds } from "#/lib/roxy.ts";
 import { speaker } from "#/lib/speaker.ts";
@@ -92,12 +93,13 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 	}, [place, found]);
 
 	useSendFinds(childId);
+	const free = useGamesFree(childId);
 
 	// Being here counts toward today's town quests (visiting twice counts once).
 	useEffect(() => {
-		const [done] = questEvent(childId, { game: "town", place });
+		const [done] = questEvent(childId, { game: "town", place }, free.current);
 		if (done) setMessage(`Quest done: ${done.label}!`);
-	}, [childId, place]);
+	}, [childId, place, free]);
 
 	async function walkToFind(findId: string) {
 		if (noScene) {

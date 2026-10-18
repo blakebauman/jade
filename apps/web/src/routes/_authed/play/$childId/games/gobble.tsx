@@ -157,7 +157,7 @@ function GobbleScreen() {
 			setEarned(tickets);
 			// Kept on the device and sent now, or when back online.
 			if (tickets > 0) void earnTickets(child.id, `gobble:${seed}`, tickets);
-			setQuestsDone(questEvent(child.id, { game: "gobble", score: me.score, ate: ate.current, holes: me.gobbles }));
+			setQuestsDone(questEvent(child.id, { game: "gobble", score: me.score, ate: ate.current, holes: me.gobbles }, free.current));
 			const was = readBest(child.id);
 			setNewBest(me.score > was);
 			if (me.score > was) {

@@ -187,7 +187,7 @@ function JellyScreen() {
 			const tickets = free.current ? 0 : Math.min(MAX_TICKETS_PER_GO, g.lines);
 			setEarned(tickets);
 			if (tickets > 0) void earnTickets(child.id, `jelly:${seed}`, tickets);
-			setQuestsDone(questEvent(child.id, { game: "jelly", rows: g.lines, score: g.score }));
+			setQuestsDone(questEvent(child.id, { game: "jelly", rows: g.lines, score: g.score }, free.current));
 			const was = readNumber(bestKey(child.id));
 			setNewBest(g.score > was);
 			if (g.score > was) {

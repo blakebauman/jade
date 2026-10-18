@@ -1,4 +1,4 @@
-import { type Quest, type QuestDay, questDone, questHave } from "@jade/core";
+import { type Quest, type QuestDay, questCollectable, questDone, questHave } from "@jade/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Ticket } from "lucide-react";
 import { useId, useState } from "react";
@@ -74,9 +74,10 @@ function QuestCard({ childId, quest, state, free, tilt }: { childId: string; que
 			style={{ "--tilt": tilt } as React.CSSProperties}
 		>
 			<span className="font-display text-lg font-medium">{quest.label}</span>
-			{free || collected ? (
+			{/* Finished while games were Free: done, and never paid (as a go on Free never is). */}
+			{free || !questCollectable(quest, state) ? (
 				<span className="inline-flex items-center gap-1.5 text-sm font-semibold">
-					<BadgeCheck className="size-5" aria-hidden /> {free ? "Done!" : `Done! ${quest.tickets} tickets collected`}
+					<BadgeCheck className="size-5" aria-hidden /> {collected ? `Done! ${quest.tickets} tickets collected` : "Done!"}
 				</span>
 			) : (
 				<button type="button" className="key" data-variant="go" onClick={collect} disabled={busy}>
