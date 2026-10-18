@@ -467,6 +467,7 @@ Studio, home and places fill the window with the scene. Their chrome is the one 
 - **Panel:** a floating glass sheet, on the right on wide screens and along the bottom on narrow ones. It starts open in the studio and when decorating, closed in places, and remembers what the kid chose.
 - **Go to…:** a dialog listing the studio, Roxy's home and every place, with "· here" on the current one.
 - **Backdrop:** `--scene-top` → `--scene-ground`, pale sky to sand in both themes (games are always daylit). Words printed straight on the scene, not on glass (the masthead, keyboard hints), use `.scene-day`, which carries Day's tokens, so they stay dark ink on the light sky at Night.
+- **A game's own night:** Campfire Woods has a day and night of its own. When its sky goes dark, `GameScreen`'s `sceneDark` adds `.scene-dark` beside `.scene-day`, putting Night's ink back on the masthead and hints so they read on the dark sky. Glass stays as it is.
 - **Loading:** a soft berry drop breathing (`.breathe`) and "Getting Roxy ready…".
 
 ## Do's and Don'ts
