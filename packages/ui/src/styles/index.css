@@ -689,6 +689,10 @@
 		background: color-mix(in oklab, var(--color-page-deep) 35%, transparent);
 		color: color-mix(in oklab, var(--color-page-muted) 55%, var(--color-page-line));
 	}
+	/* Art printed into a slot as one flat shape in the slot's ink: every painted part takes it, outlines-only parts stay open. */
+	.silhouette svg,
+	.silhouette svg [fill]:not([fill="none"]) { fill: currentColor; }
+	.silhouette svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
 
 	/*
 	 * The album's binding between two pages: each page darkens a little as it curves into the gutter, and a line of

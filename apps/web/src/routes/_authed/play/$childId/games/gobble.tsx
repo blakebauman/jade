@@ -1,4 +1,4 @@
-import { MAX_TICKETS_PER_GO } from "@jade/core";
+import { MAX_TICKETS_PER_GO, type Quest } from "@jade/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Pause, Play, RotateCcw, Trophy, Volume2, VolumeX } from "lucide-react";
 import { Component, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -17,11 +17,13 @@ import {
 } from "#/components/gobble/sim.ts";
 import * as sound from "#/components/gobble/sound.ts";
 import { Tickets } from "#/components/play/PlayBits.tsx";
+import { QuestsDone } from "#/components/play/QuestsDone.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
 import { accent, GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
 import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { useChild } from "#/lib/child.ts";
 import { earnTickets, useGamesFree } from "#/lib/play.ts";
+import { questEvent } from "#/lib/quests.ts";
 
 const scene = () => import("#/components/gobble/GobbleScene.tsx");
 // three.js only loads on game screens.
@@ -90,6 +92,9 @@ function GobbleScreen() {
 	const [newBest, setNewBest] = useState(false);
 	/** Tickets this round paid (the server pays each round once, at most 30, and nothing while games are Free). */
 	const [earned, setEarned] = useState(0);
+	/** Daily quests this round finished, and what the player gobbled toward them. */
+	const [questsDone, setQuestsDone] = useState<Quest[]>([]);
+	const ate = useRef<Record<string, number>>({});
 	const [muted, setMuted] = useState(sound.isMuted);
 	const [frozen, setFrozen] = useState(false);
 	const messageTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -152,6 +157,7 @@ function GobbleScreen() {
 			setEarned(tickets);
 			// Kept on the device and sent now, or when back online.
 			if (tickets > 0) void earnTickets(child.id, `gobble:${seed}`, tickets);
+			setQuestsDone(questEvent(child.id, { game: "gobble", score: me.score, ate: ate.current, holes: me.gobbles }, free.current));
 			const was = readBest(child.id);
 			setNewBest(me.score > was);
 			if (me.score > was) {
@@ -167,8 +173,10 @@ function GobbleScreen() {
 	const onEvents = useCallback(
 		(events: GameEvent[]) => {
 			for (const e of events) {
-				if (e.type === "gulp" && e.hole === PLAYER) sound.gulp(e.value);
-				else if (e.type === "milestone") {
+				if (e.type === "gulp" && e.hole === PLAYER) {
+					sound.gulp(e.value);
+					ate.current[e.kind] = (ate.current[e.kind] ?? 0) + 1;
+				} else if (e.type === "milestone") {
 					sound.chime();
 					const k = KINDS[e.kind];
 					say(`You’re big enough for ${k.label}!`);
@@ -201,6 +209,8 @@ function GobbleScreen() {
 		sound.unlock();
 		lastPip.current = -1;
 		setMessage(null);
+		ate.current = {};
+		setQuestsDone([]);
 		if (phase === "over") {
 			const s = Math.floor(Math.random() * 1e9);
 			const g = newGame(s, child.name);
@@ -515,6 +525,7 @@ function GobbleScreen() {
 									<Tickets count={earned} />
 								</p>
 							)}
+							<QuestsDone quests={questsDone} />
 							<p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium">
 								<Trophy className="size-4" aria-hidden />{" "}
 								{newBest ? (

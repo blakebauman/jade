@@ -41,7 +41,7 @@ test("style a Roxy, add cat ears with a gem, and save it to the gallery", async 
 	const { ids } = await setup(page);
 	await page.goto(`/play/${ids[0]}`);
 	await page.getByRole("link", { name: /^Play/ }).click();
-	await page.getByRole("link", { name: /^Roxy Style your own character/ }).click();
+	await page.getByRole("link", { name: "Roxy", exact: true }).click();
 
 	// One primary key in the studio.
 	await expect(page.locator('main [data-variant="go"]')).toHaveCount(1);
@@ -83,7 +83,7 @@ test("locked items cost tickets, stars too once a parent links them, and an exac
 	await page.goto(`/play/${ava}/games/roxy`);
 	await page.getByRole("tab", { name: "Face" }).click();
 	await page.getByRole("button", { name: "Starry, 15 tickets" }).click();
-	await expect(page.getByText(/Earn 15 more in Town or Gobble Town/)).toBeVisible();
+	await expect(page.getByText(/Earn 15 more in Roxy’s town or Gobble Town/)).toBeVisible();
 	await page.getByRole("button", { name: "OK", exact: true }).click();
 
 	// Stars from practice don't spend in games until a parent links them.
@@ -166,7 +166,7 @@ test("decorate Roxy's home, and it's still there after a reload", async ({ page 
 	await page.getByRole("button", { name: "Dots", exact: true }).click();
 	// Locked furniture asks for tickets it doesn't have yet.
 	await page.getByRole("button", { name: "Add Piano, 30 tickets" }).click();
-	await expect(page.getByText(/Earn 30 more in Town or Gobble Town/)).toBeVisible();
+	await expect(page.getByText(/Earn 30 more in Roxy’s town or Gobble Town/)).toBeVisible();
 
 	await saved;
 	await page.evaluate((id) => localStorage.removeItem(`jade.roxyhome.${id}`), ids[0]!);
@@ -226,8 +226,8 @@ test("without 3D, Help me look still finds things", async ({ page }) => {
 test("go to town, find something hidden in the park, and it's counted", async ({ page }) => {
 	const { ids } = await setup(page);
 	await page.goto(`/play/${ids[0]}/games`);
-	await page.getByRole("link", { name: /^Town/ }).click();
-	await expect(page.getByRole("heading", { name: "Town" })).toBeVisible();
+	await page.getByRole("link", { name: /^Roxy’s town/ }).click();
+	await expect(page.getByRole("heading", { name: "Town", exact: true })).toBeVisible();
 	await page.getByRole("link", { name: /^The park/ }).click();
 	await expect(page.getByRole("heading", { name: "The park" })).toBeVisible();
 	await expect(page.getByText("0 of 5 found")).toBeVisible();

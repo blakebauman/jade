@@ -1,4 +1,4 @@
-import { MAX_TICKETS_PER_GO } from "@jade/core";
+import { MAX_TICKETS_PER_GO, type Quest } from "@jade/core";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
@@ -33,10 +33,12 @@ import {
 } from "#/components/jelly/sim.ts";
 import * as sound from "#/components/jelly/sound.ts";
 import { Tickets } from "#/components/play/PlayBits.tsx";
+import { QuestsDone } from "#/components/play/QuestsDone.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
 import { accent, GameScreen, Hint } from "#/components/roxy/GameScreen.tsx";
 import { useChild } from "#/lib/child.ts";
 import { earnTickets, useGamesFree, usePlayClockValue } from "#/lib/play.ts";
+import { questEvent } from "#/lib/quests.ts";
 
 const scene = () => import("#/components/jelly/JellyScene.tsx");
 // three.js only loads on game screens.
@@ -110,6 +112,8 @@ function JellyScreen() {
 	const [ended, setEnded] = useState<"full" | "time">("full");
 	/** Tickets this game paid (the server pays each game once, at most 30, and nothing while games are Free). */
 	const [earned, setEarned] = useState(0);
+	/** Daily quests this game finished. */
+	const [questsDone, setQuestsDone] = useState<Quest[]>([]);
 	const [muted, setMuted] = useState(sound.isMuted);
 	const [frozen, setFrozen] = useState(false);
 	const [backend, setBackend] = useState<Backend | null>(null);
@@ -183,6 +187,7 @@ function JellyScreen() {
 			const tickets = free.current ? 0 : Math.min(MAX_TICKETS_PER_GO, g.lines);
 			setEarned(tickets);
 			if (tickets > 0) void earnTickets(child.id, `jelly:${seed}`, tickets);
+			setQuestsDone(questEvent(child.id, { game: "jelly", rows: g.lines, score: g.score }, free.current));
 			const was = readNumber(bestKey(child.id));
 			setNewBest(g.score > was);
 			if (g.score > was) {
@@ -696,6 +701,7 @@ function JellyScreen() {
 									<Tickets count={earned} />
 								</p>
 							)}
+							<QuestsDone quests={questsDone} />
 							<p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium">
 								<Trophy className="size-4" aria-hidden />{" "}
 								{newBest ? (
