@@ -133,6 +133,19 @@ function WoodsScreen() {
 	}, []);
 	useEffect(() => () => clearTimeout(messageTimer.current), []);
 
+	/** Once per go, on a friend's island: whose it is, and whether visitors can build. */
+	const greeted = useRef(false);
+	const greet = useCallback(() => {
+		if (greeted.current || world.island.mine) return;
+		greeted.current = true;
+		say(
+			world.island.build
+				? `You’re visiting ${world.island.label}!`
+				: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
+			4500,
+		);
+	}, [world, say]);
+
 	// The island: connect while this screen is open.
 	useEffect(() => {
 		world.connect();
@@ -149,6 +162,8 @@ function WoodsScreen() {
 							: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
 						4500,
 					);
+				// A friend's island that finished loading after Start: say whose it is now.
+				else if (e.t === "ready" && phaseRef.current === "play") greet();
 				else if (e.t === "join") say(`${e.label} is here!`);
 				else if (e.t === "leave") say(`${e.label} went home.`);
 				else if (e.t === "night") {
@@ -189,7 +204,7 @@ function WoodsScreen() {
 					);
 				}
 			}),
-		[world, say, free, child.id],
+		[world, say, free, child.id, greet],
 	);
 
 	// The HUD and the island's sounds, a few times a second.
@@ -253,14 +268,10 @@ function WoodsScreen() {
 		setKicked(null);
 		if (world.status === "kicked") world.connect();
 		setPhase("play");
-		if (!world.island.mine)
-			say(
-				world.island.build
-					? `You’re visiting ${world.island.label}!`
-					: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
-				4500,
-			);
-		if (!coarse) Promise.resolve(sceneRef.current?.requestPointerLock?.()).catch(() => {});
+		greeted.current = false;
+		if (world.status === "open") greet();
+		// A mouse looks round with the pointer held; a touch screen (even a laptop's) looks by dragging instead.
+		if (!coarse && navigator.maxTouchPoints === 0) Promise.resolve(sceneRef.current?.requestPointerLock?.()).catch(() => {});
 	}
 
 	const togglePause = useCallback(() => {
@@ -358,6 +369,8 @@ function WoodsScreen() {
 		};
 		const startTouch = (e: TouchEvent) => {
 			if (e.cancelable) e.preventDefault();
+			// A finger on the scene: this is a touch screen now, so let go of the mouse pointer.
+			if (document.pointerLockElement) document.exitPointerLock();
 			if (finger) return;
 			const t = e.changedTouches[0];
 			if (!t) return;
