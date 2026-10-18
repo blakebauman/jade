@@ -6,5 +6,7 @@
 	"compatibility_date": "2026-08-22",
 	"compatibility_flags": ["nodejs_compat"],
 	"d1_databases": [{ "binding": "DB", "database_name": "jade-test", "database_id": "00000000-0000-0000-0000-000000000000" }],
-	"r2_buckets": [{ "binding": "AUDIO", "bucket_name": "jade-audio-test" }]
+	"r2_buckets": [{ "binding": "AUDIO", "bucket_name": "jade-audio-test" }],
+	"durable_objects": { "bindings": [{ "name": "WOODS", "class_name": "WoodsWorld" }] },
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["WoodsWorld"] }]
 }

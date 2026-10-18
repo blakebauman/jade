@@ -90,6 +90,10 @@ export const parentSettings = sqliteTable("parent_settings", {
 	appearance: text("appearance", { enum: ["auto", "day", "night"] })
 		.notNull()
 		.default("auto"),
+	/** What friends see this family called ("The Baumans"): in a friend's parent area, and on their kids' island picker. */
+	familyLabel: text("family_label"),
+	/** Campfire Woods: friends visiting this family's island may build, or only look round. */
+	woodsGuestsBuild: integer("woods_guests_build", { mode: "boolean" }).notNull().default(true),
 });
 
 export const children = sqliteTable(
@@ -372,4 +376,37 @@ export const ticketEarnings = sqliteTable(
 		createdAt,
 	},
 	(t) => [primaryKey({ columns: [t.childId, t.key] })],
+);
+
+/**
+ * Friends: two families whose kids can visit each other's Campfire Woods islands. A parent makes a code, another
+ * parent enters it; both parents are in it, so no kid ever links families. Codes are single use and short-lived.
+ */
+export const friendCodes = sqliteTable(
+	"friend_codes",
+	{
+		code: text("code").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+		usedAt: integer("used_at", { mode: "timestamp_ms" }),
+		createdAt,
+	},
+	(t) => [index("friend_codes_user_idx").on(t.userId)],
+);
+
+/** A link between two families, stored once with the smaller user id first. */
+export const friendLinks = sqliteTable(
+	"friend_links",
+	{
+		userA: text("user_a")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		userB: text("user_b")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt,
+	},
+	(t) => [primaryKey({ columns: [t.userA, t.userB] }), index("friend_links_b_idx").on(t.userB)],
 );

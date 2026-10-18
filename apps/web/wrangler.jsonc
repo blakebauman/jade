@@ -25,6 +25,9 @@
 			"migrations_dir": "../../packages/db/migrations"
 		}
 	],
+	// Campfire Woods: one island per family (named by the parent's user id), holding what kids built and the fire.
+	"durable_objects": { "bindings": [{ "name": "WOODS", "class_name": "WoodsWorld" }] },
+	"migrations": [{ "tag": "v1", "new_sqlite_classes": ["WoodsWorld"] }],
 	"r2_buckets": [{ "binding": "AUDIO", "bucket_name": "jade-learning-audio" }],
 	// Workers AI always runs remotely (even in `pnpm dev`), billed per use; `remote: true` makes that explicit.
 	"ai": { "binding": "AI", "remote": true },

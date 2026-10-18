@@ -160,6 +160,20 @@
 		radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-page) 100%, white 30%) 0%, var(--color-page) 50%, color-mix(in oklab, var(--color-page) 70%, var(--color-page-deep)) 100%);
 	--chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23335c4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
 }
+/* A game with its own night (Campfire Woods after dark): the words printed on its scene take Night's ink again, whatever
+ * the theme, so they read on a dark sky. */
+.scene-day.scene-dark {
+	color-scheme: dark;
+	--color-page: #0e4f43;
+	--color-page-deep: #093a31;
+	--color-page-raised: #135c4e;
+	--color-page-line: #1a6a5a;
+	--color-page-ink: #e3f3ec;
+	--color-page-muted: #a3d0c0;
+	--color-page-pit: #072e27;
+	--color-vinyl: #dfe8e3;
+	--tone-key-line: rgb(227 243 236 / 0.16);
+}
 
 /*
  * The notch, the status bar and the home indicator. index.html sets viewport-fit=cover and a translucent status bar, so the
