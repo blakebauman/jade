@@ -38,6 +38,12 @@ export class Rain {
 		for (let k = 0; k < this.max; k++) this.drops.set([r() * SPAN, r() * HIGH, r() * SPAN, 0.8 + r() * 0.4], k * 4);
 	}
 
+	dispose() {
+		this.mesh.geometry.dispose();
+		(this.mesh.material as MeshBasicMaterial).dispose();
+		this.mesh.dispose();
+	}
+
 	/** `amount` 0 (dry) to 1 (a proper shower). */
 	update(dt: number, camera: { position: Vector3 }, amount: number) {
 		const n = Math.round(this.max * Math.min(1, Math.max(0, amount)));
@@ -55,7 +61,7 @@ export class Rain {
 			const x = c.x - SPAN / 2 + ((((this.drops[o]! - c.x) % SPAN) + SPAN) % SPAN);
 			const z = c.z - SPAN / 2 + ((((this.drops[o + 2]! - c.z) % SPAN) + SPAN) % SPAN);
 			// Not right in front of the eye, where a drop would be a big pale bar.
-			const close = Math.abs(x - c.x) < 2 && Math.abs(z - c.z) < 2;
+			const close = Math.abs(x - c.x) < 4 && Math.abs(z - c.z) < 4;
 			this.m.makeTranslation(x, c.y - HIGH / 2 + y, z);
 			if (close) this.m.scale(HIDDEN);
 			this.mesh.setMatrixAt(k, this.m);

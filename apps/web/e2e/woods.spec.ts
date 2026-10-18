@@ -7,6 +7,7 @@ type Peek = {
 	others: { label: string; p: number[] }[];
 	body?: [number, number, number];
 	target: { cell: number[]; normal: number[]; block: number } | null;
+	lastBuilt: number;
 	look: { yaw: number; pitch: number };
 };
 type Hooks = {
@@ -96,16 +97,14 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	await hooks(page, (h) => h.mine(false));
 	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), [x, y, z]), SLOW).toBe(0);
 
-	// Build red wool back in the hole, on the dirt below it.
+	// Build red wool back in the hole, on the dirt below it, and see it on the other screen where it went.
 	await hooks(page, (h, b) => h.select(b as number), WOOL_RED);
 	await hooks(page, (h, a) => h.lookAt(...(a as [number, number, number])), [x, y - 1, z]);
-	// What it aims at is worked out each frame: let a couple go by.
 	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-	const aim = (await hooks(page, (h) => h.peek().target))!;
-	// Aimed at grass or a flower, the block goes where it grows; otherwise on the face aimed at.
-	const plant = aim.block >= 26 && aim.block <= 30;
-	const spot = [0, 1, 2].map((k) => aim.cell[k]! + (plant ? 0 : aim.normal[k]!));
 	await hooks(page, (h) => h.place());
+	await expect.poll(() => hooks(page, (h) => h.peek().lastBuilt), SLOW).toBeGreaterThanOrEqual(0);
+	const built = (await hooks(page, (h) => h.peek().lastBuilt))!;
+	const spot = [built % 96, Math.floor(built / (96 * 96)), Math.floor(built / 96) % 96];
 	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), spot), SLOW).toBe(WOOL_RED);
 	await expect.poll(() => hooks(page, (h, b) => h.peek().inv[b as number], WOOL_RED), SLOW).toBe(63);
 	// The dug-up dirt is on the hotbar to build with (one block or more, as the dig carries on down while held).

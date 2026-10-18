@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import { B, CHUNK, CX, CZ, cellOf, H, unpackEdit, Volume } from "@jade/core/woods";
-import { type ColumnMesh, columnsAround, meshColumn } from "./mesher.ts";
+import { type ColumnMesh, columnsAround, LIGHT_REACH, meshColumn } from "./mesher.ts";
 
 /**
  * Meshing off the main thread: the worker keeps its own copy of the island, takes the same edits the screen applies,
@@ -8,11 +8,18 @@ import { type ColumnMesh, columnsAround, meshColumn } from "./mesher.ts";
  * the clearing appears straight away.
  */
 
-export type ToMesher = { t: "load"; data: Uint8Array; fire: [number, number, number] } | { t: "edits"; edits: Int32Array };
+export type ToMesher =
+	| { t: "load"; data: Uint8Array; fire: [number, number, number]; lit: boolean }
+	| { t: "edits"; edits: Int32Array }
+	/** The campfire went out, or was lit again: its light comes and goes. */
+	| { t: "fire"; lit: boolean };
 export type FromMesher = { t: "meshes"; meshes: ColumnMesh[]; done: boolean };
 
 let vol = new Volume();
-let fire: [number, number, number] | undefined;
+let fireCell: [number, number, number] | undefined;
+let fireLit = true;
+/** The fire as a light: only while it burns. */
+const fireLight = () => (fireLit ? fireCell : undefined);
 let generation = 0;
 
 const post = (meshes: ColumnMesh[], done: boolean) => {
@@ -24,10 +31,12 @@ const post = (meshes: ColumnMesh[], done: boolean) => {
 
 /** Whether any light source is within reach of a cell (so an edit there can change how far light gets). */
 function lightNear(x: number, y: number, z: number) {
-	if (fire && Math.abs(fire[0] - x) <= 15 && Math.abs(fire[2] - z) <= 15 && Math.abs(fire[1] - y) <= 15) return true;
-	for (let yy = Math.max(0, y - 14); yy < Math.min(H, y + 15); yy++)
-		for (let zz = z - 14; zz <= z + 14; zz++)
-			for (let xx = x - 14; xx <= x + 14; xx++) {
+	const r = LIGHT_REACH;
+	const f = fireLight();
+	if (f && Math.abs(f[0] - x) <= r && Math.abs(f[2] - z) <= r && Math.abs(f[1] - y) <= r) return true;
+	for (let yy = Math.max(0, y - r); yy < Math.min(H, y + r + 1); yy++)
+		for (let zz = z - r; zz <= z + r; zz++)
+			for (let xx = x - r; xx <= x + r; xx++) {
 				const b = vol.get(xx, yy, zz);
 				if (b === B.torch || b === B.gem) return true;
 			}
@@ -46,7 +55,8 @@ self.onmessage = async (e: MessageEvent<ToMesher>) => {
 	const m = e.data;
 	if (m.t === "load") {
 		vol = new Volume(m.data);
-		fire = m.fire;
+		fireCell = m.fire;
+		fireLit = m.lit;
 		const mine = ++generation;
 		const order: [number, number][] = [];
 		for (let cz = 0; cz < CZ; cz++) for (let cx = 0; cx < CX; cx++) order.push([cx, cz]);
@@ -55,26 +65,49 @@ self.onmessage = async (e: MessageEvent<ToMesher>) => {
 			// A newer island arrived while this one was meshing (a reconnect): stop.
 			if (mine !== generation) return;
 			post(
-				order.slice(k, k + 4).map(([cx, cz]) => meshColumn(vol, cx, cz, fire)),
+				order.slice(k, k + 4).map(([cx, cz]) => meshColumn(vol, cx, cz, fireLight())),
 				k + 4 >= order.length,
 			);
 			await new Promise((r) => setTimeout(r, 0));
 		}
+	} else if (m.t === "fire") {
+		if (m.lit === fireLit || !fireCell) return;
+		fireLit = m.lit;
+		const cs = new Set(columnsWithin(fireCell[0], fireCell[2], LIGHT_REACH));
+		post(
+			[...cs].map((c) => meshColumn(vol, c % CX, Math.floor(c / CX), fireLight())),
+			true,
+		);
 	} else {
-		const columns = new Set<number>();
+		// The columns the edits are in come back first, so a block dug or built shows at once; the columns further
+		// round, whose light it changed, follow in a second batch.
+		const near = new Set<number>();
+		const far = new Set<number>();
+		const cells: [number, number, number][] = [];
+		let lights = false;
 		for (const packed of m.edits) {
 			const [i, b] = unpackEdit(packed);
 			const was = vol.data[i];
 			vol.data[i] = b;
-			if (was === B.torch) for (const c of columnsWithin(i % (CX * CHUNK), Math.floor(i / (CX * CHUNK)) % (CZ * CHUNK), 15)) columns.add(c);
-			const [x, y, z] = cellOf(i);
-			for (const c of columnsAround(x, z)) columns.add(c);
-			// Near a torch, gem or the fire (or a torch itself), light changes further out: redraw the columns round it.
-			if (b === B.torch || lightNear(x, y, z)) for (const c of columnsWithin(x, z, 15)) columns.add(c);
+			const cell = cellOf(i);
+			cells.push(cell);
+			for (const c of columnsAround(cell[0], cell[2])) near.add(c);
+			// A light put down or taken away changes the light round it.
+			if (b === B.torch || b === B.gem || was === B.torch || was === B.gem) lights = true;
 		}
-		post(
-			[...columns].map((c) => meshColumn(vol, c % CX, Math.floor(c / CX), fire)),
-			true,
-		);
+		// Near any light, an edit can change how far the light gets (looked for once a batch: an undo can be thousands).
+		if (!lights && cells.length) {
+			const [x, y, z] = cells[0]!;
+			lights = cells.length > 32 || lightNear(x, y, z);
+		}
+		if (lights) for (const [x, , z] of cells) for (const c of columnsWithin(x, z, LIGHT_REACH)) far.add(c);
+		for (const c of near) far.delete(c);
+		const mesh = (cs: Set<number>) => [...cs].map((c) => meshColumn(vol, c % CX, Math.floor(c / CX), fireLight()));
+		post(mesh(near), far.size === 0);
+		if (far.size) {
+			const mine = generation;
+			await new Promise((r) => setTimeout(r, 0));
+			if (mine === generation) post(mesh(far), true);
+		}
 	}
 };

@@ -324,12 +324,14 @@ export class WoodsWorld extends DurableObject<unknown> {
 
 	private feedFire(ws: WebSocket, who: Who, b: number) {
 		const fuel = blockInfo(b).fuel;
+		if (this.tooFast(ws, 4)) return;
 		if (fuel <= 0 || (this.inventory(who.childId)[b] ?? 0) < 1) return;
 		if (Math.hypot(who.p[0] - this.fire[0] - 0.5, who.p[2] - this.fire[2] - 0.5) > REACH_FIRE + 1) return;
 		this.give(who.childId, b, -1);
 		this.clock.fuel = feed(this.clock.fuel, fuel);
 		this.saveClock();
 		this.sendInv(ws, who.childId);
+		ws.send(json({ t: "fed" }));
 		this.broadcast({ t: "tick", clock: this.clock });
 	}
 
@@ -342,8 +344,10 @@ export class WoodsWorld extends DurableObject<unknown> {
 			const near = Math.hypot(who.p[0] - this.fire[0] - 0.5, who.p[2] - this.fire[2] - 0.5) <= REACH_FIRE + 1;
 			if (!near || this.clock.fuel <= 0) return send(false, "fire");
 		}
-		const uses = craftUses(r, this.inventory(who.childId));
-		if (!uses) return send(false, "inventory");
+		const inv = this.inventory(who.childId);
+		const uses = craftUses(r, inv);
+		// No room in the bag for what it makes: keep what it would have used.
+		if (!uses || (inv[r.gives.b] ?? 0) + r.gives.n > STACK_MAX) return send(false, "inventory");
 		for (const u of uses) this.give(who.childId, u.b, -u.n);
 		this.give(who.childId, r.gives.b, r.gives.n);
 		send(true);

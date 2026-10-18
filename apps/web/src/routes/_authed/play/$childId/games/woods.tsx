@@ -172,13 +172,6 @@ function WoodsScreen() {
 	useEffect(
 		() =>
 			world.listen((e: WorldEvent) => {
-				if (e.t === "ready" && !world.island.mine)
-					say(
-						world.island.build
-							? `You’re visiting ${world.island.label}!`
-							: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
-						4500,
-					);
 				if (e.t === "did") report(e.what);
 				else if (e.t === "home" && e.mine) report("rescued");
 				else if (e.t === "crafted") {
@@ -293,7 +286,6 @@ function WoodsScreen() {
 		if (u.kind === "feed") {
 			world.send({ t: "feed", b: u.block });
 			sound.feed();
-			report("fed");
 		} else world.send({ t: "pickup", id: u.id });
 	}, [world, controls, report]);
 
@@ -481,6 +473,7 @@ function WoodsScreen() {
 				stats: world.stats,
 				others: [...world.others.values()].map((o) => ({ label: o.label, p: o.p })),
 				body: controls.body?.p,
+				lastBuilt: world.lastBuilt,
 				look: { ...controls.look },
 				target: controls.target,
 				elapsed: world.elapsed(),
@@ -556,6 +549,8 @@ function WoodsScreen() {
 						const x = Math.round(fx + Math.cos(a) * 6.5);
 						const z = Math.round(fz + Math.sin(a) * 6.5);
 						if (world.volume.get(x, fy, z) === B.air) world.edit(indexOf(x, fy, z), B.torch);
+						// Under the island's limit on edits a second.
+						await new Promise((r) => setTimeout(r, 120));
 					}
 				}
 				if (name === "deer" && controls.body) {

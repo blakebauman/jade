@@ -73,6 +73,8 @@ export type ServerMsg =
 	| { t: "edit"; i: number; b: number; seat: number }
 	| { t: "refused"; i: number; b: number; why: "reach" | "inventory" | "occupied" | "visit" | "full" | "fast" | "fixed" }
 	| { t: "crafted"; recipe: string; ok: boolean; why?: "inventory" | "fire" }
+	/** To the kid who fed the fire: it took the log. */
+	| { t: "fed" }
 	| { t: "inv"; inv: Inventory; stats: WoodsStats }
 	| { t: "tick"; clock: Clock }
 	| { t: "night"; night: number; lost: Lost[] }

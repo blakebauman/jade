@@ -41,7 +41,7 @@ export type WorldEvent =
 	| { t: "home"; animal: Animal; mine: boolean; at: [number, number, number] }
 	| { t: "fed"; added: number }
 	/** Something this kid did, now the island has agreed. */
-	| { t: "did"; what: "dug" | "built" }
+	| { t: "did"; what: "dug" | "built" | "fed" }
 	| { t: "crafted"; recipe: string; ok: boolean; why?: "inventory" | "fire" }
 	| { t: "snuffed"; at: [number, number, number] }
 	| { t: "follow"; animal: Animal }
@@ -151,8 +151,12 @@ export class IslandState {
 	}
 
 	/** Mines or builds now, on this screen, and asks the island; it's taken back if the island says no. */
+	/** The last cell this screen built in (for tests). */
+	lastBuilt = -1;
+
 	edit(i: number, b: number) {
 		if (!this.volume) return;
+		if (b !== B.air) this.lastBuilt = i;
 		if (!this.pending.has(i)) this.pending.set(i, this.volume.data[i]!);
 		if (b === B.air) this.send({ t: "mine", i });
 		else {
@@ -239,8 +243,9 @@ export class IslandState {
 				return;
 			}
 			case "edit":
-				if (m.seat === this.seat) this.emit({ t: "did", what: m.b === B.air ? "dug" : "built" });
 				if (m.seat === this.seat && this.pending.has(m.i)) {
+					// Only what this kid aimed at counts (not the flower that came up with the ground under it).
+					this.emit({ t: "did", what: m.b === B.air ? "dug" : "built" });
 					this.pending.delete(m.i);
 					return;
 				}
@@ -298,6 +303,8 @@ export class IslandState {
 				if (o) o.emote = { e: m.e, until };
 				return;
 			}
+			case "fed":
+				return this.emit({ t: "did", what: "fed" });
 			case "crafted":
 				return this.emit({ t: "crafted", recipe: m.recipe, ok: m.ok, why: m.why });
 			case "kicked":

@@ -161,6 +161,7 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 		scene.add(rain.mesh);
 		return () => {
 			scene.remove(rain.mesh);
+			rain.dispose();
 		};
 	}, [scene, rain]);
 	useFrame(({ camera, clock }, dt) => {
@@ -208,6 +209,15 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 
 function Terrain({ world }: { world: IslandState }) {
 	const { invalidate } = useThree();
+	/** Whether the fire's light is in the meshes, and how to tell the worker it changed. */
+	const lit = useRef(true);
+	const sendFire = useRef<(on: boolean) => void>(() => {});
+	useFrame(() => {
+		const on = world.clock.fuel > 0;
+		if (on === lit.current || !world.volume) return;
+		lit.current = on;
+		sendFire.current(on);
+	});
 	const group = useMemo(() => {
 		const g = new Group();
 		g.name = "terrain";
@@ -257,7 +267,11 @@ function Terrain({ world }: { world: IslandState }) {
 			invalidate();
 		};
 		const send = (m: ToMesher, transfer: Transferable[] = []) => worker.postMessage(m, transfer);
-		world.onIsland = (data) => send({ t: "load", data: data.slice(), fire: [...world.fire] });
+		world.onIsland = (data) => {
+			lit.current = world.clock.fuel > 0;
+			send({ t: "load", data: data.slice(), fire: [...world.fire], lit: lit.current });
+		};
+		sendFire.current = (on: boolean) => send({ t: "fire", lit: on });
 		world.onEdits = (edits) => send({ t: "edits", edits: edits.slice() });
 		if (world.volume) world.onIsland(world.volume.data);
 		return () => {
@@ -386,7 +400,7 @@ function Sky({ world, quality }: { world: IslandState; quality: Quality }) {
 		// A shower greys the day a little.
 		const sun = p.sun * (1 - 0.42 * wet);
 		const night = p.phase === "night";
-		rig.sky.update(camera, sun, p.progress, night, clock.elapsedTime);
+		rig.sky.update(camera, sun, p.progress, night, clock.elapsedTime, wet);
 		const fog = scene.fog as Fog;
 		fog.color.copy(rig.sky.colours.horizon);
 		const reach = (quality === "low" ? 0.6 : 1) * (1 - 0.35 * wet);

@@ -215,6 +215,8 @@ function occlusion(vol: Volume, x: number, y: number, z: number, f: Face, corner
 /** Light levels, as blocks count it: a source starts at its level and loses one a block through open space. */
 export const LIGHT_LEVELS = { torch: 11, fire: 12, gem: 5 } as const;
 const MAX_LIGHT = 15;
+/** How far the strongest light reaches, in blocks. */
+export const LIGHT_REACH = 12;
 
 /**
  * How much firelight reaches each open cell round one column: spread out from every torch, gem and the campfire within
@@ -222,13 +224,15 @@ const MAX_LIGHT = 15;
  * through a wall). Worked out over the column and a margin wide enough for the farthest light to reach in.
  */
 export function lightAround(vol: Volume, x0: number, z0: number, fire?: readonly [number, number, number]) {
-	const m = MAX_LIGHT;
+	const m = LIGHT_REACH;
 	const ox = x0 - m;
 	const oz = z0 - m;
 	const w = CHUNK + m * 2;
 	const size = w * w * H;
-	const level = new Uint8Array(size);
-	const queue = new Int32Array(size);
+	// Reused from column to column: these are the biggest things the mesher makes.
+	if (scratch.level.length !== size) scratch = { level: new Uint8Array(size), queue: new Int32Array(size) };
+	const { level, queue } = scratch;
+	level.fill(0);
 	let head = 0;
 	let tail = 0;
 	const idx = (x: number, y: number, z: number) => x - ox + w * (z - oz + w * y);
@@ -267,13 +271,17 @@ export function lightAround(vol: Volume, x0: number, z0: number, fire?: readonly
 			queue[tail++] = j;
 		}
 	}
+	// A copy of just what's needed, so the scratch arrays can be reused for the next column.
+	const kept = level.slice();
 	return {
 		at(x: number, y: number, z: number) {
 			if (x < ox || z < oz || x >= ox + w || z >= oz + w || y < 0 || y >= H) return 0;
-			return level[idx(x, y, z)]! / MAX_LIGHT;
+			return kept[idx(x, y, z)]! / MAX_LIGHT;
 		},
 	};
 }
+
+let scratch = { level: new Uint8Array(0), queue: new Int32Array(0) };
 
 function hash3(x: number, y: number, z: number) {
 	let h = Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ Math.imul(z, 83492791);
