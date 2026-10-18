@@ -1,7 +1,6 @@
 import { AVATARS, type ChildSettings, FONTS, GOAL_LABEL, minutesLeft, PLAY_GOALS, type PlaySettings, TIME_BLOCK, VOICES } from "@jade/core";
 import { generate, MATH_TOPICS, type Problem as MathProblem, type MathSkill, seeded, TOPIC_LABEL, TOPIC_SKILLS } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
-import { Tile } from "@jade/ui/components/tile";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, ChevronDown, Gift, Plus, Ticket, Trash2, Volume2 } from "lucide-react";
@@ -60,9 +59,9 @@ function AvatarPicker({ value, onChange, name }: { value: string; onChange: (v: 
 	const group = useId();
 	return (
 		<fieldset className="space-y-2">
-			<legend className="text-sm font-medium">Tile number</legend>
+			<legend className="text-sm font-medium">Sticker number</legend>
 			<p className="max-w-prose text-sm text-page-muted">
-				Their first letter goes on the tile; the number in the corner is theirs to pick, so siblings can tell tiles apart.
+				Their first letter goes on their sticker; the number on its edge is theirs to pick, so siblings can tell stickers apart.
 			</p>
 			<div className="flex flex-wrap gap-2">
 				{AVATARS.map((a) => (
@@ -76,8 +75,8 @@ function AvatarPicker({ value, onChange, name }: { value: string; onChange: (v: 
 							className="peer sr-only"
 							aria-label={`Number ${a}`}
 						/>
-						<span className="block rounded-xl p-1 peer-checked:ring-3 peer-checked:ring-page-ink peer-focus-visible:outline-3 peer-focus-visible:outline-page-ink">
-							<Tile letter={name.trim()[0]?.toUpperCase() || "?"} points={a} size={44} />
+						<span className="block rounded-2xl p-1.5 peer-checked:ring-3 peer-checked:ring-page-ink peer-focus-visible:outline-3 peer-focus-visible:outline-page-ink">
+							<KidTile name={name.trim() || "?"} avatar={a} size={44} />
 							<span className="mt-1 block text-center font-display text-base font-semibold tabular-nums" aria-hidden>
 								{a}
 							</span>

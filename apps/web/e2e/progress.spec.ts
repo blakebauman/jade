@@ -54,9 +54,7 @@ test("closing the app mid-round: progress is saved and the round can be continue
 
 	// The app is closed and reopened later.
 	await page.goto(`/play/${childId}`);
-	await expect(page.getByText("Pick up where you left off")).toBeVisible();
-	await expect(page.getByText("Two: 1 of 2 words done")).toBeVisible();
-	await page.getByRole("link", { name: "Continue" }).click();
+	await page.getByRole("link", { name: "Continue Two · 1 of 2" }).click();
 	await page.getByRole("button", { name: "Start" }).click();
 	await expect(page.getByText("2/2")).toBeVisible();
 	await expect.poll(() => spoken.at(-1)).not.toBe(first);

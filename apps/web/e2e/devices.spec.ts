@@ -47,7 +47,7 @@ test("nothing sits under the notch or the home bar", async ({ page }) => {
 	const childId = await setup(page);
 
 	await page.goto(`/play/${childId}`);
-	expect(await top(page.getByRole("heading", { name: /What shall we practice/ }))).toBeGreaterThanOrEqual(TOP);
+	expect(await top(page.getByRole("navigation", { name: "Places" }))).toBeGreaterThanOrEqual(TOP);
 
 	await page.goto(`/play/${childId}/math/facts`);
 	await page.getByRole("button", { name: "Start" }).click();

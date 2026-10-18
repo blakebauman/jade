@@ -43,7 +43,7 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 	await page.screenshot({ path: `test-results/${info.project.name}-profiles.png` });
 	await page.getByRole("link", { name: "Jade" }).click();
 	// Subject hub → Spelling → Bee.
-	await page.getByRole("link", { name: /Spelling/ }).click();
+	await page.getByRole("link", { name: "Let’s spell" }).click();
 	await page.getByRole("link", { name: "Bee" }).click();
 	await page.getByRole("button", { name: "Start" }).click();
 

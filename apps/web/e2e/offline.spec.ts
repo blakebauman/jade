@@ -23,7 +23,7 @@ test("cold start with no connection; offline sign-out is refused", async ({ page
 	await page.reload(); // now controlled by the service worker
 	await expect(page.getByRole("heading", { name: "Who’s practicing?" })).toBeVisible();
 	await page.goto(`/play/${child.id}`);
-	await expect(page.getByRole("heading", { name: /What shall we practice/ })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Spelling", exact: true })).toBeVisible();
 	await page.goto(`/play/${child.id}/spelling`);
 	await expect(page.getByRole("heading", { name: "Week 6" })).toBeVisible();
 	await page.waitForTimeout(800); // list prefetch
@@ -37,8 +37,8 @@ test("cold start with no connection; offline sign-out is refused", async ({ page
 	await offlinePage.goto("/");
 	await expect(offlinePage.getByRole("heading", { name: "Who’s practicing?" })).toBeVisible({ timeout: 10_000 });
 	await offlinePage.getByRole("link", { name: /Maya/ }).click();
-	await expect(offlinePage.getByRole("heading", { name: /What shall we practice/ })).toBeVisible();
-	await offlinePage.getByRole("link", { name: /Math/ }).last().click();
+	await expect(offlinePage.getByRole("heading", { name: "Spelling", exact: true })).toBeVisible();
+	await offlinePage.getByRole("link", { name: "Let’s do math" }).click();
 	await offlinePage.getByRole("link", { name: "Play" }).first().click();
 	await offlinePage.getByRole("button", { name: "Start" }).click();
 	await offlinePage.getByRole("button", { name: "1", exact: true }).click();

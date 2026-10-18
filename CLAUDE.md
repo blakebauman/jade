@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. **Play** sits beside them (the hub is a spread: Learn on the left page, Play on the right): Roxy's studio, the town, Gobble Town, Jelly Blocks and Campfire Woods. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
+Subjects: **Spelling** and **Math**, behind one subject hub (`/play/$childId`). They share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. **Play** sits between them (the hub shows one place at a time, full screen, in the order Spelling, Play, Math, one flick or arrow key apart, with tabs naming all three): Roxy's studio, the town, Gobble Town, Jelly Blocks and Campfire Woods. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
 
 Jade's World is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
@@ -255,7 +255,8 @@ Secrets:
 
 ## Design
 
-Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any UI work. The world is a **sticker album on jade pages**: practice happens with maple letter tiles on the page, and what a kid earns (badges, stars) and their places (Spelling, Math, Games) are die-cut stickers (`.sticker`, `.foil`, `.slot` in `packages/ui/src/styles/index.css`). Page colours are the `page-*` tokens.
+Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any UI work. The world is a **sticker album on jade pages**: what a kid earns (badges, stars) and their places (Spelling, Math, Play) are die-cut stickers (`.sticker`, `.foil`, `.slot`, and on the hub each place is a full-screen `.place-page`, in `packages/ui/src/styles/index.css`). Page colours are the `page-*` tokens.
+- **Maple tiles only in rounds:** wood is for letters and digits a kid handles in a round (answer rows, tile bank, keypad, bee-question rack, results). Everywhere else is vinyl: the wordmark (`Brand`, `.vinyl-type`), kids (`KidTile`, a round `.kid-sticker`), words in lists (`WordRack`, a `.word-sticker` label) and small discs (`.vinyl-disc`).
 
 **Colour laws** hold everywhere and never mean anything else:
 - marigold = right
@@ -266,7 +267,7 @@ Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any
 **Rules:**
 - Feedback colour goes on tile edges and corner marks. Letter ink stays dark.
 - No emoji as icons; use lucide.
-- Kids are identified by their initial tile plus a chosen point value.
+- Kids are identified by their initial on a round vinyl sticker plus a chosen number on a foil chip (`KidTile`).
 
 **iPad and iPhone:**
 - The round screen sizes itself to `--vvh` (`useVisualViewport`) so the answer row stays above the on-screen keyboard. `compact` (keyboard up, or under 480px tall: a phone on its side) tightens both rounds.

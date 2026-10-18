@@ -16,7 +16,7 @@ function Profiles() {
 	return (
 		<main className="mx-auto flex min-h-dvh max-w-5xl flex-col px-safe-5 py-safe-8 md:px-safe-10">
 			<header className="flex items-center justify-between">
-				<Brand size={30} />
+				<Brand size={26} />
 				<Link to="/parent" className="key" data-variant="felt">
 					<Settings2 className="size-5" aria-hidden /> Parents
 				</Link>
@@ -34,15 +34,19 @@ function Profiles() {
 					<ul className="flex flex-wrap justify-center gap-8 md:gap-12">
 						{kids.map((k, i) => (
 							<li key={k.id}>
-								{/* Each kid's album: a name sticker on the cover, their tile and their name. */}
+								{/* Each kid is their own round sticker, big enough to tap from across the table. */}
 								<Link
 									to="/play/$childId"
 									params={{ childId: k.id }}
 									onClick={() => speaker.unlock()}
-									className="sticker flex w-44 flex-col items-center gap-3 px-4 pt-6 pb-4 md:w-52"
-									style={{ "--tilt": `${i % 2 ? 2.5 : -2.5}deg` } as React.CSSProperties}
+									className="group flex flex-col items-center gap-4 rounded-3xl p-2"
 								>
-									<KidTile name={k.name} avatar={k.avatar} size={104} />
+									<span
+										className="transition-transform duration-200 ease-out-expo group-hover:-translate-y-1 group-active:translate-y-px"
+										style={{ transform: `rotate(${i % 2 ? 4 : -4}deg)` }}
+									>
+										<KidTile name={k.name} avatar={k.avatar} size={136} />
+									</span>
 									<span className="font-display text-2xl font-medium text-page-ink">{k.name}</span>
 								</Link>
 							</li>

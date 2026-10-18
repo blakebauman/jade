@@ -606,7 +606,7 @@ function ItemButton({
 		>
 			{children}
 			{badge !== undefined && (
-				<span className="plaque absolute right-1 bottom-1 gap-0.5 px-1.5 py-0.5 text-xs" aria-hidden>
+				<span className="word-sticker absolute right-1 bottom-1 !gap-0.5 text-xs" aria-hidden>
 					{badge === "gift" ? (
 						<Gift className="size-3" />
 					) : (
@@ -721,7 +721,7 @@ function HolidayPanel({
 					<p className="text-page-muted">{holiday.note}</p>
 				</div>
 				{holiday.claimed ? (
-					<p className="plaque gap-1.5 px-3 py-1.5 text-sm">
+					<p className="word-sticker text-sm">
 						<Gift className="size-4" aria-hidden /> Gift opened
 					</p>
 				) : (

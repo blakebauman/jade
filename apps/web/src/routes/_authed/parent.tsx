@@ -207,7 +207,7 @@ function ParentLayout() {
 		<div className="mx-auto min-h-dvh max-w-6xl px-safe-5 pt-safe-0 pb-safe-16 md:px-safe-10">
 			<header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 py-5 md:py-6">
 				{/* The brand is a mark, not a second way to Practice: the Practice key is the one exit. */}
-				<Brand size={28} />
+				<Brand size={22} />
 				<nav
 					className={`order-last grid w-full ${nav.length === 4 ? "grid-cols-4" : "grid-cols-3"} gap-2 sm:order-none sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center`}
 					aria-label="Parent"
