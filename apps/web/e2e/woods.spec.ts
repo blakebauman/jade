@@ -48,7 +48,7 @@ async function open(page: Page, childId: string, go = true) {
 	await slowDown(page);
 	if (go) await page.goto(`/play/${childId}/games/woods`);
 	await expect(page.getByRole("heading", { name: "Campfire Woods" })).toBeVisible();
-	await expect(page.getByRole("button", { name: "Start" })).toBeEnabled();
+	await expect(page.getByRole("button", { name: "Start" })).toBeEnabled(SLOW);
 	await page.getByRole("button", { name: "Start" }).click();
 	await page.waitForFunction(() => {
 		const d = (window as unknown as { __THREE_GAME_DIAGNOSTICS__?: Diagnostics }).__THREE_GAME_DIAGNOSTICS__;
@@ -99,6 +99,8 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	// Build red wool back in the hole, on the dirt below it.
 	await hooks(page, (h, b) => h.select(b as number), WOOL_RED);
 	await hooks(page, (h, a) => h.lookAt(...(a as [number, number, number])), [x, y - 1, z]);
+	// What it aims at is worked out each frame: let a couple go by.
+	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 	const aim = (await hooks(page, (h) => h.peek().target))!;
 	const spot = [0, 1, 2].map((k) => aim.cell[k]! + aim.normal[k]!);
 	await hooks(page, (h) => h.place());
@@ -143,7 +145,7 @@ test("a parent links with a friend's family, and their kid visits our island", a
 	await other.goto(`/play/${theo}/games/woods`);
 	await other.getByRole("radio", { name: /The Rivers/ }).check();
 	await open(other, theo, false);
-	await expect(other.getByRole("status").filter({ hasText: "You’re visiting The Rivers!" })).toBeAttached();
+	await expect(other.getByText("You’re visiting The Rivers!")).toBeVisible();
 	await expect.poll(() => hooks(page, (h) => h.peek().others.map((o) => o.label))).toEqual(["T"]);
 	await theirs.close();
 });
@@ -157,7 +159,7 @@ test("a finger drags to look round, holds to dig and taps to build", async ({ br
 	const id = await f.kid("Ava");
 	await slowDown(page);
 	await page.goto(`/play/${id}/games/woods`);
-	await expect(page.getByRole("button", { name: "Start" })).toBeEnabled();
+	await expect(page.getByRole("button", { name: "Start" })).toBeEnabled(SLOW);
 	await page.getByRole("button", { name: "Start" }).tap();
 	await page.waitForFunction(
 		() => ((window as unknown as { __THREE_GAME_DIAGNOSTICS__?: Diagnostics }).__THREE_GAME_DIAGNOSTICS__?.columns ?? 0) > 20,

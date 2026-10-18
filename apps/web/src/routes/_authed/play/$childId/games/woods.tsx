@@ -223,6 +223,13 @@ function WoodsScreen() {
 		setKicked(null);
 		if (world.status === "kicked") world.connect();
 		setPhase("play");
+		if (!world.island.mine)
+			say(
+				world.island.build
+					? `You’re visiting ${world.island.label}!`
+					: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
+				4500,
+			);
 		if (!coarse) Promise.resolve(sceneRef.current?.requestPointerLock?.()).catch(() => {});
 	}
 
@@ -307,6 +314,7 @@ function WoodsScreen() {
 	useEffect(() => {
 		const el = sceneRef.current;
 		if (!el || phase !== "play") return;
+		/** `at` is the event's own time: a busy page can handle a quick tap's release late, and it's still a tap. */
 		type Finger = { id: number; x: number; y: number; at: number; dragged: boolean; timer: ReturnType<typeof setTimeout> };
 		let finger: Finger | null = null;
 		const aimAt = (x: number, y: number): [number, number] => {
@@ -328,7 +336,7 @@ function WoodsScreen() {
 				id: t.identifier,
 				x: t.clientX,
 				y: t.clientY,
-				at: performance.now(),
+				at: e.timeStamp,
 				dragged: false,
 				timer: setTimeout(() => {}, 0),
 			};
@@ -360,7 +368,7 @@ function WoodsScreen() {
 			const t = find(e.changedTouches);
 			if (!t || !finger) return;
 			clearTimeout(finger.timer);
-			if (!finger.dragged && !controls.mining && e.type === "touchend" && performance.now() - finger.at < HOLD_MS) {
+			if (!finger.dragged && e.type === "touchend" && e.timeStamp - finger.at < HOLD_MS) {
 				// Built where the finger tapped, whenever the next frame comes.
 				controls.place = { aim: aimAt(t.clientX, t.clientY) };
 			}
