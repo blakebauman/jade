@@ -772,9 +772,7 @@ function Kids() {
 				);
 			})}
 			{kids.length === 0 && (
-				<p className="max-w-prose text-page-muted">
-					Add each child who will practice. They’ll pick their tile on the “Who’s practicing?” screen.
-				</p>
+				<p className="max-w-prose text-page-muted">Add each child. They’ll pick their tile on the “Who’s here?” screen.</p>
 			)}
 			{added && (
 				<p role="status" className="text-lg">
@@ -783,8 +781,12 @@ function Kids() {
 						<Link to="/parent/lists/$listId" params={{ listId: "new" }} className="underline underline-offset-4">
 							Next, add this week’s word list.
 						</Link>
+					) : kids.length === 1 ? (
+						"They’ll find this week’s lists under Spelling."
 					) : (
-						"They’ll see every word list under Spelling."
+						<Link to="/parent" className="underline underline-offset-4">
+							Choose which lists are theirs on This week.
+						</Link>
 					)}
 				</p>
 			)}

@@ -39,7 +39,7 @@ web
 
 ## Product Purpose
 
-The app has two subjects behind one subject hub. Spelling leads; math shares its rounds, saving, rewards and voice.
+The app has two subjects and a place to play behind one hub, shown one place at a time: Spelling, Play, Math. Spelling leads; math shares its rounds, saving, rewards and voice.
 
 **Spelling** works the way a spelling bee works:
 1. Hear the word.
@@ -51,17 +51,20 @@ Success means the child spells the week's list correctly and without help. Misse
 
 **Math** reads each problem aloud and lays it out as tiles; the child answers on an on-screen keypad. A first miss gets another go. A second miss shows the answer, how to get it, and a picture where one helps (a dot array for a fact, fraction bars for fractions). Levels adjust on their own, and missed times-table and division facts come back through the same spaced review as words.
 
+**Play** is pure play, never built on her lists, facts or practice: Roxy's dress-up studio, home and town; Gobble Town; Jelly Blocks; and Campfire Woods, a block island the family plays on live, with linked friends. Three daily quests run across the games. Games pay their own tickets; how play meets practice is the parent's choice.
+
 ## Positioning
 
 - Practice is audio-first and follows real bee etiquette: say again, definition, use it in a sentence, origin.
 - Feedback marks each letter as right, wrong, missing or extra, rather than a bare right or wrong.
 - Parents can load the actual school list in seconds, including from a photo of the worksheet.
 - Math adapts per skill from accuracy and pace, with no clock, and explains every missed answer.
+- Play is a real reward world kept apart from practice, and the parent sets the terms: free, earned by practice, or bought with stars.
 
 ## Operating Context
 
 - Short sessions of 5–15 minutes: a list of 10–25 words, repeated across a week, or a math round of about 10 problems.
-- The parent sets up lists and math topics once, and the child starts rounds on their own from a "Who's practicing?" screen, then picks a subject.
+- The parent sets up lists and math topics once, and the child starts on their own from a "Who's here?" screen, then picks a place: Spelling, Play or Math.
 - A round can be stopped and picked up later; answers are saved as they're given.
 - Audio is essential, so the device's speakers or headphones are on.
 - **iPad is a first-class target:**
@@ -87,6 +90,14 @@ Success means the child spells the week's list correctly and without help. Misse
 - **Facts review:** Leitner spaced repetition over missed times-table and division facts.
 - Each skill has levels 1–5. A skill moves up after 5 of the last 6 answers are right first time and mostly fluent, and down after 2 misses in the last 4.
 
+**Play** (games pay their own tickets; nothing in Play is about spelling or math):
+- **Roxy:** a dress-up studio (clothes, pets, holiday collections, saved looks no one else has), her home to decorate, and a 3D town (park, pet shop, school) with five finds hidden in each place.
+- **Gobble Town:** steer a hole through a toy town, swallow what fits and grow, against computer players, two minutes a go.
+- **Jelly Blocks:** falling blocks in a jar, made of wobbling jelly, at a slow, medium or fast start.
+- **Campfire Woods:** a first-person block island per family: dig, build and keep the campfire fed through the night, live with family and linked friends (no chat, four emotes).
+- **Daily quests:** three a day, one from each of three games.
+- **Parent settings per kid:** Free, tickets only, stars that pay too, games that open after today's practice goal, or play time bought with stars.
+
 **Word import:** paste, CSV, photo OCR (reviewed before saving), and built-in grade packs (Dolch K–3, plus curated 4th and 5th grade lists).
 
 **Voice:** Deepgram Aura-2 through Workers AI, cached per word. The browser's `speechSynthesis` is the fallback.
@@ -104,6 +115,9 @@ Success means the child spells the week's list correctly and without help. Misse
 - "fact" is a times-table or division fact.
 - "review" means words or facts that are due.
 - "kids" is the parent-facing word for child profiles.
+- "place" is Spelling, Play or Math on the hub.
+- "tickets" are what games pay and cost; "stars" are what practice earns.
+- "look" is a saved Roxy outfit (never "avatar", which is the number on a kid's tile).
 
 ## Brand Commitments
 

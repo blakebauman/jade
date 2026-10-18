@@ -132,7 +132,7 @@ function Lists() {
 								`${names(kids.map((k) => k.name))} ${kids.length === 1 ? "is" : "are"} ready.`
 							) : (
 								<Link to="/parent/kids" className="underline underline-offset-4 hover:text-page-ink">
-									Each child gets their own tile, voice and math topics.
+									Each child gets their own tile, voice, math topics and play settings.
 								</Link>
 							)}
 						</FirstRunStep>

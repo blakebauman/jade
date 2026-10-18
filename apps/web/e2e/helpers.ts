@@ -57,5 +57,5 @@ export async function stubWords(page: Page) {
  */
 export async function openLanding(page: Page) {
 	await page.goto("/");
-	await page.getByRole("heading", { name: "Hear it. Spell it. Solve it." }).waitFor();
+	await page.getByRole("heading", { name: "Hear it. Spell it. Solve it. Play." }).waitFor();
 }
