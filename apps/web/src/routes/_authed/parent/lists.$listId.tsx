@@ -1,5 +1,4 @@
 import { normalizeWord, parseWordList } from "@jade/core";
-import { Square, Tile } from "@jade/ui/components/tile";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
 import { Archive, ArrowLeft, Camera, Check, ClipboardPaste, FileUp, Plus, RotateCcw, Trash2, X } from "lucide-react";
@@ -462,9 +461,9 @@ function ListEditor() {
 							<div className="flex items-center gap-3" role="status">
 								<span className="flex items-center gap-1" aria-hidden>
 									{[0, 1, 2].map((i) => (
-										<Tile key={i} size={22} grain={i} className="animate-tile-drop" style={{ animationDelay: `${i * 120}ms` }} />
+										<span key={i} className="vinyl-disc size-5 animate-sticker-place" style={{ animationDelay: `${i * 120}ms` }} />
 									))}
-									<Square size={22} active />
+									<span className="slot size-5 !rounded-full !border-2" />
 								</span>
 								<span className="text-sm text-page-muted">Reading the words off the sheet…</span>
 							</div>

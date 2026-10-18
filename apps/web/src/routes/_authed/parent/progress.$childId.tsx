@@ -170,7 +170,7 @@ function ProgressPage() {
 								key={b.id}
 								className={
 									b.earned
-										? "plaque px-4 py-2 text-sm"
+										? "word-sticker text-sm"
 										: "flex items-center gap-2 rounded-[0.7rem] px-4 py-2 text-sm text-page-muted ring-1 ring-page-muted/50 ring-inset"
 								}
 							>

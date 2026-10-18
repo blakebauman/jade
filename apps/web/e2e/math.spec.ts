@@ -34,9 +34,9 @@ test("times-tables round on the keypad: right, missed twice, stop, results", asy
 
 	// Hub → Math → Times tables.
 	await page.goto(`/play/${childId}`);
-	await expect(page.getByRole("heading", { name: "What shall we practice?" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Spelling", exact: true })).toBeVisible();
 	await shot("hub");
-	await page.getByRole("link", { name: /Math/ }).click();
+	await page.getByRole("link", { name: "Let’s do math" }).click();
 	await expect(page.getByRole("heading", { name: "Math: pick a topic" })).toBeVisible();
 	await shot("topics");
 	await page.getByRole("link", { name: "Play" }).first().click();

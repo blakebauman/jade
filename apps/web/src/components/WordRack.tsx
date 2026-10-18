@@ -1,26 +1,15 @@
-import { WordTiles } from "@jade/ui/components/tile";
-import { useLayoutEffect, useRef, useState } from "react";
-import { fitTile } from "#/components/round/AnswerRow.tsx";
-
 /**
- * A word as a rack of tiles that fits the space it's given: `max` where there's room, smaller for a long word in a narrow
- * row (a 14-letter bee word on a phone), never below `min`. Measures its parent, so it can sit inline beside other racks.
- * A rack stays on one line, like the answer row: only a word too long to fit even at `min` wraps, rather than overflow.
+ * A word on its own die-cut vinyl label, set in the display face. Lists show their words this way everywhere outside a
+ * round: a parent or a kid reads them here, and only handles letters as tiles in the round itself. `max` is the size
+ * it was given as a tile edge, so the label stays in step with the space it sits in; `min` is kept for callers.
  */
-export function WordRack({ word, max, min = 16, dropDelay }: { word: string; max: number; min?: number; dropDelay?: number }) {
-	const ref = useRef<HTMLSpanElement>(null);
-	const [width, setWidth] = useState(0);
-	useLayoutEffect(() => {
-		const parent = ref.current?.parentElement;
-		if (!parent) return;
-		const ro = new ResizeObserver(([e]) => setWidth(e?.contentRect.width ?? 0));
-		ro.observe(parent);
-		return () => ro.disconnect();
-	}, []);
-	const size = width ? Math.max(min, fitTile(width, word.length, max).size) : max;
+export function WordRack({ word, max, dropDelay }: { word: string; max: number; min?: number; dropDelay?: number }) {
 	return (
-		<span ref={ref} className="inline-flex max-w-full">
-			<WordTiles word={word} size={size} dropDelay={dropDelay} className="max-w-full flex-wrap" />
+		<span
+			className={`word-sticker max-w-full ${dropDelay !== undefined ? "animate-sticker-place" : ""}`}
+			style={{ fontSize: Math.round(max * 0.72), animationDelay: dropDelay !== undefined ? `${dropDelay}ms` : undefined }}
+		>
+			{word}
 		</span>
 	);
 }

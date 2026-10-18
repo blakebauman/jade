@@ -1,6 +1,5 @@
 import type { SPELLING_MODES } from "@jade/core";
 import { KidTile } from "@jade/ui/components/kid-tile";
-import { Tile } from "@jade/ui/components/tile";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BadgeCheck, Blocks, BookOpen, Ear, Flame, Play, RotateCcw, Star } from "lucide-react";
@@ -121,7 +120,9 @@ function SpellingHome() {
 					<div className="flex items-center gap-5">
 						<div className="flex -space-x-2" aria-hidden>
 							{due.slice(0, 3).map((w, i) => (
-								<Tile key={w} letter={w[0]} size={48} style={{ transform: `rotate(${(i - 1) * 7}deg)` }} />
+								<span key={w} className="vinyl-disc size-12 text-2xl" style={{ transform: `rotate(${(i - 1) * 7}deg)` }}>
+									{w[0]}
+								</span>
 							))}
 						</div>
 						<div>
@@ -299,7 +300,7 @@ function ListCard({
 					{sure > 0 && ` · ${sure} mastered`}
 				</p>
 			</div>
-			<div className="rack flex flex-wrap items-end gap-x-3 gap-y-2 self-start" aria-hidden>
+			<div className="flex flex-wrap items-center gap-2 self-start" aria-hidden>
 				{l.preview.slice(0, 3).map((w) => (
 					<WordRack key={w} word={w} max={24} min={12} />
 				))}

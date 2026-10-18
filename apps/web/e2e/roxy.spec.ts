@@ -40,7 +40,7 @@ async function earnStars(page: Page, h: Record<string, string>, childId: string,
 test("style a Roxy, add cat ears with a gem, and save it to the gallery", async ({ page }) => {
 	const { ids } = await setup(page);
 	await page.goto(`/play/${ids[0]}`);
-	await page.getByRole("link", { name: /^Play/ }).click();
+	await page.getByRole("link", { name: "Let’s play" }).click();
 	await page.getByRole("link", { name: "Roxy", exact: true }).click();
 
 	// One primary key in the studio.

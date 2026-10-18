@@ -1,6 +1,6 @@
 import { MATH_TOPICS, type MathTopic, TOPIC_LABEL, TOPIC_SKILLS } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
-import { Pips, Tile } from "@jade/ui/components/tile";
+import { Pips } from "@jade/ui/components/tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BookOpenText, Brain, ChartPie, Play, RotateCcw, X as Times } from "lucide-react";
@@ -47,14 +47,12 @@ function MathHome() {
 					<div className="flex items-center gap-5">
 						<div className="flex -space-x-2" aria-hidden>
 							{due.slice(0, 3).map((k, i) => (
-								<Tile key={k} size={52} style={{ transform: `rotate(${(i - 1) * 7}deg)` }}>
-									<span style={{ fontSize: 20 }}>
-										{k
-											.replace(/^m:(mul|div):/, "")
-											.replace("x", "×")
-											.replace("/", "÷")}
-									</span>
-								</Tile>
+								<span key={k} className="vinyl-disc size-14 text-lg tabular-nums" style={{ transform: `rotate(${(i - 1) * 7}deg)` }}>
+									{k
+										.replace(/^m:(mul|div):/, "")
+										.replace("x", "×")
+										.replace("/", "÷")}
+								</span>
 							))}
 						</div>
 						<div>
@@ -85,9 +83,9 @@ function MathHome() {
 						return (
 							<li key={t} className="sticker flex flex-wrap items-center justify-between gap-4 p-4 md:px-6" data-place="math">
 								<div className="flex min-w-[13rem] flex-1 items-center gap-4">
-									<Tile size={52} aria-hidden>
-										<Icon className="size-6" strokeWidth={2.4} />
-									</Tile>
+									<span className="vinyl-disc size-13" aria-hidden>
+										<Icon className="relative size-6" strokeWidth={2.4} />
+									</span>
 									<div className="min-w-0">
 										<div className="flex items-center gap-x-3">
 											<h3 className="font-display text-xl font-medium">{TOPIC_LABEL[t]}</h3>

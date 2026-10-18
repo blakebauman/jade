@@ -203,7 +203,7 @@ function Lists() {
 										<ul className="min-w-0 space-y-1.5 text-sm" aria-label={`Who ${l.name} is for`}>
 											{kidsFor(l, kids).map((k) => (
 												<li key={k.id} className="flex items-center gap-2">
-													<KidTile name={k.name} avatar={k.avatar} size={22} />
+													<KidTile name={k.name} avatar={k.avatar} size={40} />
 													<span>
 														<span className="font-medium">{k.name}</span> <span className="text-page-muted">{kidProgress(l, k)}</span>
 													</span>

@@ -101,6 +101,12 @@
 	100% { transform: translateY(0) scale(1); }
 }
 
+/* A place's caption, rising in as the place lands. It starts mostly visible, so a skipped frame never hides it. */
+@keyframes place-rise {
+	from { transform: translateY(0.9rem); opacity: 0.35; }
+	to { transform: none; opacity: 1; }
+}
+
 /* Lit, then dim. With reduced motion the one 1ms run ends and the caret just stays lit. */
 @keyframes caret-blink {
 	0%, 55% { opacity: 1; }
@@ -569,14 +575,18 @@
 		pointer-events: none;
 	}
 	/* Text, pips and keys printed on a place's hue read in the sticker's light ink. */
-	.sticker[data-place] {
+	.sticker[data-place],
+	.place-page[data-place] {
 		--color-page-ink: var(--color-sticker-ink);
 		--color-page-muted: color-mix(in oklab, var(--color-sticker-ink) 82%, var(--sticker-face));
 		--color-page-deep: color-mix(in oklab, var(--sticker-face) 55%, black);
 	}
-	.sticker[data-place="spell"] { --sticker-face: var(--color-spell); color: var(--color-sticker-ink); }
-	.sticker[data-place="math"] { --sticker-face: var(--color-math); color: var(--color-sticker-ink); }
-	.sticker[data-place="roxy"] { --sticker-face: var(--color-roxy); color: var(--color-sticker-ink); }
+	.sticker[data-place="spell"],
+	.place-page[data-place="spell"] { --sticker-face: var(--color-spell); color: var(--color-sticker-ink); }
+	.sticker[data-place="math"],
+	.place-page[data-place="math"] { --sticker-face: var(--color-math); color: var(--color-sticker-ink); }
+	.sticker[data-place="roxy"],
+	.place-page[data-place="roxy"] { --sticker-face: var(--color-roxy); color: var(--color-sticker-ink); }
 	@media (hover: hover) {
 		a.sticker:hover,
 		button.sticker:hover:not(:disabled) {
@@ -590,6 +600,143 @@
 	button.sticker:active:not(:disabled) { transform: rotate(var(--tilt, 0deg)) translateY(1px); }
 	/* At Night the printed faces sit under the lamp, a step quieter than in daylight. */
 	:root:not([data-theme="day"]) .sticker[data-place] { filter: saturate(0.9) brightness(0.94); }
+
+	/*
+	 * One place at a time: a place fills the screen as one big sticker pressed onto the page, rim and all, with the
+	 * album page showing round its edge. Its media owns the middle; the caption sits low on the left.
+	 */
+	.place-page {
+		--place-inset-x: max(0.625rem, var(--safe-left), var(--safe-right));
+		--place-inset-top: max(0.625rem, var(--safe-top));
+		--place-inset-bottom: max(0.625rem, var(--safe-bottom));
+		position: relative;
+		height: 100dvh;
+		scroll-snap-align: start;
+		scroll-snap-stop: always;
+	}
+	@media (min-width: 48rem) {
+		.place-page {
+			--place-inset-x: max(1rem, var(--safe-left), var(--safe-right));
+			--place-inset-top: max(1rem, var(--safe-top));
+			--place-inset-bottom: max(1rem, var(--safe-bottom));
+		}
+	}
+	.place-page[data-place] { --color-page-line: color-mix(in oklab, var(--color-sticker-ink) 50%, var(--sticker-face)); }
+	.place-face {
+		position: absolute;
+		inset: var(--place-inset-top) var(--place-inset-x) var(--place-inset-bottom);
+		isolation: isolate;
+		overflow: hidden;
+		border-radius: 2rem;
+		background: var(--sticker-face);
+		border: 0.4rem solid var(--color-vinyl);
+		box-shadow:
+			0 0.7rem 1.4rem -0.5rem var(--tone-drop-deep),
+			0 0.1rem 0.2rem var(--tone-drop);
+	}
+	/* The gloss: one soft band across the top corner, as on every sticker. */
+	.place-face::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		background: linear-gradient(158deg, rgb(255 255 255 / 0.2) 0%, rgb(255 255 255 / 0.05) 30%, transparent 31%);
+		pointer-events: none;
+	}
+	:root:not([data-theme="day"]) .place-face { filter: saturate(0.9) brightness(0.94); }
+	/* The place's lettering, printed big on its face a tint off the hue: decoration, cropped by the rim. */
+	.place-print {
+		font-family: var(--font-display);
+		font-weight: 700;
+		line-height: 0.8;
+		letter-spacing: -0.03em;
+		white-space: nowrap;
+		color: color-mix(in oklab, var(--sticker-face) 78%, white);
+		user-select: none;
+	}
+	/* The caption rises in once its place lands; it is always visible without the motion. */
+	.place-page[data-current] .place-caption { animation: place-rise 520ms var(--ease-out-expo); }
+	@media (prefers-reduced-motion: reduce) { .place-page[data-current] .place-caption { animation: none; } }
+
+	/*
+	 * A kid's own sticker: a round white vinyl disc with their initial printed in ink, and their number on a foil chip.
+	 * Ink and vinyl are fixed, so it reads on the page in either light and on any place's hue.
+	 */
+	.kid-sticker,
+	.vinyl-disc,
+	.word-sticker {
+		position: relative;
+		flex: none;
+		color: #12332c;
+		background: radial-gradient(110% 110% at 30% 18%, #ffffff 0%, #f6faf8 50%, #e2ebe7 100%);
+		font-family: var(--font-display);
+		font-weight: 600;
+		line-height: 1;
+		border-radius: 999px;
+		box-shadow:
+			inset 0 -0.05em 0 rgb(18 51 44 / 0.1),
+			inset 0 0 0 1px rgb(18 51 44 / 0.06),
+			0 0.04em 0.1em rgb(3 25 20 / 0.25),
+			0 0.16em 0.32em -0.1em var(--tone-drop-deep);
+	}
+	.kid-sticker,
+	.vinyl-disc { display: inline-grid; place-items: center; }
+	/* A word on its own die-cut vinyl label: how lists show their words outside a round, where nothing is handled. */
+	.word-sticker {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35em;
+		padding: 0.28em 0.7em 0.32em;
+		white-space: nowrap;
+		box-shadow:
+			inset 0 -0.08em 0 rgb(18 51 44 / 0.1),
+			0 0.06em 0.12em rgb(3 25 20 / 0.22),
+			0 0.2em 0.4em -0.16em var(--tone-drop-deep);
+	}
+	.kid-sticker::before,
+	.vinyl-disc::before,
+	.word-sticker::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background: linear-gradient(158deg, rgb(255 255 255 / 0.7) 0%, rgb(255 255 255 / 0.1) 36%, transparent 37%);
+		pointer-events: none;
+	}
+	.kid-sticker > .foil {
+		position: absolute;
+		right: -8%;
+		bottom: -6%;
+		justify-content: center;
+		padding: 0;
+		font-family: var(--font-display);
+		font-weight: 650;
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+	}
+
+	/*
+	 * Die-cut vinyl lettering: dark ink letters on a white cut that follows every letter, lifted off whatever is under
+	 * it. The cut is the same text drawn behind with a wide white stroke. Used for the wordmark.
+	 */
+	.vinyl-type {
+		display: inline-grid;
+		font-family: var(--font-display);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.005em;
+		white-space: nowrap;
+		filter: drop-shadow(0 0.05em 0.04em rgb(3 25 20 / 0.3)) drop-shadow(0 0.12em 0.16em var(--tone-drop));
+	}
+	.vinyl-type > * { grid-area: 1 / 1; position: relative; }
+	.vinyl-type > .vinyl-cut {
+		color: #fbfdfb;
+		-webkit-text-stroke: 0.36em #fbfdfb;
+		paint-order: stroke fill;
+		/* Grows the cut into the open counters (o, a, d), so no ground shows through a letter. */
+		filter: drop-shadow(0 0 0.025em #fbfdfb) drop-shadow(0 0 0.025em #fbfdfb) drop-shadow(0 0 0.025em #fbfdfb);
+	}
+	.vinyl-type > .vinyl-ink { z-index: 1; color: #1d2430; }
 
 	/*
 	 * Holographic foil, for stars and streaks: silver with a cool shimmer, never gold (marigold means right).
@@ -675,39 +822,6 @@
 	.silhouette svg [fill]:not([fill="none"]) { fill: currentColor; }
 	.silhouette svg [stroke]:not([stroke="none"]) { stroke: currentColor; }
 
-	/*
-	 * The album's binding between two pages: each page darkens a little as it curves into the gutter, and a line of
-	 * stitches runs down the seam (across the page on phones, where the pages stack).
-	 */
-	.spine {
-		position: relative;
-		mask-image: linear-gradient(180deg, transparent, black 8%, black 92%, transparent);
-		background:
-			linear-gradient(90deg, transparent 0%, var(--tone-recess) 46%, transparent 50%, var(--tone-recess) 54%, transparent 100%);
-	}
-	.spine::after {
-		content: "";
-		position: absolute;
-		inset: 0 auto 0 50%;
-		width: 3px;
-		transform: translateX(-50%);
-		background: repeating-linear-gradient(180deg, transparent 0 6px, var(--color-vinyl) 6px 16px, transparent 16px 22px);
-		opacity: 0.55;
-		border-radius: 2px;
-	}
-	@media (max-width: 767px) {
-		.spine {
-			background: linear-gradient(180deg, transparent 0%, var(--tone-recess) 46%, transparent 50%, var(--tone-recess) 54%, transparent 100%);
-			mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent);
-		}
-		.spine::after {
-			inset: 50% 0 auto 0;
-			width: auto;
-			height: 3px;
-			transform: translateY(-50%);
-			background: repeating-linear-gradient(90deg, transparent 0 6px, var(--color-vinyl) 6px 16px, transparent 16px 22px);
-		}
-	}
 }
 
 @keyframes breathe {

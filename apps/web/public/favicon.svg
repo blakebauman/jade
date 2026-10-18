@@ -1,19 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <title>Jade's World</title>
-  <!-- Jade's World mark: the wordmark's lifted maple "j" tile, die-cut as the album's first sticker, with a silver foil star
-       stuck on its corner, on the jade page under the lamp. Authored SVG, no external source or font.
-       Generated with the PNG icons; regenerate with apps/web/scripts/icons.sh. -->
+  <!-- Jade's World mark: a white vinyl "j" with a holographic foil star for its dot, over the three places stacked as the
+       hub shows them. Authored SVG, no external source or font. Generated with the PNG icons; regenerate with
+       apps/web/scripts/icons.sh. -->
   <defs>
-    <radialGradient id="lamp" cx="0.28" cy="0.2" r="0.95">
-      <stop offset="0" stop-color="#1a6a5a"/>
-      <stop offset="0.45" stop-color="#0e4f43"/>
-      <stop offset="1" stop-color="#072e27"/>
-    </radialGradient>
-    <linearGradient id="maple" x1="0" y1="0" x2="0.18" y2="1">
-      <stop offset="0" stop-color="#f9e0b3"/>
-      <stop offset="0.6" stop-color="#f1c98a"/>
-      <stop offset="1" stop-color="#e9bb79"/>
-    </linearGradient>
     <linearGradient id="foil" x1="0" y1="0" x2="1" y2="0.6">
       <stop offset="0" stop-color="#e6eaee"/>
       <stop offset="0.24" stop-color="#c3cff4"/>
@@ -22,54 +12,36 @@
       <stop offset="1" stop-color="#eceff1"/>
     </linearGradient>
     <linearGradient id="gloss" x1="0" y1="0" x2="0.55" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.55"/>
-      <stop offset="0.33" stop-color="#fff" stop-opacity="0.12"/>
+      <stop offset="0" stop-color="#fff" stop-opacity="0.4"/>
+      <stop offset="0.33" stop-color="#fff" stop-opacity="0.08"/>
       <stop offset="0.34" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
     <filter id="lift" x="-30%" y="-30%" width="160%" height="170%">
-      <feGaussianBlur stdDeviation="14"/>
-    </filter>
-    <filter id="lift-sm" x="-40%" y="-40%" width="180%" height="190%">
-      <feGaussianBlur stdDeviation="5"/>
-    </filter>
-    <filter id="grain" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.22" numOctaves="1" seed="3"/>
-      <feColorMatrix values="0 0 0 0 0.55  0 0 0 0 0.36  0 0 0 0 0.16  0 0 0 0.16 0"/>
-      <feComposite in2="SourceGraphic" operator="in"/>
+      <feGaussianBlur stdDeviation="8"/>
     </filter>
     <clipPath id="corner"><rect width="512" height="512" rx="112"/></clipPath>
   </defs>
 
-  <rect width="512" height="512" rx="112" fill="url(#lamp)"/>
-
   <g clip-path="url(#corner)">
-  <g transform="translate(256 262) scale(1) translate(-270 -254)">
-    <!-- the j sticker, tilted the way the wordmark lifts it -->
-    <g transform="rotate(-7 256 262)">
-      <!-- lift shadow: offset down, soft -->
-      <rect x="92" y="122" width="328" height="334" rx="78" fill="#021612" opacity="0.6" filter="url(#lift)"/>
-      <!-- white vinyl die-cut rim -->
-      <rect x="92" y="96" width="328" height="334" rx="78" fill="#f4f8f6"/>
-      <rect x="93" y="97" width="326" height="332" rx="77" fill="none" stroke="#9fb4ac" stroke-opacity="0.6" stroke-width="2"/>
-      <!-- maple tile: bevel, then face -->
-      <rect x="114" y="118" width="284" height="290" rx="58" fill="#c9965a"/>
-      <rect x="114" y="118" width="284" height="266" rx="58" fill="url(#maple)"/>
-      
-      <!-- the j, pressed ink, rounded like Fredoka -->
-      <circle cx="281" cy="173" r="27" fill="#23180f"/>
-      <path d="M281 226 V300 Q281 350 236 350 Q214 350 202 340" fill="none" stroke="#23180f" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
-      <!-- vinyl gloss across the top of the sticker -->
-      <rect x="92" y="96" width="328" height="334" rx="78" fill="url(#gloss)"/>
-    </g>
-
-    <!-- the silver foil star, stuck over the sticker's top right corner -->
-    <g transform="rotate(14 384 136)">
-      <path d="M384.0 70.0L406.9 114.4L456.3 122.5L421.1 158.1L428.7 207.5L384.0 185.0L339.3 207.5L346.9 158.1L311.7 122.5L361.1 114.4Z" fill="#021612" opacity="0.55" filter="url(#lift-sm)" stroke="#021612" stroke-width="22" stroke-linejoin="round"/>
-      <path d="M384.0 60.0L406.9 104.4L456.3 112.5L421.1 148.1L428.7 197.5L384.0 175.0L339.3 197.5L346.9 148.1L311.7 112.5L361.1 104.4Z" fill="#f4f8f6" stroke="#f4f8f6" stroke-width="24" stroke-linejoin="round"/>
-      <path d="M384.0 60.0L406.9 104.4L456.3 112.5L421.1 148.1L428.7 197.5L384.0 175.0L339.3 197.5L346.9 148.1L311.7 112.5L361.1 104.4Z" fill="none" stroke="#9fb4ac" stroke-opacity="0.7" stroke-width="2" stroke-linejoin="round" transform="translate(384 136) scale(1.2) translate(-384 -136)"/>
-      <path d="M384.0 60.0L406.9 104.4L456.3 112.5L421.1 148.1L428.7 197.5L384.0 175.0L339.3 197.5L346.9 148.1L311.7 112.5L361.1 104.4Z" fill="url(#foil)" stroke="#8d97b5" stroke-width="2.5" stroke-linejoin="round"/>
-      <path d="M384.0 60.0L406.9 104.4L456.3 112.5L421.1 148.1L428.7 197.5L384.0 175.0L339.3 197.5L346.9 148.1L311.7 112.5L361.1 104.4Z" fill="url(#gloss)"/>
-    </g>
+    <rect width="512" height="171" fill="#17795e"/>
+    <rect y="171" width="512" height="170" fill="#b8326f"/>
+    <rect y="341" width="512" height="171" fill="#5b4bc4"/>
+    
+    <rect width="512" height="512" fill="url(#gloss)" opacity="0.6"/>
   </g>
+
+  <g transform="translate(256 256) scale(1) translate(-256 -256) rotate(-6 256 270)">
+    <!-- lift shadow under the whole cut -->
+    <g opacity="0.45" filter="url(#lift)" transform="translate(0 14)">
+      <path d="M292 214 V318 Q292 388 226 388 Q196 388 178 372" fill="none" stroke="#06140f" stroke-width="130" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M292.0 54.0L314.3 97.3L362.4 105.1L328.1 139.7L335.5 187.9L292.0 166.0L248.5 187.9L255.9 139.7L221.6 105.1L269.7 97.3Z" fill="#06140f" stroke="#06140f" stroke-width="52" stroke-linejoin="round"/>
+    </g>
+    <!-- the white vinyl cut, following the letter and the star as one sticker -->
+    <path d="M292 214 V318 Q292 388 226 388 Q196 388 178 372" fill="none" stroke="#fbfdfb" stroke-width="130" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M292.0 54.0L314.3 97.3L362.4 105.1L328.1 139.7L335.5 187.9L292.0 166.0L248.5 187.9L255.9 139.7L221.6 105.1L269.7 97.3Z" fill="#fbfdfb" stroke="#fbfdfb" stroke-width="52" stroke-linejoin="round"/>
+    <path d="M292 160 V214" stroke="#fbfdfb" stroke-width="91" stroke-linecap="round"/>
+    <!-- ink letter and foil dot -->
+    <path d="M292 214 V318 Q292 388 226 388 Q196 388 178 372" fill="none" stroke="#1d2430" stroke-width="78" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M292.0 54.0L314.3 97.3L362.4 105.1L328.1 139.7L335.5 187.9L292.0 166.0L248.5 187.9L255.9 139.7L221.6 105.1L269.7 97.3Z" fill="#d6dcf6" stroke="#1d2430" stroke-width="9" stroke-linejoin="round"/>
   </g>
 </svg>
