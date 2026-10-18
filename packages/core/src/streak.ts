@@ -34,14 +34,33 @@ export type BadgeStats = {
 	fractionsLevel?: number;
 };
 
-export const BADGES: (Badge & { earned: (s: BadgeStats) => boolean })[] = [
-	{ id: "first-round", label: "First round!", icon: "sprout", earned: (s) => s.words > 0 },
-	{ id: "perfect", label: "Perfect round", icon: "sparkles", earned: (s) => s.perfectRounds >= 1 },
-	{ id: "streak-3", label: "3-day streak", icon: "flame", earned: (s) => s.streak >= 3 },
-	{ id: "streak-7", label: "Week of practice", icon: "medal", earned: (s) => s.streak >= 7 },
-	{ id: "stars-50", label: "50 stars", icon: "star", earned: (s) => s.totalStars >= 50 },
-	{ id: "stars-250", label: "Star collector", icon: "trophy", earned: (s) => s.totalStars >= 250 },
-	{ id: "words-100", label: "100 right answers", icon: "library", earned: (s) => s.words >= 100 },
-	{ id: "facts-30", label: "Times-table star", icon: "grid", earned: (s) => (s.factsMastered ?? 0) >= 30 },
-	{ id: "fractions-3", label: "Fraction friend", icon: "pie", earned: (s) => (s.fractionsLevel ?? 0) >= 3 },
+/** `hint` says how to earn it, in the kid's words, under its empty slot. */
+export const BADGES: (Badge & { hint: string; earned: (s: BadgeStats) => boolean })[] = [
+	{ id: "first-round", label: "First round!", icon: "sprout", hint: "Get your first answer right", earned: (s) => s.words > 0 },
+	{
+		id: "perfect",
+		label: "Perfect round",
+		icon: "sparkles",
+		hint: "Get every answer right first try",
+		earned: (s) => s.perfectRounds >= 1,
+	},
+	{ id: "streak-3", label: "3-day streak", icon: "flame", hint: "Practice 3 days in a row", earned: (s) => s.streak >= 3 },
+	{ id: "streak-7", label: "Week of practice", icon: "medal", hint: "Practice 7 days in a row", earned: (s) => s.streak >= 7 },
+	{ id: "stars-50", label: "50 stars", icon: "star", hint: "Earn 50 stars", earned: (s) => s.totalStars >= 50 },
+	{ id: "stars-250", label: "Star collector", icon: "trophy", hint: "Earn 250 stars", earned: (s) => s.totalStars >= 250 },
+	{ id: "words-100", label: "100 right answers", icon: "library", hint: "Get 100 answers right", earned: (s) => s.words >= 100 },
+	{
+		id: "facts-30",
+		label: "Times-table star",
+		icon: "grid",
+		hint: "Master 30 times-table facts",
+		earned: (s) => (s.factsMastered ?? 0) >= 30,
+	},
+	{
+		id: "fractions-3",
+		label: "Fraction friend",
+		icon: "pie",
+		hint: "Reach fractions level 3",
+		earned: (s) => (s.fractionsLevel ?? 0) >= 3,
+	},
 ];

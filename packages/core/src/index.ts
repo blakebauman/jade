@@ -1,6 +1,7 @@
 export * from "./grade.ts";
 export * from "./normalize.ts";
 export * from "./play.ts";
+export * from "./quests.ts";
 export * from "./schemas.ts";
 export * from "./srs.ts";
 export * from "./stars.ts";
