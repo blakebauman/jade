@@ -344,7 +344,7 @@ At Night, place stickers and place faces sit under the lamp a step quieter (satu
 **Character:** Rounded, geometric and lowercase-friendly. Fredoka gives tiles, headings and sticker labels a friendly, toy-like solidity. Lexend is the calm reading voice for definitions, sentences and parent copy. There are no condensed faces and no pixel faces.
 
 ### Hierarchy
-- **Display** (600, 2.25rem to 3rem at md, -0.01em, balanced wrap): page and state headlines such as "Who's practicing?" and "12 words. Ready?".
+- **Display** (600, 2.25rem to 3rem at md, -0.01em, balanced wrap): page and state headlines such as "Who's here?" and "12 words. Ready?".
 - **Place name** (600, 3.5rem to 6rem by viewport, line-height 0.95, -0.02em): the one headline on a hub place page ("Spelling", "Play", "Math"), low on the left in Sticker Ink.
 - **Place print** (700, up to 58vh, line-height 0.8, -0.03em, rotated -7deg): giant decorative lettering ("spell", "7×8") printed across a place face a tint off its hue (78% hue, 22% white) and cropped by the rim. `aria-hidden`, never read, never a label.
 - **Wordmark** (700, 22px to 36px, -0.005em): "ȷade's world" as die-cut vinyl type; see Brand mark.
@@ -371,7 +371,9 @@ Every route but the hub is a single centred column on the album page. The round 
 - **Centre, the media,** `aria-hidden` and never UI: Spelling prints "spell" and stands three words as word stickers (46px, then 34px, tilted -4, 3, -2deg): words due for review when there are any, else the newest list's first three; Play stands the child's current Roxy look full height on a soft blurred floor shadow, without her stage backdrop (with Play closed on a phone she stands smaller and higher, clear of the slot); Math prints "7×8" and fans her due facts on big vinyl discs ("7×8", never the answer), or with none due, a sample problem for each topic she does ("6×7", "48−19", "¾"). On tall screens (md and portrait) the print and media sit lower and a quarter larger, so an iPad held upright has no empty middle.
 The hub opens on the place last seen this visit (`jade.hub.place.{childId}` in sessionStorage), else where a round is waiting, else Spelling. Arrow and Page keys, the tabs, a flick or a scroll move one whole place.
 
-**Kid picker (profiles).** The wordmark (26px) and a Parents page key on top, then "Who's practicing?" over each child as a big round kid sticker (136px), tilted ±4deg alternately, with their name below in Fredoka 500. No cover card behind it; the sticker lifts 4px on hover.
+**Sign-in page (`/`).** The wordmark (36px), the headline "Hear it. Spell it. Solve it. Play.", one line of what it is, and the demo row with its coral tile explained; the account patch (New family or Sign in) sits beside it from md, below it on a phone. Under both, the three places as small place stickers in the hub's order and hues (Spelling, Play, Math; tilted -1.5, 1, -0.75deg), each a lucide icon, its name and two lines of what's inside, then one muted line for parents on tickets and how play meets practice. No screenshots, testimonials or numbers (PRODUCT.md: there are none).
+
+**Kid picker (profiles).** The wordmark (26px) and a Parents page key on top, then "Who's here?" over each child as a big round kid sticker (136px), tilted ±4deg alternately, with their name below in Fredoka 500. No cover card behind it; the sticker lifts 4px on hover.
 
 **Spelling home.** The foil progress strip (streak, stars, words mastered), one `go` key chosen for the kid, then each list as a sticker on the raised page (the one up next tilted -1deg), with its first words as word stickers and one suggested way. Earned badges follow as pill stickers in a wrapping row, with the next badge as a dashed pill slot ("Next: …").
 

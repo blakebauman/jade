@@ -22,7 +22,7 @@ function Profiles() {
 				</Link>
 			</header>
 			<section className="grid flex-1 content-center gap-10 py-10">
-				<h1 className="text-center text-4xl font-semibold md:text-5xl">Who’s practicing?</h1>
+				<h1 className="text-center text-4xl font-semibold md:text-5xl">Who’s here?</h1>
 				{kids.length === 0 ? (
 					<div className="mx-auto max-w-sm space-y-5 text-center">
 						<p className="text-page-muted">No kids yet. A parent adds each child and their word lists first.</p>

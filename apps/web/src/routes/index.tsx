@@ -1,5 +1,6 @@
 import { Tile } from "@jade/ui/components/tile";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { BookOpenText, Calculator, type LucideIcon, Tent } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { z } from "zod";
 import { Brand } from "#/components/Brand.tsx";
@@ -50,6 +51,31 @@ function DemoRow() {
 	);
 }
 
+/** The three places a kid finds behind their tile, in the hub's order. */
+const PLACES: { hue: "spell" | "roxy" | "math"; name: string; icon: LucideIcon; tilt: string; text: string }[] = [
+	{
+		hue: "spell",
+		name: "Spelling",
+		icon: BookOpenText,
+		tilt: "-1.5deg",
+		text: "This week’s words, spoken aloud. Ask for the definition, a sentence or the origin, the way you can at a bee. Missed words come back until they stick.",
+	},
+	{
+		hue: "roxy",
+		name: "Play",
+		icon: Tent,
+		tilt: "1deg",
+		text: "Dress Roxy and explore her town, then Gobble Town, Jelly Blocks and Campfire Woods: a block island the family builds on together, with friends you link.",
+	},
+	{
+		hue: "math",
+		name: "Math",
+		icon: Calculator,
+		tilt: "-0.75deg",
+		text: "Times tables, mental math, fractions and word problems, read aloud. Levels adjust on their own, and every miss shows how to get the answer.",
+	},
+];
+
 function Landing() {
 	const { next } = Route.useSearch();
 	const navigate = useNavigate();
@@ -82,12 +108,11 @@ function Landing() {
 				<h1 className="text-5xl leading-[1.05] font-semibold md:text-6xl">
 					Hear it. Spell it.
 					<br />
-					Solve it.
+					Solve it. Play.
 				</h1>
 				<p className="max-w-[46ch] text-lg text-pretty text-page-muted">
-					Spelling and math practice for 8–11 year olds. Load this week’s school list, and your child hears each word, asks for the
-					definition or a sentence, and places the letters tile by tile, with feedback on every letter. Math covers times tables, mental
-					math, fractions and word problems, with levels that adjust as they go.
+					Spelling and math practice for 8–11 year olds, and a world to play in. Load this week’s school list from a paste or a photo of the
+					sheet, and your child spells each word tile by tile, with feedback on every letter.
 				</p>
 				<DemoRow />
 				<p className="text-sm text-page-muted">
@@ -147,6 +172,28 @@ function Landing() {
 						The account belongs to a parent. Kids pick their own tile to practice. No child email or password.
 					</p>
 				</form>
+			</section>
+
+			<section aria-labelledby="places" className="min-w-0 space-y-6 md:col-span-2">
+				<h2 id="places" className="sr-only">
+					What’s inside
+				</h2>
+				<ul className="grid gap-6 md:grid-cols-3">
+					{PLACES.map(({ hue, name, icon: Icon, tilt, text }) => (
+						<li key={hue} data-place={hue} className="sticker space-y-2 p-5" style={{ "--tilt": tilt } as React.CSSProperties}>
+							<h3 className="flex items-center gap-2 text-2xl font-semibold">
+								<Icon aria-hidden className="size-6" />
+								{name}
+							</h3>
+							<p className="text-pretty text-page-muted">{text}</p>
+						</li>
+					))}
+				</ul>
+				<p className="max-w-[70ch] text-pretty text-page-muted">
+					Games pay their own tickets, so practice stars stay a record of practice. You decide, for each child, how the two meet: stars can
+					pay in games, games can open after today’s practice, or play time can cost stars. Rounds work offline, on a laptop, an iPad or a
+					phone.
+				</p>
 			</section>
 		</main>
 	);

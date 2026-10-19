@@ -21,7 +21,7 @@ test("cold start with no connection; offline sign-out is refused", async ({ page
 	await page.goto("/profiles");
 	await page.evaluate(() => navigator.serviceWorker.ready);
 	await page.reload(); // now controlled by the service worker
-	await expect(page.getByRole("heading", { name: "Who’s practicing?" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Who’s here?" })).toBeVisible();
 	await page.goto(`/play/${child.id}`);
 	await expect(page.getByRole("heading", { name: "Spelling", exact: true })).toBeVisible();
 	await page.goto(`/play/${child.id}/spelling`);
@@ -35,7 +35,7 @@ test("cold start with no connection; offline sign-out is refused", async ({ page
 	await page.close();
 	await context.setOffline(true);
 	await offlinePage.goto("/");
-	await expect(offlinePage.getByRole("heading", { name: "Who’s practicing?" })).toBeVisible({ timeout: 10_000 });
+	await expect(offlinePage.getByRole("heading", { name: "Who’s here?" })).toBeVisible({ timeout: 10_000 });
 	await offlinePage.getByRole("link", { name: /Maya/ }).click();
 	await expect(offlinePage.getByRole("heading", { name: "Spelling", exact: true })).toBeVisible();
 	await offlinePage.getByRole("link", { name: "Let’s do math" }).click();

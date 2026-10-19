@@ -21,7 +21,8 @@ export default defineConfig({
 			manifest: {
 				name: "Jade's World",
 				short_name: "Jade's World",
-				description: "Spelling bee and math practice for 8–11 year olds, with stars to spend in Roxy’s dress-up studio.",
+				description:
+					"Spelling bee and math practice for 8–11 year olds, and a world to play in: Roxy’s studio and town, Gobble Town, Jelly Blocks and Campfire Woods.",
 				theme_color: "#0e4f43",
 				background_color: "#0e4f43",
 				display: "standalone",
