@@ -476,10 +476,10 @@
 		padding: 0.5rem 1.1rem;
 		border-radius: 999px;
 	}
-	/* The small uppercase line over a game screen's title. */
+	/* A small uppercase label for a tray or a group (Jelly Blocks' Hold and Next), never a kicker over a title. */
 	.eyebrow {
 		font-family: var(--font-body);
-		font-size: 0.65rem;
+		font-size: 0.75rem;
 		font-weight: 550;
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
@@ -815,6 +815,35 @@
 	.user-pick:focus-visible { outline: none; }
 	.user-pick:focus-visible .user-pick-ring { outline-color: var(--color-select); transform: scale(1.04); }
 	.user-pick:active .user-pick-ring { transform: scale(0.97); }
+
+	/*
+	 * Roxy's wardrobe tiles. The thing under the pointer or the keyboard wears the select-blue ring (one light, as on the
+	 * home shelf); what she's wearing keeps an ink ring and a check; a locked thing she's trying on has a dashed ring.
+	 */
+	.studio-item {
+		outline: 0.2rem solid transparent;
+		outline-offset: 0.2rem;
+		transition: transform 160ms var(--ease-out-expo), outline-color 120ms ease-out;
+		touch-action: manipulation;
+	}
+	.studio-item[data-state="worn"] { box-shadow: 0 0 0 0.22rem var(--color-page-ink); }
+	.studio-item[data-state="trying"] { outline: 0.22rem dashed var(--color-page-ink); outline-offset: -0.11rem; }
+	@media (hover: hover) { .studio-item:hover { outline: 0.2rem solid var(--color-select); outline-offset: 0.2rem; } }
+	.studio-item:focus-visible { outline: 0.2rem solid var(--color-select); outline-offset: 0.2rem; border-radius: 0.75rem; }
+	.studio-item:active { transform: translateY(1px); }
+	/* A saved look's photo: one white flash over the stage. */
+	.studio-flash {
+		position: absolute;
+		inset: 0;
+		background: #fff;
+		pointer-events: none;
+		animation: studio-flash 700ms ease-out both;
+	}
+	@keyframes studio-flash {
+		0% { opacity: 0.85; }
+		100% { opacity: 0; }
+	}
+	@media (prefers-reduced-motion: reduce) { .studio-flash { display: none; } }
 
 	/*
 	 * A kid's own sticker: a round white vinyl disc with their initial printed in ink, and their number on a foil chip.

@@ -1,4 +1,5 @@
-import { Star, Ticket } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { MapPinned, Star, Ticket } from "lucide-react";
 import { Confirm } from "#/components/Confirm.tsx";
 import type { Pay, Wallet } from "#/lib/roxy.ts";
 import { Tickets } from "./PlayBits.tsx";
@@ -18,6 +19,7 @@ export function BuyChoice({
 	onBuy,
 	onCancel,
 	className = "",
+	earnIn,
 }: {
 	/** As it reads in a sentence: "Crown", "the piano". */
 	name: string;
@@ -28,6 +30,8 @@ export function BuyChoice({
 	onBuy: (pay: Pay) => void;
 	onCancel: () => void;
 	className?: string;
+	/** A kid to send to Roxy's town to earn what's missing, so a short wallet is a way on rather than a dead end. */
+	earnIn?: string;
 }) {
 	const tickets = wallet.tickets >= cost;
 	const stars = wallet.stars !== null && wallet.stars >= cost;
@@ -45,9 +49,16 @@ export function BuyChoice({
 						</>
 					)}
 				</span>
-				<button type="button" className="key" onClick={onCancel}>
-					OK
-				</button>
+				<span className="flex flex-wrap gap-2">
+					{online && earnIn && (
+						<Link to="/play/$childId/games/roxy/town" params={{ childId: earnIn }} className="key" data-variant="go">
+							<MapPinned className="size-5" aria-hidden /> Go to town
+						</Link>
+					)}
+					<button type="button" className="key" onClick={onCancel}>
+						{online && earnIn ? "Not now" : "OK"}
+					</button>
+				</span>
 			</p>
 		);
 	return (

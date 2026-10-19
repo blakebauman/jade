@@ -611,7 +611,6 @@ function WoodsScreen() {
 			panelLabel="Your things"
 			panelKey="woods"
 			panelOpen={false}
-			sceneDark={hud.dark}
 			goInProgress={playing && hud.night}
 			scene={
 				<div
@@ -661,10 +660,8 @@ function WoodsScreen() {
 			}
 			eyebrow="Games"
 			title={
-				// A soft halo so the title reads over leaves by day and a dark sky by night ("Woods" stays berry).
-				<b
-					className={`font-[inherit] [&>span]:text-roxy ${hud.dark ? "[text-shadow:0_2px_12px_rgb(0_0_0/0.45)]" : "[text-shadow:0_0_14px_rgb(255_255_255/0.7),0_1px_0_rgb(255_255_255/0.6)]"}`}
-				>
+				// On the masthead's glass, so it reads by day and by night ("Woods" stays berry).
+				<b className="font-[inherit] [&>span]:text-roxy">
 					Campfire <span>Woods</span>
 				</b>
 			}
@@ -704,7 +701,7 @@ function WoodsScreen() {
 				)
 			}
 			hints={
-				<span className={`contents ${hud.dark ? "" : "[&_span]:[text-shadow:0_0_8px_rgb(255_255_255/0.85)]"}`}>
+				<span className="contents">
 					<Hint keys={["W", "A", "S", "D"]}>walk</Hint>
 					<Hint keys={["Space"]}>jump</Hint>
 					<Hint keys={["Click"]}>hold to dig</Hint>

@@ -53,7 +53,7 @@ test("style a Roxy, add cat ears with a gem, and save it to the gallery", async 
 	await expect(page.getByRole("button", { name: "Coily", exact: true })).toHaveAttribute("aria-pressed", "false");
 	await page.getByRole("button", { name: "Coily", exact: true }).click();
 
-	await page.getByRole("tab", { name: "Gems" }).click();
+	await page.getByRole("tab", { name: "Extras" }).click();
 	await page.getByRole("button", { name: "Sapphire: cat", exact: true }).click();
 	await expect(page.getByRole("button", { name: "Sapphire: cat", exact: true })).toHaveAttribute("aria-pressed", "true");
 
@@ -67,7 +67,7 @@ test("style a Roxy, add cat ears with a gem, and save it to the gallery", async 
 	await page.getByRole("button", { name: "Comet", exact: true }).click();
 	await expect(page.locator('main [data-variant="go"]')).toHaveCount(1);
 	await page.getByRole("button", { name: "Save", exact: true }).click();
-	await expect(page.getByText("Saved “Comet” to your looks.")).toBeVisible();
+	await expect(page.getByText(/Saved “Comet” to your looks\./)).toBeVisible();
 
 	await page.getByRole("link", { name: /My looks/ }).click();
 	await expect(page.getByRole("heading", { name: "Comet and Mochi" })).toBeVisible();
@@ -83,7 +83,7 @@ test("locked items cost tickets, stars too once a parent links them, and an exac
 	await page.getByRole("tab", { name: "Face" }).click();
 	await page.getByRole("button", { name: "Starry, 15 tickets" }).click();
 	await expect(page.getByText(/Earn 15 more in Roxy’s town or Gobble Town/)).toBeVisible();
-	await page.getByRole("button", { name: "OK", exact: true }).click();
+	await page.getByRole("button", { name: "Not now", exact: true }).click();
 
 	// Stars from practice don't spend in games until a parent links them.
 	await earnStars(page, h, ava, ["cat", "dog", "sun", "hat", "pig"]);
