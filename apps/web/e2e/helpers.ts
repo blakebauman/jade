@@ -57,7 +57,7 @@ export async function stubWords(page: Page) {
  */
 export async function openLanding(page: Page) {
 	await page.goto("/");
-	await page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." }).waitFor();
+	await page.getByRole("heading", { name: "Every game your kid loves, plus spelling and math, on one shelf." }).waitFor();
 }
 
 /** A tile on the home shelf, by its name ("Roxy" doesn't match "Roxy’s town"). */
