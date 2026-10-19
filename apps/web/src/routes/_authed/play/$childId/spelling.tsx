@@ -78,7 +78,7 @@ function SpellingHome() {
 			<header className="flex flex-wrap items-center justify-between gap-4">
 				<div className="flex items-center gap-3">
 					<Link to="/play/$childId" params={{ childId: child.id }} className="key" data-variant="felt">
-						<ArrowLeft className="size-5" aria-hidden /> Subjects
+						<ArrowLeft className="size-5" aria-hidden /> Home
 					</Link>
 					<KidTile name={child.name} avatar={child.avatar} size={48} />
 					<span className="font-display text-2xl font-medium">{child.name}</span>

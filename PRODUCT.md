@@ -39,7 +39,7 @@ web
 
 ## Product Purpose
 
-The app has two subjects and a place to play behind one hub, shown one place at a time: Spelling, Play, Math. Spelling leads; math shares its rounds, saving, rewards and voice.
+Jade's World is a kids' games portal with practice built in. Its home is one shelf of tiles, every game plus Spelling and Math, the one she played last first. The games are up front; Spelling and Math are two tiles among them, and they share rounds, saving, rewards and voice.
 
 **Spelling** works the way a spelling bee works:
 1. Hear the word.
@@ -64,7 +64,7 @@ Success means the child spells the week's list correctly and without help. Misse
 ## Operating Context
 
 - Short sessions of 5–15 minutes: a list of 10–25 words, repeated across a week, or a math round of about 10 problems.
-- The parent sets up lists and math topics once, and the child starts on their own from a "Who's here?" screen, then picks a place: Spelling, Play or Math.
+- The parent sets up lists and math topics once, and the child starts on their own from a "Who's playing?" screen, then picks a tile from the home shelf: a game, Spelling or Math.
 - A round can be stopped and picked up later; answers are saved as they're given.
 - Audio is essential, so the device's speakers or headphones are on.
 - **iPad is a first-class target:**

@@ -53,7 +53,7 @@ test("signing out forgets the family on this device", async ({ page }) => {
 	});
 	expect(await page.evaluate(() => localStorage.getItem("jade.user"))).not.toBeNull();
 	await page.getByRole("button", { name: "Sign out" }).click();
-	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Solve it. Play." })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." })).toBeVisible();
 	const left = await page.evaluate(async () => ({ user: localStorage.getItem("jade.user"), caches: await caches.keys() }));
 	expect(left.user).toBeNull();
 	expect(left.caches).not.toContain("jade-data");
@@ -72,7 +72,7 @@ test("unsaved practice: a 401 keeps it queued, sign-out warns, and it uploads on
 	// The server accepts writes again: signing out uploads the practice first, then signs out.
 	await page.unroute("**/api/sessions**");
 	await page.getByRole("button", { name: "Sign out" }).click();
-	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Solve it. Play." })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." })).toBeVisible();
 	expect(await queued(page)).toBe(0);
 
 	// The word really reached the server.
@@ -86,6 +86,6 @@ test("unsaved practice: 'Sign out anyway' discards it", async ({ page }) => {
 	await page.goto("/parent/settings");
 	await page.getByRole("button", { name: "Sign out" }).click();
 	await page.getByRole("button", { name: "Sign out anyway" }).click();
-	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Solve it. Play." })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." })).toBeVisible();
 	expect(await queued(page)).toBe(0);
 });

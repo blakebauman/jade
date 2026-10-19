@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openLanding } from "./helpers.ts";
+import { openLanding, shelfTile } from "./helpers.ts";
 
 test("cold start with no connection; offline sign-out is refused", async ({ page, context }) => {
 	test.setTimeout(90_000);
@@ -21,9 +21,9 @@ test("cold start with no connection; offline sign-out is refused", async ({ page
 	await page.goto("/profiles");
 	await page.evaluate(() => navigator.serviceWorker.ready);
 	await page.reload(); // now controlled by the service worker
-	await expect(page.getByRole("heading", { name: "Who’s here?" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Who’s playing?" })).toBeVisible();
 	await page.goto(`/play/${child.id}`);
-	await expect(page.getByRole("heading", { name: "Spelling", exact: true })).toBeVisible();
+	await expect(shelfTile(page, "Spelling")).toBeVisible();
 	await page.goto(`/play/${child.id}/spelling`);
 	await expect(page.getByRole("heading", { name: "Week 6" })).toBeVisible();
 	await page.waitForTimeout(800); // list prefetch
@@ -35,10 +35,9 @@ test("cold start with no connection; offline sign-out is refused", async ({ page
 	await page.close();
 	await context.setOffline(true);
 	await offlinePage.goto("/");
-	await expect(offlinePage.getByRole("heading", { name: "Who’s here?" })).toBeVisible({ timeout: 10_000 });
+	await expect(offlinePage.getByRole("heading", { name: "Who’s playing?" })).toBeVisible({ timeout: 10_000 });
 	await offlinePage.getByRole("link", { name: /Maya/ }).click();
-	await expect(offlinePage.getByRole("heading", { name: "Spelling", exact: true })).toBeVisible();
-	await offlinePage.getByRole("link", { name: "Let’s do math" }).click();
+	await shelfTile(offlinePage, "Math").click();
 	await offlinePage.getByRole("link", { name: "Play" }).first().click();
 	await offlinePage.getByRole("button", { name: "Start" }).click();
 	await offlinePage.getByRole("button", { name: "1", exact: true }).click();

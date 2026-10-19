@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { openLanding } from "./helpers.ts";
+import { openLanding, shelfTile } from "./helpers.ts";
 
 type Peek = {
 	status: string;
@@ -208,10 +208,10 @@ test("a finger drags to look round, holds to dig and taps to build", async ({ br
 	await context.close();
 });
 
-test("the Play home has a Campfire Woods card", async ({ page }) => {
+test("the home shelf has a Campfire Woods tile", async ({ page }) => {
 	const f = await family(page);
 	const id = await f.kid("Ava");
 	await page.goto(`/play/${id}/games`);
-	await page.getByRole("link", { name: /Campfire Woods/ }).click();
+	await shelfTile(page, "Campfire Woods").click();
 	await expect(page.getByRole("heading", { name: "Campfire Woods" })).toBeVisible();
 });

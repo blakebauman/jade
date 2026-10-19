@@ -25,7 +25,7 @@ test("Day and Night: Auto follows the device, a parent's choice holds on every v
 	// Night, chosen: it holds against a light device, and across a reload (lit before React, from the device's copy).
 	await page.getByRole("button", { name: "Night", exact: true }).click();
 	await expect(theme(page)).toHaveAttribute("data-theme", "night");
-	await expect(themeColor(page)).toHaveAttribute("content", "#0e4f43");
+	await expect(themeColor(page)).toHaveAttribute("content", "#212224");
 	await page.reload();
 	await expect(theme(page)).toHaveAttribute("data-theme", "night");
 	await expect(page.getByRole("button", { name: "Night", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -37,5 +37,5 @@ test("Day and Night: Auto follows the device, a parent's choice holds on every v
 
 	await page.getByRole("button", { name: "Day", exact: true }).click();
 	await expect(theme(page)).toHaveAttribute("data-theme", "day");
-	await expect(themeColor(page)).toHaveAttribute("content", "#d4ebe1");
+	await expect(themeColor(page)).toHaveAttribute("content", "#eceef2");
 });

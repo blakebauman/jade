@@ -57,5 +57,11 @@ export async function stubWords(page: Page) {
  */
 export async function openLanding(page: Page) {
 	await page.goto("/");
-	await page.getByRole("heading", { name: "Hear it. Spell it. Solve it. Play." }).waitFor();
+	await page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." }).waitFor();
 }
+
+/** A tile on the home shelf, by its name ("Roxy" doesn't match "Roxy’s town"). */
+export const shelfTile = (page: Page, name: string) =>
+	page
+		.getByRole("list", { name: "Games, Spelling and Math" })
+		.getByRole("button", { name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(,|$)`) });

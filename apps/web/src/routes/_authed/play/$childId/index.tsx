@@ -1,19 +1,21 @@
-import { BADGES, type SPELLING_MODES } from "@jade/core";
-import { MATH_TOPICS, type MathTopic, TOPIC_LABEL } from "@jade/core/math";
+import { BADGES, goalProgress, type SPELLING_MODES } from "@jade/core";
+import { TOPIC_LABEL } from "@jade/core/math";
+import { FINDS } from "@jade/core/roxy";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, Flame, Play, Star, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Award, CalendarHeart, Clock, Flame, Lock, Star, Target, Ticket, Users, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import { BadgeIcon, badgeFace } from "#/components/BadgeIcon.tsx";
 import { Brand } from "#/components/Brand.tsx";
-import { PlayClosed, PlayWallet, usePlacedToday } from "#/components/play/PlayBits.tsx";
+import { MoreTime } from "#/components/play/PlayBits.tsx";
+import { QuestBoard } from "#/components/play/QuestBoard.tsx";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
-import { WordRack } from "#/components/WordRack.tsx";
+import { SubjectArt } from "#/components/SubjectArt.tsx";
 import { listIsFor, newestFirst, type Progress } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { resumableMath } from "#/lib/mathRound.ts";
-import { playQuery } from "#/lib/play.ts";
+import { type PlayStatus, playQuery } from "#/lib/play.ts";
 import { listsQuery, progressQuery } from "#/lib/queries.ts";
 import { resumableRound } from "#/lib/round.ts";
 import { roxyQuery, shownLook } from "#/lib/roxy.ts";
@@ -27,38 +29,46 @@ export const Route = createFileRoute("/_authed/play/$childId/")({
 			context.queryClient.prefetchQuery({ ...playQuery(params.childId), staleTime: 0 }),
 			context.queryClient.prefetchQuery(listsQuery),
 		]),
-	component: SubjectHub,
+	component: Home,
 });
 
 type SpellingMode = (typeof SPELLING_MODES)[number];
+type TileId = "roxy" | "town" | "gobble" | "jelly" | "woods" | "spelling" | "math";
+const TILE_IDS: TileId[] = ["roxy", "gobble", "jelly", "spelling", "woods", "math", "town"];
+const GAMES = new Set<TileId>(["roxy", "town", "gobble", "jelly", "woods"]);
 
-/** Learn and Play take turns, so neither is ever two flicks away. */
-const PLACES = [
-	{ id: "spelling", label: "Spelling", hue: "spell" },
-	{ id: "play", label: "Play", hue: "roxy" },
-	{ id: "math", label: "Math", hue: "math" },
-] as const;
-type PlaceId = (typeof PLACES)[number]["id"];
-
-/** Small, fixed tilts, so stickers look pressed on by hand but never shift between visits. */
-const TILT = [-5, 4, -3, 6, -4, 3, -6, 4];
-
-const placeKey = (childId: string) => `jade.hub.place.${childId}`;
-
-function rememberedPlace(childId: string): PlaceId | null {
+/** The shelf leads with what she played last, as a console's home does; a new kid starts from the games. */
+const orderKey = (childId: string) => `jade.shelf.${childId}`;
+function readOrder(childId: string): TileId[] {
 	try {
-		const v = sessionStorage.getItem(placeKey(childId));
-		return PLACES.some((p) => p.id === v) ? (v as PlaceId) : null;
+		const saved = JSON.parse(localStorage.getItem(orderKey(childId)) ?? "[]") as string[];
+		const known = saved.filter((id): id is TileId => TILE_IDS.includes(id as TileId));
+		return [...new Set([...known, ...TILE_IDS])];
 	} catch {
-		return null;
+		return TILE_IDS;
+	}
+}
+function markPlayed(childId: string, id: TileId) {
+	try {
+		localStorage.setItem(orderKey(childId), JSON.stringify([id, ...readOrder(childId).filter((t) => t !== id)]));
+	} catch {}
+}
+
+function readNumber(key: string) {
+	try {
+		return Number(localStorage.getItem(key)) || 0;
+	} catch {
+		return 0;
 	}
 }
 
 /** How to earn a badge, in the kid's words, under its empty slot. */
 const hint = (id: string) => BADGES.find((d) => d.id === id)?.hint;
+/** Small, fixed tilts, so earned badges look pressed on by hand but never shift between visits. */
+const TILT = [-5, 4, -3, 6, -4, 3, -6, 4];
 
-/** The sticker sheet: every badge has its place, earned ones stuck down, the rest still a printed outline. */
-function StickerSheet({ badges }: { badges: Progress["badges"] }) {
+/** The badge sheet: every badge has its place, earned ones stuck down, the rest a dim disc saying how to earn it. */
+function BadgeSheet({ badges }: { badges: Progress["badges"] }) {
 	return (
 		<ul className="grid grid-cols-3 gap-x-3 gap-y-5">
 			{badges.map((b, i) => (
@@ -72,8 +82,8 @@ function StickerSheet({ badges }: { badges: Progress["badges"] }) {
 							<BadgeIcon icon={b.icon} className="size-8" />
 						</span>
 					) : (
-						<span className="slot size-16 !rounded-2xl md:size-[4.5rem]">
-							<BadgeIcon icon={b.icon} className="size-6 opacity-70" />
+						<span className="grid size-16 place-items-center rounded-2xl bg-page-deep text-page-muted md:size-[4.5rem]">
+							<BadgeIcon icon={b.icon} className="size-6" />
 						</span>
 					)}
 					<span className={b.earned ? "text-xs font-medium leading-tight" : "text-xs leading-tight text-page-muted"}>
@@ -87,461 +97,455 @@ function StickerSheet({ badges }: { badges: Progress["badges"] }) {
 	);
 }
 
-/** One place, filling the screen as one big sticker: its own picture in the middle, its caption low on the left. */
-function PlacePage({
-	place,
-	current,
-	placed,
-	media,
+/** One sheet over the home, for badges, quests or more time; Esc, Close or a tap outside closes it. */
+function Sheet({
+	sheetRef,
+	title,
 	children,
-	sectionRef,
 }: {
-	place: (typeof PLACES)[number];
-	current: boolean;
-	/** Stuck down just now (Play opening after practice), so it's placed with the sticker's own motion. */
-	placed?: boolean;
-	media: React.ReactNode;
+	sheetRef: React.RefObject<HTMLDialogElement | null>;
+	title: React.ReactNode;
 	children: React.ReactNode;
-	sectionRef: (el: HTMLElement | null) => void;
 }) {
+	const id = useId();
 	return (
-		<section
-			ref={sectionRef}
-			id={`place-${place.id}`}
-			data-id={place.id}
-			className="place-page"
-			data-place={place.hue}
-			data-current={current || undefined}
-			aria-labelledby={`place-${place.id}-heading`}
+		// biome-ignore lint/a11y/useKeyWithClickEvents: only a tap on the backdrop; the keyboard closes it with Esc or Close.
+		<dialog
+			ref={sheetRef}
+			aria-labelledby={id}
+			className="m-auto max-h-[calc(100dvh-2rem)] w-[min(40rem,calc(100vw-2rem))] overflow-y-auto rounded-[1.75rem] bg-page-raised p-6 text-page-ink shadow-2xl backdrop:bg-black/55 md:p-8"
+			onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
 		>
-			<div className={`place-face ${placed ? "animate-sticker-place" : ""}`}>
-				<div className="absolute inset-0" aria-hidden>
-					{media}
-				</div>
-				<div className="place-caption absolute inset-x-0 bottom-0 z-[2] flex max-w-2xl flex-col items-start gap-4 p-6 pr-24 pb-7 md:p-12 md:pr-36">
-					{children}
-				</div>
+			<div className="mb-6 flex items-center justify-between gap-4">
+				<h2 id={id} className="text-2xl font-semibold">
+					{title}
+				</h2>
+				<button type="button" className="key size-12 !px-0" aria-label="Close" onClick={() => sheetRef.current?.close()}>
+					<X className="size-5" aria-hidden />
+				</button>
 			</div>
-		</section>
-	);
-}
-
-/** A place's name: the caption's headline, as big as the screen allows. */
-function PlaceName({ id, children }: { id: string; children: React.ReactNode }) {
-	return (
-		<h2
-			id={id}
-			tabIndex={-1}
-			className="outline-none font-display text-[clamp(3.5rem,11vw,6rem)] leading-[0.95] font-semibold tracking-[-0.02em] text-balance"
-		>
 			{children}
-		</h2>
+		</dialog>
 	);
 }
 
-/** The place's lettering, printed huge across its face a tint off the hue and cropped by the rim. */
-function Print({ children }: { children: string }) {
+type Tile = {
+	id: TileId;
+	name: string;
+	/** One line under the shelf while it's lit. */
+	line: string;
+	/** A short fact beside the line: a best score, finds, a round to finish. */
+	stat?: React.ReactNode;
+	art: React.ReactNode;
+	/** A red count on the tile's corner: words or facts waiting. */
+	count?: number;
+	/** How far a waiting round has come, as a bar along the tile's foot. */
+	progress?: number;
+	/** Where the tile goes; a game while Play is shut goes nowhere. */
+	go?: () => void;
+	locked?: boolean;
+};
+
+/**
+ * Under a shut game: one line for what opens it (a strip for a star goal) and one key to where practice waits; out of
+ * time, the minutes stars can buy.
+ */
+function ClosedLine({ play, childId, go }: { play: PlayStatus; childId: string; go: React.ReactNode }) {
+	const p = goalProgress(play.settings.goal, play.today);
 	return (
-		<span
-			className="place-print absolute top-[18%] -right-[4%] origin-top-right text-[min(58vh,52vw)] md:top-[9%] md:text-[min(58vh,44vw)] md:portrait:top-[14%] md:portrait:text-[60vw]"
-			style={{ transform: "rotate(-7deg)" }}
-		>
-			{children}
-		</span>
+		<div id="shelf-line" className="flex flex-wrap items-center gap-x-5 gap-y-3">
+			<p className="flex items-center gap-2.5 text-lg font-medium">
+				<Lock className="size-5 shrink-0" aria-hidden />
+				{play.shut ? "Play opens after practice" : "Out of play time"}
+			</p>
+			{play.shut ? (
+				<>
+					{p.unit === "star" ? (
+						<span className="flex items-center gap-2.5 text-sm font-semibold text-page-muted tabular-nums">
+							<span className="block h-2 w-28 overflow-hidden rounded-full bg-page-line" aria-hidden>
+								<span className="block h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (p.have / p.need) * 100)}%` }} />
+							</span>
+							{p.have} of {p.need} stars today
+						</span>
+					) : (
+						<span className="text-sm font-semibold text-page-muted">Finish 1 round today</span>
+					)}
+					{go}
+				</>
+			) : (
+				<MoreTime childId={childId} status={play} />
+			)}
+		</div>
 	);
 }
 
-/** A rail item's words, on a small white vinyl label so they read on any hue and over the print. */
-function RailLabel({ children }: { children: React.ReactNode }) {
-	return (
-		<span aria-hidden className="word-sticker items-center gap-1 tabular-nums" style={{ fontSize: 13 }}>
-			{children}
-		</span>
-	);
+/** Key art from the game itself (public/tiles), edge to edge. */
+function Art({ src }: { src: string }) {
+	return <img src={src} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />;
 }
 
-/** How a fact key reads on a disc: "m:mul:7x8" is 7×8. */
-const factText = (k: string) =>
-	k
-		.replace(/^m:(mul|div):/, "")
-		.replace("x", "×")
-		.replace("/", "÷");
-
-/** What each topic looks like, as a problem on a disc; story problems have no short face, so they lend none. */
-const TOPIC_SAMPLE: Partial<Record<MathTopic, string>> = { facts: "6×7", mental: "48−19", fractions: "¾" };
-
-function SubjectHub() {
+function Home() {
 	const child = useChild();
+	const navigate = useNavigate();
 	const { data: progress } = useQuery(progressQuery(child.id));
 	const { data: roxy } = useQuery(roxyQuery(child.id));
 	const { data: play } = useQuery(playQuery(child.id));
-	const placed = usePlacedToday(child.id, play);
+	const { data: lists } = useQuery(listsQuery);
 	const spellingLeft = resumableRound(child.id);
 	const mathLeft = resumableMath(child.id);
 	const spellingDue = progress?.reviewDue.length ?? 0;
 	const factsDue = progress?.math.factsDue.length ?? 0;
-	// One primary key per view: the round touched most recently gets it.
-	const latest = !mathLeft || (spellingLeft && spellingLeft.startedAt >= mathLeft.startedAt) ? "spelling" : "math";
+	const stars = progress?.stats.totalStars ?? 0;
+	const streak = progress?.stats.currentStreak ?? 0;
 	const earned = progress?.badges.filter((b) => b.earned).length ?? 0;
-	// What's waiting in Spelling: words due first, else this week's newest list, said as new or as how far along it is.
-	const { data: lists } = useQuery(listsQuery);
+	const locked = !!play && !play.open;
 	const newest = lists && newestFirst(lists.filter((l) => listIsFor(l, child.id)))[0];
 	const played = newest?.perChild.find((p) => p.childId === child.id && p.lastPlayedAt);
-	// A round in progress speaks for itself on its Continue key, so the line doesn't count the list over again.
-	const spellingNote: { lead: string; tail?: string } = spellingLeft
-		? { lead: "Pick up where you left off", tail: `${spellingLeft.done} of ${spellingLeft.total}` }
-		: spellingDue > 0
-			? { lead: `${spellingDue} ${spellingDue === 1 ? "word" : "words"} to review` }
-			: newest
-				? {
-						lead: newest.name,
-						tail: played
-							? `${played.mastered} of ${newest.wordCount} mastered`
-							: `${newest.wordCount} new ${newest.wordCount === 1 ? "word" : "words"}`,
-					}
-				: { lead: "Hear it, spell it" };
-	// The words on Spelling's face are the ones waiting for her: review first, else this week's newest list.
-	const faceWords = spellingDue > 0 ? (progress?.reviewDue ?? []).slice(0, 3) : (newest?.preview ?? []).slice(0, 3);
-	const topics = MATH_TOPICS.filter((t) => child.settings.math.topics.includes(t));
-	const stars = progress?.stats.totalStars ?? 0;
-	const closed = !!play && !play.open;
-	// Where closed Play sends her: the subject with something waiting, else Spelling.
-	const practiceAt: PlaceId = mathLeft || (factsDue > 0 && !spellingLeft && spellingDue === 0) ? "math" : "spelling";
-	const streak = progress?.stats.currentStreak ?? 0;
+	const holiday = roxy?.holidays[0];
+	const [best] = useState(() => ({
+		gobble: readNumber(`jade.gobble.best.${child.id}`),
+		jelly: readNumber(`jade.jelly.best.${child.id}`),
+		nights: readNumber(`jade.woods.nights.${child.id}`),
+	}));
+	const game =
+		(
+			to:
+				| "/play/$childId/games/roxy"
+				| "/play/$childId/games/roxy/town"
+				| "/play/$childId/games/gobble"
+				| "/play/$childId/games/jelly"
+				| "/play/$childId/games/woods",
+		) =>
+		() =>
+			navigate({ to, params: { childId: child.id } });
 
-	// Open where she was last on this visit, else where a round is waiting, else at Spelling.
-	const [current, setCurrent] = useState<PlaceId>(() => rememberedPlace(child.id) ?? (spellingLeft || mathLeft ? latest : "spelling"));
-	const scroller = useRef<HTMLElement>(null);
-	const sections = useRef(new Map<PlaceId, HTMLElement>());
-	const badgesDialog = useRef<HTMLDialogElement>(null);
+	const tiles: Record<TileId, Tile> = {
+		roxy: {
+			id: "roxy",
+			name: "Roxy",
+			line: "Style your own character, then turn them into an animal with a magic gem.",
+			stat: holiday && (
+				<>
+					<CalendarHeart className="size-4" aria-hidden /> {holiday.label} collection
+				</>
+			),
+			art: roxy ? (
+				<RoxyFigure look={shownLook(child.id, roxy)} viewBox="40 20 320 320" className="absolute inset-0 size-full" />
+			) : (
+				<span className="absolute inset-0 bg-roxy" />
+			),
+			go: game("/play/$childId/games/roxy"),
+		},
+		town: {
+			id: "town",
+			name: "Roxy’s town",
+			line: "Take Roxy and your pet to the park, the pet shop and school, and find what’s hidden.",
+			stat: roxy && `${roxy.finds.length} of ${FINDS.length} found`,
+			art: <Art src="/tiles/town.webp" />,
+			go: game("/play/$childId/games/roxy/town"),
+		},
+		gobble: {
+			id: "gobble",
+			name: "Gobble Town",
+			line: "Be a hungry hole! Gobble flowers, then cars, then whole houses, and be the biggest in town.",
+			stat: best.gobble > 0 && `Your best: ${best.gobble.toLocaleString()}`,
+			art: <Art src="/tiles/gobble.webp" />,
+			go: game("/play/$childId/games/gobble"),
+		},
+		jelly: {
+			id: "jelly",
+			name: "Jelly Blocks",
+			line: "Turn and drop wobbly jelly blocks to fill whole rows. Fill a row and it pops!",
+			stat: best.jelly > 0 && `Your best: ${best.jelly.toLocaleString()}`,
+			art: <Art src="/tiles/jelly.webp" />,
+			go: game("/play/$childId/games/jelly"),
+		},
+		woods: {
+			id: "woods",
+			name: "Campfire Woods",
+			line: "Dig and build on your island, keep the campfire burning all night, and bring lost animals home.",
+			stat: best.nights > 0 && `${best.nights} ${best.nights === 1 ? "night" : "nights"} by the fire`,
+			art: <Art src="/tiles/woods.webp" />,
+			go: game("/play/$childId/games/woods"),
+		},
+		spelling: {
+			id: "spelling",
+			name: "Spelling",
+			line: spellingLeft
+				? `Pick up ${spellingLeft.name} where you left off.`
+				: spellingDue > 0
+					? `${spellingDue} ${spellingDue === 1 ? "word wants" : "words want"} another go.`
+					: newest
+						? played
+							? `${newest.name}: ${played.mastered} of ${newest.wordCount} mastered.`
+							: `${newest.name}: ${newest.wordCount} new ${newest.wordCount === 1 ? "word" : "words"}.`
+						: "Hear the word, then spell it, like a real bee.",
+			stat: spellingLeft && `${spellingLeft.done} of ${spellingLeft.total} done`,
+			art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} right={2} />,
+			// What's waiting: words due again, else this week's words she hasn't started.
+			count: spellingDue || (newest && !played ? newest.wordCount : undefined),
+			progress: spellingLeft ? spellingLeft.done / spellingLeft.total : undefined,
+			go: spellingLeft
+				? () =>
+						navigate({
+							to: "/play/$childId/round/$listId/$mode",
+							params: { childId: child.id, listId: spellingLeft.listId ?? "review", mode: spellingLeft.mode as SpellingMode },
+							search: { resume: true },
+						})
+				: () => navigate({ to: "/play/$childId/spelling", params: { childId: child.id } }),
+		},
+		math: {
+			id: "math",
+			name: "Math",
+			line: mathLeft
+				? `Pick up ${mathLeft.mode === "mathreview" ? "facts review" : TOPIC_LABEL[mathLeft.mode].toLowerCase()} where you left off.`
+				: factsDue > 0
+					? `${factsDue} ${factsDue === 1 ? "fact wants" : "facts want"} another go.`
+					: "Times tables, mental math, fractions and story problems.",
+			stat: mathLeft && `${mathLeft.done} of ${mathLeft.total} done`,
+			art: <SubjectArt hue="math" tiles={["7", "×", "8"]} right={-1} answer />,
+			count: factsDue || undefined,
+			progress: mathLeft ? mathLeft.done / mathLeft.total : undefined,
+			go: mathLeft
+				? () =>
+						navigate({
+							to: "/play/$childId/math/$topic",
+							params: { childId: child.id, topic: mathLeft.mode },
+							search: { resume: true },
+						})
+				: () => navigate({ to: "/play/$childId/math", params: { childId: child.id } }),
+		},
+	};
 
-	function go(id: PlaceId) {
+	// A round waiting to be finished leads the shelf (the most recent of the two), whatever was tapped last.
+	const [order] = useState(() => {
+		const waiting = [
+			spellingLeft && { id: "spelling" as const, at: spellingLeft.startedAt },
+			mathLeft && { id: "math" as const, at: mathLeft.startedAt },
+		]
+			.filter((w): w is { id: "spelling" | "math"; at: number } => !!w)
+			.sort((a, b) => b.at - a.at)
+			.map((w) => w.id);
+		return [...new Set<TileId>([...waiting, ...readOrder(child.id)])];
+	});
+	const shelf = order.map((id) => {
+		const t = tiles[id];
+		const shut = locked && GAMES.has(id);
+		const go = t.go;
+		return {
+			...t,
+			locked: shut,
+			go:
+				shut || !go
+					? undefined
+					: () => {
+							markPlayed(child.id, id);
+							speaker.unlock();
+							go();
+						},
+		};
+	});
+	// A kid whose games are shut starts lit on the first thing she can open.
+	const [lit, setLit] = useState(() =>
+		Math.max(
+			0,
+			shelf.findIndex((t) => !t.locked),
+		),
+	);
+	const buttons = useRef<(HTMLElement | null)[]>([]);
+	const current = shelf[lit] ?? shelf[0]!;
+
+	function light(i: number) {
+		const next = Math.max(0, Math.min(shelf.length - 1, i));
+		setLit(next);
+		const el = buttons.current[next];
+		el?.focus({ preventScroll: true });
 		const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-		const section = sections.current.get(id);
-		section?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-		// Focus follows to the place's name, so a screen reader says where she landed and Tab goes on to its keys.
-		section?.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
+		el?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", inline: "center", block: "nearest" });
 	}
 
-	// Land on the opening place without a scroll, before anything paints.
+	// The lit tile starts in view, ring and all, even when it isn't first (a shut Play lights Spelling).
 	useEffect(() => {
-		sections.current.get(current)?.scrollIntoView({ behavior: "instant", block: "start" });
+		if (lit > 0) buttons.current[lit]?.scrollIntoView({ behavior: "instant", inline: "center", block: "nearest" });
 	}, []);
 
-	// The place that fills the screen is the current one; the tabs and caption follow it.
-	useEffect(() => {
-		const root = scroller.current;
-		if (!root) return;
-		const seen = new IntersectionObserver(
-			(entries) => {
-				for (const e of entries) if (e.isIntersecting) setCurrent(e.target.getAttribute("data-id") as PlaceId);
-			},
-			{ root, threshold: 0.6 },
-		);
-		for (const el of sections.current.values()) seen.observe(el);
-		return () => seen.disconnect();
-	}, []);
-
-	useEffect(() => {
-		try {
-			sessionStorage.setItem(placeKey(child.id), current);
-		} catch {}
-	}, [child.id, current]);
-
-	// Arrows and Page Up/Down move a whole place, Home and End go to the first and last, unless something that takes
-	// keys of its own (a field, a slider, a list) has focus.
+	// Arrows, Home and End move the light along the shelf from anywhere on the page, unless a field, a list or a sheet
+	// has the keys. Enter or Space on the lit tile opens it, as a press does.
 	useEffect(() => {
 		function onKey(e: KeyboardEvent) {
-			if (e.altKey || e.ctrlKey || e.metaKey || badgesDialog.current?.open) return;
+			if (e.altKey || e.ctrlKey || e.metaKey || document.querySelector("dialog[open]")) return;
 			const t = e.target as HTMLElement | null;
 			if (t?.closest("input, textarea, select, [contenteditable], [role=slider], [role=listbox], [role=menu], [role=tablist]")) return;
-			const at = PLACES.findIndex((p) => p.id === current);
-			const i =
-				e.key === "Home"
-					? 0
-					: e.key === "End"
-						? PLACES.length - 1
-						: e.key === "ArrowDown" || e.key === "PageDown"
-							? at + 1
-							: e.key === "ArrowUp" || e.key === "PageUp"
-								? at - 1
-								: -2;
-			if (i === -2 || i < 0 || i >= PLACES.length || i === at) return;
+			const to =
+				e.key === "Home" ? 0 : e.key === "End" ? shelf.length - 1 : e.key === "ArrowRight" ? lit + 1 : e.key === "ArrowLeft" ? lit - 1 : -1;
+			if (to < 0 || to >= shelf.length) return;
 			e.preventDefault();
-			go(PLACES[i]?.id ?? current);
+			light(to);
 		}
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	});
 
-	const hue = PLACES.find((p) => p.id === current)?.hue ?? "spell";
-	const register = (id: PlaceId) => (el: HTMLElement | null) => {
-		if (el) sections.current.set(id, el);
-		else sections.current.delete(id);
-	};
+	const badges = useRef<HTMLDialogElement>(null);
+	const quests = useRef<HTMLDialogElement>(null);
+	const time = useRef<HTMLDialogElement>(null);
+	// Where a shut Play sends her: the subject nearest the front of her shelf.
+	const subject = shelf.find((t) => !GAMES.has(t.id));
+	const timeCosts = !!play?.settings.timeCosts && !play.settings.free;
 
 	return (
-		<div className="relative">
-			<h1 className="sr-only">{child.name}’s places</h1>
+		<main className="grid min-h-dvh grid-rows-[auto_1fr_auto] gap-y-4 py-safe-5 md:py-safe-7">
+			<h1 className="sr-only">{child.name}’s games</h1>
 
-			{/* The chrome floats over whichever place fills the screen, inside its rim. */}
-			<div className="pointer-events-none fixed inset-0 z-10 text-sticker-ink">
-				<div className="absolute top-[calc(var(--place-inset-top,0.625rem)+1.1rem)] left-[calc(max(0.625rem,var(--safe-left))+1.4rem)] hidden md:left-[calc(max(1rem,var(--safe-left))+2rem)] md:top-[calc(max(1rem,var(--safe-top))+1.6rem)] sm:block">
-					<Brand size={22} />
+			{/* Who's playing, and what she has: her sticker and name, then her stars and tickets as big numerals. */}
+			<header className="flex items-center justify-between gap-4 px-safe-5 md:px-safe-12">
+				<div className="flex min-w-0 items-center gap-3">
+					<KidTile name={child.name} avatar={child.avatar} size={48} />
+					<span className="truncate font-display text-2xl font-semibold">{child.name}</span>
 				</div>
-
-				<nav
-					aria-label="Places"
-					className="pointer-events-auto absolute top-[calc(max(0.625rem,var(--safe-top))+1rem)] left-1/2 flex -translate-x-1/2 gap-1 rounded-full bg-black/25 p-1 md:top-[calc(max(1rem,var(--safe-top))+1.4rem)]"
-				>
-					{PLACES.map((p) => (
-						<button
-							key={p.id}
-							type="button"
-							onClick={() => go(p.id)}
-							aria-current={p.id === current ? "location" : undefined}
-							className={`min-h-11 rounded-full px-4 font-display text-base font-semibold transition-colors duration-200 md:px-5 ${
-								p.id === current ? "bg-sticker-ink" : "text-sticker-ink hover:bg-black/15"
-							}`}
-							style={p.id === current ? { color: `var(--color-${hue})` } : undefined}
-						>
-							{p.label}
-						</button>
-					))}
-				</nav>
-			</div>
-
-			<main ref={scroller} className="h-dvh snap-y snap-mandatory overflow-y-auto overscroll-y-contain [scrollbar-width:none]">
-				<PlacePage
-					place={PLACES[0]}
-					current={current === "spelling"}
-					sectionRef={register("spelling")}
-					media={
-						<>
-							<Print>spell</Print>
-							{faceWords.length > 0 && (
-								<span className="absolute top-[26%] right-[22%] flex origin-right flex-col items-end gap-3 md:top-[50%] md:right-[16%] md:portrait:top-[52%] md:portrait:scale-125">
-									{faceWords.map((w, i) => (
-										<span key={w} style={{ transform: `rotate(${[-4, 3, -2][i]}deg)` }}>
-											<WordRack word={w} max={i === 0 ? 46 : 34} />
-										</span>
-									))}
-								</span>
-							)}
-						</>
-					}
-				>
-					<PlaceName id="place-spelling-heading">Spelling</PlaceName>
-					<p className="text-lg font-medium">
-						{spellingNote.lead}
-						{spellingNote.tail && <span className="whitespace-nowrap"> · {spellingNote.tail}</span>}
-					</p>
-					{spellingLeft ? (
-						<div className="flex flex-wrap items-center gap-3">
-							<Link
-								to="/play/$childId/round/$listId/$mode"
-								params={{ childId: child.id, listId: spellingLeft.listId ?? "review", mode: spellingLeft.mode as SpellingMode }}
-								search={{ resume: true }}
-								onClick={() => speaker.unlock()}
-								className="key max-w-full whitespace-nowrap"
-								data-variant={latest === "spelling" ? "go" : undefined}
-							>
-								<Play className="size-5 shrink-0" aria-hidden />
-								<span className="max-w-[17ch] truncate sm:max-w-[24ch]">Continue {spellingLeft.name}</span>
-								<span className="sr-only">{` · ${spellingLeft.done} of ${spellingLeft.total}`}</span>
-							</Link>
-							<Link to="/play/$childId/spelling" params={{ childId: child.id }} onClick={() => speaker.unlock()} className="key">
-								All lists
-							</Link>
+				<dl className="flex items-center gap-5 font-display md:gap-7">
+					<div className="flex items-center gap-2">
+						<dt>
+							<Star className="size-6 fill-current text-marigold" aria-hidden />
+							<span className="sr-only">Stars</span>
+						</dt>
+						<dd className="text-2xl font-semibold tabular-nums md:text-3xl">{stars}</dd>
+					</div>
+					{play && !play.settings.free && (
+						<div className="flex items-center gap-2">
+							<dt>
+								<Ticket className="size-6 text-roxy" aria-hidden />
+								<span className="sr-only">Tickets</span>
+							</dt>
+							<dd className="text-2xl font-semibold tabular-nums md:text-3xl">{play.wallet.tickets}</dd>
 						</div>
-					) : (
-						<Link
-							to="/play/$childId/spelling"
-							params={{ childId: child.id }}
-							onClick={() => speaker.unlock()}
-							className="key"
-							data-variant="go"
-						>
-							Let’s spell
-						</Link>
 					)}
-				</PlacePage>
+				</dl>
+			</header>
 
-				<PlacePage
-					place={PLACES[1]}
-					current={current === "play"}
-					placed={placed}
-					sectionRef={register("play")}
-					media={
-						roxy && (
-							<>
-								{/* Closed, the caption grows by the slot, so on a phone she steps up and back out of its way. */}
-								<span
-									className={`absolute h-[3%] rounded-[50%] bg-black/25 blur-md md:right-[17%] md:bottom-[8%] md:h-[3.5%] md:w-[20%] ${closed ? "right-[12%] bottom-[57%] w-[24%]" : "right-[30%] bottom-[39%] w-[34%]"}`}
-								/>
-								<RoxyFigure
-									look={shownLook(child.id, roxy)}
-									omit={["background"]}
-									className={`absolute w-auto drop-shadow-[0_0.6rem_0.8rem_rgb(0_0_0/0.18)] md:right-[14%] md:bottom-[9%] md:h-[min(74%,42rem)] ${closed ? "right-[10%] bottom-[58%] h-[27%]" : "right-[26%] bottom-[40%] h-[42%]"}`}
-								/>
-							</>
-						)
-					}
-				>
-					<PlaceName id="place-play-heading">Play</PlaceName>
-					{closed ? (
-						<div className="w-full max-w-sm">
-							<PlayClosed
-								childId={child.id}
-								status={play}
-								size="small"
-								next={
-									<button type="button" className="key" data-variant="go" onClick={() => go(practiceAt)}>
-										Go to {practiceAt === "math" ? "Math" : "Spelling"}
-									</button>
-								}
-							/>
-						</div>
-					) : (
-						<>
-							<p className="text-lg font-medium md:max-w-[20rem]">Roxy, the town, Gobble Town, Jelly Blocks and Campfire Woods</p>
-							<div className="flex flex-wrap items-center gap-3">
-								<Link
-									to="/play/$childId/games"
-									params={{ childId: child.id }}
-									onClick={() => speaker.unlock()}
-									className="key"
-									data-variant="go"
-								>
-									Let’s play
-								</Link>
-								{play && <PlayWallet status={play} stars={false} />}
-							</div>
-						</>
-					)}
-				</PlacePage>
-
-				<PlacePage
-					place={PLACES[2]}
-					current={current === "math"}
-					sectionRef={register("math")}
-					media={
-						<>
-							<Print>7×8</Print>
-							<span className="absolute top-[32%] right-[24%] flex origin-right -space-x-2 md:top-[50%] md:right-[16%] md:-space-x-3 md:portrait:top-[52%] md:portrait:scale-125">
-								{factsDue > 0
-									? progress?.math.factsDue.slice(0, 3).map((k, i) => (
-											<span
-												key={k}
-												className="vinyl-disc size-20 text-2xl tabular-nums md:size-32 md:text-4xl"
-												style={{ transform: `rotate(${[-6, 4, -3][i]}deg)` }}
-											>
-												{factText(k)}
-											</span>
-										))
-									: topics
-											.flatMap((t) => TOPIC_SAMPLE[t] ?? [])
-											.map((q, i) => (
-												<span
-													key={q}
-													className="vinyl-disc size-20 text-2xl tabular-nums md:size-32 md:text-4xl"
-													style={{ transform: `rotate(${[-6, 4, -3][i]}deg)` }}
-												>
-													{q}
-												</span>
-											))}
+			<section aria-label="Your games" className="flex min-w-0 flex-col justify-center gap-4">
+				{/* The shelf: one row of big tiles, the one she played last first. One is lit at a time; the ring moves with
+				    arrows, hover and focus, and a press goes. */}
+				<ul className="shelf" aria-label="Games, Spelling and Math">
+					{shelf.map((t, i) => (
+						<li key={t.id} className="shelf-slot">
+							<span className="shelf-name" aria-hidden data-lit={i === lit || undefined}>
+								{t.name}
 							</span>
-						</>
-					}
-				>
-					<PlaceName id="place-math-heading">Math</PlaceName>
-					<p className="text-lg font-medium">
-						{mathLeft
-							? `Pick up where you left off · ${mathLeft.done} of ${mathLeft.total}`
-							: factsDue > 0
-								? `${factsDue} ${factsDue === 1 ? "fact" : "facts"} to review`
-								: "Facts, fractions, puzzles"}
-					</p>
-					{mathLeft ? (
-						<div className="flex flex-wrap items-center gap-3">
-							<Link
-								to="/play/$childId/math/$topic"
-								params={{ childId: child.id, topic: mathLeft.mode }}
-								search={{ resume: true }}
-								onClick={() => speaker.unlock()}
-								className="key max-w-full whitespace-nowrap"
-								data-variant={latest === "math" ? "go" : undefined}
+							<button
+								ref={(el) => {
+									buttons.current[i] = el;
+								}}
+								type="button"
+								className="shelf-tile"
+								data-lit={i === lit || undefined}
+								data-locked={t.locked || undefined}
+								tabIndex={i === lit ? 0 : -1}
+								aria-label={`${t.name}${t.count ? `, ${t.count} waiting` : ""}${t.locked ? ", opens after practice" : ""}`}
+								aria-describedby="shelf-line"
+								onFocus={() => setLit(i)}
+								onPointerEnter={(e) => e.pointerType === "mouse" && setLit(i)}
+								onClick={() => (t.go ? t.go() : light(i))}
 							>
-								<Play className="size-5 shrink-0" aria-hidden />
-								<span className="max-w-[17ch] truncate sm:max-w-[24ch]">
-									Continue {mathLeft.mode === "mathreview" ? "facts review" : TOPIC_LABEL[mathLeft.mode]}
-								</span>
-								<span className="sr-only">{` · ${mathLeft.done} of ${mathLeft.total}`}</span>
-							</Link>
-							<Link to="/play/$childId/math" params={{ childId: child.id }} onClick={() => speaker.unlock()} className="key">
-								All topics
-							</Link>
-						</div>
-					) : (
-						<Link
-							to="/play/$childId/math"
-							params={{ childId: child.id }}
-							onClick={() => speaker.unlock()}
-							className="key"
-							data-variant="go"
-						>
-							Let’s do math
-						</Link>
-					)}
-				</PlacePage>
-			</main>
+								{t.art}
+								{t.count ? (
+									<span className="shelf-count" aria-hidden>
+										{t.count > 99 ? "99+" : t.count}
+									</span>
+								) : null}
+								{t.progress !== undefined && (
+									<span className="shelf-progress" aria-hidden>
+										<span style={{ width: `${Math.max(6, t.progress * 100)}%` }} />
+									</span>
+								)}
+								{t.locked && (
+									<span className="shelf-lock" aria-hidden>
+										<Lock className="size-4" /> {play?.shut ? "After practice" : "Out of time"}
+									</span>
+								)}
+							</button>
+						</li>
+					))}
+				</ul>
 
-			{/* Who and what she has, after the places in reading order, so Tab goes from a place's name to its keys. */}
-			<div className="pointer-events-none fixed inset-0 z-10 text-sticker-ink">
-				<div className="pointer-events-auto absolute top-1/2 right-[calc(max(0.625rem,var(--safe-right))+0.9rem)] flex -translate-y-1/2 flex-col items-center gap-5 md:right-[calc(max(1rem,var(--safe-right))+1.6rem)]">
-					<Link to="/profiles" className="flex flex-col items-center gap-1.5 rounded-full" aria-label={`Switch from ${child.name}`}>
-						<KidTile name={child.name} avatar={child.avatar} size={52} />
-						<RailLabel>Switch</RailLabel>
-					</Link>
+				{/* What the lit tile is: one line, and a fact when there is one. A shut game says what opens it instead. */}
+				<div className="min-h-20 px-safe-5 md:px-safe-12">
+					{current.locked && play ? (
+						<ClosedLine
+							play={play}
+							childId={child.id}
+							go={
+								subject?.go && (
+									<button type="button" className="key" data-variant="go" onClick={subject.go}>
+										Go to {subject.name}
+									</button>
+								)
+							}
+						/>
+					) : (
+						<p id="shelf-line" className="flex max-w-3xl flex-wrap items-baseline gap-x-4 gap-y-1">
+							<span className="text-lg font-medium text-balance">{current.line}</span>
+							{current.stat && (
+								<span className="inline-flex items-center gap-1.5 text-sm font-semibold text-page-muted tabular-nums">{current.stat}</span>
+							)}
+						</p>
+					)}
+				</div>
+			</section>
+
+			<footer className="flex flex-wrap items-end justify-between gap-6 px-safe-5 md:px-safe-12">
+				<nav aria-label="More" className="flex items-start gap-5 md:gap-7">
+					{play?.open && (
+						<button type="button" className="home-action" onClick={() => quests.current?.showModal()}>
+							<span aria-hidden>
+								<Target className="size-6" />
+							</span>
+							Quests
+						</button>
+					)}
 					{progress && progress.badges.length > 0 && (
-						<button
-							type="button"
-							className="flex flex-col items-center gap-1.5 rounded-full"
-							onClick={() => badgesDialog.current?.showModal()}
-							aria-haspopup="dialog"
-							aria-label={`Badges, stars and streak: ${stars} ${stars === 1 ? "star" : "stars"}, ${earned} of ${progress.badges.length} badges`}
-						>
-							<span className="vinyl-disc size-13" aria-hidden>
+						<button type="button" className="home-action" onClick={() => badges.current?.showModal()}>
+							<span aria-hidden>
 								<Award className="size-6" />
 							</span>
-							<RailLabel>
-								<Star className="size-3.5 fill-current" />
-								{stars}
-							</RailLabel>
+							Badges
 						</button>
 					)}
+					{timeCosts && (
+						<button type="button" className="home-action" onClick={() => time.current?.showModal()}>
+							<span aria-hidden>
+								<Clock className="size-6" />
+							</span>
+							More time
+						</button>
+					)}
+					<Link to="/profiles" className="home-action" aria-label={`Switch from ${child.name}`}>
+						<span aria-hidden>
+							<Users className="size-6" />
+						</span>
+						Switch
+					</Link>
+				</nav>
+				<div className="flex items-center gap-5">
+					<p className="hidden text-sm text-page-muted lg:[@media(pointer:fine)]:block" aria-hidden>
+						<kbd className="kbd">←</kbd> <kbd className="kbd">→</kbd> choose · <kbd className="kbd">Enter</kbd> play
+					</p>
+					<Brand size={18} />
 				</div>
-			</div>
+			</footer>
 
 			{progress && progress.badges.length > 0 && (
-				// biome-ignore lint/a11y/useKeyWithClickEvents: only a tap on the backdrop; the keyboard closes it with Esc or Close.
-				<dialog
-					ref={badgesDialog}
-					aria-labelledby="badges-heading"
-					className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-[1.75rem] border-[0.35rem] border-vinyl bg-page-raised p-6 text-page-ink shadow-2xl backdrop:bg-black/55 md:p-8"
-					onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
-				>
-					<div className="mb-6 flex items-center justify-between gap-4">
-						<h2 id="badges-heading" className="text-2xl font-semibold">
+				<Sheet
+					sheetRef={badges}
+					title={
+						<>
 							Your badges{" "}
 							<span className="text-base font-normal text-page-muted tabular-nums">
 								· {earned} of {progress.badges.length}
 							</span>
-						</h2>
-						<button type="button" className="key size-12 !px-0" aria-label="Close" onClick={() => badgesDialog.current?.close()}>
-							<X className="size-5" aria-hidden />
-						</button>
-					</div>
+						</>
+					}
+				>
 					{/* Her record of practice: every star ever earned (games never take from it) and the days in a row. */}
 					{stars > 0 ? (
 						<div className="mb-6 flex flex-wrap gap-2.5">
@@ -561,9 +565,19 @@ function SubjectHub() {
 					) : (
 						<p className="mb-6 text-page-muted">Your first round starts your stars and your streak.</p>
 					)}
-					<StickerSheet badges={progress.badges} />
-				</dialog>
+					<BadgeSheet badges={progress.badges} />
+				</Sheet>
 			)}
-		</div>
+			{play?.open && (
+				<Sheet sheetRef={quests} title="Today’s quests">
+					<QuestBoard childId={child.id} status={play} heading={false} />
+				</Sheet>
+			)}
+			{timeCosts && play && (
+				<Sheet sheetRef={time} title="More play time">
+					<MoreTime childId={child.id} status={play} />
+				</Sheet>
+			)}
+		</main>
 	);
 }

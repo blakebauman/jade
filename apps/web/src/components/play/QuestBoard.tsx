@@ -9,19 +9,26 @@ import { Tickets } from "./PlayBits.tsx";
 const TILTS = ["-1.5deg", "1deg", "-0.75deg"];
 
 /**
- * Today's three quests on the Play page. One still to do is a slot printed on the page with how far along it is; a
+ * Today's three quests, in the home shelf's Quests sheet. One still to do is a solid card with how far along it is; a
  * finished one is a berry sticker with its tickets to collect (or just "Done" while games are Free).
  */
-export function QuestBoard({ childId, status }: { childId: string; status: PlayStatus }) {
+/** `heading={false}` inside a sheet that already says "Today's quests". */
+export function QuestBoard({ childId, status, heading = true }: { childId: string; status: PlayStatus; heading?: boolean }) {
 	const id = useId();
 	const { quests, state } = useQuests(childId);
 	const done = quests.filter((q) => questDone(q, state)).length;
 	return (
-		<section aria-labelledby={id} className="mt-8">
+		<section
+			aria-labelledby={heading ? id : undefined}
+			aria-label={heading ? undefined : "Today’s quests"}
+			className={heading ? "mt-8" : ""}
+		>
 			<div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-				<h2 id={id} className="font-display text-2xl font-semibold">
-					Today’s quests
-				</h2>
+				{heading && (
+					<h2 id={id} className="font-display text-2xl font-semibold">
+						Today’s quests
+					</h2>
+				)}
 				<span className="text-sm font-medium text-page-muted">
 					{done} of {quests.length} done
 				</span>
@@ -43,7 +50,7 @@ function QuestCard({ childId, quest, state, free, tilt }: { childId: string; que
 
 	if (!questDone(quest, state))
 		return (
-			<li className="slot min-h-32 gap-2 p-4 text-center">
+			<li className="grid min-h-32 content-center justify-items-center gap-2 rounded-2xl bg-page-deep p-4 text-center">
 				<span className="font-display text-lg font-medium text-page-ink">{quest.label}</span>
 				<span className="text-sm font-medium text-page-muted tabular-nums">
 					{have} of {quest.need}

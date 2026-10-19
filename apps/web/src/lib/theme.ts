@@ -9,7 +9,7 @@ export type Theme = "day" | "night";
 
 const KEY = "jade.appearance";
 /** The page colour per theme, for the browser chrome (`<meta name="theme-color">`). Keep in step with index.css. */
-export const THEME_COLOR: Record<Theme, string> = { day: "#d4ebe1", night: "#0e4f43" };
+export const THEME_COLOR: Record<Theme, string> = { day: "#eceef2", night: "#212224" };
 
 const DARK = "(prefers-color-scheme: dark)";
 

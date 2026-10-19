@@ -1,9 +1,9 @@
-// iOS launch screens (apple-touch-startup-image): the Jade's World mark on the jade page under the lamp, one PNG per
+// iOS launch screens (apple-touch-startup-image): the Jade's World red tile on the Night shell, one PNG per
 // iPhone and iPad screen in each orientation. iOS shows a blank page at launch without them, and picks the one whose
-// media query matches exactly, so every size is listed. Night only: the manifest's colours are Night's page.
+// media query matches exactly, so every size is listed. Night only: the manifest's colours are Night's shell.
 // Writes public/splash/*.png and prints the <link> tags for index.html. Needs rsvg-convert (brew install librsvg) and
 // ImageMagick (brew install imagemagick): 256 colours, undithered, keeps the set near 3MB instead of 9 (dithering the
-// lamp's gradient makes it bigger, not smaller).
+// shell's gradient makes it bigger, not smaller).
 // Usage: node scripts/splash.mjs
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -44,16 +44,16 @@ for (const [w, h, dpr] of SCREENS) {
 	for (const orientation of ["portrait", "landscape"]) {
 		const [cw, ch] = orientation === "portrait" ? [w, h] : [h, w];
 		const [pw, ph] = [cw * dpr, ch * dpr];
-		const size = Math.round(Math.min(pw, ph) * 0.36);
+		const size = Math.round(Math.min(pw, ph) * 0.3);
 		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}" viewBox="0 0 ${pw} ${ph}">
   <defs>
-    <radialGradient id="lamp" cx="0.28" cy="0.2" r="0.95" gradientUnits="objectBoundingBox">
-      <stop offset="0" stop-color="#1a6a5a"/>
-      <stop offset="0.45" stop-color="#0e4f43"/>
-      <stop offset="1" stop-color="#072e27"/>
-    </radialGradient>
+    <linearGradient id="shell" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#28292c"/>
+      <stop offset="0.4" stop-color="#212224"/>
+      <stop offset="1" stop-color="#18191b"/>
+    </linearGradient>
   </defs>
-  <rect width="${pw}" height="${ph}" fill="url(#lamp)"/>
+  <rect width="${pw}" height="${ph}" fill="url(#shell)"/>
   <image x="${(pw - size) / 2}" y="${(ph - size) / 2}" width="${size}" height="${size}" href="data:image/svg+xml;base64,${mark}"/>
 </svg>`;
 		const name = `${pw}x${ph}.png`;

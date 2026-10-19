@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { openLanding } from "./helpers.ts";
+import { openLanding, shelfTile } from "./helpers.ts";
 
 async function setup(page: Page) {
 	await openLanding(page);
@@ -68,10 +68,10 @@ test("play Jelly Blocks: choose a speed, move, turn and drop, pause, and see the
 	await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
 });
 
-test("the Play home has a Jelly Blocks card", async ({ page }) => {
+test("the home shelf has a Jelly Blocks tile", async ({ page }) => {
 	const id = await setup(page);
 	await page.goto(`/play/${id}/games`);
-	await page.getByRole("link", { name: /Jelly Blocks/ }).click();
+	await shelfTile(page, "Jelly Blocks").click();
 	await expect(page).toHaveURL(new RegExp(`/play/${id}/games/jelly$`));
 });
 
