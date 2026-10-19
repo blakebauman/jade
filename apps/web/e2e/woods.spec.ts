@@ -125,7 +125,9 @@ test("the island grows dark at night, with the fire still on the status", async 
 	).toBeVisible();
 	await expect(page.getByRole("meter", { name: "Campfire" }).first()).toBeAttached();
 
-	// The panel can make things, once there's something to make them from.
+	// The panel can make things, once there's something to make them from. Where the browser really holds the
+	// pointer for looking round (Linux CI does), it's let go first, as a kid would with Escape.
+	await page.evaluate(() => document.exitPointerLock?.());
 	await page.getByRole("button", { name: /Show your things/ }).click();
 	await expect(page.getByRole("button", { name: "Make planks" })).toBeDisabled();
 	await expect(page.getByRole("button", { name: /Make glass/ })).toBeDisabled();
