@@ -23,8 +23,8 @@ export default defineConfig({
 				short_name: "Jade's World",
 				description:
 					"Spelling bee and math practice for 8–11 year olds, and a world to play in: Roxy’s studio and town, Gobble Town, Jelly Blocks and Campfire Woods.",
-				theme_color: "#0e4f43",
-				background_color: "#0e4f43",
+				theme_color: "#212224",
+				background_color: "#212224",
 				display: "standalone",
 				orientation: "any",
 				id: "/",
@@ -38,7 +38,7 @@ export default defineConfig({
 			workbox: {
 				navigateFallback: "/index.html",
 				navigateFallbackDenylist: [/^\/api\//, /^\/health$/],
-				globPatterns: ["**/*.{js,css,html,svg,png,woff2,glb}"],
+				globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2,glb}"],
 				// Latin type only: the other scripts' subsets load on demand (unicode-range) and would only weigh down the
 				// install on a phone. Splash screens are fetched by iOS itself when the app is added, never by the app.
 				globIgnores: ["**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,hebrew}-*.woff2", "splash/**"],

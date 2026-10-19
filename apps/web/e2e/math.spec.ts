@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { openLanding, stubVoice } from "./helpers.ts";
+import { openLanding, shelfTile, stubVoice } from "./helpers.ts";
 
 async function setup(page: Page, name: string) {
 	await openLanding(page);
@@ -32,11 +32,11 @@ test("times-tables round on the keypad: right, missed twice, stop, results", asy
 	await stubVoice(page);
 	const { childId } = await setup(page, "Max");
 
-	// Hub → Math → Times tables.
+	// Home shelf → Math → Times tables.
 	await page.goto(`/play/${childId}`);
-	await expect(page.getByRole("heading", { name: "Spelling", exact: true })).toBeVisible();
+	await expect(shelfTile(page, "Math")).toBeVisible();
 	await shot("hub");
-	await page.getByRole("link", { name: "Let’s do math" }).click();
+	await shelfTile(page, "Math").click();
 	await expect(page.getByRole("heading", { name: "Math: pick a topic" })).toBeVisible();
 	await shot("topics");
 	await page.getByRole("link", { name: "Play" }).first().click();

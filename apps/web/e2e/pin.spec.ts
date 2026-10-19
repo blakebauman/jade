@@ -41,7 +41,7 @@ test("going back to Practice locks the parent area again", async ({ page }) => {
 	await enterPin(page);
 	await expect(settings(page)).toBeVisible();
 	await page.getByRole("link", { name: "Practice", exact: true }).click();
-	await expect(page.getByRole("heading", { name: "Who’s here?" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Who’s playing?" })).toBeVisible();
 	await page.getByRole("link", { name: "Parents" }).click();
 	await expect(gate(page)).toBeVisible();
 });
@@ -51,7 +51,7 @@ test("signing out and back in on the same tab asks for the PIN again", async ({ 
 	await page.goto("/parent/settings");
 	await enterPin(page);
 	await page.getByRole("button", { name: "Sign out" }).click();
-	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Solve it. Play." })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." })).toBeVisible();
 	await page.request.post("/api/auth/sign-in/email", { headers: h, data: { email, password: PASSWORD } });
 	await page.goto("/parent/settings");
 	await expect(gate(page)).toBeVisible();
@@ -122,7 +122,7 @@ test("the gate can sign out, so a family is never stuck on it", async ({ page })
 	await page.goto("/parent");
 	await expect(gate(page)).toBeVisible();
 	await page.getByRole("button", { name: "Sign out" }).click();
-	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Solve it. Play." })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." })).toBeVisible();
 });
 
 test("a new PIN has to be typed twice", async ({ page }) => {

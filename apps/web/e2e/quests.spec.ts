@@ -18,6 +18,7 @@ const today = (page: Page) =>
 test("today's quests show on the Play page, and a finished one pays its tickets once", async ({ page }) => {
 	const id = await setup(page);
 	await page.goto(`/play/${id}/games`);
+	await page.getByRole("button", { name: "Quests" }).click();
 	const board = page.getByRole("region", { name: "Today’s quests" });
 	await expect(board).toBeVisible();
 	await expect(board.getByRole("listitem")).toHaveCount(3);
@@ -33,6 +34,7 @@ test("today's quests show on the Play page, and a finished one pays its tickets 
 		[`jade.quests.${id}`, JSON.stringify({ day, progress, collected: [] })],
 	);
 	await page.reload();
+	await page.getByRole("button", { name: "Quests" }).click();
 	await expect(board.getByText("3 of 3 done")).toBeVisible();
 
 	const collect = board.getByRole("button", { name: /^Collect/ }).first();
@@ -41,7 +43,8 @@ test("today's quests show on the Play page, and a finished one pays its tickets 
 	await expect(board.getByText(`Done! ${tickets} tickets collected`)).toBeVisible();
 	await expect(board.getByRole("button", { name: /^Collect/ })).toHaveCount(2);
 	const wallet = async () => (await (await page.request.get(`/api/children/${id}/play?day=${day}`)).json()).wallet.tickets as number;
-	expect(await wallet()).toBe(tickets);
+	// The card says Done as soon as it's tapped; the payment reaches the server a moment later.
+	await expect.poll(wallet).toBe(tickets);
 
 	// A second collect of the same quest (another tab, a resend) pays nothing more.
 	const key = `quest:${day}-${(await page.evaluate((k) => JSON.parse(localStorage.getItem(k)!).collected[0], `jade.quests.${id}`)) as string}`;
@@ -70,6 +73,7 @@ test("visiting a place in town counts toward today's town quests", async ({ page
 test("a quest finished while games were Free shows Done and never offers to collect", async ({ page }) => {
 	const id = await setup(page);
 	await page.goto(`/play/${id}/games`);
+	await page.getByRole("button", { name: "Quests" }).click();
 	const board = page.getByRole("region", { name: "Today’s quests" });
 	await expect(board).toBeVisible();
 	const day = await today(page);
@@ -81,6 +85,7 @@ test("a quest finished while games were Free shows Done and never offers to coll
 		[`jade.quests.${id}`, JSON.stringify({ day, progress, collected: [], unpaid: QUESTS.map((q) => q.id) })],
 	);
 	await page.reload();
+	await page.getByRole("button", { name: "Quests" }).click();
 	await expect(board.getByText("3 of 3 done")).toBeVisible();
 	await expect(board.getByText("Done!", { exact: true })).toHaveCount(3);
 	await expect(board.getByRole("button", { name: /^Collect/ })).toHaveCount(0);

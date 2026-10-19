@@ -772,7 +772,7 @@ function Kids() {
 				);
 			})}
 			{kids.length === 0 && (
-				<p className="max-w-prose text-page-muted">Add each child. They’ll pick their tile on the “Who’s here?” screen.</p>
+				<p className="max-w-prose text-page-muted">Add each child. They’ll pick their sticker on the “Who’s playing?” screen.</p>
 			)}
 			{added && (
 				<p role="status" className="text-lg">

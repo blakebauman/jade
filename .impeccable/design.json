@@ -6,194 +6,246 @@
 		"colorMeta": {
 			"page": {
 				"role": "primary",
-				"displayName": "Jade Page (Night)",
-				"canonical": "#0e4f43",
-				"oklch": "oklch(38.5% 0.066 177.0)",
-				"tonalRamp": ["#00130b", "#002e23", "#074b3f", "#2e6a5d", "#508a7c", "#71ac9e", "#96d3c3", "#c0feee"],
+				"displayName": "Charcoal Shell (Night)",
+				"canonical": "#212224",
+				"oklch": "oklch(25.2% 0.004 264.5)",
+				"tonalRamp": ["#0a0b0d", "#252628", "#444547", "#656668", "#88898c", "#adaeb0", "#cfd1d4", "#edeef1"],
 				"theme": "night (default)",
 				"cssVar": "--color-page"
 			},
 			"page-deep": {
 				"role": "primary",
-				"displayName": "Page Shadow (Night)",
-				"canonical": "#093a31",
-				"oklch": "oklch(31.4% 0.053 177.3)",
-				"tonalRamp": ["#00120b", "#002c24", "#1b493f", "#3b685d", "#5a887d", "#7baa9e", "#a0d0c4", "#cafbee"],
+				"displayName": "Shell Shadow (Night)",
+				"canonical": "#18191b",
+				"oklch": "oklch(21.3% 0.004 264.5)",
+				"tonalRamp": ["#0a0b0d", "#252629", "#444547", "#656668", "#88898c", "#acaeb1", "#cfd1d4", "#edeef1"],
 				"theme": "night (default)",
 				"cssVar": "--color-page-deep"
 			},
 			"page-raised": {
 				"role": "primary",
-				"displayName": "Raised Page (Night)",
-				"canonical": "#135c4e",
-				"oklch": "oklch(42.8% 0.073 176.5)",
-				"tonalRamp": ["#00130a", "#002f23", "#004c3f", "#266b5c", "#498c7c", "#6bae9d", "#91d4c3", "#baffed"],
+				"displayName": "Raised Shell (Night)",
+				"canonical": "#2c2d2f",
+				"oklch": "oklch(29.7% 0.004 264.5)",
+				"tonalRamp": ["#0a0b0d", "#252628", "#444547", "#656668", "#88898b", "#adaeb0", "#d0d1d3", "#edeef1"],
 				"theme": "night (default)",
 				"cssVar": "--color-page-raised"
 			},
 			"page-line": {
 				"role": "neutral",
-				"displayName": "Page Seam (Night)",
-				"canonical": "#1a6a5a",
-				"oklch": "oklch(47.3% 0.079 176.1)",
-				"tonalRamp": ["#00130a", "#002f23", "#004d3e", "#1d6c5c", "#438d7c", "#65af9d", "#8bd5c2", "#b5ffed"],
+				"displayName": "Shell Seam (Night)",
+				"canonical": "#3c3d3f",
+				"oklch": "oklch(36.0% 0.004 264.5)",
+				"tonalRamp": ["#0a0b0d", "#252628", "#444547", "#656668", "#88898b", "#adaeb0", "#d0d1d3", "#edeef1"],
 				"theme": "night (default)",
 				"cssVar": "--color-page-line"
 			},
 			"page-ink": {
 				"role": "neutral",
-				"displayName": "Chalk (Night)",
-				"canonical": "#e3f3ec",
-				"oklch": "oklch(95.0% 0.019 167.9)",
-				"tonalRamp": ["#040e0a", "#1b2722", "#36433e", "#54615b", "#73817b", "#94a29c", "#b9c8c2", "#e3f3ec"],
+				"displayName": "Shell Ink (Night)",
+				"canonical": "#f1f2f4",
+				"oklch": "oklch(96.1% 0.003 264.5)",
+				"tonalRamp": ["#0a0b0c", "#262628", "#444547", "#656668", "#88898b", "#adaeb0", "#d0d1d3", "#edeef0"],
 				"theme": "night (default)",
 				"cssVar": "--color-page-ink"
 			},
 			"page-muted": {
 				"role": "neutral",
-				"displayName": "Lichen (Night)",
-				"canonical": "#a3d0c0",
-				"oklch": "oklch(82.1% 0.052 171.2)",
-				"tonalRamp": ["#001108", "#002c21", "#1f493c", "#3d675a", "#5d8879", "#7ea99a", "#a3d0c0", "#ccfbea"],
+				"displayName": "Shell Muted (Night)",
+				"canonical": "#acaeb2",
+				"oklch": "oklch(75.0% 0.006 264.5)",
+				"tonalRamp": ["#0a0b0e", "#25262a", "#434548", "#64666a", "#87898d", "#acaeb2", "#cfd1d5", "#eceef3"],
 				"theme": "night (default)",
 				"cssVar": "--color-page-muted"
 			},
 			"page-pit": {
 				"role": "primary",
-				"displayName": "Page Pit (Night)",
-				"canonical": "#072e27",
-				"oklch": "oklch(27.2% 0.044 178.2)",
-				"tonalRamp": ["#00110b", "#042b24", "#234840", "#41665e", "#61867d", "#81a89e", "#a6cec4", "#d0f9ee"],
+				"displayName": "Shell Pit (Night)",
+				"canonical": "#121315",
+				"oklch": "oklch(18.6% 0.004 264.5)",
+				"tonalRamp": ["#0a0b0d", "#252629", "#444547", "#656669", "#88898c", "#acaeb1", "#cfd1d4", "#edeef1"],
 				"theme": "night (default)",
 				"cssVar": "--color-page-pit"
 			},
-			"vinyl": {
-				"role": "secondary",
-				"displayName": "Vinyl (Night)",
-				"canonical": "#dfe8e3",
-				"oklch": "oklch(92.3% 0.012 162.0)",
-				"tonalRamp": ["#070d0a", "#1f2622", "#3a423e", "#58605c", "#777f7b", "#98a19c", "#bec7c2", "#e8f1ec"],
-				"theme": "night (default)",
-				"cssVar": "--color-vinyl"
-			},
 			"page-day": {
 				"role": "primary",
-				"displayName": "Jade Page (Day)",
-				"canonical": "#d4ebe1",
-				"oklch": "oklch(92.0% 0.028 167.8)",
-				"tonalRamp": ["#010f09", "#162821", "#31453d", "#4f635a", "#6e837a", "#8fa49b", "#b4cac1", "#def5eb"],
+				"displayName": "Pale Cool Grey Shell (Day)",
+				"canonical": "#eceef2",
+				"oklch": "oklch(94.9% 0.006 264.5)",
+				"tonalRamp": ["#0a0b0e", "#252629", "#434548", "#646669", "#87898d", "#acaeb2", "#cfd1d5", "#eceef2"],
 				"theme": "day",
-				"cssVar": "--color-page under :root[data-theme=\"day\"]"
+				"cssVar": "--color-page"
 			},
 			"page-deep-day": {
 				"role": "primary",
-				"displayName": "Page Shadow (Day)",
-				"canonical": "#bcdccd",
-				"oklch": "oklch(86.7% 0.040 165.5)",
-				"tonalRamp": ["#001007", "#0e2a1f", "#2b473b", "#486558", "#678578", "#88a799", "#adcdbe", "#d7f8e8"],
+				"displayName": "Shell Shadow (Day)",
+				"canonical": "#dde1e7",
+				"oklch": "oklch(90.8% 0.009 258.3)",
+				"tonalRamp": ["#090b0f", "#24272b", "#42454a", "#63666b", "#86898f", "#aaaeb4", "#cdd1d7", "#ebeff5"],
 				"theme": "day",
-				"cssVar": "--color-page-deep under :root[data-theme=\"day\"]"
+				"cssVar": "--color-page-deep"
 			},
 			"page-raised-day": {
 				"role": "primary",
-				"displayName": "Raised Page (Day)",
-				"canonical": "#e9f5ef",
-				"oklch": "oklch(96.0% 0.015 164.7)",
-				"tonalRamp": ["#060d0a", "#1d2622", "#39423e", "#56605b", "#76807b", "#96a19c", "#bcc7c2", "#e6f2ec"],
+				"displayName": "Raised Shell (Day)",
+				"canonical": "#ffffff",
+				"oklch": "oklch(100.0% 0.000 89.9)",
+				"tonalRamp": ["#0b0b0b", "#262626", "#454545", "#666666", "#898989", "#aeaeae", "#d1d1d1", "#eeeeee"],
 				"theme": "day",
-				"cssVar": "--color-page-raised under :root[data-theme=\"day\"]"
+				"cssVar": "--color-page-raised"
 			},
 			"page-line-day": {
 				"role": "neutral",
-				"displayName": "Page Seam (Day)",
-				"canonical": "#9cc7b4",
-				"oklch": "oklch(79.3% 0.053 166.3)",
-				"tonalRamp": ["#001106", "#012c1e", "#214939", "#3f6757", "#5f8876", "#7fa997", "#a4d0bc", "#cefbe7"],
+				"displayName": "Shell Seam (Day)",
+				"canonical": "#cdd2db",
+				"oklch": "oklch(86.3% 0.014 262.4)",
+				"tonalRamp": ["#080b11", "#23272d", "#41454d", "#62666e", "#858992", "#a9aeb7", "#ccd1da", "#eaeff8"],
 				"theme": "day",
-				"cssVar": "--color-page-line under :root[data-theme=\"day\"]"
+				"cssVar": "--color-page-line"
 			},
 			"page-ink-day": {
 				"role": "neutral",
-				"displayName": "Chalk (Day)",
-				"canonical": "#0d3a31",
-				"oklch": "oklch(31.5% 0.051 176.7)",
-				"tonalRamp": ["#00110b", "#002c23", "#1e493f", "#3d675d", "#5c877c", "#7da99e", "#a2cfc3", "#ccfaee"],
+				"displayName": "Shell Ink (Day)",
+				"canonical": "#1b2130",
+				"oklch": "oklch(24.9% 0.030 267.4)",
+				"tonalRamp": ["#060a18", "#202635", "#3e4556", "#5e6678", "#81899c", "#a5aec2", "#c8d1e5", "#e6eeff"],
 				"theme": "day",
-				"cssVar": "--color-page-ink under :root[data-theme=\"day\"]"
+				"cssVar": "--color-page-ink"
 			},
 			"page-muted-day": {
 				"role": "neutral",
-				"displayName": "Lichen (Day)",
-				"canonical": "#335c4f",
-				"oklch": "oklch(44.0% 0.051 171.4)",
-				"tonalRamp": ["#001108", "#002c21", "#1f493c", "#3e675a", "#5e8879", "#7ea99a", "#a3cfc0", "#cdfaea"],
+				"displayName": "Shell Muted (Day)",
+				"canonical": "#555e70",
+				"oklch": "oklch(48.1% 0.031 264.2)",
+				"tonalRamp": ["#050b18", "#1f2636", "#3d4556", "#5d6678", "#80899d", "#a4aec2", "#c7d1e6", "#e4efff"],
 				"theme": "day",
-				"cssVar": "--color-page-muted under :root[data-theme=\"day\"]"
+				"cssVar": "--color-page-muted"
 			},
 			"page-pit-day": {
 				"role": "primary",
-				"displayName": "Page Pit (Day)",
-				"canonical": "#b3d5c5",
-				"oklch": "oklch(84.4% 0.042 165.3)",
-				"tonalRamp": ["#001007", "#0c2a1f", "#29473a", "#476558", "#668677", "#86a798", "#accdbd", "#d5f8e8"],
+				"displayName": "Shell Pit (Day)",
+				"canonical": "#d5d9e1",
+				"oklch": "oklch(88.5% 0.012 264.5)",
+				"tonalRamp": ["#090b10", "#24262c", "#42454c", "#63666d", "#868991", "#aaaeb6", "#cdd1d9", "#eaeff7"],
 				"theme": "day",
-				"cssVar": "--color-page-pit under :root[data-theme=\"day\"]"
+				"cssVar": "--color-page-pit"
+			},
+			"brand": {
+				"role": "secondary",
+				"displayName": "Brand Red",
+				"canonical": "#d62c27",
+				"oklch": "oklch(60.2% 0.215 27.7)",
+				"tonalRamp": ["#340000", "#620000", "#930000", "#c40006", "#ef3e36", "#ff6b5d", "#ff9a8a", "#ffbfae"],
+				"cssVar": "--color-brand"
+			},
+			"brand-deep": {
+				"role": "secondary",
+				"displayName": "Brand Red Deep",
+				"canonical": "#ab1d19",
+				"oklch": "oklch(50.5% 0.188 28.2)",
+				"tonalRamp": ["#300000", "#5d0000", "#8c0000", "#ba211d", "#e44e43", "#ff7667", "#ffa291", "#ffc5b4"],
+				"cssVar": "--color-brand-deep"
+			},
+			"select": {
+				"role": "secondary",
+				"displayName": "Select Blue",
+				"canonical": "#1d9bf0",
+				"oklch": "oklch(66.7% 0.161 245.5)",
+				"tonalRamp": ["#000339", "#002464", "#004692", "#006abb", "#008fe3", "#43b6ff", "#75daff", "#9ef8ff"],
+				"cssVar": "--color-select"
+			},
+			"select-day-name": {
+				"role": "secondary",
+				"displayName": "Select Name Day",
+				"canonical": "color-mix(in oklab, #1d9bf0 78%, black)",
+				"oklch": "oklch(52.1% 0.126 245.4)",
+				"tonalRamp": ["#000731", "#002759", "#004883", "#0b6ba9", "#3d8fd0", "#64b5f8", "#8ad9ff", "#aef7ff"],
+				"resolvedHex": "#126eac",
+				"theme": "day"
+			},
+			"action-white": {
+				"role": "neutral",
+				"displayName": "Action White",
+				"canonical": "#ffffff",
+				"oklch": "oklch(100.0% 0.000 89.9)",
+				"tonalRamp": ["#0b0b0b", "#262626", "#454545", "#666666", "#898989", "#aeaeae", "#d1d1d1", "#eeeeee"]
+			},
+			"action-ink": {
+				"role": "neutral",
+				"displayName": "Action Ink",
+				"canonical": "#1b2130",
+				"oklch": "oklch(24.9% 0.030 267.4)",
+				"tonalRamp": ["#060a18", "#202635", "#3e4556", "#5e6678", "#81899c", "#a5aec2", "#c8d1e5", "#e6eeff"]
+			},
+			"vinyl": {
+				"role": "neutral",
+				"displayName": "Vinyl (Night)",
+				"canonical": "#dfe8e3",
+				"oklch": "oklch(92.3% 0.012 162.0)",
+				"tonalRamp": ["#070d0a", "#222825", "#404743", "#606864", "#838b87", "#a8b0ac", "#cbd3cf", "#e8f1ec"],
+				"cssVar": "--color-vinyl"
 			},
 			"vinyl-day": {
-				"role": "secondary",
+				"role": "neutral",
 				"displayName": "Vinyl (Day)",
 				"canonical": "#fbfdfb",
 				"oklch": "oklch(99.2% 0.003 145.6)",
-				"tonalRamp": ["#0a0c0a", "#232423", "#3f403f", "#5c5e5c", "#7c7e7c", "#9d9f9d", "#c3c5c3", "#edefed"],
+				"tonalRamp": ["#0a0c0a", "#252725", "#444544", "#656765", "#888a88", "#adaead", "#d0d1d0", "#edefed"],
 				"theme": "day",
-				"cssVar": "--color-vinyl under :root[data-theme=\"day\"]"
+				"cssVar": "--color-vinyl"
 			},
-			"spell": {
-				"role": "secondary",
-				"displayName": "Spelling Jade",
-				"canonical": "#17795e",
-				"oklch": "oklch(51.5% 0.096 169.1)",
-				"tonalRamp": ["#001405", "#00311c", "#004f37", "#006f54", "#359073", "#5ab294", "#81d9b9", "#afffe4"],
-				"cssVar": "--color-spell"
-			},
-			"math": {
-				"role": "secondary",
-				"displayName": "Math Grape",
-				"canonical": "#5b4bc4",
-				"oklch": "oklch(49.9% 0.181 283.7)",
-				"tonalRamp": ["#0f003e", "#230367", "#3b2593", "#5645be", "#7368e3", "#938aff", "#b7b3ff", "#e2e1ff"],
-				"cssVar": "--color-math"
-			},
-			"roxy": {
-				"role": "secondary",
-				"displayName": "Roxy Berry",
-				"canonical": "#b8326f",
-				"oklch": "oklch(53.8% 0.178 357.2)",
-				"tonalRamp": ["#2b000c", "#520025", "#7b0041", "#a41b5f", "#ca447e", "#f1679f", "#ff92c5", "#ffc4ef"],
-				"cssVar": "--color-roxy"
-			},
-			"sticker-ink": {
-				"role": "secondary",
-				"displayName": "Sticker Ink",
-				"canonical": "#f4fbf7",
-				"oklch": "oklch(98.2% 0.009 161.4)",
-				"tonalRamp": ["#080c0a", "#202523", "#3c413e", "#595f5c", "#797f7b", "#9aa09d", "#bfc6c2", "#e9f0ec"],
-				"cssVar": "--color-sticker-ink"
+			"vinyl-ink": {
+				"role": "neutral",
+				"displayName": "Vinyl Ink",
+				"canonical": "#12332c",
+				"oklch": "oklch(29.4% 0.041 177.3)",
+				"tonalRamp": ["#00100b", "#0b2d26", "#2c4c45", "#4d6e66", "#6f9289", "#93b7ad", "#b6dad0", "#d3f8ee"]
 			},
 			"foil-ink": {
-				"role": "secondary",
+				"role": "neutral",
 				"displayName": "Foil Ink",
 				"canonical": "#1d2430",
 				"oklch": "oklch(25.9% 0.025 261.1)",
-				"tonalRamp": ["#060b16", "#1d2430", "#38404d", "#565e6c", "#757e8d", "#969fae", "#bbc5d5", "#e5efff"],
-				"cssVar": "literal in .foil"
+				"tonalRamp": ["#060b16", "#202733", "#3e4553", "#5e6775", "#818a99", "#a5aebe", "#c8d2e2", "#e5efff"]
+			},
+			"spell": {
+				"role": "tertiary",
+				"displayName": "Spelling Green",
+				"canonical": "#17795e",
+				"oklch": "oklch(51.5% 0.096 169.1)",
+				"tonalRamp": ["#001405", "#00341e", "#00553c", "#14775d", "#439c7f", "#6bc2a4", "#8ee6c6", "#afffe4"],
+				"cssVar": "--color-spell"
+			},
+			"math": {
+				"role": "tertiary",
+				"displayName": "Math Grape",
+				"canonical": "#5b4bc4",
+				"oklch": "oklch(49.9% 0.181 283.7)",
+				"tonalRamp": ["#0f003e", "#25066b", "#402a9c", "#5e4ec8", "#7f74f1", "#a29aff", "#c4c1ff", "#e2e1ff"],
+				"cssVar": "--color-math"
+			},
+			"roxy": {
+				"role": "tertiary",
+				"displayName": "Play Berry",
+				"canonical": "#b8326f",
+				"oklch": "oklch(53.8% 0.178 357.2)",
+				"tonalRamp": ["#2b000c", "#560027", "#830046", "#ae2867", "#d8518a", "#ff78af", "#ffa1d2", "#ffc4ef"],
+				"cssVar": "--color-roxy"
+			},
+			"sticker-ink": {
+				"role": "tertiary",
+				"displayName": "Sticker Ink",
+				"canonical": "#f4fbf7",
+				"oklch": "oklch(98.2% 0.009 161.4)",
+				"tonalRamp": ["#080c0a", "#232825", "#414743", "#626864", "#858b87", "#a9b0ac", "#ccd3cf", "#e9f0ec"],
+				"cssVar": "--color-sticker-ink"
 			},
 			"maple": {
 				"role": "tertiary",
 				"displayName": "Maple",
 				"canonical": "#f1c98a",
 				"oklch": "oklch(85.6% 0.092 78.4)",
-				"tonalRamp": ["#1c0300", "#3b1b00", "#5a3800", "#7a5612", "#9b7638", "#be975a", "#e5bd7f", "#ffe8aa"],
+				"tonalRamp": ["#1c0300", "#3e1e00", "#5f3d00", "#835f1e", "#a88244", "#cea769", "#f2ca8b", "#ffe8aa"],
 				"cssVar": "--color-maple"
 			},
 			"maple-hi": {
@@ -201,7 +253,7 @@
 				"displayName": "Maple Highlight",
 				"canonical": "#f9e0b3",
 				"oklch": "oklch(91.6% 0.065 82.2)",
-				"tonalRamp": ["#180600", "#332000", "#513c11", "#705a31", "#907a50", "#b39b70", "#d9c195", "#ffebbe"],
+				"tonalRamp": ["#180600", "#362200", "#564117", "#796339", "#9d865c", "#c2ab7f", "#e6cea1", "#ffebbe"],
 				"cssVar": "--color-maple-hi"
 			},
 			"maple-lo": {
@@ -209,7 +261,7 @@
 				"displayName": "Maple Bevel",
 				"canonical": "#c9965a",
 				"oklch": "oklch(70.9% 0.099 69.6)",
-				"tonalRamp": ["#1f0100", "#3f1700", "#603300", "#81520e", "#a37235", "#c69357", "#eeb97c", "#ffe4a9"],
+				"tonalRamp": ["#1f0100", "#421900", "#663900", "#8a5b1a", "#af7e42", "#d6a367", "#fbc689", "#ffe4a9"],
 				"cssVar": "--color-maple-lo"
 			},
 			"maple-deep": {
@@ -217,7 +269,7 @@
 				"displayName": "Rack Walnut",
 				"canonical": "#a87842",
 				"oklch": "oklch(61.0% 0.093 67.8)",
-				"tonalRamp": ["#1f0100", "#3f1700", "#5f3400", "#805219", "#a2723c", "#c5935d", "#edb982", "#ffe4ad"],
+				"tonalRamp": ["#1f0100", "#421900", "#653900", "#895b23", "#ae7e48", "#d5a36c", "#fac68e", "#ffe4ad"],
 				"cssVar": "--color-maple-deep"
 			},
 			"ink": {
@@ -225,7 +277,7 @@
 				"displayName": "Walnut Ink",
 				"canonical": "#23180f",
 				"oklch": "oklch(22.0% 0.024 60.4)",
-				"tonalRamp": ["#130903", "#2d2118", "#4a3d33", "#685b50", "#887a6f", "#aa9b90", "#d0c1b5", "#fbebdf"],
+				"tonalRamp": ["#130903", "#2f241a", "#4f4238", "#716358", "#95867b", "#baab9f", "#ddcec2", "#fbebdf"],
 				"cssVar": "--color-ink"
 			},
 			"ink-soft": {
@@ -233,15 +285,15 @@
 				"displayName": "Soft Ink",
 				"canonical": "#5a4630",
 				"oklch": "oklch(40.9% 0.044 68.8)",
-				"tonalRamp": ["#170700", "#32200a", "#4f3c26", "#6e5943", "#8f7961", "#b19a82", "#d7c0a6", "#ffead0"],
+				"tonalRamp": ["#170700", "#34220d", "#55412b", "#77624b", "#9b856d", "#c1a991", "#e5ccb3", "#ffead0"],
 				"cssVar": "--color-ink-soft"
 			},
 			"marigold": {
 				"role": "tertiary",
-				"displayName": "Marigold (law: right)",
+				"displayName": "Marigold (right)",
 				"canonical": "#f2b632",
 				"oklch": "oklch(81.1% 0.153 82.1)",
-				"tonalRamp": ["#200000", "#411600", "#653100", "#875000", "#aa7100", "#cd9300", "#f4b93d", "#ffe684"],
+				"tonalRamp": ["#200000", "#451800", "#6b3600", "#905900", "#b67d00", "#dea208", "#ffc755", "#ffe684"],
 				"cssVar": "--color-marigold"
 			},
 			"marigold-deep": {
@@ -249,654 +301,463 @@
 				"displayName": "Marigold Deep",
 				"canonical": "#b9820f",
 				"oklch": "oklch(64.5% 0.131 78.0)",
-				"tonalRamp": ["#200000", "#411600", "#643200", "#855100", "#a77100", "#cb932c", "#f3b958", "#ffe593"],
+				"tonalRamp": ["#200000", "#441900", "#6a3700", "#8e5a00", "#b47d01", "#dba340", "#ffc66a", "#ffe593"],
 				"cssVar": "--color-marigold-deep"
 			},
 			"coral": {
 				"role": "tertiary",
-				"displayName": "Coral (law: wrong letter)",
+				"displayName": "Coral (wrong letter)",
 				"canonical": "#e5553b",
 				"oklch": "oklch(63.8% 0.184 32.4)",
-				"tonalRamp": ["#300000", "#580000", "#830000", "#ad1a00", "#d4452b", "#fb6a4f", "#ff9579", "#ffc8ae"],
+				"tonalRamp": ["#300000", "#5c0000", "#8b0000", "#b8270b", "#e25239", "#ff7a5e", "#ffa589", "#ffc8ae"],
 				"cssVar": "--color-coral"
 			},
 			"sky": {
 				"role": "tertiary",
-				"displayName": "Sky (law: missing letter)",
+				"displayName": "Sky (missing letter)",
 				"canonical": "#5aa9e6",
 				"oklch": "oklch(71.0% 0.119 243.9)",
-				"tonalRamp": ["#00082f", "#002553", "#004379", "#00639b", "#3384be", "#57a6e3", "#7dccff", "#aff7ff"],
+				"tonalRamp": ["#00082f", "#002757", "#00497f", "#126ca4", "#4090cb", "#67b6f4", "#8bdaff", "#aff7ff"],
 				"cssVar": "--color-sky"
 			},
 			"stone": {
 				"role": "tertiary",
-				"displayName": "Stone (law: extra letter)",
+				"displayName": "Stone (extra letter)",
 				"canonical": "#9a9186",
 				"oklch": "oklch(66.1% 0.019 73.0)",
-				"tonalRamp": ["#100a04", "#2a231a", "#463e35", "#645c52", "#847c71", "#a69d92", "#ccc2b7", "#f7ede1"],
+				"tonalRamp": ["#100a04", "#2c251c", "#4b443a", "#6d655a", "#90887d", "#b6aca1", "#d9cfc4", "#f7ede1"],
 				"cssVar": "--color-stone"
 			},
-			"foil": {
-				"role": "secondary",
-				"displayName": "Holographic Foil",
-				"canonical": "linear-gradient(118deg, #e6eaee 0%, #cdd7f3 24%, #ead6ef 46%, #d0efe2 68%, #eceff1 100%)",
-				"tonalRamp": ["#e6eaee", "#cdd7f3", "#ead6ef", "#d0efe2", "#eceff1"],
-				"note": "Gradient, not a token; stars, streak, milestone badges. Never gold."
-			},
-			"vinyl-cut": {
-				"role": "secondary",
-				"displayName": "Vinyl Cut",
-				"canonical": "#fbfdfb",
-				"oklch": "oklch(99.2% 0.003 145.6)",
-				"tonalRamp": ["#0a0c0a", "#232423", "#3f403f", "#5c5e5c", "#7c7e7c", "#9d9f9d", "#c3c5c3", "#edefed"],
-				"theme": "fixed (both lights)",
-				"cssVar": "literal in .kid-sticker/.vinyl-disc/.word-sticker (radial #ffffff → #f6faf8 → #e2ebe7) and .vinyl-type > .vinyl-cut"
-			},
-			"vinyl-ink": {
+			"scene-top": {
 				"role": "neutral",
-				"displayName": "Vinyl Ink",
-				"canonical": "#12332c",
-				"oklch": "oklch(29.6% 0.040 176.0)",
-				"tonalRamp": ["#00110c", "#12332c", "#2c4c44", "#4a6a62", "#6a8a81", "#8cada3", "#b2d3c9", "#dcfdf3"],
-				"theme": "fixed (both lights)",
-				"cssVar": "literal color in .kid-sticker/.vinyl-disc/.word-sticker"
+				"displayName": "Scene Sky",
+				"canonical": "#cfe9f4",
+				"oklch": "oklch(91.8% 0.031 225.1)",
+				"tonalRamp": ["#000e15", "#142a32", "#334952", "#536a74", "#768e98", "#9ab3bd", "#bcd6e1", "#d9f4ff"],
+				"cssVar": "--scene-top"
+			},
+			"scene-ground": {
+				"role": "neutral",
+				"displayName": "Scene Sand",
+				"canonical": "#f4ead8",
+				"oklch": "oklch(94.0% 0.026 82.4)",
+				"tonalRamp": ["#110a01", "#2d2518", "#4c4435", "#6e6555", "#918878", "#b6ad9c", "#dad0be", "#f7eddb"],
+				"cssVar": "--scene-ground"
 			}
 		},
 		"typographyMeta": {
 			"display": {
-				"displayName": "Display (Fredoka)",
-				"purpose": "Page and state headlines; balanced wrap."
+				"displayName": "Display",
+				"purpose": "The sign-in headline."
 			},
 			"headline": {
 				"displayName": "Headline",
-				"purpose": "Section heads."
+				"purpose": "\"Who's playing?\" and inner-screen section heads."
+			},
+			"shelf-name": {
+				"displayName": "Shelf name",
+				"purpose": "The lit tile's name, above its top-left corner, in select blue; only the lit name shows."
 			},
 			"title": {
 				"displayName": "Title",
-				"purpose": "List and speller names, result line."
+				"purpose": "Kid's name in the top bar, sheet titles, sign-in column heads."
+			},
+			"numeral": {
+				"displayName": "Numeral",
+				"purpose": "Stars and tickets in the top bar; every count is tabular."
 			},
 			"body": {
-				"displayName": "Body (Lexend)",
-				"purpose": "Definitions, sentences, helper and parent copy."
+				"displayName": "Body",
+				"purpose": "Sheet copy, helper text, parent screens."
+			},
+			"shelf-line": {
+				"displayName": "Shelf line",
+				"purpose": "The one line under the shelf about the lit tile."
+			},
+			"action-label": {
+				"displayName": "Action label",
+				"purpose": "The word under each round action button."
 			},
 			"label": {
-				"displayName": "Key Label",
-				"purpose": "All .key labels."
-			},
-			"tile": {
-				"displayName": "Tile Face",
-				"purpose": "Tile letters via --font-tile; per-child data-font: fredoka (default), andika, lexend, atkinson.",
-				"faces": {
-					"fredoka": "Fredoka Variable",
-					"andika": "Andika",
-					"lexend": "Lexend Variable",
-					"atkinson": "Atkinson Hyperlegible"
-				}
-			},
-			"place-name": {
-				"displayName": "Place name",
-				"purpose": "The one headline on a hub place page, low left, Sticker Ink."
-			},
-			"place-print": {
-				"displayName": "Place print",
-				"purpose": "Giant decorative lettering ('spell', '7×8') a tint off the hue, rotated -7deg, cropped by the rim. aria-hidden."
+				"displayName": "Label",
+				"purpose": "Every key label."
 			},
 			"wordmark": {
 				"displayName": "Wordmark",
-				"purpose": "'ȷade’s world' as die-cut vinyl type, Foil Ink on a white cut, -2deg."
+				"purpose": "jade's world on the red plate: 36px sign-in, 26px picker, 22px parent header, 18px home footer."
+			},
+			"tile": {
+				"displayName": "Tile letter",
+				"purpose": "Maple tile letters in the child's chosen face (--font-tile)."
 			}
 		},
 		"shadows": [
 			{
-				"name": "sticker",
-				"value": "0 0.55rem 1.1rem -0.45rem var(--tone-drop-deep), 0 0.08rem 0.18rem var(--tone-drop)",
-				"purpose": "Every sticker at rest, over a 158deg gloss ::before."
+				"name": "shelf-tile",
+				"value": "0 0.5rem 1rem -0.4rem var(--tone-drop-deep), 0 0.08rem 0.2rem var(--tone-drop)",
+				"purpose": "A shelf tile at rest."
 			},
 			{
-				"name": "sticker-lift",
-				"value": "0 0.9rem 1.5rem -0.5rem var(--tone-drop-deep), 0 0.1rem 0.2rem var(--tone-drop)",
-				"purpose": "Interactive sticker on hover, with translateY(-3px) at its tilt."
+				"name": "shelf-tile-lit",
+				"value": "0 0.9rem 1.8rem -0.6rem var(--tone-drop-deep), 0 0.1rem 0.25rem var(--tone-drop)",
+				"purpose": "The lit tile, cast further as it grows."
+			},
+			{
+				"name": "shelf-gloss",
+				"value": "linear-gradient(150deg, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0.04) 28%, transparent 29%); inset 0 0 0 1px rgb(255 255 255 / 0.12)",
+				"purpose": "The glossy band across a tile's top corner."
+			},
+			{
+				"name": "select-ring",
+				"value": "outline: 0.3rem solid var(--color-select); outline-offset: 0.35rem (0.4rem on a kid sticker)",
+				"purpose": "The lit tile, a focused tile, and the kid under pointer or keyboard on Who's playing."
+			},
+			{
+				"name": "home-action",
+				"value": "inset 0 -0.15rem 0 rgb(27 33 48 / 0.08), 0 0.35rem 0.7rem -0.25rem var(--tone-drop-deep), 0 0.05rem 0.12rem var(--tone-drop)",
+				"purpose": "Round white action buttons."
+			},
+			{
+				"name": "brand-plate",
+				"value": "inset 0 0.06em 0 rgb(255 255 255 / 0.35), inset 0 -0.06em 0 rgb(0 0 0 / 0.12), 0 0.12em 0.3em -0.05em var(--tone-drop-deep)",
+				"purpose": "The wordmark plate."
+			},
+			{
+				"name": "shelf-count",
+				"value": "0 0 0 0.18rem #fff, 0 0.2rem 0.4rem rgb(0 0 0 / 0.3)",
+				"purpose": "White ring separating the red count from any art."
+			},
+			{
+				"name": "key",
+				"value": "inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 0.25em 0.5em -0.2em var(--tone-drop-deep)",
+				"purpose": "Default key."
+			},
+			{
+				"name": "tile",
+				"value": "inset 0 -0.3em 0 var(--tile-edge), inset 0 1px 0 rgb(255 255 255 / .6), inset 0 0 0 1px rgb(120 78 34 / .12), 0 .35em .7em -.1em var(--tone-drop)",
+				"purpose": "Maple letter tile; the bevel is the law slot."
+			},
+			{
+				"name": "sticker",
+				"value": "0 0.55rem 1.1rem -0.45rem var(--tone-drop-deep), 0 0.08rem 0.18rem var(--tone-drop)",
+				"purpose": "Earned stickers."
 			},
 			{
 				"name": "foil",
 				"value": "inset 0 1px 0 rgb(255 255 255 / 0.8), 0 0.3rem 0.6rem -0.25rem var(--tone-drop-deep)",
-				"purpose": "Foil chips and milestone badges."
+				"purpose": "Foil chips."
 			},
 			{
-				"name": "tile",
-				"value": "inset 0 -0.3em 0 var(--tile-edge, var(--color-maple-lo)), inset 0 1px 0 rgb(255 255 255 / 0.6), inset 0 0 0 1px rgb(120 78 34 / 0.12), 0 0.35em 0.7em -0.1em var(--tone-drop)",
-				"purpose": "Every letter tile; the bevel carries the law colour."
-			},
-			{
-				"name": "key-maple",
-				"value": "inset 0 -0.22em 0 var(--key-edge, var(--color-maple-lo)), inset 0 1px 0 rgb(255 255 255 / 0.55), 0 0.3em 0.6em -0.15em var(--tone-drop)",
-				"purpose": "Tile and Check keys at rest."
-			},
-			{
-				"name": "key-maple-active",
-				"value": "inset 0 -0.08em 0 var(--key-edge, var(--color-maple-lo)), 0 0.1em 0.3em -0.1em var(--tone-drop)",
-				"purpose": "Maple key pressed (with translateY 0.12em)."
-			},
-			{
-				"name": "plaque",
-				"value": "inset 0 -0.2em 0 var(--color-maple-lo), inset 0 1px 0 rgb(255 255 255 / 0.55), 0 0.3em 0.6em -0.2em var(--tone-drop)",
-				"purpose": "Spoken-answer strip, problem story, small counts."
-			},
-			{
-				"name": "rack",
-				"value": "inset 0 1px 0 rgb(255 230 190 / 0.35), inset 0 -0.35rem 0 rgb(80 48 18 / 0.45), 0 0.4rem 0.9rem -0.2rem var(--tone-drop-deep)",
-				"purpose": "Walnut shelf under bee questions, list previews, results scoreboard."
-			},
-			{
-				"name": "key-page",
-				"value": "inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 0.25em 0.5em -0.2em var(--tone-drop-deep)",
-				"purpose": "Default page key."
-			},
-			{
-				"name": "key-go",
-				"value": "inset 0 -0.18em 0 color-mix(in oklab, var(--color-page-ink) 70%, var(--color-page)), 0 0.3em 0.6em -0.2em var(--tone-drop-deep)",
-				"purpose": "Chalk primary key."
-			},
-			{
-				"name": "key-toggle-on",
-				"value": "inset 0 -0.2em 0 color-mix(in oklab, var(--color-page-ink) 80%, transparent), inset 0 0.15em 0.4em var(--tone-recess)",
-				"purpose": "Pressed toggle key: chalk bar under the label."
-			},
-			{
-				"name": "patch",
-				"value": "inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 1px 0 var(--tone-recess)",
-				"purpose": "Printed panel on the page."
-			},
-			{
-				"name": "recess-square",
-				"value": "inset 0 0.2em 0.5em var(--tone-recess), inset 0 -1px 0 var(--tone-pit-lip)",
-				"purpose": "Squares and the disabled Check."
+				"name": "glass",
+				"value": "inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 0.4em 1.2em -0.4em var(--tone-drop); background page-raised 72%; backdrop-filter blur(14px)",
+				"purpose": "Game-screen chrome only."
 			},
 			{
 				"name": "recess",
-				"value": "inset 0 0.15em 0.4em var(--tone-recess)",
-				"purpose": "Fields and pressed keys (--inset-shadow-recess)."
-			},
-			{
-				"name": "place-face",
-				"value": "0 0.7rem 1.4rem -0.5rem var(--tone-drop-deep), 0 0.1rem 0.2rem var(--tone-drop)",
-				"purpose": "The screen-sized sticker of a hub place page."
-			},
-			{
-				"name": "vinyl",
-				"value": "inset 0 -0.05em 0 rgb(18 51 44 / 0.1), inset 0 0 0 1px rgb(18 51 44 / 0.06), 0 0.04em 0.1em rgb(3 25 20 / 0.25), 0 0.16em 0.32em -0.1em var(--tone-drop-deep)",
-				"purpose": "Kid stickers and vinyl discs; in em so it scales."
-			},
-			{
-				"name": "word-sticker",
-				"value": "inset 0 -0.08em 0 rgb(18 51 44 / 0.1), 0 0.06em 0.12em rgb(3 25 20 / 0.22), 0 0.2em 0.4em -0.16em var(--tone-drop-deep)",
-				"purpose": "A word on a vinyl pill label."
-			},
-			{
-				"name": "vinyl-type",
-				"value": "filter: drop-shadow(0 0.05em 0.04em rgb(3 25 20 / 0.3)) drop-shadow(0 0.12em 0.16em var(--tone-drop))",
-				"purpose": "The wordmark's whole cut, lifted as one piece."
+				"value": "inset 0 0.2em 0.5em var(--tone-recess), inset 0 -1px 0 var(--tone-pit-lip)",
+				"purpose": "Squares and the disabled Check."
 			}
 		],
 		"motion": [
 			{
+				"name": "lit-spring",
+				"value": "transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1); outline-color 120ms ease-out; box-shadow 260ms var(--ease-out-expo)",
+				"purpose": "The lit tile's ring and 1.035 scale; also the kid picker ring (260ms) and action-button lift (200ms)."
+			},
+			{
+				"name": "name-fade",
+				"value": "opacity 160ms ease-out; transform translateY(0.3rem) -> none 220ms var(--ease-out-expo)",
+				"purpose": "The lit tile's name appearing above it."
+			},
+			{
+				"name": "shelf-glide",
+				"value": "scrollIntoView({ behavior: 'smooth', inline: 'center' }) ('auto' under reduced motion)",
+				"purpose": "Keeps the lit tile in view."
+			},
+			{
 				"name": "ease-out-expo",
 				"value": "cubic-bezier(0.16, 1, 0.3, 1)",
-				"purpose": "The only easing: settles, flips, key presses."
-			},
-			{
-				"name": "sticker-place",
-				"value": "sticker-place 320ms var(--ease-out-expo) both; translateY(-14px) rotate(var(--tilt) - 7deg) scale(1.07) -> translateY(0) rotate(var(--tilt)) scale(1)",
-				"purpose": "Earned badges on the hub sheet (60ms apart) and new badges on results (from 300ms, 120ms apart)."
-			},
-			{
-				"name": "sticker-lift",
-				"value": "transform/box-shadow 180ms var(--ease-out-expo); hover rotate(var(--tilt)) translateY(-3px), active translateY(1px)",
-				"purpose": "Interactive stickers only, as if a corner were being peeled."
+				"purpose": "Round motion, key presses, settles."
 			},
 			{
 				"name": "tile-drop",
-				"value": "tile-drop 240ms var(--ease-out-expo) both; translateY(-18px) scale(1.06) -> rest",
-				"purpose": "Typed tiles, reveal tiles, stars. Decorative staggers 70–140ms."
+				"value": "240ms; translateY(-18px) scale(1.06) -> rest",
+				"purpose": "Typed and revealed tiles, the sign-in demo row."
 			},
 			{
 				"name": "tile-flip",
-				"value": "tile-flip 420ms var(--ease-out-expo) both; perspective(500px) rotateX 0 -> 88deg -> 0",
-				"purpose": "Check cascade, left to right, 55ms per tile; replays per check via key nonce."
+				"value": "420ms; perspective(500px) rotateX 0 -> 88deg -> 0, 55ms per tile",
+				"purpose": "Check cascade."
 			},
 			{
 				"name": "tile-nudge",
-				"value": "tile-nudge 360ms var(--ease-out-expo); translateX 0 -> -5px -> 4px -> 0",
-				"purpose": "Whole answer row on retry."
+				"value": "360ms; translateX -5px then 4px",
+				"purpose": "Row on retry."
 			},
 			{
 				"name": "tile-land",
-				"value": "tile-land 420ms var(--ease-out-expo) both; translateY(-56px) scale(1.14) -> 2px 0.98 -> rest",
-				"purpose": "Star tiles on a results screen with two or three stars; on a perfect round they then flip left to right (110ms apart) and come up marigold."
+				"value": "420ms; translateY(-56px) scale(1.14) -> settle",
+				"purpose": "Star tiles on results."
 			},
 			{
-				"name": "key-press",
-				"value": "transform/box-shadow 120ms var(--ease-out-expo), filter 120ms",
-				"purpose": "Key hover brightness 1.08 and press."
-			},
-			{
-				"name": "tile-state",
-				"value": "box-shadow/transform 160ms var(--ease-out-expo)",
-				"purpose": "Tile edge changes."
+				"name": "sticker-place",
+				"value": "320ms; translateY(-14px) rotate(tilt - 7deg) scale(1.07) -> tilt",
+				"purpose": "Earned badges in the sheet and on results."
 			},
 			{
 				"name": "reduced-motion",
-				"value": "@media (prefers-reduced-motion: reduce) { animation-duration: 1ms; animation-iteration-count: 1; transition-duration: 1ms } + reveal shows whole word at once",
-				"purpose": "All motion collapsed."
-			},
-			{
-				"name": "reduced-motion",
-				"value": "animation-duration 1ms, iteration-count 1, animation-delay 0ms, transition-duration 1ms (all !important)",
-				"purpose": "Everything lands at once; stickers appear placed."
-			},
-			{
-				"name": "place-rise",
-				"value": "520ms var(--ease-out-expo); translateY(0.9rem) opacity 0.35 → none 1",
-				"purpose": "The current hub place's caption once its page lands; off under reduced motion."
+				"value": "shelf tile and name: no transition, lit tile unscaled; global: animation and transition 1ms, one iteration, no delay",
+				"purpose": "prefers-reduced-motion: reduce."
 			}
 		],
 		"breakpoints": [
+			{
+				"name": "phone-shelf",
+				"value": "max-width 40rem",
+				"note": "Tile min(62vw, 38dvh); the next tile peeks in."
+			},
 			{
 				"name": "sm",
 				"value": "640px"
 			},
 			{
+				"name": "portrait-tablet",
+				"value": "orientation: portrait and min-width 40rem",
+				"note": "Tile min(68vw, 46dvh)."
+			},
+			{
 				"name": "md",
 				"value": "768px",
-				"note": "The hub spread opens into two pages with a vertical spine."
+				"note": "Shelf gutter max(3rem, safe inset); home inline padding 3rem."
 			},
 			{
 				"name": "lg",
-				"value": "1024px"
+				"value": "1024px",
+				"note": "Keyboard hints on a fine pointer."
+			},
+			{
+				"name": "short",
+				"value": "landscape, max-height 32rem, width < 64rem",
+				"note": "A phone on its side."
 			},
 			{
 				"name": "keyboard-up",
-				"value": "visualViewport.height < 0.78 * innerHeight (sets --vvh)"
-			}
-		],
-		"textures": [
-			{
-				"name": "tex-grain-0..3",
-				"value": "feTurbulence fractalNoise, baseFrequency ~0.006–0.019 x 0.28–0.4, numOctaves 3, seeds 11/23/37/51, 320px tile",
-				"purpose": "Maple grain; one of four per tile via data-grain."
-			},
-			{
-				"name": "tex-page",
-				"value": "feTurbulence fractalNoise baseFrequency 1.25, numOctaves 2, seed 7, drawn at 128px",
-				"purpose": "Paper tooth of the album page."
-			},
-			{
-				"name": "tex-page-mottle",
-				"value": "feTurbulence fractalNoise baseFrequency 0.0078, numOctaves 3, seed 5, 512px",
-				"purpose": "Soft large-scale page mottling."
-			},
-			{
-				"name": "page-light (night)",
-				"value": "radial-gradient(55% 48% at 18% 0%, rgb(255 184 110 / 0.2), rgb(255 184 110 / 0.07) 45%, transparent 75%), radial-gradient(120% 90% at 50% 0%, page+4% white, page 45%, page-deep)",
-				"purpose": "Warm reading lamp pooled on the upper left."
-			},
-			{
-				"name": "page-light (day)",
-				"value": "linear-gradient(118deg, transparent 28%, rgb(255 255 255 / 0.32) 40%, transparent 56%), radial-gradient(120% 90% at 50% 0%, page+30% white, page 50%, page/page-deep mix)",
-				"purpose": "Daylight with one soft diagonal gloss band."
-			},
-			{
-				"name": "sticker-gloss",
-				"value": "linear-gradient(158deg, rgb(255 255 255 / 0.3) 0%, rgb(255 255 255 / 0.06) 34%, transparent 35%)",
-				"purpose": "Gloss highlight across a sticker's top-left."
-			},
-			{
-				"name": "spine-stitch",
-				"value": "repeating-linear-gradient(180deg, transparent 0 6px, var(--color-vinyl) 6px 16px, transparent 16px 22px), 3px wide, opacity 0.55",
-				"purpose": "Stitches down the album spine (90deg below md)."
+				"value": "visualViewport height < 80% of the tallest seen at this width (sets --vvh)"
 			}
 		],
 		"themes": {
-			"attribute": "data-theme on <html>: \"night\" | \"day\"; CSS default (no attribute) is Night",
-			"resolution": "Parent setting appearance auto|day|night (default auto). Auto follows prefers-color-scheme live. Stored on the account and in localStorage jade.appearance; an inline script in index.html sets data-theme and meta theme-color before first paint (lib/theme.ts).",
-			"themeColor": {
-				"night": "#0e4f43",
-				"day": "#d4ebe1"
-			},
-			"nightStickerFilter": ".sticker[data-place] saturate(0.9) brightness(0.94) when not Day",
-			"tones": [
-				{
-					"name": "--tone-drop",
-					"night": "rgb(3 25 20 / 0.55)",
-					"day": "rgb(22 74 58 / 0.26)",
-					"purpose": "Drop shadow cast onto the page by tiles, keys, plaques, stickers."
+			"attribute": "data-theme on <html> (auto | day | night), set before first paint from jade.appearance",
+			"night": "CSS default; --page-light: linear-gradient(to bottom, page + 3% white, page 40%, page-deep)",
+			"day": ":root[data-theme=day] and .scene-day; --page-light: linear-gradient(to bottom, page + 40% white, page 45%)",
+			"tones": {
+				"night": {
+					"--tone-drop": "rgb(6 6 7 / 0.5)",
+					"--tone-drop-deep": "rgb(6 6 7 / 0.6)",
+					"--tone-lit": "rgb(255 255 255 / 0.07)",
+					"--tone-key-line": "rgb(255 255 255 / 0.06)",
+					"--tone-recess": "rgb(0 0 0 / 0.4)",
+					"--tone-pit-lip": "rgb(255 255 255 / 0.06)"
 				},
-				{
-					"name": "--tone-drop-deep",
-					"night": "rgb(3 25 20 / 0.6)",
-					"day": "rgb(22 74 58 / 0.32)",
-					"purpose": "Deeper drop: racks, page keys, sticker lift, foil."
-				},
-				{
-					"name": "--tone-lit",
-					"night": "rgb(255 255 255 / 0.08)",
-					"day": "rgb(255 255 255 / 0.75)",
-					"purpose": "Lit top edge of a raised page key or patch."
-				},
-				{
-					"name": "--tone-key-line",
-					"night": "rgb(255 255 255 / 0.05)",
-					"day": "rgb(13 58 49 / 0.14)",
-					"purpose": "Outline that keeps a raised key visible on a pale page."
-				},
-				{
-					"name": "--tone-recess",
-					"night": "rgb(0 0 0 / 0.4)",
-					"day": "rgb(16 60 48 / 0.2)",
-					"purpose": "Dark of a recess; spine gutter shading."
-				},
-				{
-					"name": "--tone-pit-lip",
-					"night": "rgb(255 255 255 / 0.06)",
-					"day": "rgb(255 255 255 / 0.6)",
-					"purpose": "Lower lip of a pit (square, disabled Check)."
+				"day": {
+					"--tone-drop": "rgb(27 33 48 / 0.16)",
+					"--tone-drop-deep": "rgb(27 33 48 / 0.24)",
+					"--tone-lit": "rgb(255 255 255 / 0.85)",
+					"--tone-key-line": "rgb(27 33 48 / 0.1)",
+					"--tone-recess": "rgb(27 33 48 / 0.14)",
+					"--tone-pit-lip": "rgb(255 255 255 / 0.7)"
 				}
-			]
+			},
+			"themeColor": {
+				"night": "#212224",
+				"day": "#eceef2"
+			}
 		},
-		"ipad": {
-			"viewportMeta": "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
-			"vvh": "--vvh on <html> from visualViewport; round main min-height var(--vvh, 100dvh), height var(--vvh) while keyboard is up",
-			"minTarget": "44px (icon keys size-11); text keys min-height 3rem",
-			"spellingInput": "autocorrect=off autocapitalize=none spellcheck=false autocomplete=off, 16px font, enterkeyhint=done"
+		"foil": {
+			"value": "linear-gradient(118deg, #e6eaee 0%, #cdd7f3 24%, #ead6ef 46%, #d0efe2 68%, #eceff1 100%)",
+			"ink": "#1d2430"
 		},
-		"placeHues": {
-			"spell": "Spelling place page and tab, spelling badges (sprout), icon top band",
-			"math": "Math place page, topic stickers, due-facts sticker, math badges (star, grid, pie), icon bottom band",
-			"roxy": "Play place page, Play home stickers, tickets, roxy badges (sparkles, flame), icon middle band, iOS touch icon background",
-			"foil": "Milestone badges (medal, trophy, library), streak and star rail discs, kid sticker number chips, the wordmark's star"
-		},
-		"tilts": {
-			"placeStickers": "±1.5–2deg",
-			"kidStickersOnProfiles": "±4deg alternating",
-			"hubWordStickers": [-4, 3, -2],
-			"fannedDiscs": [-7, 0, 7],
-			"badgeSheet": [-5, 4, -3, 6, -4, 3, -6, 4],
-			"listUpNext": "-1deg",
-			"wordmark": "-2deg",
-			"placePrint": "-7deg",
-			"iconJ": "-6deg"
+		"assets": {
+			"gameTiles": "public/tiles/{town,gobble,jelly,woods}.webp: 720x720 WebP q82, captured 2026-10-18 with headless Playwright Chromium (SwiftShader) from the app's dev server at 1200x1200, canvas only; cropped/resized with ImageMagick. No generated or third-party imagery.",
+			"subjectTiles": "SubjectArt: the round's own maple Tile components on spell/math hue (no raster).",
+			"roxyTile": "Live RoxyFigure SVG, viewBox 40 20 320 320.",
+			"icons": "scripts/icon-mark.mjs (white j + white star on brand-red rounded square) -> scripts/icons.sh (rsvg-convert).",
+			"splash": "scripts/splash.mjs: red tile on the Night shell gradient, rsvg-convert + ImageMagick 256 colours."
 		}
 	},
 	"components": [
 		{
-			"name": "Place Stickers",
-			"kind": "card",
-			"refersTo": "sticker-spell",
-			"description": "Place-hued die-cut stickers (math topics, due stickers, Play home games): one hue each, vinyl rim, gloss, lift shadow, fixed tilt; lift on hover.",
-			"html": "<div class=\"ds-board\"><a href=\"#\" class=\"ds-sticker ds-spell\" style=\"--tilt:-1.5deg\"><span class=\"ds-word\"><span class=\"ds-t\">s</span><span class=\"ds-t\">p</span><span class=\"ds-t\">e</span><span class=\"ds-t\">l</span><span class=\"ds-t\">l</span></span><span class=\"ds-label\">Spelling</span><span class=\"ds-note\">1 word to review</span></a><a href=\"#\" class=\"ds-sticker ds-math\" style=\"--tilt:1.5deg\"><span class=\"ds-word\"><span class=\"ds-t\">m</span><span class=\"ds-t\">a</span><span class=\"ds-t\">t</span><span class=\"ds-t\">h</span></span><span class=\"ds-label\">Math</span><span class=\"ds-note\">Facts, fractions, puzzles</span></a><a href=\"#\" class=\"ds-sticker ds-roxy\" style=\"--tilt:2deg\"><span class=\"ds-label\">Games</span><span class=\"ds-note\">Style your Roxy</span></a></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:28px;display:flex;flex-wrap:wrap;gap:24px;align-items:center;font-family:'Lexend Variable','Lexend',system-ui,sans-serif;color:var(--color-page-ink, #e3f3ec)}.ds-sticker{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:14px;min-width:240px;padding:24px;border-radius:1.5rem;border:.35rem solid var(--color-vinyl, #dfe8e3);color:#f4fbf7;text-decoration:none;box-shadow:0 .55rem 1.1rem -.45rem rgb(3 25 20 / .6),0 .08rem .18rem rgb(3 25 20 / .55);transform:rotate(var(--tilt,0deg));transition:transform 180ms cubic-bezier(.16,1,.3,1),box-shadow 180ms cubic-bezier(.16,1,.3,1)}.ds-sticker::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:calc(1.5rem - .35rem);background:linear-gradient(158deg,rgb(255 255 255 / .3) 0%,rgb(255 255 255 / .06) 34%,transparent 35%)}.ds-sticker:hover{transform:rotate(var(--tilt,0deg)) translateY(-3px);box-shadow:0 .9rem 1.5rem -.5rem rgb(3 25 20 / .6),0 .1rem .2rem rgb(3 25 20 / .55)}.ds-sticker:active{transform:rotate(var(--tilt,0deg)) translateY(1px)}.ds-sticker:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-spell{background-color:#17795e}.ds-math{background-color:#5b4bc4}.ds-roxy{background-color:#b8326f}.ds-word{display:flex;gap:6px}.ds-t{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:18%;font:600 22px/1 'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;color:#23180f;background:linear-gradient(172deg,#f9e0b3,#f1c98a 52%,#e7bc7f);box-shadow:inset 0 -.3em 0 #c9965a,inset 0 1px 0 rgb(255 255 255 / .6),0 .35em .7em -.1em rgb(3 25 20 / .55)}.ds-label{font:600 2rem/1.1 'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif}.ds-note{font-weight:500}"
-		},
-		{
-			"name": "Place Page (hub)",
-			"kind": "card",
-			"refersTo": "place-face-spell",
-			"description": "One place filling the screen as one big sticker: hue face, 0.4rem vinyl rim, gloss band, giant print a tint off the hue, word stickers as media, caption low left with the place name and one go key, tabs on top.",
-			"html": "<div class=\"ds-place\"><div class=\"ds-place-face\"><nav class=\"ds-tabs\"><span class=\"ds-tab ds-tab-on\">Spelling</span><span class=\"ds-tab\">Play</span><span class=\"ds-tab\">Math</span></nav><span class=\"ds-print\" aria-hidden=\"true\">spell</span><span class=\"ds-words\" aria-hidden=\"true\"><span class=\"ds-word\" style=\"transform:rotate(-4deg);font-size:26px\">necessary</span><span class=\"ds-word\" style=\"transform:rotate(3deg)\">rhythm</span></span><div class=\"ds-cap\"><h2 class=\"ds-name\">Spelling</h2><p class=\"ds-wait\">Week 7 · 6 new words</p><button class=\"ds-go\">Let’s spell</button></div></div></div>",
-			"css": ".ds-place{padding:12px;background:#0e4f43}.ds-place-face{position:relative;overflow:hidden;height:340px;border-radius:2rem;background:#17795e;border:.4rem solid #dfe8e3;color:#f4fbf7;box-shadow:0 .7rem 1.4rem -.5rem rgb(2 22 18 / .65),0 .1rem .2rem rgb(3 25 20 / .55);font-family:'Lexend Variable','Lexend',system-ui,sans-serif}.ds-place-face::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(158deg,rgb(255 255 255 / .2) 0%,rgb(255 255 255 / .05) 30%,transparent 31%);pointer-events:none}.ds-tabs{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:4px;padding:4px;border-radius:999px;background:rgb(0 0 0 / .15)}.ds-tab{min-height:44px;display:inline-flex;align-items:center;padding:0 16px;border-radius:999px;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;color:rgb(244 251 247 / .85)}.ds-tab-on{background:#f4fbf7;color:#17795e}.ds-print{position:absolute;top:20%;right:-4%;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:700;font-size:220px;line-height:.8;letter-spacing:-.03em;white-space:nowrap;color:color-mix(in oklab,#17795e 78%,white);transform:rotate(-7deg);user-select:none}.ds-words{position:absolute;top:46%;right:18%;z-index:2;display:flex;flex-direction:column;align-items:flex-end;gap:10px}.ds-word{position:relative;display:inline-flex;padding:.28em .7em .32em;border-radius:999px;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:20px;line-height:1;color:#12332c;background:radial-gradient(110% 110% at 30% 18%,#ffffff 0%,#f6faf8 50%,#e2ebe7 100%);box-shadow:inset 0 -.08em 0 rgb(18 51 44 / .1),0 .06em .12em rgb(3 25 20 / .22),0 .2em .4em -.16em rgb(2 22 18 / .65)}.ds-word::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(158deg,rgb(255 255 255 / .7) 0%,rgb(255 255 255 / .1) 36%,transparent 37%);pointer-events:none}.ds-cap{position:absolute;left:0;bottom:0;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:24px}.ds-name{margin:0;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:64px;line-height:.95;letter-spacing:-.02em}.ds-wait{margin:0;font-size:18px;font-weight:500}.ds-go{min-height:48px;padding:0 1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;background:#f4fbf7;color:color-mix(in oklab,#17795e 55%,black);box-shadow:inset 0 -.18em 0 color-mix(in oklab,#f4fbf7 70%,#17795e),0 .25em .5em -.2em rgb(2 22 18 / .65);cursor:pointer;transition:filter .18s,transform .18s}.ds-go:hover{filter:brightness(1.08)}.ds-go:active{transform:translateY(1px)}.ds-go:focus-visible{outline:3px solid #f4fbf7;outline-offset:3px}"
-		},
-		{
-			"name": "Foil Chips",
-			"kind": "chip",
-			"refersTo": "foil",
-			"description": "Holographic silver for streak and stars (and milestone badges). Never gold.",
-			"html": "<div class=\"ds-board\"><span class=\"ds-foil\" title=\"Day streak\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z\"/></svg>4</span><span class=\"ds-foil\" title=\"Stars\"><svg viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z\"/></svg>27</span></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:28px;display:flex;flex-wrap:wrap;gap:24px;align-items:center;font-family:'Lexend Variable','Lexend',system-ui,sans-serif;color:var(--color-page-ink, #e3f3ec)}.ds-foil{display:inline-flex;align-items:center;gap:.4rem;padding:.375rem .875rem;border-radius:999px;color:#1d2430;font:600 1.25rem/1 'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-variant-numeric:tabular-nums;background:linear-gradient(118deg,#e6eaee 0%,#cdd7f3 24%,#ead6ef 46%,#d0efe2 68%,#eceff1 100%);border:.2rem solid var(--color-vinyl, #dfe8e3);box-shadow:inset 0 1px 0 rgb(255 255 255 / .8),0 .3rem .6rem -.25rem rgb(3 25 20 / .6)}.ds-foil svg{width:20px;height:20px}"
-		},
-		{
-			"name": "Badge Sheet (stickers and slots)",
+			"name": "Shelf (lit tile)",
 			"kind": "custom",
-			"refersTo": "slot",
-			"description": "Earned badges stuck down at fixed tilts (place hue or foil for milestones); unearned ones are dashed slots with a silhouette and a Lichen label.",
-			"html": "<div class=\"ds-board\"><ul class=\"ds-sheet\"><li><span class=\"ds-badge ds-spell\" style=\"--tilt:-5deg\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7 20h10\"/><path d=\"M10 20c5.5-2.5.8-6.4 3-10\"/><path d=\"M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z\"/><path d=\"M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z\"/></svg></span>First round!</li><li><span class=\"ds-badge ds-foilface\" style=\"--tilt:4deg;animation-delay:60ms\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"/><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"/><path d=\"M4 22h16\"/><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"/><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"/><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"/></svg></span>Star collector</li><li><span class=\"ds-slot\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"/><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"/><path d=\"M4 22h16\"/><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22\"/><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22\"/><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"/></svg></span><span class=\"ds-muted\">Week of practice<span style=\"position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)\"> (not yet)</span></span></li></ul></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:28px;display:flex;flex-wrap:wrap;gap:24px;align-items:center;font-family:'Lexend Variable','Lexend',system-ui,sans-serif;color:var(--color-page-ink, #e3f3ec)}.ds-sheet{display:grid;grid-template-columns:repeat(3,88px);gap:20px 12px;list-style:none;margin:0;padding:0}.ds-sheet li{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:12px;line-height:1.2}.ds-badge{position:relative;isolation:isolate;display:grid;place-items:center;width:64px;height:64px;border-radius:1rem;border:.35rem solid var(--color-vinyl, #dfe8e3);color:#f4fbf7;box-shadow:0 .55rem 1.1rem -.45rem rgb(3 25 20 / .6),0 .08rem .18rem rgb(3 25 20 / .55);transform:rotate(var(--tilt,0deg));animation:ds-place 320ms cubic-bezier(.16,1,.3,1) both}.ds-badge svg,.ds-slot svg{width:32px;height:32px}.ds-badge.ds-spell{background:#17795e}.ds-badge.ds-foilface{color:#1d2430;background:linear-gradient(118deg,#e6eaee 0%,#cdd7f3 24%,#ead6ef 46%,#d0efe2 68%,#eceff1 100%)}.ds-slot{display:grid;place-items:center;width:64px;height:64px;border-radius:1rem;border:2px dashed var(--color-page-line, #1a6a5a);background:color-mix(in oklab,var(--color-page-deep, #093a31) 35%,transparent);color:var(--color-page-line, #1a6a5a)}.ds-slot svg{width:24px;height:24px;opacity:.7}.ds-muted{color:var(--color-page-muted, #a3d0c0)}@keyframes ds-place{0%{transform:translateY(-14px) rotate(calc(var(--tilt,0deg) - 7deg)) scale(1.07)}100%{transform:translateY(0) rotate(var(--tilt,0deg)) scale(1)}}@media (prefers-reduced-motion:reduce){.ds-badge{animation:none}}"
+			"refersTo": "shelf-tile",
+			"description": "The home shelf: big glossy square tiles, one lit with the select ring, its name above, a red count and a red progress bar.",
+			"html": "<div class=\"ds-shelf\"><div class=\"ds-slot\"><span class=\"ds-name\">Spelling</span><button class=\"ds-tile ds-lit\" style=\"background:#17795e\" aria-label=\"Spelling, 6 waiting\"><span class=\"ds-count\">6</span><span class=\"ds-bar\"><span style=\"width:40%\"></span></span></button></div><div class=\"ds-slot\"><span class=\"ds-name\">Gobble Town</span><button class=\"ds-tile\" style=\"background:linear-gradient(160deg,#cfe9f4,#9ccf8a)\" aria-label=\"Gobble Town\"></button></div><div class=\"ds-slot\"><span class=\"ds-name\">Math</span><button class=\"ds-tile\" style=\"background:#5b4bc4\" aria-label=\"Math\"></button></div></div>",
+			"css": ".ds-shelf{display:flex;gap:1.1rem;padding:3.2rem 1.25rem 1.25rem;background:#212224} .ds-slot{position:relative} .ds-name{position:absolute;left:.15rem;bottom:calc(100% + .8rem);font:600 1.4rem/1 'Fredoka Variable',Fredoka,ui-rounded,system-ui,sans-serif;color:#1d9bf0;white-space:nowrap;opacity:0;transform:translateY(.3rem);transition:opacity 160ms ease-out,transform 220ms cubic-bezier(.16,1,.3,1)} .ds-slot:has(.ds-lit) .ds-name,.ds-slot:hover .ds-name{opacity:1;transform:none} .ds-tile{position:relative;display:block;width:9rem;aspect-ratio:1;border:0;border-radius:1.4rem;overflow:hidden;cursor:pointer;box-shadow:0 .5rem 1rem -.4rem rgb(6 6 7/.6),0 .08rem .2rem rgb(6 6 7/.5);outline:.3rem solid transparent;outline-offset:.35rem;transition:transform 260ms cubic-bezier(.34,1.56,.64,1),outline-color 120ms ease-out,box-shadow 260ms cubic-bezier(.16,1,.3,1)} .ds-tile::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(150deg,rgb(255 255 255/.22) 0%,rgb(255 255 255/.04) 28%,transparent 29%);box-shadow:inset 0 0 0 1px rgb(255 255 255/.12)} .ds-tile.ds-lit,.ds-tile:hover,.ds-tile:focus-visible{outline-color:#1d9bf0;transform:scale(1.035);box-shadow:0 .9rem 1.8rem -.6rem rgb(6 6 7/.6),0 .1rem .25rem rgb(6 6 7/.5)} .ds-tile:active{transform:scale(.98)} .ds-count{position:absolute;top:.65rem;right:.65rem;min-width:2rem;height:2rem;padding:0 .5rem;display:grid;place-items:center;border-radius:9999px;font:650 1rem/1 'Fredoka Variable',Fredoka,sans-serif;color:#fff;background:#d62c27;box-shadow:0 0 0 .18rem #fff,0 .2rem .4rem rgb(0 0 0/.3)} .ds-bar{position:absolute;inset:auto .8rem .8rem;height:.45rem;border-radius:9999px;background:rgb(20 23 30/.55);overflow:hidden} .ds-bar>span{display:block;height:100%;border-radius:inherit;background:#d62c27}"
 		},
 		{
-			"name": "Kid Sticker",
-			"kind": "custom",
-			"refersTo": "kid-sticker",
-			"description": "A child's identity: initial on a round white vinyl disc, chosen number on a foil chip at its edge. Fixed in both lights; 40px or larger.",
-			"html": "<div class=\"ds-kids\"><span class=\"ds-kid\" style=\"transform:rotate(-4deg)\" role=\"img\" aria-label=\"Jade\"><span>J</span><span class=\"ds-chip\">7</span></span><span class=\"ds-kid ds-kid-sm\" role=\"img\" aria-label=\"Sam\"><span>S</span><span class=\"ds-chip\">10</span></span></div>",
-			"css": ".ds-kids{display:flex;align-items:center;gap:40px;padding:28px;background:#0e4f43}.ds-kid{position:relative;display:inline-grid;place-items:center;width:136px;height:136px;border-radius:999px;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:71px;line-height:1;color:#12332c;background:radial-gradient(110% 110% at 30% 18%,#ffffff 0%,#f6faf8 50%,#e2ebe7 100%);box-shadow:inset 0 -.05em 0 rgb(18 51 44 / .1),inset 0 0 0 1px rgb(18 51 44 / .06),0 .04em .1em rgb(3 25 20 / .25),0 .16em .32em -.1em rgb(2 22 18 / .65);transition:transform .2s cubic-bezier(.16,1,.3,1);cursor:pointer}.ds-kid::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(158deg,rgb(255 255 255 / .7) 0%,rgb(255 255 255 / .1) 36%,transparent 37%);pointer-events:none}.ds-kid:hover{translate:0 -4px}.ds-kid:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-kid-sm{width:52px;height:52px;font-size:27px}.ds-chip{position:absolute;right:-8%;bottom:-6%;display:inline-flex;align-items:center;justify-content:center;min-width:.73em;height:.73em;padding:0 .14em;border-radius:999px;font-size:.4em;font-weight:650;font-variant-numeric:tabular-nums;background:linear-gradient(118deg,#e6eaee 0%,#cdd7f3 24%,#ead6ef 46%,#d0efe2 68%,#eceff1 100%);color:#1d2430;border:2px solid #dfe8e3;box-shadow:inset 0 1px 0 rgb(255 255 255 / .8),0 .3rem .6rem -.25rem rgb(2 22 18 / .65)}.ds-kid-sm .ds-chip{min-width:22px;height:22px;font-size:13px}"
-		},
-		{
-			"name": "Word Stickers and Vinyl Discs",
-			"kind": "chip",
-			"refersTo": "word-sticker",
-			"description": "Outside a round, a word is a vinyl pill label and a single letter, fact or icon is a vinyl disc. Dark ink on fixed white, never tiles.",
-			"html": "<div class=\"ds-vinyl\"><span class=\"ds-wordlabel\">necessary</span><span class=\"ds-wordlabel\">rhythm</span><span class=\"ds-disc\" style=\"transform:rotate(-7deg)\">b</span><span class=\"ds-disc\">7×8</span></div>",
-			"css": ".ds-vinyl{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:24px;background:#135c4e}.ds-wordlabel,.ds-disc{position:relative;color:#12332c;background:radial-gradient(110% 110% at 30% 18%,#ffffff 0%,#f6faf8 50%,#e2ebe7 100%);font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;line-height:1;border-radius:999px}.ds-wordlabel{display:inline-flex;align-items:center;padding:.28em .7em .32em;font-size:18px;white-space:nowrap;box-shadow:inset 0 -.08em 0 rgb(18 51 44 / .1),0 .06em .12em rgb(3 25 20 / .22),0 .2em .4em -.16em rgb(2 22 18 / .65)}.ds-disc{display:inline-grid;place-items:center;width:52px;height:52px;font-size:18px;font-variant-numeric:tabular-nums;box-shadow:inset 0 -.05em 0 rgb(18 51 44 / .1),inset 0 0 0 1px rgb(18 51 44 / .06),0 .04em .1em rgb(3 25 20 / .25),0 .16em .32em -.1em rgb(2 22 18 / .65)}.ds-wordlabel::before,.ds-disc::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(158deg,rgb(255 255 255 / .7) 0%,rgb(255 255 255 / .1) 36%,transparent 37%);pointer-events:none}"
+			"name": "Action Button",
+			"kind": "button",
+			"refersTo": "home-action",
+			"description": "Round white action under the shelf with its word beneath: Quests, Badges, More time, Switch.",
+			"html": "<button class=\"ds-action\"><span><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526\"/><circle cx=\"12\" cy=\"8\" r=\"6\"/></svg></span>Badges</button>",
+			"css": ".ds-action{display:inline-flex;flex-direction:column;align-items:center;gap:.45rem;font:600 .875rem/1 'Lexend Variable',Lexend,system-ui,sans-serif;color:#f1f2f4;background:none;border:0;border-radius:1rem;cursor:pointer} .ds-action>span{display:grid;place-items:center;width:3.5rem;height:3.5rem;border-radius:9999px;color:#1b2130;background:radial-gradient(120% 120% at 30% 15%,#fff,#f1f3f6 60%,#e3e7ec);box-shadow:inset 0 -.15rem 0 rgb(27 33 48/.08),0 .35rem .7rem -.25rem rgb(6 6 7/.6),0 .05rem .12rem rgb(6 6 7/.5);transition:transform 200ms cubic-bezier(.34,1.56,.64,1)} .ds-action:hover>span{transform:translateY(-2px)} .ds-action:active>span{transform:scale(.95)} .ds-action:focus-visible{outline:3px solid #1d9bf0;outline-offset:3px}"
 		},
 		{
 			"name": "Wordmark",
 			"kind": "custom",
-			"refersTo": "wordmark",
-			"description": "'ȷade’s world' cut from vinyl: Fredoka 700 in Foil Ink on a white cut following every letter, lifted, -2deg, a foil star for the j's dot.",
-			"html": "<span class=\"ds-mark\" role=\"img\" aria-label=\"Jade's World\"><span class=\"ds-cut\" aria-hidden=\"true\">ȷade’s world</span><span class=\"ds-ink\" aria-hidden=\"true\"><span class=\"ds-j\">ȷ<svg viewBox=\"-12 -12 24 24\" class=\"ds-star\"><path d=\"M0 -10.5 L3.1 -3.6 L10.5 -3 L4.9 1.9 L6.6 9.3 L0 5.4 L-6.6 9.3 L-4.9 1.9 L-10.5 -3 L-3.1 -3.6 Z\" fill=\"#d6dcf6\" stroke=\"#1d2430\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/></svg></span>ade’s world</span></span>",
-			"css": ".ds-mark{display:inline-grid;margin:24px;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:700;font-size:36px;line-height:1;letter-spacing:-.005em;white-space:nowrap;transform:rotate(-2deg);filter:drop-shadow(0 .05em .04em rgb(3 25 20 / .3)) drop-shadow(0 .12em .16em rgb(3 25 20 / .55))}.ds-mark>*{grid-area:1/1;position:relative}.ds-cut{color:#fbfdfb;-webkit-text-stroke:.36em #fbfdfb;paint-order:stroke fill;filter:drop-shadow(0 0 .025em #fbfdfb) drop-shadow(0 0 .025em #fbfdfb) drop-shadow(0 0 .025em #fbfdfb)}.ds-ink{z-index:1;color:#1d2430}.ds-j{position:relative;display:inline-block}.ds-star{position:absolute;width:.4em;height:.4em;top:-.1em;left:-.01em;overflow:visible}"
+			"refersTo": "brand-plate",
+			"description": "jade's world in white Fredoka 700 on the brand-red pill plate, a white star dotting the j.",
+			"html": "<span class=\"ds-brand\" role=\"img\" aria-label=\"Jade's World\">&#567;ade&rsquo;s world</span>",
+			"css": ".ds-brand{display:inline-flex;align-items:center;padding:.16em .62em .24em;border-radius:9999px;font:700 26px/1 'Fredoka Variable',Fredoka,ui-rounded,system-ui,sans-serif;letter-spacing:-.01em;color:#fff;background:linear-gradient(to bottom,#d62c27 45%,#ab1d19);box-shadow:inset 0 .06em 0 rgb(255 255 255/.35),inset 0 -.06em 0 rgb(0 0 0/.12),0 .12em .3em -.05em rgb(6 6 7/.6)}"
 		},
 		{
-			"name": "Page Key",
+			"name": "Who's Playing (kid pick)",
+			"kind": "custom",
+			"refersTo": "kid-sticker",
+			"description": "A kid as a round white vinyl sticker with a foil number chip; hover or focus gives it the select ring.",
+			"html": "<a class=\"ds-pick\" href=\"#\"><span class=\"ds-ring\"><span class=\"ds-kid\">J<span class=\"ds-chip\">7</span></span></span><span class=\"ds-kname\">Jade</span></a>",
+			"css": ".ds-pick{display:inline-flex;flex-direction:column;align-items:center;gap:1rem;padding:.5rem;text-decoration:none;color:#f1f2f4;font:500 1.5rem/1 'Fredoka Variable',Fredoka,sans-serif} .ds-ring{display:inline-grid;border-radius:9999px;outline:.3rem solid transparent;outline-offset:.4rem;transition:transform 260ms cubic-bezier(.34,1.56,.64,1),outline-color 120ms ease-out} .ds-pick:hover .ds-ring,.ds-pick:focus-visible .ds-ring{outline-color:#1d9bf0;transform:scale(1.04)} .ds-pick:focus-visible{outline:none} .ds-kid{position:relative;display:grid;place-items:center;width:7rem;height:7rem;border-radius:9999px;font:600 3.6rem/1 'Fredoka Variable',Fredoka,sans-serif;color:#12332c;background:radial-gradient(110% 110% at 30% 18%,#fff 0%,#f6faf8 50%,#e2ebe7 100%);box-shadow:inset 0 -.05em 0 rgb(18 51 44/.1),0 .16em .32em -.1em rgb(6 6 7/.6)} .ds-chip{position:absolute;right:-8%;bottom:-6%;display:grid;place-items:center;min-width:2.6rem;height:2.6rem;border-radius:9999px;font:650 1.4rem/1 'Fredoka Variable',Fredoka,sans-serif;color:#1d2430;background:linear-gradient(118deg,#e6eaee 0%,#cdd7f3 24%,#ead6ef 46%,#d0efe2 68%,#eceff1 100%);border:.15rem solid #dfe8e3}"
+		},
+		{
+			"name": "Key",
 			"kind": "button",
-			"refersTo": "key-page",
-			"description": "Default action key for everything the speller does not handle: nav, Done, Add, exit.",
-			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-pagekey\">Done</button></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-pagekey{color:#e3f3ec;background:#135c4e;box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 0 0 1px rgb(255 255 255/.05),0 .25em .5em -.2em rgb(3 25 20/.6);}"
+			"refersTo": "key",
+			"description": "Every ordinary action: raised shell with shell ink.",
+			"html": "<button class=\"ds-key\">Parents</button>",
+			"css": ".ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding:0 1.1rem;border:0;border-radius:.85rem;font:600 1.05rem 'Fredoka Variable',Fredoka,ui-rounded,system-ui,sans-serif;color:var(--color-page-ink,#f1f2f4);background:var(--color-page-raised,#2c2d2f);box-shadow:inset 0 1px 0 rgb(255 255 255/.07),inset 0 0 0 1px rgb(255 255 255/.06),0 .25em .5em -.2em rgb(6 6 7/.6);cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),filter 120ms} .ds-key:hover{filter:brightness(1.08)} .ds-key:active{transform:translateY(1px)} .ds-key:focus-visible{outline:3px solid #f1f2f4;outline-offset:3px}"
 		},
 		{
 			"name": "Go Key",
 			"kind": "button",
 			"refersTo": "key-go",
-			"description": "Chalk page; the one primary non-check action per view (Review, Next word, Save list). Never marigold.",
-			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-go\">Next word</button></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-go{color:#093a31;background:#e3f3ec;box-shadow:inset 0 -.18em 0 #afcdc2,0 .3em .6em -.2em rgb(3 25 20/.6)}"
-		},
-		{
-			"name": "Tile Key",
-			"kind": "button",
-			"refersTo": "key-tile",
-			"description": "Grained maple key for things the speller handles: Slowly, Definition, Sentence, Origin, hear-word.",
-			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-maple\">Definition</button></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-maple{color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3,#f1c98a);background-size:320px 320px,auto;box-shadow:inset 0 -.22em 0 #c9965a,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.15em rgb(3 25 20/.55)}.ds-maple:hover{filter:brightness(1.08)}.ds-maple:active{transform:translateY(.12em);box-shadow:inset 0 -.08em 0 #c9965a,0 .1em .3em -.1em rgb(3 25 20/.55)}"
-		},
-		{
-			"name": "Check Key",
-			"kind": "button",
-			"refersTo": "key-check",
-			"description": "Marigold-tinted maple at the right end of the answer row; marigold because it asks 'is this right?'.",
-			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-check\">Check</button></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-check{min-height:3.5rem;padding-inline:1.25rem;font-size:1.25rem;color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,color-mix(in oklab,#f2b632 60%,white),#f2b632);background-size:320px 320px,auto;box-shadow:inset 0 -.22em 0 #b9820f,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.15em rgb(3 25 20/.55)}.ds-check:active{transform:translateY(.12em);box-shadow:inset 0 -.08em 0 #b9820f,0 .1em .3em -.1em rgb(3 25 20/.55)}"
-		},
-		{
-			"name": "Pressed Key (selected)",
-			"kind": "chip",
-			"refersTo": "key-pressed",
-			"description": "data-pressed=\"true\": a page key pressed into the board for segmented choices and the active nav item.",
-			"html": "<div class=\"ds-board\"><button class=\"ds-key ds-pagekey ds-pressed\" aria-pressed=\"true\">Paste</button> <button class=\"ds-key ds-pagekey\">CSV or text file</button></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-pagekey{color:#e3f3ec;background:#135c4e;box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 0 0 1px rgb(255 255 255/.05),0 .25em .5em -.2em rgb(3 25 20/.6);}.ds-pressed{background:#093a31;box-shadow:inset 0 .15em .4em rgb(0 0 0/.4)}"
+			"description": "The one primary non-check action per view: shell-ink face, shell-shadow text.",
+			"html": "<button class=\"ds-go\">Go to Spelling</button>",
+			"css": ".ds-go{display:inline-flex;align-items:center;justify-content:center;min-height:3rem;padding:0 1.1rem;border:0;border-radius:.85rem;font:600 1.05rem 'Fredoka Variable',Fredoka,ui-rounded,system-ui,sans-serif;color:var(--color-page-deep,#18191b);background:var(--color-page-ink,#f1f2f4);box-shadow:inset 0 -.18em 0 color-mix(in oklab,#f1f2f4 70%,#212224),0 .3em .6em -.2em rgb(6 6 7/.6);cursor:pointer} .ds-go:hover{filter:brightness(1.08)} .ds-go:active{transform:translateY(1px)} .ds-go:focus-visible{outline:3px solid #f1f2f4;outline-offset:3px}"
 		},
 		{
 			"name": "Letter Tiles with Laws",
 			"kind": "custom",
 			"refersTo": "tile",
-			"description": "Maple tiles; law colour lives on the lower bevel and a corner mark, letter ink stays dark. Right, wrong (X), missing (sky square), extra (minus).",
-			"html": "<div class=\"ds-board ds-row\"><span class=\"ds-tile ds-right\">b</span><span class=\"ds-tile ds-wrong\">a<i class=\"ds-mark\" style=\"background:#e5553b\">×</i></span><span class=\"ds-square ds-missing\"></span><span class=\"ds-tile\">i</span><span class=\"ds-tile ds-extra\">e<i class=\"ds-mark\" style=\"background:#9a9186\">−</i></span><span class=\"ds-square ds-active\"></span></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-row{display:flex;gap:7px}.ds-tile{position:relative;display:inline-grid;place-items:center;width:64px;height:64px;font-size:36px;line-height:1;border-radius:18%;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3 0%,#f1c98a 52%,color-mix(in oklab,#f1c98a 86%,#c9965a) 100%);background-size:320px 320px,auto;text-shadow:0 1px 0 rgb(255 240 212/.75),0 -1px 0 rgb(95 58 22/.3);box-shadow:inset 0 -.3em 0 var(--edge,#c9965a),inset 0 1px 0 rgb(255 255 255/.6),inset 0 0 0 1px rgb(120 78 34/.12),0 .35em .7em -.1em rgb(3 25 20/.55)}.ds-right{--edge:#f2b632}.ds-wrong{--edge:#e5553b}.ds-extra{--edge:#9a9186}.ds-mark{position:absolute;top:-6%;right:-6%;width:16px;height:16px;border-radius:50%;border:1px solid #fff;color:#fff;font:700 12px/14px system-ui;text-align:center;font-style:normal;text-shadow:none}.ds-square{display:inline-block;width:64px;height:64px;border-radius:18%;background:color-mix(in oklab,#093a31 80%,black);box-shadow:inset 0 .2em .5em rgb(0 0 0/.45),inset 0 -1px 0 rgb(255 255 255/.06)}.ds-missing{box-shadow:inset 0 -.3em 0 #5aa9e6,inset 0 .2em .5em rgb(0 0 0/.45)}.ds-active{outline:2px solid rgb(227 243 236/.7);outline-offset:2px}"
-		},
-		{
-			"name": "Rack with Plaque",
-			"kind": "card",
-			"refersTo": "rack",
-			"description": "Walnut rack holding bee-question tile keys; a maple plaque carries the spoken answer below. Rounds only.",
-			"html": "<div class=\"ds-board\"><div class=\"ds-rack\"><button class=\"ds-key ds-maple\">Definition</button><button class=\"ds-key ds-maple\">Sentence</button></div><p class=\"ds-plaque\"><b>Definition:</b> a word your speller is practicing</p></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;display:grid;gap:14px;justify-items:center}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-key:disabled{opacity:.45;cursor:not-allowed}.ds-maple{color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3,#f1c98a);background-size:320px 320px,auto;box-shadow:inset 0 -.22em 0 #c9965a,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.15em rgb(3 25 20/.55)}.ds-rack{display:flex;gap:.5rem;padding:.5rem .75rem .9rem;border-radius:.9rem;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(180deg,color-mix(in oklab,#a87842 70%,#c9965a) 0%,#a87842 100%);background-size:320px 320px,auto;box-shadow:inset 0 1px 0 rgb(255 230 190/.35),inset 0 -.35rem 0 rgb(80 48 18/.45),0 .4rem .9rem -.2rem rgb(3 25 20/.6)}.ds-plaque{margin:0;padding:.6rem 1rem;border-radius:.7rem;color:#2a1c10;font-family:'Lexend Variable','Lexend',system-ui,sans-serif;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3,#f1c98a);background-size:320px 320px,auto;text-shadow:0 1px 0 rgb(255 240 212/.7);box-shadow:inset 0 -.2em 0 #c9965a,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.2em rgb(3 25 20/.55)}"
+			"description": "Maple tiles in a round; the law colour lives on the lower bevel and a corner mark only.",
+			"html": "<div class=\"ds-row\"><span class=\"ds-t ds-right\">n</span><span class=\"ds-t ds-right\">e</span><span class=\"ds-t ds-wrong\" aria-label=\"s, wrong letter\">s<i>&times;</i></span><span class=\"ds-t\">e</span></div>",
+			"css": ".ds-row{display:flex;gap:6px} .ds-t{position:relative;display:inline-grid;place-items:center;width:56px;height:56px;border-radius:18%;font:600 31px/1 'Fredoka Variable',Fredoka,sans-serif;color:#23180f;background:linear-gradient(172deg,#f9e0b3 0%,#f1c98a 52%,color-mix(in oklab,#f1c98a 86%,#c9965a) 100%);text-shadow:0 1px 0 rgb(255 240 212/.75),0 -1px 0 rgb(95 58 22/.3);box-shadow:inset 0 -.3em 0 var(--edge,#c9965a),inset 0 1px 0 rgb(255 255 255/.6),inset 0 0 0 1px rgb(120 78 34/.12),0 .35em .7em -.1em rgb(6 6 7/.5)} .ds-right{--edge:#f2b632} .ds-wrong{--edge:#e5553b} .ds-t i{position:absolute;top:-5px;right:-5px;width:16px;height:16px;border-radius:50%;background:#e5553b;color:#fff;font:700 11px/16px sans-serif;text-align:center;font-style:normal;box-shadow:0 0 0 1.5px #fff}"
 		},
 		{
 			"name": "Field in a Patch",
 			"kind": "input",
 			"refersTo": "field",
-			"description": "Recessed page field inside a raised page patch (parent screens).",
-			"html": "<div class=\"ds-board\"><label class=\"ds-patch\"><span>List name</span><input class=\"ds-field\" placeholder=\"Week 6\"></label></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-patch{display:grid;gap:.5rem;padding:1.25rem;border-radius:1.25rem;color:#e3f3ec;font:500 .875rem 'Lexend Variable','Lexend',system-ui,sans-serif;background:color-mix(in oklab,#135c4e 70%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255 / .08),inset 0 0 0 1px rgb(255 255 255 / .05),0 1px 0 rgb(0 0 0 / .4)}.ds-field{min-height:3rem;padding:.7rem .95rem;border-radius:.8rem;border:1px solid #1a6a5a;color:#e3f3ec;font:400 1rem 'Lexend Variable','Lexend',system-ui,sans-serif;background:#072e27;box-shadow:inset 0 .15em .4em rgb(0 0 0/.4)}.ds-field::placeholder{color:#a3d0c0}.ds-field:focus-visible{outline:3px solid #e3f3ec;outline-offset:1px}"
+			"description": "A recessed field inside the raised patch (sign-in account form).",
+			"html": "<div class=\"ds-patch\"><label class=\"ds-lab\">Email<input class=\"ds-field\" type=\"email\"></label></div>",
+			"css": ".ds-patch{padding:1.5rem;border-radius:1.25rem;background:color-mix(in oklab,#2c2d2f 70%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255/.07),inset 0 0 0 1px rgb(255 255 255/.06)} .ds-lab{display:grid;gap:.4rem;font:500 .875rem 'Lexend Variable',Lexend,sans-serif;color:#f1f2f4} .ds-field{min-height:3rem;padding:.7rem .95rem;border-radius:.8rem;border:1px solid #3c3d3f;background:#121315;color:#f1f2f4;font:400 1rem 'Lexend Variable',Lexend,sans-serif;box-shadow:inset 0 .15em .4em rgb(0 0 0/.4)} .ds-field:focus-visible{outline:3px solid #f1f2f4;outline-offset:1px}"
 		},
 		{
-			"name": "Pips",
-			"kind": "custom",
-			"refersTo": "pip",
-			"description": "Five-dot mastery ramp (Leitner box 1–5), identical in play, results and parent progress.",
-			"html": "<div class=\"ds-board\"><span class=\"ds-pips\" role=\"img\" aria-label=\"Mastery 2 of 5\"><i class=\"on\"></i><i class=\"on\"></i><i></i><i></i><i></i></span></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-pips{display:inline-flex;gap:3px}.ds-pips i{width:9px;height:9px;border-radius:9999px;box-shadow:inset 0 0 0 1.5px #a3d0c0}.ds-pips i.on{background:#e3f3ec;box-shadow:none}"
-		},
-		{
-			"name": "Math Keypad",
-			"kind": "custom",
-			"refersTo": "key-tile",
-			"description": "The only math input: maple digit keys in a 3-column grid, a page delete key, and Check below as an empty recess until there is an answer.",
-			"html": "<div class=\"ds-board\"><div class=\"ds-pad\"><button class=\"ds-key ds-maple ds-big\">7</button><button class=\"ds-key ds-maple ds-big\">8</button><button class=\"ds-key ds-maple ds-big\">9</button><button class=\"ds-key ds-maple ds-big\">4</button><button class=\"ds-key ds-maple ds-big\">5</button><button class=\"ds-key ds-maple ds-big\">6</button><button class=\"ds-key ds-maple ds-big\">1</button><button class=\"ds-key ds-maple ds-big\">2</button><button class=\"ds-key ds-maple ds-big\">3</button><button class=\"ds-key ds-maple ds-big ds-wide\">0</button><button class=\"ds-key ds-pagekey ds-big\" aria-label=\"Delete\">⌫</button><button class=\"ds-key ds-recess ds-big ds-full\" disabled>Check</button></div></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-maple{color:#2a1c10;background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='g' x='0' y='0' width='1' height='1'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01875 0.28125' numOctaves='3' seed='23' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.47  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 1.1 -0.42'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23g)'/%3E%3C/svg%3E\"),linear-gradient(172deg,#f9e0b3,#f1c98a);background-size:320px 320px,auto;box-shadow:inset 0 -.22em 0 #c9965a,inset 0 1px 0 rgb(255 255 255/.55),0 .3em .6em -.15em rgb(3 25 20/.55)}.ds-pagekey{color:#e3f3ec;background:#135c4e;box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 0 0 1px rgb(255 255 255/.05),0 .25em .5em -.2em rgb(3 25 20/.6)}.ds-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;max-width:24rem}.ds-big{min-height:3.5rem;font-size:1.5rem}.ds-wide{grid-column:1/span 2}.ds-full{grid-column:1/-1}.ds-recess{color:#a3d0c0;background:color-mix(in oklab,#093a31 80%,black);box-shadow:inset 0 .2em .5em rgb(0 0 0/.45),inset 0 -1px 0 rgb(255 255 255/.06);cursor:not-allowed}"
-		},
-		{
-			"name": "Confirm (in place)",
-			"kind": "custom",
-			"refersTo": "patch",
-			"description": "The in-place \"are you sure?\" that replaces the browser confirm box: a patch where the action was, safe choice first and focused, Escape backs out.",
-			"html": "<div class=\"ds-board\"><div class=\"ds-confirm\" role=\"alertdialog\" aria-label=\"Stop here?\"><div><p class=\"ds-q\">Stop here?</p><p class=\"ds-note\">Your 3 answers are saved, and you’ll see how you did.</p></div><div class=\"ds-acts\"><button class=\"ds-key ds-pagekey\">Keep going</button><button class=\"ds-key ds-pagekey\">Stop</button></div></div></div>",
-			"css": ".ds-board{background:var(--color-page, #0e4f43);padding:24px;}.ds-key{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-height:3rem;padding-inline:1.1rem;border:0;border-radius:.85rem;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.05rem;cursor:pointer;transition:transform 120ms cubic-bezier(.16,1,.3,1),box-shadow 120ms cubic-bezier(.16,1,.3,1),filter 120ms}.ds-key:hover{filter:brightness(1.08)}.ds-key:active{transform:translateY(1px)}.ds-key:focus-visible{outline:3px solid #e3f3ec;outline-offset:3px}.ds-pagekey{color:#e3f3ec;background:#135c4e;box-shadow:inset 0 1px 0 rgb(255 255 255/.08),inset 0 0 0 1px rgb(255 255 255/.05),0 .25em .5em -.2em rgb(3 25 20/.6)}.ds-confirm{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem 1.25rem;padding:1rem;border-radius:1.25rem;background:color-mix(in oklab,#135c4e 70%,transparent);box-shadow:inset 0 1px 0 rgb(255 255 255 / .08),inset 0 0 0 1px rgb(255 255 255 / .05),0 1px 0 rgb(0 0 0 / .4);color:#e3f3ec}.ds-q{margin:0;font-family:'Fredoka Variable','Fredoka',ui-rounded,system-ui,sans-serif;font-weight:600;font-size:1.125rem}.ds-note{margin:.125rem 0 0;font-family:'Lexend Variable','Lexend',system-ui,sans-serif;font-size:.875rem;color:#a3d0c0}.ds-acts{display:flex;gap:.5rem;flex-wrap:wrap}"
+			"name": "Earned Badge and Foil",
+			"kind": "chip",
+			"refersTo": "foil",
+			"description": "Earned materials: a subject-hue badge sticker at its tilt, an unearned dim disc, and a foil star chip.",
+			"html": "<div class=\"ds-earn\"><span class=\"ds-foil\">&#9733; <b>42</b> stars</span><span class=\"ds-badge\">&#10022;</span><span class=\"ds-none\">&#10022;</span></div>",
+			"css": ".ds-earn{display:flex;align-items:center;gap:1rem} .ds-foil{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:999px;color:#1d2430;font:500 .875rem 'Lexend Variable',Lexend,sans-serif;background:linear-gradient(118deg,#e6eaee 0%,#cdd7f3 24%,#ead6ef 46%,#d0efe2 68%,#eceff1 100%);border:.2rem solid #dfe8e3;box-shadow:inset 0 1px 0 rgb(255 255 255/.8),0 .3rem .6rem -.25rem rgb(6 6 7/.6)} .ds-foil b{font:600 1.25rem 'Fredoka Variable',Fredoka,sans-serif} .ds-badge,.ds-none{display:grid;place-items:center;width:4rem;height:4rem;border-radius:1rem;font-size:1.6rem} .ds-badge{color:#f4fbf7;background:#5b4bc4;border:.35rem solid #dfe8e3;transform:rotate(-5deg);box-shadow:0 .55rem 1.1rem -.45rem rgb(6 6 7/.6),0 .08rem .18rem rgb(6 6 7/.5)} .ds-none{color:#acaeb2;background:#18191b}"
 		}
 	],
 	"narrative": {
-		"northStar": "The Sticker Album, One Place at a Time",
-		"overview": "Jade's World is a sticker album that fills up. The ground on every route is a glossy album page in jade, and practice earns what goes on it. The album's places (Spelling, Play, Math) are each printed in their own hue, and on the subject hub each one fills the screen as a single giant die-cut sticker, one flick from the next, so Learn and Play get equal billing. Everything a kid collects or is named by is white die-cut vinyl: the wordmark, her own round initial sticker, the words on a list, small discs. Badges are stickers stuck down at a small tilt once earned and printed as dashed empty slots until then. Stars and streak are holographic silver foil. Wood is reserved for the rounds: only where a kid handles letters or digits are there maple tiles, and the four law colours judge them letter by letter.\n\nThe page has two lights and one set of token names. **Night** (the default in CSS) is the deep jade page under a warm reading lamp that pools on the upper left. **Day** is a mint-jade liner page in daylight, with the page's gloss catching it in one soft diagonal band. The parent picks Auto, Day or Night in Settings; Auto follows the device's light or dark setting live. Every surface reads `page-*` and `--tone-*`, so it works in both lights without a second rule.\n\nDensity stays low during a round, where the word is the only subject and the album recedes to a plain lit page. The hub shows one place at a time, its media in the middle and its caption low on the left; parent screens use the same page at lower intensity, with patches, page keys and words on vinyl labels. Depth is physical: stickers lift off the page, tiles sit on it, squares and fields are pressed into it. Textures are authored SVG turbulence with no raster assets. Motion is short and physical: stickers are placed, tiles drop, flip and nudge. Nothing floats or loops.",
+		"northStar": "Console Home",
+		"overview": "Jade's World is a games portal laid out as a console's home menu. A plain shell holds one shelf of big glossy square tiles: every game (Roxy, Roxy's town, Gobble Town, Jelly Blocks, Campfire Woods) and Spelling and Math among them, the one she pressed last first. One tile is lit at a time. The lit tile wears a thick select-blue ring standing off its corners, grows a touch on a quick spring, and shows its name above it in blue. Under the shelf sit one line about the lit tile and a row of round white action buttons. One brand red owns the wordmark plate, the counts on tiles and the progress bars. Nothing else is on the shell. There is no texture, no paper and no decoration.\n\nThe shell has two lights and one set of token names. **Night** (the CSS default) is neutral charcoal, lit a touch from above. **Day** is a pale cool grey, a touch brighter at the top. The parent picks Auto, Day or Night in Settings, and Auto follows the device live. The tiles carry the colour: real art captured from each game, edge to edge, or for Spelling and Math, the round's own maple tiles on the subject hue. Rounds are where the quiet craft lives: maple letter tiles judged by four law colours, unchanged from before the portal. Game screens are unchanged too: the scene fills the window, always daylit, with small glass chrome in the corners. What a kid earns keeps its material: badges are stickers, stars and streak are silver foil, tickets are berry stubs.\n\nDensity is low and scale is big. A tile is about 40% of the viewport tall, so a kid can pick one from across the table. Motion is short: the ring springs, the name fades up, tiles drop and flip in rounds, and nothing loops.",
 		"keyCharacteristics": [
-			"A jade album page on every route, in two lights (Night under a lamp, Day with a gloss band), with paper tooth and mottle.",
-			"Die-cut vinyl stickers for the album's places and earned badges: printed hue face, white vinyl rim, gloss highlight, soft lift shadow, fixed small tilt. On the hub a place is one screen-filling sticker.",
-			"White vinyl for identity and words outside rounds: the die-cut wordmark, round kid stickers, word labels and small discs, always dark ink on white.",
-			"One printed hue per place: jade for Spelling, grape for Math, berry for Play (Roxy and the games). None is a law colour.",
-			"Holographic silver foil for stars, streak and milestone badges, never gold.",
-			"Dashed slots printed on the page for anything not yet earned.",
-			"Maple tiles only for what a kid handles in a round (answer row, tile bank, problem row, keypad, bee questions, spoken plaque, results), judged by four law colours shown only on edges, underlines and corner marks.",
-			"Rounded Fredoka for display and tiles, Lexend for reading, and a per-child tile face.",
-			"Short physical motion (sticker-place, place-rise, tile-drop, flip cascade, nudge), all collapsed under reduced motion."
+			"A plain shell in two lights: Night charcoal, Day pale cool grey. No texture, no paper.",
+			"One shelf of big square tiles (1.4rem corners, a top-corner gloss), each filled edge to edge with art from its game. Spelling and Math are two tiles among the games.",
+			"One lit tile at a time: a 0.3rem select-blue ring 0.35rem off its corners, a 1.035 scale on a spring, and its name above in Fredoka.",
+			"One brand red for the wordmark plate, the corner counts and the progress bars.",
+			"Round white action buttons with their word beneath (Quests, Badges, More time, Switch).",
+			"\"Who's playing?\": each kid a big round vinyl sticker that takes the same select ring.",
+			"Maple tiles and the four law colours inside rounds, and as the picture of a round on the Spelling and Math tiles.",
+			"Earned materials kept: badge stickers in a subject hue or foil, silver foil for stars and streak, berry tickets.",
+			"Fredoka for names, counts and keys; Lexend for lines."
 		],
 		"rules": [
 			{
+				"name": "The One Light Rule",
+				"body": "Exactly one tile on the shelf is lit, and select blue marks only that tile (its ring and its name) or the thing under the keyboard or pointer on a picker. Blue is never decoration, a link colour or a fill.",
+				"section": "colors"
+			},
+			{
+				"name": "The One Red Rule",
+				"body": "Brand red is the wordmark plate, a count of what's waiting, and how far something has come. It never marks an error and never appears in a round or on a tile's letters, so it can't be read beside coral as \"wrong\".",
+				"section": "colors"
+			},
+			{
 				"name": "The One Law Rule",
-				"body": "Each law colour means one thing everywhere: marigold is right, coral is a wrong letter, sky is a missing letter, stone is an extra letter. Test: if you can't finish the sentence \"this colour here means ___\" with that colour's law, the colour is wrong.",
+				"body": "Each law colour means one thing everywhere: marigold is right, coral is a wrong letter, sky is a missing letter, stone is an extra letter. Test: if you can't finish \"this colour here means ___\" with its law, the colour is wrong.",
 				"section": "colors"
 			},
 			{
 				"name": "The Edge-Only Rule",
-				"body": "Feedback colour lives on tile edges (the `--tile-edge` bevel), underlines and the corner mark. It never goes on the letter or the tile face. Letter ink stays dark on every tile.",
-				"section": "colors"
-			},
-			{
-				"name": "The Marigold Is Earned Rule",
-				"body": "Marigold never marks a generic primary action. The primary non-check action is the chalk `go` key. On retry, correct letters lose their marigold, so marigold only confirms a finished word.",
+				"body": "Feedback colour lives on tile edges (the `--tile-edge` bevel), underlines and corner marks. It never goes on the letter or the tile face. Letter ink stays dark on every tile.",
 				"section": "colors"
 			},
 			{
 				"name": "The Mark Beside Colour Rule",
-				"body": "Every non-right law also carries a corner mark (X, plus or minus on a white-stroked disc) and an aria-label such as \"b, wrong letter\". Colour is never the only signal. Right carries no mark and is confirmed by the result line.",
+				"body": "Every non-right law also carries a corner mark (X, plus or minus) and an aria-label such as \"b, wrong letter\". Colour is never the only signal.",
 				"section": "colors"
 			},
 			{
-				"name": "The Place Hue Rule",
-				"body": "Each place has exactly one printed hue (spell, math, roxy) and it marks that place everywhere: its sticker, its topic stickers, its badges. A place hue is paint, never feedback, and text on it is always Sticker Ink. A new place gets a new hue that sits clear of marigold, coral, sky and stone.",
-				"section": "colors"
-			},
-			{
-				"name": "The Silver Foil Rule",
-				"body": "Stars, streak and milestone badges are holographic silver foil. Nothing that rewards is ever gold or marigold, because marigold means right.",
-				"section": "colors"
-			},
-			{
-				"name": "The Ticket Rule",
-				"body": "What games pay and spend is a ticket (`.ticket`): a berry stub with punched sides and a dotted perforation after its mark, with the count in Sticker Ink. Foil means practice and a ticket means play, so a ticket is never foil and a star is never a ticket. Free games show no wallet at all.",
+				"name": "The Earned Material Rule",
+				"body": "Stars, streak and milestone badges are holographic silver foil, never gold or marigold, because marigold means right. Other badges are stickers in a subject hue. What games pay is a berry ticket, never foil. Free games show no wallet at all.",
 				"section": "colors"
 			},
 			{
 				"name": "The Two Lights Rule",
-				"body": "Night and Day share every token name. New surfaces use `page-*` colours and `--tone-*` shadow tones, never a hard-coded page hex or a fixed shadow rgb, so they light correctly in both. Only materials are fixed: maple, vinyl-cut and foil keep their colours in both lights, and their lift shadows still use `--tone-drop-deep`. Test: switch Settings → Day and Night; nothing disappears or inverts.",
-				"section": "colors"
-			},
-			{
-				"name": "The Wood Is Handled Rule",
-				"body": "Maple appears only where a kid handles letters or digits in a round: the answer row, the tile bank, the math problem row and keypad, the bee-question rack, the spoken plaque, and results. Everywhere else a word, a letter or a count is white vinyl. Test: if nothing on the screen is typed, tapped into place or checked, there is no wood on it.",
+				"body": "Night and Day share every token name. New surfaces use `page-*` colours and `--tone-*` shadows, never a hard-coded shell hex or a fixed shadow rgb. Only materials are fixed: maple, brand red, action white, vinyl and foil, and the white and dark scrims printed on tile art.",
 				"section": "colors"
 			},
 			{
 				"name": "The Child's Face Rule",
-				"body": "Tile letters take their face from `data-font` on the play subtree (`fredoka`, `andika`, `lexend`, `atkinson`). Every tile uses `--font-tile`, never a hard-coded family, so a child's chosen face reaches every tile in the round. All four faces are bundled locally through @fontsource.",
+				"body": "Every tile uses `--font-tile`, set from `data-font` on the play subtree, never a hard-coded family, so a child's chosen face reaches every tile in a round.",
 				"section": "typography"
 			},
 			{
 				"name": "The Lowercase Word Rule",
-				"body": "Words are shown as the speller types them, usually lowercase. Don't uppercase or letter-space tile letters, key labels or words on vinyl labels. Positive tracking appears only on PIN fields; the big Fredoka sizes (place name, place print) are tightened, never spread.",
+				"body": "Words are shown as typed, usually lowercase. Don't uppercase or letter-space tile letters, key labels, shelf names or words on labels.",
 				"section": "typography"
 			},
 			{
+				"name": "The Plain Shell Rule",
+				"body": "The body is `--page-light` (a top-lit gradient into page-deep at Night, a brightened top by Day) and nothing else. No texture, paper, pattern or illustration goes on the shell. The colour on a screen comes from the tiles' art.",
+				"section": "elevation"
+			},
+			{
 				"name": "The Grain-Not-Flat Rule",
-				"body": "Every maple surface stacks a grain texture over a 172deg highlight gradient. Tiles pick one of four grain variants (`data-grain` 0 to 3, derived from the letter or index), so neighbours rarely match. A flat maple fill is a defect.",
-				"section": "elevation"
-			},
-			{
-				"name": "The Page Is Lit Rule",
-				"body": "The body stacks page mottle (512px), paper tooth (128px) and `--page-light`, fixed to the viewport: at Night a warm lamp pool at the upper left over a radial falloff to page-deep; by Day a 118deg gloss band over a daylight radial. New surfaces sit on this page; they don't paint their own opaque backgrounds.",
-				"section": "elevation"
-			},
-			{
-				"name": "The Peel Rule",
-				"body": "Only stickers lift. A sticker that is a link or button rises 3px on hover (a kid sticker on profiles, 4px) and presses 1px on tap, keeping its tilt; a sticker that is just a picture (an earned badge, a word label, a place face) never moves after it is placed.",
+				"body": "Every maple surface stacks one of four grain textures over a 172deg gradient. A flat maple fill is a defect.",
 				"section": "elevation"
 			}
 		],
 		"dos": [
-			"**Do** put feedback colour only on `--tile-edge`, underlines and corner marks. Test: with the law colours desaturated, every judged tile still shows an X, plus or minus mark, and its aria-label names the law.",
-			"**Do** use maple (tiles, `data-variant=\"tile\"` or `\"check\"`, plaques, racks) only in a round, for things the speller handles. Test: if a key isn't part of listening to, asking about or checking the word, it's a page key; if the screen isn't a round or its results, it has no wood.",
-			"**Do** show words, letters and counts outside a round as white vinyl: a word sticker for a word, a vinyl disc for a single letter, fact or icon, a kid sticker for a child.",
-			"**Do** keep kid stickers at 40px or larger, so the foil chip never covers the initial.",
-			"**Do** use exactly one `go` key per view for the primary non-check action, in chalk.",
-			"**Do** mark selection with `data-pressed=\"true\"` (plus `aria-current` for nav), never with a colour change.",
-			"**Do** make each place a sticker in its own hue (spell, math, roxy) with Sticker Ink text, and give it a small fixed tilt (±1.5 to 2deg). On the hub, a place is a whole place page: one name, one line of what's waiting, one go key, and media that is never UI.",
-			"**Do** keep the hub's tabs naming all three places, in the order Spelling, Play, Math.",
-			"**Do** print stars, streak and milestone badges on holographic silver foil.",
-			"**Do** show anything not yet earned as a dashed slot with its silhouette and a Lichen label that says what it is.",
-			"**Do** colour new surfaces with `page-*` tokens and `--tone-*` shadows, and check them in both Day and Night.",
-			"**Do** size answer tiles through `fitTile` so tile edge and gap scale together (gap = 10% of the edge). Test: a 15-letter word at 375px fits on one line.",
-			"**Do** size round screens to `var(--vvh, 100dvh)` and collapse the rail while the keyboard is up. Test: on iPad with the on-screen keyboard up, the Say-it disc, the answer row and Check are all visible.",
-			"**Do** keep every tap target at least 44px: text keys are 48px or more, and square icon-only keys are 44 to 48px.",
-			"**Do** set `autocorrect=\"off\"`, `autocapitalize=\"none\"` and `spellcheck={false}` on any field that takes a spelling.",
-			"**Do** render tile letters in `--font-tile` so the child's chosen face applies.",
-			"**Do** keep motion to sticker-place, place-rise, tile-drop, tile-land, tile-flip and tile-nudge on ease-out-expo, and check each new animation under `prefers-reduced-motion`.",
-			"**Do** take math answers on the keypad only. Test: a math round has no `input` or `textarea` anywhere.",
-			"**Do** draw operators as chalk marks on the page; only numbers and answers are tiles.",
-			"**Do** ask \"are you sure?\" in place with Confirm, with the safe choice first and focused."
+			"Do keep exactly one tile lit, marked by the select ring, the 1.035 spring and its name above. Test: arrows, Home, End, hover and focus all move the same single light.",
+			"Do fill a shelf tile edge to edge with real art from its game, or for Spelling and Math, the round's own maple tiles on the subject hue.",
+			"Do use brand red only for the wordmark plate, waiting counts and progress.",
+			"Do put feedback colour only on tile edges, underlines and corner marks. Test: with the law colours desaturated, every judged tile still shows its mark and its aria-label names the law.",
+			"Do keep maple to rounds and to the picture of a round (the Spelling and Math tiles, the sign-in demo row). Those pictures are `aria-hidden` and never pressed as tiles.",
+			"Do print stars, streak and milestone badges on silver foil, and other earned badges as subject-hue stickers.",
+			"Do colour new surfaces with `page-*` tokens and `--tone-*` shadows, and check them in both Day and Night.",
+			"Do keep text on brand red and on subject hues at 4.5:1 or better at its size.",
+			"Do end a static shelf (like the sign-in demo) on whole tiles. Only the live shelf may let the next tile peek in.",
+			"Do put hand-written `:hover` rules inside `@media (hover: hover)`, and give tiles, keys and stickers `touch-action: manipulation`.",
+			"Do pad pages with the `*-safe-*` utilities and read insets through `--safe-*`.",
+			"Do size answer tiles through `fitTile` and round screens to `var(--vvh, 100dvh)`.",
+			"Do render tile letters in `--font-tile`.",
+			"Do check each new animation under `prefers-reduced-motion`."
 		],
 		"donts": [
-			"**Don't** use marigold for a generic primary, \"start\" or \"continue\" action. Marigold means right.",
-			"**Don't** use coral, sky or stone for anything except wrong, missing and extra letters: no coral error banners, sky links, stone disabled states, or law-coloured stickers.",
-			"**Don't** make a reward gold. Foil is silver; a place hue is paint, not praise.",
-			"**Don't** tint a tile face or colour a letter's ink to show feedback.",
-			"**Don't** fill maple flat or use raster wood. Every maple surface carries a grain texture over the 172deg gradient.",
-			"**Don't** put white cards, flat panels or opaque page backgrounds over the album page. White is vinyl only: a sticker's rim, a place face's rim, a kid sticker, a disc, a word label, the wordmark's cut. Parent panels are `patch`.",
-			"**Don't** spell a word in tiles outside a round, or put a child's initial on maple. Wood says \"handle this\".",
-			"**Don't** put dark ink straight on a place hue; text on a sticker face is Sticker Ink. Dark ink on a hue only ever sits on its own white vinyl or a Sticker Ink key.",
-			"**Don't** randomise tilts per render; a sticker keeps the tilt it was placed with.",
-			"**Don't** hard-code a Night hex or a fixed shadow rgb on a new surface; it breaks Day.",
-			"**Don't** let the answer row wrap onto two lines.",
-			"**Don't** add floaty fades, long easings or looping motion.",
-			"**Don't** use condensed or pixel faces, or uppercase tile letters.",
-			"**Don't** use the browser's `confirm()` or a modal for a yes/no; they belong to no part of the album.",
-			"**Don't** add particle effects (confetti, sparkles). Celebration is stickers being placed and star tiles landing and, on a perfect round, flipping to marigold."
+			"Don't put texture, paper, patterns or illustration on the shell.",
+			"Don't use select blue as decoration, a link colour or a fill, or light two tiles at once.",
+			"Don't use brand red for errors, warnings or anything in a round. Errors are a Shell Shadow bubble.",
+			"Don't use marigold for a generic primary action or a reward. Marigold means right.",
+			"Don't use coral, sky or stone for anything except wrong, missing and extra letters.",
+			"Don't tint a tile face or colour a letter's ink to show feedback.",
+			"Don't fill maple flat or use raster wood.",
+			"Don't hide a shut game. Grey it with a lock and say what opens it.",
+			"Don't hard-code a Night hex or a fixed shadow rgb on a themed surface.",
+			"Don't let the answer row wrap onto two lines.",
+			"Don't add looping motion, confetti or particle effects.",
+			"Don't name the outside portal, console or games that this or any game was modelled on, in UI, code or docs."
 		]
 	}
 }

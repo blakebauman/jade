@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { openLanding, stubVoice, stubWords } from "./helpers.ts";
+import { openLanding, shelfTile, stubVoice, stubWords } from "./helpers.ts";
 
 async function setup(page: Page) {
 	await openLanding(page);
@@ -54,7 +54,7 @@ test("closing the app mid-round: progress is saved and the round can be continue
 
 	// The app is closed and reopened later.
 	await page.goto(`/play/${childId}`);
-	await page.getByRole("link", { name: "Continue Two · 1 of 2" }).click();
+	await shelfTile(page, "Spelling").click();
 	await page.getByRole("button", { name: "Start" }).click();
 	await expect(page.getByText("2/2")).toBeVisible();
 	await expect.poll(() => spoken.at(-1)).not.toBe(first);

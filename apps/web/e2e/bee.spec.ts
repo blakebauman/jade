@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { stubVoice, stubWords } from "./helpers.ts";
+import { shelfTile, stubVoice, stubWords } from "./helpers.ts";
 
 const WORDS = ["believe", "rhythm"];
 
@@ -10,7 +10,7 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 
 	// Parent signs up.
 	await page.goto("/");
-	await expect(page.getByRole("heading", { name: "Hear it. Spell it. Solve it. Play." })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." })).toBeVisible();
 	await page.screenshot({ path: `test-results/${info.project.name}-landing.png` });
 	await page.getByLabel("Your name").fill("Test Parent");
 	await page.getByLabel("Email").fill(email);
@@ -42,8 +42,8 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 	await page.getByRole("link", { name: "Practice", exact: true }).click();
 	await page.screenshot({ path: `test-results/${info.project.name}-profiles.png` });
 	await page.getByRole("link", { name: "Jade" }).click();
-	// Subject hub → Spelling → Bee.
-	await page.getByRole("link", { name: "Let’s spell" }).click();
+	// Home shelf → Spelling → Bee.
+	await shelfTile(page, "Spelling").click();
 	await page.getByRole("link", { name: "Bee" }).click();
 	await page.getByRole("button", { name: "Start" }).click();
 

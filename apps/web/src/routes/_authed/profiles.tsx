@@ -22,7 +22,7 @@ function Profiles() {
 				</Link>
 			</header>
 			<section className="grid flex-1 content-center gap-10 py-10">
-				<h1 className="text-center text-4xl font-semibold md:text-5xl">Who’s here?</h1>
+				<h1 className="text-center text-4xl font-semibold md:text-5xl">Who’s playing?</h1>
 				{kids.length === 0 ? (
 					<div className="mx-auto max-w-sm space-y-5 text-center">
 						<p className="text-page-muted">No kids yet. A parent adds each child and their word lists first.</p>
@@ -32,19 +32,17 @@ function Profiles() {
 					</div>
 				) : (
 					<ul className="flex flex-wrap justify-center gap-8 md:gap-12">
-						{kids.map((k, i) => (
+						{kids.map((k) => (
 							<li key={k.id}>
-								{/* Each kid is their own round sticker, big enough to tap from across the table. */}
+								{/* Each kid is their own round sticker, big enough to tap from across the table; the one under the
+								    pointer or the keyboard wears the shelf's select ring, as a console's user picker does. */}
 								<Link
 									to="/play/$childId"
 									params={{ childId: k.id }}
 									onClick={() => speaker.unlock()}
-									className="group flex flex-col items-center gap-4 rounded-3xl p-2"
+									className="user-pick group flex flex-col items-center gap-4 rounded-3xl p-2"
 								>
-									<span
-										className="transition-transform duration-200 ease-out-expo group-hover:-translate-y-1 group-active:translate-y-px"
-										style={{ transform: `rotate(${i % 2 ? 4 : -4}deg)` }}
-									>
+									<span className="user-pick-ring">
 										<KidTile name={k.name} avatar={k.avatar} size={136} />
 									</span>
 									<span className="font-display text-2xl font-medium text-page-ink">{k.name}</span>

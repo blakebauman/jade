@@ -1,10 +1,10 @@
 import { Tile } from "@jade/ui/components/tile";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { BookOpenText, Calculator, type LucideIcon, Tent } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { z } from "zod";
 import { Brand } from "#/components/Brand.tsx";
 import { fitTile } from "#/components/round/AnswerRow.tsx";
+import { SubjectArt } from "#/components/SubjectArt.tsx";
 import { authClient, signIn, signUp } from "#/lib/auth.ts";
 import { rememberedUser } from "#/lib/device.ts";
 import { useElementWidth } from "#/lib/hooks.ts";
@@ -33,7 +33,7 @@ function DemoRow() {
 	const word = "necessary";
 	const laws = ["right", "right", "wrong", "right", "right", "right", "right", "right", "right"] as const;
 	const [ref, width] = useElementWidth<HTMLDivElement>();
-	const { size, gap } = fitTile(width, word.length, 50);
+	const { size, gap } = fitTile(width, word.length, 40);
 	return (
 		<div ref={ref} className="flex w-full max-w-[34rem]" style={{ gap }} aria-hidden>
 			{[...word].map((c, i) => (
@@ -51,30 +51,32 @@ function DemoRow() {
 	);
 }
 
-/** The three places a kid finds behind their tile, in the hub's order. */
-const PLACES: { hue: "spell" | "roxy" | "math"; name: string; icon: LucideIcon; tilt: string; text: string }[] = [
-	{
-		hue: "spell",
-		name: "Spelling",
-		icon: BookOpenText,
-		tilt: "-1.5deg",
-		text: "This week’s words, spoken aloud. Ask for the definition, a sentence or the origin, the way you can at a bee. Missed words come back until they stick.",
-	},
-	{
-		hue: "roxy",
-		name: "Play",
-		icon: Tent,
-		tilt: "1deg",
-		text: "Dress Roxy and explore her town, then Gobble Town, Jelly Blocks and Campfire Woods: a block island the family builds on together, with friends you link.",
-	},
-	{
-		hue: "math",
-		name: "Math",
-		icon: Calculator,
-		tilt: "-0.75deg",
-		text: "Times tables, mental math, fractions and word problems, read aloud. Levels adjust on their own, and every miss shows how to get the answer.",
-	},
+/** The home shelf as a kid sees it, lit on a game: real art from each game, one tile with words waiting. */
+const DEMO: { name: string; art: React.ReactNode; count?: number }[] = [
+	{ name: "Gobble Town", art: <img src="/tiles/gobble.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
+	{ name: "Spelling", art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} right={2} />, count: 6 },
+	{ name: "Jelly Blocks", art: <img src="/tiles/jelly.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
+	{ name: "Math", art: <SubjectArt hue="math" tiles={["7", "×", "8"]} right={-1} answer /> },
 ];
+
+/** Ends on whole tiles: four across the column (three on a phone), each a quarter of it, the first one lit. */
+function DemoShelf() {
+	return (
+		<ul className="grid grid-cols-3 gap-3 pt-12 sm:grid-cols-4 md:gap-4" aria-hidden>
+			{DEMO.map((t, i) => (
+				<li key={t.name} className={`shelf-slot [container-type:inline-size] ${i === 3 ? "max-sm:hidden" : ""}`}>
+					<span className="shelf-name" data-lit={i === 0 || undefined}>
+						{t.name}
+					</span>
+					<span className="shelf-tile" data-lit={i === 0 || undefined} style={{ "--tile": "100cqi" } as React.CSSProperties}>
+						{t.art}
+						{t.count && <span className="shelf-count">{t.count}</span>}
+					</span>
+				</li>
+			))}
+		</ul>
+	);
+}
 
 function Landing() {
 	const { next } = Route.useSearch();
@@ -102,27 +104,33 @@ function Landing() {
 	}
 
 	return (
-		<main className="mx-auto grid min-h-dvh max-w-6xl content-center gap-12 px-safe-5 py-safe-10 md:grid-cols-[1.2fr_1fr] md:gap-16 md:px-safe-10">
+		<main className="mx-auto grid min-h-dvh max-w-6xl grid-cols-[minmax(0,1fr)] content-center gap-12 px-safe-5 py-safe-10 md:grid-cols-[1.2fr_1fr] md:gap-16 md:px-safe-10">
 			<section className="min-w-0 space-y-8">
-				<Brand size={36} />
-				<h1 className="text-5xl leading-[1.05] font-semibold md:text-6xl">
-					Hear it. Spell it.
-					<br />
-					Solve it. Play.
+				{/* On a phone the form sits below the fold, so a returning parent gets a way to it up here. */}
+				<div className="flex items-center justify-between gap-4">
+					<Brand size={36} />
+					<button
+						type="button"
+						className="key md:hidden"
+						onClick={() => {
+							setMode("signin");
+							document.getElementById("account")?.scrollIntoView({ behavior: "smooth", block: "start" });
+						}}
+					>
+						Sign in
+					</button>
+				</div>
+				<h1 className="text-5xl leading-[1.05] font-semibold text-balance md:text-6xl">
+					Every game she loves, plus spelling and math, on one shelf.
 				</h1>
-				<p className="max-w-[46ch] text-lg text-pretty text-page-muted">
-					Spelling and math practice for 8–11 year olds, and a world to play in. Load this week’s school list from a paste or a photo of the
-					sheet, and your child spells each word tile by tile, with feedback on every letter.
+				<p className="max-w-[48ch] text-lg text-pretty text-page-muted">
+					A games portal for 8–11 year olds with practice built in. Roxy, her town, Gobble Town, Jelly Blocks and Campfire Woods sit beside
+					Spelling and Math, the one she played last first, and you decide how play and practice meet.
 				</p>
-				<DemoRow />
-				<p className="text-sm text-page-muted">
-					One tile went coral: <span className="font-semibold text-page-ink">nece</span>
-					<span className="font-semibold text-page-ink underline decoration-coral decoration-[3px] underline-offset-4">s</span>
-					<span className="font-semibold text-page-ink">sary</span> has a single <span className="font-semibold text-page-ink">c</span>.
-				</p>
+				<DemoShelf />
 			</section>
 
-			<section className="patch min-w-0 p-6 md:p-8">
+			<section id="account" className="patch min-w-0 scroll-mt-6 self-start p-6 md:p-8">
 				<fieldset className="mx-0 mb-6 flex gap-2 border-0 p-0">
 					<legend className="sr-only">Account</legend>
 					{(["signup", "signin"] as const).map((m) => (
@@ -169,30 +177,45 @@ function Landing() {
 						{busy ? "One moment…" : mode === "signup" ? "Create family account" : "Sign in"}
 					</button>
 					<p className="text-xs text-page-muted">
-						The account belongs to a parent. Kids pick their own tile to practice. No child email or password.
+						The account belongs to a parent. Kids pick their own sticker to play. No child email or password.
 					</p>
 				</form>
 			</section>
 
-			<section aria-labelledby="places" className="min-w-0 space-y-6 md:col-span-2">
-				<h2 id="places" className="sr-only">
-					What’s inside
+			<section aria-labelledby="inside" className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10 md:col-span-2 md:grid-cols-3">
+				<h2 id="inside" className="sr-only">
+					What’s on the shelf
 				</h2>
-				<ul className="grid gap-6 md:grid-cols-3">
-					{PLACES.map(({ hue, name, icon: Icon, tilt, text }) => (
-						<li key={hue} data-place={hue} className="sticker space-y-2 p-5" style={{ "--tilt": tilt } as React.CSSProperties}>
-							<h3 className="flex items-center gap-2 text-2xl font-semibold">
-								<Icon aria-hidden className="size-6" />
-								{name}
-							</h3>
-							<p className="text-pretty text-page-muted">{text}</p>
-						</li>
-					))}
-				</ul>
-				<p className="max-w-[70ch] text-pretty text-page-muted">
-					Games pay their own tickets, so practice stars stay a record of practice. You decide, for each child, how the two meet: stars can
-					pay in games, games can open after today’s practice, or play time can cost stars. Rounds work offline, on a laptop, an iPad or a
-					phone.
+				<div className="space-y-2">
+					<h3 className="text-2xl font-semibold">The games</h3>
+					<p className="text-pretty text-page-muted">
+						Dress Roxy and explore her town, then Gobble Town, Jelly Blocks and Campfire Woods: a block island the family builds on
+						together, with friends you link. Games pay their own tickets, so practice stars stay a record of practice.
+					</p>
+				</div>
+				<div className="space-y-3">
+					<h3 className="text-2xl font-semibold">Spelling</h3>
+					<p className="text-pretty text-page-muted">
+						This week’s school list, from a paste or a photo of the sheet, spoken aloud. She spells each word tile by tile, with feedback on
+						every letter, and missed words come back until they stick.
+					</p>
+					<DemoRow />
+					<p className="text-sm text-page-muted">
+						One tile went coral: <span className="font-semibold text-page-ink">nece</span>
+						<span className="font-semibold text-page-ink underline decoration-coral decoration-[3px] underline-offset-4">s</span>
+						<span className="font-semibold text-page-ink">sary</span> has a single <span className="font-semibold text-page-ink">c</span>.
+					</p>
+				</div>
+				<div className="space-y-2">
+					<h3 className="text-2xl font-semibold">Math</h3>
+					<p className="text-pretty text-page-muted">
+						Times tables, mental math, fractions and word problems, read aloud. Levels adjust on their own, and every miss shows how to get
+						the answer.
+					</p>
+				</div>
+				<p className="max-w-[70ch] text-pretty text-page-muted md:col-span-3">
+					You decide, for each child, how play and practice meet: games can be free or earn tickets, stars can pay in games, games can open
+					after today’s practice, or play time can cost stars. Rounds work offline, on a laptop, an iPad or a phone.
 				</p>
 			</section>
 		</main>

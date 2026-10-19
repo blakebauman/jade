@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { openLanding } from "./helpers.ts";
+import { openLanding, shelfTile } from "./helpers.ts";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -40,8 +40,7 @@ async function earnStars(page: Page, h: Record<string, string>, childId: string,
 test("style a Roxy, add cat ears with a gem, and save it to the gallery", async ({ page }) => {
 	const { ids } = await setup(page);
 	await page.goto(`/play/${ids[0]}`);
-	await page.getByRole("link", { name: "Let’s play" }).click();
-	await page.getByRole("link", { name: "Roxy", exact: true }).click();
+	await shelfTile(page, "Roxy").click();
 
 	// One primary key in the studio.
 	await expect(page.locator('main [data-variant="go"]')).toHaveCount(1);
@@ -225,8 +224,8 @@ test("without 3D, Help me look still finds things", async ({ page }) => {
 
 test("go to town, find something hidden in the park, and it's counted", async ({ page }) => {
 	const { ids } = await setup(page);
-	await page.goto(`/play/${ids[0]}/games`);
-	await page.getByRole("link", { name: /^Roxy’s town/ }).click();
+	await page.goto(`/play/${ids[0]}`);
+	await shelfTile(page, "Roxy’s town").click();
 	await expect(page.getByRole("heading", { name: "Town", exact: true })).toBeVisible();
 	await page.getByRole("link", { name: /^The park/ }).click();
 	await expect(page.getByRole("heading", { name: "The park" })).toBeVisible();
