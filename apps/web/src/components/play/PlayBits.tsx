@@ -131,11 +131,14 @@ export function PlayClosed({
 	status,
 	size = "large",
 	level = "h3",
+	next,
 }: {
 	childId: string;
 	status: PlayStatus;
 	size?: "large" | "small";
-	/** h2 directly under a page's h1 (the Play home); h3 under the hub's "What shall we play?". */
+	/** Where to go from here while practice comes first; the hub passes one key to its own waiting subject. */
+	next?: React.ReactNode;
+	/** h2 directly under a page's h1 (the Play home); h3 under the hub's "Play". */
 	level?: "h2" | "h3";
 }) {
 	const id = useId();
@@ -153,21 +156,35 @@ export function PlayClosed({
 					<H id={id} className="font-display text-2xl font-semibold text-page-ink">
 						Play opens after practice
 					</H>
-					<p className="text-page-muted">{goalLeft(settings.goal, today)}</p>
-					{progress.unit === "star" && (
-						<p className="font-display text-lg font-medium text-page-ink tabular-nums">
-							{progress.have} of {progress.need} stars
-							<span className="sr-only"> for {GOAL_LABEL[settings.goal].toLowerCase()}</span>
-						</p>
+					{/* One line for what's left: a star goal says it as a filling strip, a round goal in words. */}
+					{progress.unit === "star" ? (
+						<div className="flex flex-col items-center gap-2">
+							<span className="block h-2.5 w-44 overflow-hidden rounded-full bg-black/25" aria-hidden>
+								<span
+									className="block h-full rounded-full bg-page-ink"
+									style={{ width: `${Math.min(100, (progress.have / progress.need) * 100)}%` }}
+								/>
+							</span>
+							<p className="font-display text-lg font-medium text-page-ink tabular-nums">
+								{progress.have} of {progress.need} stars today
+								<span className="sr-only"> for {GOAL_LABEL[settings.goal].toLowerCase()}</span>
+							</p>
+						</div>
+					) : (
+						<p className="text-page-muted">{goalLeft(settings.goal, today)}</p>
 					)}
 					{/* Somewhere to go from here, not just what's missing. */}
 					<div className="flex flex-wrap justify-center gap-2.5 pt-1">
-						<Link to="/play/$childId/spelling" params={{ childId }} onClick={() => speaker.unlock()} className="key">
-							Spelling
-						</Link>
-						<Link to="/play/$childId/math" params={{ childId }} onClick={() => speaker.unlock()} className="key">
-							Math
-						</Link>
+						{next ?? (
+							<>
+								<Link to="/play/$childId/spelling" params={{ childId }} onClick={() => speaker.unlock()} className="key">
+									Spelling
+								</Link>
+								<Link to="/play/$childId/math" params={{ childId }} onClick={() => speaker.unlock()} className="key">
+									Math
+								</Link>
+							</>
+						)}
 					</div>
 				</>
 			) : (
