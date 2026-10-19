@@ -613,7 +613,7 @@ function SlotPicker({
 						</ItemButton>
 					</li>
 				)}
-				{/* What she has first, then what's still to unlock, so the locks don't interleave with her own things. */}
+				{/* What the kid has first, then what's still to unlock, so the locks don't interleave with their own things. */}
 				{[...items.filter((i) => isOwned(i, unlocked)), ...items.filter((i) => !isOwned(i, unlocked))].map((item) => {
 					const owned = isOwned(item, unlocked);
 					const state = trying === item.id ? "trying" : worn?.item === item.id ? "worn" : undefined;
@@ -708,7 +708,7 @@ type UnlockProps = {
 	childId: string;
 };
 
-/** Sticks to the foot of the panel over the grid, so trying a locked thing never scrolls her away from where she was. */
+/** Sticks to the foot of the panel over the grid, so trying a locked thing never scrolls the kid away from where they were. */
 function UnlockPrompt(props: UnlockProps) {
 	return (
 		<div className="sticky bottom-0 z-10 -mx-1 mt-4 rounded-[1.4rem] bg-page-raised p-1 shadow-[0_-0.5rem_1.5rem_-0.5rem_var(--tone-drop-deep)]">
