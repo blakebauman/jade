@@ -58,7 +58,7 @@ typography:
     letterSpacing: "-0.01em"
   shelf-name:
     fontFamily: "Fredoka Variable, Fredoka, ui-rounded, system-ui, sans-serif"
-    fontSize: "clamp(1.4rem, 2.2vw, 2.1rem)"
+    fontSize: "clamp(1.3rem, calc(var(--tile) * 0.085), 2.6rem) (sized from the tile)"
     fontWeight: 600
     lineHeight: 1
   title:
@@ -117,9 +117,9 @@ rounded:
   sheet: "1.75rem"
   pill: "9999px"
 spacing:
-  shelf-tile: "clamp(10rem, min(40dvh, 34vw), 22rem)"
+  shelf-tile: "clamp(10rem, min(44dvh, 34vw), 24rem)"
   shelf-tile-phone: "min(62vw, 38dvh)"
-  shelf-tile-portrait: "min(68vw, 46dvh)"
+  shelf-tile-portrait: "min(72vw, 50dvh)"
   shelf-gap: "clamp(0.9rem, 1.6vw, 1.5rem)"
   shelf-gutter: "max(1.25rem, safe inset); max(3rem, safe inset) from md"
   shelf-head: "3.75rem"
@@ -343,7 +343,7 @@ Night values are the unsuffixed keys and the CSS default. The Day values (`-day`
 **Character:** Fredoka gives names, numerals and keys a round, toy-solid voice that reads as a game, not a worksheet. Lexend is the calm voice for the one line under the shelf, sheet copy and parent screens.
 
 ### Hierarchy
-- **Display** (600, 3rem to 3.75rem at md, line-height 1.05): the sign-in headline, "Every game she loves, plus spelling and math, on one shelf."
+- **Display** (600, 3rem to 3.75rem at md, line-height 1.05): the sign-in headline, "Every game your kid loves, plus spelling and math, on one shelf."
 - **Headline** (600, 2.25rem to 3rem at md): "Who's playing?" and section heads on inner screens.
 - **Shelf name** (600, clamp 1.4rem to 2.1rem, line-height 1, one line): the lit tile's name, 1rem above its top-left corner, in select blue. Only the lit name shows.
 - **Title** (600, 1.5rem): the kid's name in the home's top bar, sheet titles ("Your badges · 3 of 12", "Today's quests"), and "The games", "Spelling" and "Math" on the sign-in page.
@@ -363,8 +363,8 @@ Night values are the unsuffixed keys and the CSS default. The Day values (`-day`
 ## Layout
 
 **The home (`/play/$childId`).** A three-row grid filling `100dvh`. Inline padding is 1.25rem, rising to 3rem from md, with `py-safe-5` (`py-safe-7` from md).
-- **Top bar:** her kid sticker (48px) and name on the left; stars and, unless games are Free, tickets on the right as big numerals beside a lucide Star and Ticket.
-- **Middle, the shelf:** one row of square tiles, vertically centred. A tile is `clamp(10rem, min(40dvh, 34vw), 22rem)` on a laptop, `min(62vw, 38dvh)` on a phone (so the next tile peeks in from the edge), and `min(68vw, 46dvh)` on an upright tablet. The gap is `clamp(0.9rem, 1.6vw, 1.5rem)`. The row scrolls sideways with mandatory snap and no scrollbar. It is padded 3.75rem above (room for the name) and 1.25rem below, with a gutter that grows from md and respects the safe inset, so the ring, the name and the lift never clip. Under it, in a 5rem-tall slot, sit the lit tile's line and stat (a game's best score or finds; a waiting round says "Finish …: 2 of 5 done" and its tile drops the count, leaving the bar). While games are shut, a line under it always says what opens them ("Games open after practice" with a star strip), and when a shut game is lit it adds one go key to the first subject on the shelf. Hover and keyboard share one light (hovering a tile focuses it); a swipe that leaves the lit tile off-screen hands the light to the tile at the shelf's start; Enter with nothing focused opens the lit tile.
+- **Top bar:** her kid sticker (48px) and name on the left; stars and, unless games are Free, tickets on the right as big numerals beside a silver lucide Star (never marigold, which means right) and a berry Ticket.
+- **Middle, the shelf:** one row of square tiles, vertically centred. A tile is `clamp(10rem, min(44dvh, 34vw), 24rem)` on a laptop, `min(62vw, 38dvh)` on a phone (so the next tile peeks in from the edge), and `min(72vw, 50dvh)` on an upright tablet. The gap is `clamp(0.9rem, 1.6vw, 1.5rem)`. The row scrolls sideways with mandatory snap and no scrollbar. It is padded 3.75rem above (room for the name) and 1.25rem below, with a gutter that grows from md and respects the safe inset, so the ring, the name and the lift never clip. Under it, in a 5rem-tall slot, sit the lit tile's line and stat (a game's best score or finds; a waiting round says "Finish …: 2 of 5 done" and its tile drops the count, leaving the bar). While games are shut, a line under it always says what opens them ("Games open after practice" with a star strip), and when a shut game is lit it adds one go key to the first subject on the shelf. Hover and keyboard share one light (hovering a tile focuses it); a swipe that leaves the lit tile off-screen hands the light to the tile at the shelf's start; Enter with nothing focused opens the lit tile, but only once a key has been let go on the page (never a held or repeated Enter carried over from "Who's playing?"). Arrows on the round buttons don't pull focus back to the shelf, and while a round button has focus the lit tile's ring steps back to 35%, so only one ring is bright. Pressing a shut game shakes it once (`tile-nudge`) and lights it, so the line under the shelf offers the way to practice; shut tiles are `aria-disabled`, and on a phone their lock shows the icon alone. The shelf always opens at its start, so a restored scroll position never moves the light.
 - **Footer:** the round action buttons on the left (1.25rem apart, 1.75rem from md). On the right, keyboard hints ("← → choose · Enter play" in `.kbd` keys, only from lg with a fine pointer) and the wordmark at 18px.
 
 **Shelf order.** Most recently pressed first, saved per kid on the device (`jade.shelf.{childId}`). A new kid starts Roxy, Gobble Town, Jelly Blocks, Spelling, Campfire Woods, Math, Roxy's town. A round waiting to be finished leads the shelf (the newer of the two), and it is lit on arrival. While Play is shut, the light starts on the first tile she can open.
@@ -415,7 +415,7 @@ Tilt survives only on earned stickers: badge stickers cycle through -5, 4, -3, 6
 
 ### Shelf tile (the signature)
 A glossy rounded square filled edge to edge with its game's art.
-- **Art:** a game's tile is a captured WebP (`public/tiles/*.webp`, `object-fit: cover`). Roxy's tile is her live SVG look. Spelling and Math are `SubjectArt`: the round's own maple Tile components on the subject hue ("rhythm" with its y marked right in marigold on spell green; "7 × 8" beside an empty answer recess on grape), sized from `--tile`. Art is `alt=""`; the button's aria-label names the tile, its count and whether it's locked.
+- **Art:** a game's tile is a captured WebP (`public/tiles/*.webp`, `object-fit: cover`). Roxy's tile is her live SVG look. Spelling and Math are `SubjectArt`: the round's own maple Tile components on the subject hue ("rhythm" on spell green; "7 × 8" beside an empty answer recess on grape), with no law colour, since nothing outside a round has been checked, sized from `--tile`. Art is `alt=""`; the button's aria-label names the tile, its count and whether it's locked.
 - **Lit:** `data-lit` sets the ring colour to select, scales to 1.035 and deepens the drop. Keyboard focus shows the same ring.
 - **Count:** a red 2rem round in the top-right corner (0.65rem in), with a white Fredoka 650 numeral, "99+" past 99. It shows words due, else this week's unstarted words, or facts due.
 - **Progress:** a red bar 0.45rem tall along the foot (0.8rem in) over a dark 55% track, for a round waiting to be finished. It is never under 6% wide.
@@ -483,7 +483,7 @@ The scene fills the window on the `--scene-top` to `--scene-ground` sky, always 
 ## Assets and provenance
 
 Every shipping raster and its source:
-- **Game tiles** (`apps/web/public/tiles/town.webp`, `gobble.webp`, `jelly.webp`, `woods.webp`): 720×720 WebP at quality 82, captured 2026-10-18 with headless Playwright Chromium (SwiftShader WebGL) from the app's own dev server. The viewport was 1200×1200, with every DOM element but the canvas hidden. town is `/games/roxy/place/park` after 9s. gobble is `/games/gobble` with the test hooks `setSeed(7)` and `setState("late-game")`, paused. jelly is `/games/jelly` with `setSeed(3)` and `setState("late-game")`, paused. woods is `/games/woods` after Start, with `setState("dusk")`. Each was cropped and resized with ImageMagick: town 1000×1000+100+60, gobble 860×860+176+200, jelly 940×940+130+230, woods 1000×1000+100+150. No generated imagery and no third-party assets.
+- **Game tiles** (`apps/web/public/tiles/town.webp`, `gobble.webp`, `jelly.webp`, `woods.webp`): 720×720 WebP at quality 82, captured 2026-10-18 with headless Playwright Chromium (SwiftShader WebGL) from the app's own dev server. The viewport was 1200×1200, with every DOM element but the canvas hidden. town is `/games/roxy/place/park` after 9s. gobble is `/games/gobble` with the test hooks `setSeed(7)` and `setState("late-game")`, paused. jelly is `/games/jelly` with `setSeed(3)` and `setState("late-game")`, paused. woods is `/games/woods` after Start, with `setState("dusk")`. Each was cropped and resized with ImageMagick: town 1000×1000+100+60, gobble 860×860+176+200, jelly 700×700+250+450 (recropped 2026-10-19 to the stack), woods 1000×1000+100+150. No generated imagery and no third-party assets.
 - **Spelling and Math tiles:** not rasters. `SubjectArt` draws the round's own maple `Tile` components on the subject hue.
 - **Roxy's tile:** her live SVG look (`RoxyFigure`, viewBox `40 20 320 320`).
 - **Icons** (`public/favicon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`): authored in `apps/web/scripts/icon-mark.mjs`, a white rounded-stroke j with a white star dot on a brand-red rounded square (gradient #ee5a52 → #e5322d → #c4231f; the icon keeps the brighter red, where the white j is far past any contrast floor), turned -6deg. They are rendered by `scripts/icons.sh` with rsvg-convert. The favicon draws a larger star, the maskable icon keeps the mark inside the 80% circle, and the touch icon is full bleed on brand red.

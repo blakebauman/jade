@@ -278,7 +278,7 @@ function Home() {
 							? `${newest.name}: ${played.mastered} of ${newest.wordCount} mastered.`
 							: `${newest.name}: ${newest.wordCount} new ${newest.wordCount === 1 ? "word" : "words"}.`
 						: "Hear the word, then spell it, like a real bee.",
-			art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} right={2} />,
+			art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} />,
 			// What's waiting: words due again, else this week's words she hasn't started.
 			// The bar speaks for a waiting round, so the count only shows when there isn't one.
 			count: spellingLeft ? undefined : spellingDue || (newest && !played ? newest.wordCount : undefined),
@@ -300,7 +300,7 @@ function Home() {
 				: factsDue > 0
 					? `${factsDue} ${factsDue === 1 ? "fact wants" : "facts want"} another go.`
 					: "Times tables, mental math, fractions and story problems.",
-			art: <SubjectArt hue="math" tiles={["7", "×", "8"]} right={-1} answer />,
+			art: <SubjectArt hue="math" tiles={["7", "×", "8"]} answer />,
 			count: mathLeft ? undefined : factsDue || undefined,
 			progress: mathLeft ? mathLeft.done / mathLeft.total : undefined,
 			go: mathLeft
@@ -343,6 +343,7 @@ function Home() {
 		};
 	});
 	// A kid whose games are shut starts lit on the first thing she can open.
+	const [nudged, setNudged] = useState<number | null>(null);
 	const [lit, setLit] = useState(() =>
 		Math.max(
 			0,
@@ -356,7 +357,13 @@ function Home() {
 		const root = shelfRef.current;
 		if (!root) return;
 		let timer = 0;
+		// Only a scroll she makes moves the light; a scroll position the browser restores on back or reload doesn't.
+		let touched = false;
+		const touch = () => {
+			touched = true;
+		};
 		const settle = () => {
+			if (!touched) return;
 			const box = root.getBoundingClientRect();
 			const r = buttons.current[lit]?.getBoundingClientRect();
 			if (r && r.left >= box.left - 1 && r.right <= box.right + 1) return;
@@ -374,8 +381,10 @@ function Home() {
 			timer = window.setTimeout(settle, 140);
 		};
 		root.addEventListener("scroll", onScroll, { passive: true });
+		for (const type of ["pointerdown", "touchstart", "wheel"]) root.addEventListener(type, touch, { passive: true });
 		return () => {
 			root.removeEventListener("scroll", onScroll);
+			for (const type of ["pointerdown", "touchstart", "wheel"]) root.removeEventListener(type, touch);
 			window.clearTimeout(timer);
 		};
 	}, [lit]);
@@ -391,13 +400,28 @@ function Home() {
 		el?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", inline: "center", block: "nearest" });
 	}
 
-	// The lit tile starts in view, ring and all, even when it isn't first (a shut Play lights Spelling).
+	// The shelf opens at its start with the lit tile in view, ring and all (a shut Play lights Spelling), whatever scroll
+	// position the browser kept from before.
 	useEffect(() => {
+		if (shelfRef.current) shelfRef.current.scrollLeft = 0;
 		if (lit > 0) buttons.current[lit]?.scrollIntoView({ behavior: "instant", inline: "center", block: "nearest" });
 	}, []);
 
 	// Arrows, Home and End move the light along the shelf from anywhere on the page, unless a field, a list or a sheet
 	// has the keys. Enter or Space on the lit tile opens it, as a press does.
+	// A key let go on this page arms Enter, so the Enter that picked her on "Who's playing?" can't also start a game.
+	const armed = useRef(false);
+	useEffect(() => {
+		const arm = () => {
+			armed.current = true;
+		};
+		window.addEventListener("keyup", arm);
+		window.addEventListener("pointerdown", arm);
+		return () => {
+			window.removeEventListener("keyup", arm);
+			window.removeEventListener("pointerdown", arm);
+		};
+	}, []);
 	useEffect(() => {
 		function onKey(e: KeyboardEvent) {
 			if (e.altKey || e.ctrlKey || e.metaKey || document.querySelector("dialog[open]")) return;
@@ -405,11 +429,14 @@ function Home() {
 			if (t?.closest("input, textarea, select, [contenteditable], [role=slider], [role=listbox], [role=menu], [role=tablist]")) return;
 			// Enter with nothing focused opens the lit tile, as the hint says.
 			if (e.key === "Enter" && (t === document.body || t === null)) {
+				if (e.repeat || !armed.current) return;
 				e.preventDefault();
 				if (current.go) current.go();
 				else light(lit);
 				return;
 			}
+			// The round buttons under the shelf are their own row: arrows there don't pull focus back up.
+			if (t?.closest(".home-action")) return;
 			const to =
 				e.key === "Home" ? 0 : e.key === "End" ? shelf.length - 1 : e.key === "ArrowRight" ? lit + 1 : e.key === "ArrowLeft" ? lit - 1 : -1;
 			if (to < 0 || to >= shelf.length) return;
@@ -444,7 +471,7 @@ function Home() {
 				<dl className="flex shrink-0 items-center gap-5 font-display md:gap-7">
 					<div className="flex items-center gap-2">
 						<dt>
-							<Star className="size-6 fill-current text-marigold" aria-hidden />
+							<Star className="size-6 fill-[#d9dee8] text-[#8e97a8]" aria-hidden />
 							<span className="sr-only">Stars</span>
 						</dt>
 						<dd className={`text-2xl font-semibold tabular-nums md:text-3xl ${stars ? "" : "text-page-muted"}`}>{stars}</dd>
@@ -480,6 +507,9 @@ function Home() {
 								className="shelf-tile"
 								data-lit={i === lit || undefined}
 								data-locked={t.locked || undefined}
+								data-nudge={nudged === i || undefined}
+								aria-disabled={t.locked || undefined}
+								onAnimationEnd={() => setNudged(null)}
 								tabIndex={i === lit ? 0 : -1}
 								aria-label={`${t.name}${t.count ? `, ${t.count} waiting` : ""}${t.locked ? ", opens after practice" : ""}`}
 								aria-describedby={t.locked ? "shelf-shut" : "shelf-line"}
@@ -490,7 +520,13 @@ function Home() {
 									setLit(i);
 									buttons.current[i]?.focus({ preventScroll: true });
 								}}
-								onClick={() => (t.go ? t.go() : light(i))}
+								onClick={() => {
+									if (t.go) return t.go();
+									// A shut game answers the press: it shakes, takes the light, and the line under the shelf offers the
+									// way to practice.
+									light(i);
+									setNudged(i);
+								}}
 							>
 								{t.art}
 								{t.count ? (
@@ -505,7 +541,8 @@ function Home() {
 								)}
 								{t.locked && (
 									<span className="shelf-lock" aria-hidden>
-										<Lock className="size-4" /> {play?.shut ? "After practice" : "Out of time"}
+										<Lock className="size-4" />
+										<span className="max-sm:sr-only">{play?.shut ? "After practice" : "Out of time"}</span>
 									</span>
 								)}
 							</button>

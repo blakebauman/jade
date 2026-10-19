@@ -10,7 +10,7 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 
 	// Parent signs up.
 	await page.goto("/");
-	await expect(page.getByRole("heading", { name: "Every game she loves, plus spelling and math, on one shelf." })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Every game your kid loves, plus spelling and math, on one shelf." })).toBeVisible();
 	await page.screenshot({ path: `test-results/${info.project.name}-landing.png` });
 	await page.getByLabel("Your name").fill("Test Parent");
 	await page.getByLabel("Email").fill(email);

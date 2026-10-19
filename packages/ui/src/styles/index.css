@@ -631,7 +631,7 @@
 	 * above it. The row scrolls sideways and snaps; it's padded so the ring, the name and the lift never clip.
 	 */
 	.shelf {
-		--tile: clamp(10rem, min(40dvh, 34vw), 22rem);
+		--tile: clamp(10rem, min(44dvh, 34vw), 24rem);
 		--gutter: max(1.25rem, var(--safe-left));
 		display: flex;
 		gap: clamp(0.9rem, 1.6vw, 1.5rem);
@@ -647,7 +647,7 @@
 	/* A phone: tiles take most of the width, so the next one peeks in from the edge. */
 	@media (max-width: 40rem) { .shelf { --tile: min(62vw, 38dvh); } }
 	/* A tablet held upright: tall and narrow, so the tiles grow to fill the height the row would leave empty. */
-	@media (orientation: portrait) and (min-width: 40rem) { .shelf { --tile: min(68vw, 46dvh); } }
+	@media (orientation: portrait) and (min-width: 40rem) { .shelf { --tile: min(72vw, 50dvh); } }
 	.shelf-slot {
 		position: relative;
 		flex: none;
@@ -657,9 +657,10 @@
 	.shelf-name {
 		position: absolute;
 		left: 0.15rem;
-		bottom: calc(100% + 1rem);
+		bottom: calc(100% + 1.2rem);
 		font-family: var(--font-display);
-		font-size: clamp(1.4rem, 2.2vw, 2.1rem);
+		/* Sized from the tile, so a big upright-iPad tile gets a name to match. */
+		font-size: clamp(1.3rem, calc(var(--tile) * 0.085), 2.6rem);
 		font-weight: 600;
 		line-height: 1;
 		white-space: nowrap;
@@ -711,9 +712,14 @@
 	}
 	.shelf-tile:focus-visible { outline-color: var(--color-select); border-radius: 1.4rem; }
 	.shelf-tile:active { transform: scale(0.98); }
+	/* A shut game shakes once when pressed: it heard her, and the line under the shelf says why. */
+	.shelf-tile[data-nudge] { animation: tile-nudge 360ms var(--ease-out-expo); }
+	/* With focus on a button below, the lit tile keeps its place but its ring steps back, so only one ring is bright. */
+	main:has(.home-action:focus-visible) .shelf-tile[data-lit] { outline-color: color-mix(in oklab, var(--color-select) 35%, transparent); }
 	@media (prefers-reduced-motion: reduce) {
 		.shelf-tile, .shelf-name { transition: none; }
 		.shelf-tile[data-lit] { transform: none; }
+		.shelf-tile[data-nudge] { animation: none; }
 	}
 	/* A game while Play is shut: its art greyed and a lock on it, never hidden. */
 	.shelf-tile[data-locked] > img,
