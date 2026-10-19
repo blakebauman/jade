@@ -1,4 +1,4 @@
-import { BADGES, goalProgress, type SPELLING_MODES } from "@jade/core";
+import { BADGES, goalProgress, questCollectable, type SPELLING_MODES } from "@jade/core";
 import { TOPIC_LABEL } from "@jade/core/math";
 import { FINDS } from "@jade/core/roxy";
 import { KidTile } from "@jade/ui/components/kid-tile";
@@ -17,6 +17,7 @@ import { useChild } from "#/lib/child.ts";
 import { resumableMath } from "#/lib/mathRound.ts";
 import { type PlayStatus, playQuery } from "#/lib/play.ts";
 import { listsQuery, progressQuery } from "#/lib/queries.ts";
+import { useQuests } from "#/lib/quests.ts";
 import { resumableRound } from "#/lib/round.ts";
 import { roxyQuery, shownLook } from "#/lib/roxy.ts";
 import { speaker } from "#/lib/speaker.ts";
@@ -113,7 +114,7 @@ function Sheet({
 		<dialog
 			ref={sheetRef}
 			aria-labelledby={id}
-			className="m-auto max-h-[calc(100dvh-2rem)] w-[min(40rem,calc(100vw-2rem))] overflow-y-auto rounded-[1.75rem] bg-page-raised p-6 text-page-ink shadow-2xl backdrop:bg-black/55 md:p-8"
+			className="m-auto max-h-[calc(100dvh-2rem)] w-[min(40rem,calc(100vw-2rem))] overflow-y-auto rounded-[1.75rem] bg-page-raised p-6 text-page-ink shadow-2xl backdrop:bg-black/55 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:pb-safe-6 md:p-8"
 			onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
 		>
 			<div className="mb-6 flex items-center justify-between gap-4">
@@ -150,17 +151,17 @@ type Tile = {
  * Under a shut game: one line for what opens it (a strip for a star goal) and one key to where practice waits; out of
  * time, the minutes stars can buy.
  */
-function ClosedLine({ play, childId, go }: { play: PlayStatus; childId: string; go: React.ReactNode }) {
+function ClosedLine({ play, childId, go }: { play: PlayStatus; childId: string; go?: React.ReactNode }) {
 	const p = goalProgress(play.settings.goal, play.today);
 	return (
-		<div id="shelf-line" className="flex flex-wrap items-center gap-x-5 gap-y-3">
-			<p className="flex items-center gap-2.5 text-lg font-medium">
-				<Lock className="size-5 shrink-0" aria-hidden />
-				{play.shut ? "Play opens after practice" : "Out of play time"}
-			</p>
-			{play.shut ? (
-				<>
-					{p.unit === "star" ? (
+		<div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+			<p id="shelf-shut" className="flex flex-wrap items-center gap-x-4 gap-y-2">
+				<span className="flex items-center gap-2.5 text-lg font-medium">
+					<Lock className="size-5 shrink-0" aria-hidden />
+					{play.shut ? "Games open after practice" : "Out of play time"}
+				</span>
+				{play.shut &&
+					(p.unit === "star" ? (
 						<span className="flex items-center gap-2.5 text-sm font-semibold text-page-muted tabular-nums">
 							<span className="block h-2 w-28 overflow-hidden rounded-full bg-page-line" aria-hidden>
 								<span className="block h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (p.have / p.need) * 100)}%` }} />
@@ -169,12 +170,9 @@ function ClosedLine({ play, childId, go }: { play: PlayStatus; childId: string; 
 						</span>
 					) : (
 						<span className="text-sm font-semibold text-page-muted">Finish 1 round today</span>
-					)}
-					{go}
-				</>
-			) : (
-				<MoreTime childId={childId} status={play} />
-			)}
+					))}
+			</p>
+			{play.shut ? go : <MoreTime childId={childId} status={play} />}
 		</div>
 	);
 }
@@ -230,7 +228,7 @@ function Home() {
 				</>
 			),
 			art: roxy ? (
-				<RoxyFigure look={shownLook(child.id, roxy)} viewBox="40 20 320 320" className="absolute inset-0 size-full" />
+				<RoxyFigure look={shownLook(child.id, roxy)} viewBox="10 0 380 380" className="absolute inset-0 size-full" />
 			) : (
 				<span className="absolute inset-0 bg-roxy" />
 			),
@@ -272,7 +270,7 @@ function Home() {
 			id: "spelling",
 			name: "Spelling",
 			line: spellingLeft
-				? `Pick up ${spellingLeft.name} where you left off.`
+				? `Finish ${spellingLeft.listId ? spellingLeft.name : "your review words"}: ${spellingLeft.done} of ${spellingLeft.total} done.`
 				: spellingDue > 0
 					? `${spellingDue} ${spellingDue === 1 ? "word wants" : "words want"} another go.`
 					: newest
@@ -280,10 +278,10 @@ function Home() {
 							? `${newest.name}: ${played.mastered} of ${newest.wordCount} mastered.`
 							: `${newest.name}: ${newest.wordCount} new ${newest.wordCount === 1 ? "word" : "words"}.`
 						: "Hear the word, then spell it, like a real bee.",
-			stat: spellingLeft && `${spellingLeft.done} of ${spellingLeft.total} done`,
 			art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} right={2} />,
 			// What's waiting: words due again, else this week's words she hasn't started.
-			count: spellingDue || (newest && !played ? newest.wordCount : undefined),
+			// The bar speaks for a waiting round, so the count only shows when there isn't one.
+			count: spellingLeft ? undefined : spellingDue || (newest && !played ? newest.wordCount : undefined),
 			progress: spellingLeft ? spellingLeft.done / spellingLeft.total : undefined,
 			go: spellingLeft
 				? () =>
@@ -298,13 +296,12 @@ function Home() {
 			id: "math",
 			name: "Math",
 			line: mathLeft
-				? `Pick up ${mathLeft.mode === "mathreview" ? "facts review" : TOPIC_LABEL[mathLeft.mode].toLowerCase()} where you left off.`
+				? `Finish your ${mathLeft.mode === "mathreview" ? "facts review" : TOPIC_LABEL[mathLeft.mode].toLowerCase()}: ${mathLeft.done} of ${mathLeft.total} done.`
 				: factsDue > 0
 					? `${factsDue} ${factsDue === 1 ? "fact wants" : "facts want"} another go.`
 					: "Times tables, mental math, fractions and story problems.",
-			stat: mathLeft && `${mathLeft.done} of ${mathLeft.total} done`,
 			art: <SubjectArt hue="math" tiles={["7", "×", "8"]} right={-1} answer />,
-			count: factsDue || undefined,
+			count: mathLeft ? undefined : factsDue || undefined,
 			progress: mathLeft ? mathLeft.done / mathLeft.total : undefined,
 			go: mathLeft
 				? () =>
@@ -352,6 +349,36 @@ function Home() {
 			shelf.findIndex((t) => !t.locked),
 		),
 	);
+	const shelfRef = useRef<HTMLUListElement>(null);
+	// A swipe leaves the light behind off-screen; when the shelf settles with the lit tile out of view, the tile at the
+	// shelf's start takes the light (without focus, so a touch screen shows no focus ring).
+	useEffect(() => {
+		const root = shelfRef.current;
+		if (!root) return;
+		let timer = 0;
+		const settle = () => {
+			const box = root.getBoundingClientRect();
+			const r = buttons.current[lit]?.getBoundingClientRect();
+			if (r && r.left >= box.left - 1 && r.right <= box.right + 1) return;
+			const start = box.left + (Number.parseFloat(getComputedStyle(root).scrollPaddingLeft) || 0);
+			let best = 0;
+			let gap = Number.POSITIVE_INFINITY;
+			buttons.current.forEach((el, i) => {
+				const d = Math.abs((el?.getBoundingClientRect().left ?? 0) - start);
+				if (d < gap) [best, gap] = [i, d];
+			});
+			setLit(best);
+		};
+		const onScroll = () => {
+			window.clearTimeout(timer);
+			timer = window.setTimeout(settle, 140);
+		};
+		root.addEventListener("scroll", onScroll, { passive: true });
+		return () => {
+			root.removeEventListener("scroll", onScroll);
+			window.clearTimeout(timer);
+		};
+	}, [lit]);
 	const buttons = useRef<(HTMLElement | null)[]>([]);
 	const current = shelf[lit] ?? shelf[0]!;
 
@@ -376,6 +403,13 @@ function Home() {
 			if (e.altKey || e.ctrlKey || e.metaKey || document.querySelector("dialog[open]")) return;
 			const t = e.target as HTMLElement | null;
 			if (t?.closest("input, textarea, select, [contenteditable], [role=slider], [role=listbox], [role=menu], [role=tablist]")) return;
+			// Enter with nothing focused opens the lit tile, as the hint says.
+			if (e.key === "Enter" && (t === document.body || t === null)) {
+				e.preventDefault();
+				if (current.go) current.go();
+				else light(lit);
+				return;
+			}
 			const to =
 				e.key === "Home" ? 0 : e.key === "End" ? shelf.length - 1 : e.key === "ArrowRight" ? lit + 1 : e.key === "ArrowLeft" ? lit - 1 : -1;
 			if (to < 0 || to >= shelf.length) return;
@@ -386,6 +420,8 @@ function Home() {
 		return () => window.removeEventListener("keydown", onKey);
 	});
 
+	const { quests: today, state: questState } = useQuests(child.id);
+	const ready = play && !play.settings.free ? today.filter((q) => questCollectable(q, questState)).length : 0;
 	const badges = useRef<HTMLDialogElement>(null);
 	const quests = useRef<HTMLDialogElement>(null);
 	const time = useRef<HTMLDialogElement>(null);
@@ -394,22 +430,24 @@ function Home() {
 	const timeCosts = !!play?.settings.timeCosts && !play.settings.free;
 
 	return (
-		<main className="grid min-h-dvh grid-rows-[auto_1fr_auto] gap-y-4 py-safe-5 md:py-safe-7">
+		<main className="grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto] gap-y-4 py-safe-5 md:py-safe-7">
 			<h1 className="sr-only">{child.name}’s games</h1>
 
 			{/* Who's playing, and what she has: her sticker and name, then her stars and tickets as big numerals. */}
 			<header className="flex items-center justify-between gap-4 px-safe-5 md:px-safe-12">
 				<div className="flex min-w-0 items-center gap-3">
-					<KidTile name={child.name} avatar={child.avatar} size={48} />
+					<span aria-hidden className="shrink-0">
+						<KidTile name={child.name} avatar={child.avatar} size={48} />
+					</span>
 					<span className="truncate font-display text-2xl font-semibold">{child.name}</span>
 				</div>
-				<dl className="flex items-center gap-5 font-display md:gap-7">
+				<dl className="flex shrink-0 items-center gap-5 font-display md:gap-7">
 					<div className="flex items-center gap-2">
 						<dt>
 							<Star className="size-6 fill-current text-marigold" aria-hidden />
 							<span className="sr-only">Stars</span>
 						</dt>
-						<dd className="text-2xl font-semibold tabular-nums md:text-3xl">{stars}</dd>
+						<dd className={`text-2xl font-semibold tabular-nums md:text-3xl ${stars ? "" : "text-page-muted"}`}>{stars}</dd>
 					</div>
 					{play && !play.settings.free && (
 						<div className="flex items-center gap-2">
@@ -417,7 +455,9 @@ function Home() {
 								<Ticket className="size-6 text-roxy" aria-hidden />
 								<span className="sr-only">Tickets</span>
 							</dt>
-							<dd className="text-2xl font-semibold tabular-nums md:text-3xl">{play.wallet.tickets}</dd>
+							<dd className={`text-2xl font-semibold tabular-nums md:text-3xl ${play.wallet.tickets ? "" : "text-page-muted"}`}>
+								{play.wallet.tickets}
+							</dd>
 						</div>
 					)}
 				</dl>
@@ -426,7 +466,7 @@ function Home() {
 			<section aria-label="Your games" className="flex min-w-0 flex-col justify-center gap-4">
 				{/* The shelf: one row of big tiles, the one she played last first. One is lit at a time; the ring moves with
 				    arrows, hover and focus, and a press goes. */}
-				<ul className="shelf" aria-label="Games, Spelling and Math">
+				<ul ref={shelfRef} className="shelf" aria-label="Games, Spelling and Math">
 					{shelf.map((t, i) => (
 						<li key={t.id} className="shelf-slot">
 							<span className="shelf-name" aria-hidden data-lit={i === lit || undefined}>
@@ -442,9 +482,14 @@ function Home() {
 								data-locked={t.locked || undefined}
 								tabIndex={i === lit ? 0 : -1}
 								aria-label={`${t.name}${t.count ? `, ${t.count} waiting` : ""}${t.locked ? ", opens after practice" : ""}`}
-								aria-describedby="shelf-line"
+								aria-describedby={t.locked ? "shelf-shut" : "shelf-line"}
 								onFocus={() => setLit(i)}
-								onPointerEnter={(e) => e.pointerType === "mouse" && setLit(i)}
+								onPointerEnter={(e) => {
+									// The pointer and the keyboard share one light: hovering a tile focuses it, so Enter opens what's lit.
+									if (e.pointerType !== "mouse") return;
+									setLit(i);
+									buttons.current[i]?.focus({ preventScroll: true });
+								}}
 								onClick={() => (t.go ? t.go() : light(i))}
 							>
 								{t.art}
@@ -469,20 +514,8 @@ function Home() {
 				</ul>
 
 				{/* What the lit tile is: one line, and a fact when there is one. A shut game says what opens it instead. */}
-				<div className="min-h-20 px-safe-5 md:px-safe-12">
-					{current.locked && play ? (
-						<ClosedLine
-							play={play}
-							childId={child.id}
-							go={
-								subject?.go && (
-									<button type="button" className="key" data-variant="go" onClick={subject.go}>
-										Go to {subject.name}
-									</button>
-								)
-							}
-						/>
-					) : (
+				<div className="min-h-20 space-y-3 px-safe-5 md:px-safe-12">
+					{!current.locked && (
 						<p id="shelf-line" className="flex max-w-3xl flex-wrap items-baseline gap-x-4 gap-y-1">
 							<span className="text-lg font-medium text-balance">{current.line}</span>
 							{current.stat && (
@@ -490,15 +523,36 @@ function Home() {
 							)}
 						</p>
 					)}
+					{/* While games are shut it always says what opens them, whichever tile is lit; a lit game adds the way there. */}
+					{locked && play && (
+						<ClosedLine
+							play={play}
+							childId={child.id}
+							go={
+								current.locked &&
+								subject?.go && (
+									<button type="button" className="key" data-variant="go" onClick={subject.go}>
+										Go to {subject.name}
+									</button>
+								)
+							}
+						/>
+					)}
 				</div>
 			</section>
 
 			<footer className="flex flex-wrap items-end justify-between gap-6 px-safe-5 md:px-safe-12">
 				<nav aria-label="More" className="flex items-start gap-5 md:gap-7">
 					{play?.open && (
-						<button type="button" className="home-action" onClick={() => quests.current?.showModal()}>
-							<span aria-hidden>
+						<button
+							type="button"
+							className="home-action"
+							onClick={() => quests.current?.showModal()}
+							aria-label={ready ? `Quests, ${ready} to collect` : undefined}
+						>
+							<span aria-hidden className="relative">
 								<Target className="size-6" />
+								{ready > 0 && <span className="home-action-count">{ready}</span>}
 							</span>
 							Quests
 						</button>

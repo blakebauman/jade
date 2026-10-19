@@ -24,8 +24,9 @@
 	--color-page-pit: #121315;
 
 	/* The brand: one red for the wordmark plate, counts on tiles and progress; one blue for the lit tile's ring. */
-	--color-brand: #e5322d;
-	--color-brand-deep: #b81f1b;
+	/* #d62c27 keeps white type at AA (4.9:1) on the counts and the wordmark. */
+	--color-brand: #d62c27;
+	--color-brand-deep: #ab1d19;
 	--color-select: #1d9bf0;
 
 	/* Stickers: the white vinyl rim, and one printed hue per place. None of them is a law colour. */
@@ -646,7 +647,7 @@
 	/* A phone: tiles take most of the width, so the next one peeks in from the edge. */
 	@media (max-width: 40rem) { .shelf { --tile: min(62vw, 38dvh); } }
 	/* A tablet held upright: tall and narrow, so the tiles grow to fill the height the row would leave empty. */
-	@media (orientation: portrait) and (min-width: 40rem) { .shelf { --tile: min(56vw, 40dvh); } }
+	@media (orientation: portrait) and (min-width: 40rem) { .shelf { --tile: min(68vw, 46dvh); } }
 	.shelf-slot {
 		position: relative;
 		flex: none;
@@ -787,6 +788,21 @@
 	@media (hover: hover) { .home-action:hover > span { transform: translateY(-2px); } }
 	.home-action:active > span { transform: scale(0.95); }
 	.home-action:focus-visible { outline-color: var(--color-select); }
+	.home-action-count {
+		position: absolute;
+		top: -0.35rem;
+		right: -0.45rem;
+		min-width: 1.4rem;
+		height: 1.4rem;
+		padding-inline: 0.3rem;
+		display: grid;
+		place-items: center;
+		border-radius: 9999px;
+		font: 650 0.8rem/1 var(--font-display);
+		color: #fff;
+		background: var(--color-brand);
+		box-shadow: 0 0 0 0.15rem #fff;
+	}
 	/* "Who's playing?": a kid's sticker under the pointer or the keyboard wears the select ring and lifts. */
 	.user-pick-ring {
 		display: inline-grid;
@@ -872,7 +888,8 @@
 		letter-spacing: -0.01em;
 		white-space: nowrap;
 		color: #ffffff;
-		background: linear-gradient(to bottom, color-mix(in oklab, var(--color-brand) 88%, white), var(--color-brand) 55%, var(--color-brand-deep));
+		/* Brand red down to its deep, never lighter, so the white word holds AA across the whole plate. */
+		background: linear-gradient(to bottom, var(--color-brand) 45%, var(--color-brand-deep));
 		box-shadow:
 			inset 0 0.06em 0 rgb(255 255 255 / 0.35),
 			inset 0 -0.06em 0 rgb(0 0 0 / 0.12),

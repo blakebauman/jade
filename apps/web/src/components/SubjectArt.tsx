@@ -9,7 +9,7 @@ export function SubjectArt({ hue, tiles, right, answer }: { hue: "spell" | "math
 	const k = hue === "spell" ? 0.125 : 0.2;
 	const box = { width: `calc(var(--tile) * ${k})`, height: `calc(var(--tile) * ${k})`, fontSize: `calc(var(--tile) * ${k * 0.56})` };
 	return (
-		<span className={`absolute inset-0 grid place-items-center ${hue === "spell" ? "bg-spell" : "bg-math"}`}>
+		<span aria-hidden className={`absolute inset-0 grid place-items-center ${hue === "spell" ? "bg-spell" : "bg-math"}`}>
 			<span className="flex items-center justify-center" style={{ gap: `calc(var(--tile) * ${hue === "spell" ? 0.018 : 0.03})` }}>
 				{tiles.map((c, i) =>
 					c === "×" ? (

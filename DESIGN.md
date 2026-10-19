@@ -16,8 +16,8 @@ colors:
   page-ink-day: "#1b2130"
   page-muted-day: "#555e70"
   page-pit-day: "#d5d9e1"
-  brand: "#e5322d"
-  brand-deep: "#b81f1b"
+  brand: "#d62c27"
+  brand-deep: "#ab1d19"
   select: "#1d9bf0"
   select-day-name: "color-mix(in oklab, #1d9bf0 78%, black)"
   action-white: "#ffffff"
@@ -119,7 +119,7 @@ rounded:
 spacing:
   shelf-tile: "clamp(10rem, min(40dvh, 34vw), 22rem)"
   shelf-tile-phone: "min(62vw, 38dvh)"
-  shelf-tile-portrait: "min(56vw, 40dvh)"
+  shelf-tile-portrait: "min(68vw, 46dvh)"
   shelf-gap: "clamp(0.9rem, 1.6vw, 1.5rem)"
   shelf-gutter: "max(1.25rem, safe inset); max(3rem, safe inset) from md"
   shelf-head: "3.75rem"
@@ -364,7 +364,7 @@ Night values are the unsuffixed keys and the CSS default. The Day values (`-day`
 
 **The home (`/play/$childId`).** A three-row grid filling `100dvh`. Inline padding is 1.25rem, rising to 3rem from md, with `py-safe-5` (`py-safe-7` from md).
 - **Top bar:** her kid sticker (48px) and name on the left; stars and, unless games are Free, tickets on the right as big numerals beside a lucide Star and Ticket.
-- **Middle, the shelf:** one row of square tiles, vertically centred. A tile is `clamp(10rem, min(40dvh, 34vw), 22rem)` on a laptop, `min(62vw, 38dvh)` on a phone (so the next tile peeks in from the edge), and `min(56vw, 40dvh)` on an upright tablet. The gap is `clamp(0.9rem, 1.6vw, 1.5rem)`. The row scrolls sideways with mandatory snap and no scrollbar. It is padded 3.75rem above (room for the name) and 1.25rem below, with a gutter that grows from md and respects the safe inset, so the ring, the name and the lift never clip. Under it, in a 5rem-tall slot, sit the lit tile's line and stat. A shut game shows what opens it there instead.
+- **Middle, the shelf:** one row of square tiles, vertically centred. A tile is `clamp(10rem, min(40dvh, 34vw), 22rem)` on a laptop, `min(62vw, 38dvh)` on a phone (so the next tile peeks in from the edge), and `min(68vw, 46dvh)` on an upright tablet. The gap is `clamp(0.9rem, 1.6vw, 1.5rem)`. The row scrolls sideways with mandatory snap and no scrollbar. It is padded 3.75rem above (room for the name) and 1.25rem below, with a gutter that grows from md and respects the safe inset, so the ring, the name and the lift never clip. Under it, in a 5rem-tall slot, sit the lit tile's line and stat (a game's best score or finds; a waiting round says "Finish …: 2 of 5 done" and its tile drops the count, leaving the bar). While games are shut, a line under it always says what opens them ("Games open after practice" with a star strip), and when a shut game is lit it adds one go key to the first subject on the shelf. Hover and keyboard share one light (hovering a tile focuses it); a swipe that leaves the lit tile off-screen hands the light to the tile at the shelf's start; Enter with nothing focused opens the lit tile.
 - **Footer:** the round action buttons on the left (1.25rem apart, 1.75rem from md). On the right, keyboard hints ("← → choose · Enter play" in `.kbd` keys, only from lg with a fine pointer) and the wordmark at 18px.
 
 **Shelf order.** Most recently pressed first, saved per kid on the device (`jade.shelf.{childId}`). A new kid starts Roxy, Gobble Town, Jelly Blocks, Spelling, Campfire Woods, Math, Roxy's town. A round waiting to be finished leads the shelf (the newer of the two), and it is lit on arrival. While Play is shut, the light starts on the first tile she can open.
@@ -426,7 +426,7 @@ A glossy rounded square filled edge to edge with its game's art.
 The lit tile's name sits above its top-left corner in select blue. The others are invisible but present (opacity 0, 0.3rem lower), so the name fades up when the light moves. Under the shelf is one line (`aria-describedby` of every tile) and an optional stat: a best score, finds, "2 of 5 done", or a holiday collection.
 
 ### Action buttons
-A round white 3.5rem disc with a 1.5rem lucide glyph in Action Ink, and its word beneath in Shell Ink. Quests (only while Play is open), Badges, More time (only when time costs stars) and Switch (to the kid picker). Hover lifts the disc 2px and press scales it to 0.95, both on the spring. Focus draws the select ring around the whole button. Each of Quests, Badges and More time opens a sheet.
+A round white 3.5rem disc with a 1.5rem lucide glyph in Action Ink, and its word beneath in Shell Ink. Quests (only while Play is open), Badges, More time (only when time costs stars) and Switch (to the kid picker). Hover lifts the disc 2px and press scales it to 0.95, both on the spring. Focus draws the select ring around the whole button. Each of Quests, Badges and More time opens a sheet; Quests wears a red count of quests ready to collect. On a phone the sheets sit at the bottom edge, full width, so Close is in thumb reach.
 
 ### Sheet
 A native `<dialog>` in the shell's light: Raised Shell, a 1.75rem radius, up to 40rem wide, 1.5rem padding (2rem from md), over a 55% black backdrop. A Fredoka 1.5rem title sits beside a square Close key. Esc, Close or a tap on the backdrop closes it, and the shelf keys stop while it's open.
@@ -486,7 +486,7 @@ Every shipping raster and its source:
 - **Game tiles** (`apps/web/public/tiles/town.webp`, `gobble.webp`, `jelly.webp`, `woods.webp`): 720×720 WebP at quality 82, captured 2026-10-18 with headless Playwright Chromium (SwiftShader WebGL) from the app's own dev server. The viewport was 1200×1200, with every DOM element but the canvas hidden. town is `/games/roxy/place/park` after 9s. gobble is `/games/gobble` with the test hooks `setSeed(7)` and `setState("late-game")`, paused. jelly is `/games/jelly` with `setSeed(3)` and `setState("late-game")`, paused. woods is `/games/woods` after Start, with `setState("dusk")`. Each was cropped and resized with ImageMagick: town 1000×1000+100+60, gobble 860×860+176+200, jelly 940×940+130+230, woods 1000×1000+100+150. No generated imagery and no third-party assets.
 - **Spelling and Math tiles:** not rasters. `SubjectArt` draws the round's own maple `Tile` components on the subject hue.
 - **Roxy's tile:** her live SVG look (`RoxyFigure`, viewBox `40 20 320 320`).
-- **Icons** (`public/favicon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`): authored in `apps/web/scripts/icon-mark.mjs`, a white rounded-stroke j with a white star dot on a brand-red rounded square (gradient #ee5a52 → #e5322d → #c4231f), turned -6deg. They are rendered by `scripts/icons.sh` with rsvg-convert. The favicon draws a larger star, the maskable icon keeps the mark inside the 80% circle, and the touch icon is full bleed on brand red.
+- **Icons** (`public/favicon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`): authored in `apps/web/scripts/icon-mark.mjs`, a white rounded-stroke j with a white star dot on a brand-red rounded square (gradient #ee5a52 → #e5322d → #c4231f; the icon keeps the brighter red, where the white j is far past any contrast floor), turned -6deg. They are rendered by `scripts/icons.sh` with rsvg-convert. The favicon draws a larger star, the maskable icon keeps the mark inside the 80% circle, and the touch icon is full bleed on brand red.
 - **Launch screens** (`public/splash/*.png`): from `scripts/splash.mjs`, the red tile at 30% of the short side on the Night shell gradient (#28292c → #212224 → #18191b). They are rendered with rsvg-convert and quantised to 256 colours, undithered, with ImageMagick.
 - **Textures:** maple grain is authored SVG `feTurbulence` in `index.css`. Town props and pets are generated 3D models documented in CLAUDE.md, not shell rasters.
 

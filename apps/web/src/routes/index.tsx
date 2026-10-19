@@ -104,7 +104,7 @@ function Landing() {
 	}
 
 	return (
-		<main className="mx-auto grid min-h-dvh max-w-6xl content-center gap-12 px-safe-5 py-safe-10 md:grid-cols-[1.2fr_1fr] md:gap-16 md:px-safe-10">
+		<main className="mx-auto grid min-h-dvh max-w-6xl grid-cols-[minmax(0,1fr)] content-center gap-12 px-safe-5 py-safe-10 md:grid-cols-[1.2fr_1fr] md:gap-16 md:px-safe-10">
 			<section className="min-w-0 space-y-8">
 				{/* On a phone the form sits below the fold, so a returning parent gets a way to it up here. */}
 				<div className="flex items-center justify-between gap-4">
@@ -182,7 +182,7 @@ function Landing() {
 				</form>
 			</section>
 
-			<section aria-labelledby="inside" className="grid min-w-0 gap-10 md:col-span-2 md:grid-cols-3">
+			<section aria-labelledby="inside" className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-10 md:col-span-2 md:grid-cols-3">
 				<h2 id="inside" className="sr-only">
 					What’s on the shelf
 				</h2>
