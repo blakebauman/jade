@@ -54,9 +54,9 @@ function DemoRow() {
 /** The home shelf as a kid sees it, lit on a game: real art from each game, one tile with words waiting. */
 const DEMO: { name: string; art: React.ReactNode; count?: number }[] = [
 	{ name: "Gobble Town", art: <img src="/tiles/gobble.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
-	{ name: "Spelling", art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} right={2} />, count: 6 },
+	{ name: "Spelling", art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} />, count: 6 },
 	{ name: "Jelly Blocks", art: <img src="/tiles/jelly.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
-	{ name: "Math", art: <SubjectArt hue="math" tiles={["7", "×", "8"]} right={-1} answer /> },
+	{ name: "Math", art: <SubjectArt hue="math" tiles={["7", "×", "8"]} answer /> },
 ];
 
 /** Ends on whole tiles: four across the column (three on a phone), each a quarter of it, the first one lit. */
@@ -121,11 +121,11 @@ function Landing() {
 					</button>
 				</div>
 				<h1 className="text-5xl leading-[1.05] font-semibold text-balance md:text-6xl">
-					Every game she loves, plus spelling and math, on one shelf.
+					Every game your kid loves, plus spelling and math, on one shelf.
 				</h1>
 				<p className="max-w-[48ch] text-lg text-pretty text-page-muted">
 					A games portal for 8–11 year olds with practice built in. Roxy, her town, Gobble Town, Jelly Blocks and Campfire Woods sit beside
-					Spelling and Math, the one she played last first, and you decide how play and practice meet.
+					Spelling and Math, the one they played last first, and you decide how play and practice meet.
 				</p>
 				<DemoShelf />
 			</section>
