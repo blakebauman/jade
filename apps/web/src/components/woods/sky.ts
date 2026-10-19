@@ -83,6 +83,8 @@ function moonTexture() {
 }
 
 const CLOUD_WHITE = new Color(1, 1, 1);
+const OVERCAST_TOP = new Color("#7c8794");
+const OVERCAST_HORIZON = new Color("#b4bcc4");
 const CLOUDS = 26;
 const CLOUD_HEIGHT = 62;
 const CLOUD_RANGE = 150;
@@ -159,10 +161,15 @@ export class Sky {
 	 * `sun` 0–1 daylight; `arc` 0–1 how far the sun (by day) or moon (by night) has crossed the sky; `time` seconds, for
 	 * the clouds' drift.
 	 */
-	update(camera: { position: Vector3 }, sun: number, arc: number, night: boolean, time: number) {
+	update(camera: { position: Vector3 }, sun: number, arc: number, night: boolean, time: number, wet = 0) {
 		const c = camera.position;
 		this.group.position.copy(c);
 		skyColours(sun, this.colours);
+		// A shower: an overcast grey over the colours.
+		if (wet > 0) {
+			this.colours.top.lerp(OVERCAST_TOP, wet * 0.75);
+			this.colours.horizon.lerp(OVERCAST_HORIZON, wet * 0.75);
+		}
 		this.dome.material.uniforms.top!.value.copy(this.colours.top);
 		this.dome.material.uniforms.horizon!.value.copy(this.colours.horizon);
 
@@ -181,7 +188,7 @@ export class Sky {
 		const cm = this.clouds.material as MeshBasicMaterial;
 		cm.color.copy(this.colours.horizon).lerp(CLOUD_WHITE, sun * 0.8);
 		// Barely there at night, so they never cover the stars.
-		cm.opacity = 0.08 + 0.77 * sun;
+		cm.opacity = Math.min(0.95, 0.08 + 0.77 * sun + 0.3 * wet);
 		for (let k = 0; k < CLOUDS; k++) {
 			const b = this.cloudBase[k]!;
 			let x = b.x + time * 1.2;

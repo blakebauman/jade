@@ -138,6 +138,37 @@ describe("Campfire Woods islands", () => {
 		expect(find(a, "refused")[0]!.why).toBe("fixed");
 	});
 
+	it("makes planks from a log anywhere, and glass only by the lit fire", async () => {
+		const f = await family();
+		const id = await f.kid("Jade");
+		const a = await connect(f.cookie, id);
+		const stub = f.island();
+		await runInDurableObject(stub, (o: WoodsWorld) => {
+			const give = (o as unknown as { give: (c: string, b: number, n: number) => void }).give.bind(o);
+			give(id, B.log, 1);
+			give(id, B.sand, 2);
+		});
+		a.send({ t: "craft", recipe: "planks" });
+		await until(() => find(a, "crafted").length > 0 && find(a, "inv").length > 0);
+		expect(find(a, "crafted")[0]).toMatchObject({ recipe: "planks", ok: true });
+		expect(find(a, "inv").at(-1)!.inv[B.planks]).toBe(4);
+		expect(find(a, "inv").at(-1)!.inv[B.log]).toBeUndefined();
+
+		// Far from the fire, glass won't melt; beside it, it does.
+		a.send({ t: "move", p: [10.5, 30, 10.5], yaw: 0 });
+		a.send({ t: "craft", recipe: "glass" });
+		await until(() => find(a, "crafted").length > 1);
+		expect(find(a, "crafted")[1]).toMatchObject({ ok: false, why: "fire" });
+		const [x, y, z] = spawnPoint(generate(welcome(a).seed));
+		a.send({ t: "move", p: [x, y, z - 3], yaw: 0 });
+		a.send({ t: "craft", recipe: "glass" });
+		await until(() => find(a, "crafted").length > 2);
+		expect(find(a, "crafted")[2]).toMatchObject({ ok: true });
+		a.send({ t: "craft", recipe: "glass" });
+		await until(() => find(a, "crafted").length > 3);
+		expect(find(a, "crafted")[3]).toMatchObject({ ok: false, why: "inventory" });
+	});
+
 	it("only lets a kid onto their own family's island", async () => {
 		const f = await family();
 		const other = await family();

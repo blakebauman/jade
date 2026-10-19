@@ -5,9 +5,11 @@ import {
 	CAMP,
 	CELLS,
 	CLEARING,
+	CYCLE_S,
 	cellOf,
 	chunksAround,
 	clientMsg,
+	craftUses,
 	DAY_S,
 	deerAt,
 	FUEL_MAX,
@@ -24,6 +26,9 @@ import {
 	NO_STATS,
 	packEdit,
 	phaseAt,
+	RECIPE_BY_ID,
+	RECIPES,
+	rainAt,
 	SEA,
 	spawnPoint,
 	TILE_NAMES,
@@ -167,6 +172,38 @@ describe("woods nights", () => {
 		const d = (p: { x: number; z: number }) => Math.hypot(p.x - CAMP.x, p.z - CAMP.z);
 		expect(d(near)).toBeLessThan(d(far));
 		expect(d(near)).toBeGreaterThan(fireRadius(FUEL_MAX / 4));
+	});
+});
+
+describe("woods rain", () => {
+	it("rains on some days, only by day, easing in and out", () => {
+		let wet = 0;
+		for (let day = 0; day < 40; day++) {
+			let any = false;
+			for (let t = 0; t < CYCLE_S; t += 2) {
+				const r = rainAt(77, day * CYCLE_S + t);
+				expect(r).toBeGreaterThanOrEqual(0);
+				expect(r).toBeLessThanOrEqual(1);
+				if (r > 0) {
+					any = true;
+					expect(t).toBeLessThan(DAY_S);
+				}
+			}
+			if (any) wet++;
+		}
+		expect(wet).toBeGreaterThan(6);
+		expect(wet).toBeLessThan(28);
+		expect(rainAt(77, 1234)).toBe(rainAt(77, 1234));
+	});
+});
+
+describe("woods crafting", () => {
+	it("uses whichever kind of log the bag has, and nothing it can't afford", () => {
+		const planks = RECIPE_BY_ID.planks!;
+		expect(craftUses(planks, { [B.birchLog]: 2 })).toEqual([{ b: B.birchLog, n: 1 }]);
+		expect(craftUses(planks, {})).toBeNull();
+		expect(craftUses(RECIPE_BY_ID.torches!, { [B.coal]: 1 })).toBeNull();
+		for (const r of RECIPES) expect(r.gives.n).toBeGreaterThan(0);
 	});
 });
 

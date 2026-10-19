@@ -30,9 +30,10 @@ jobs:
       - name: Test
         run: pnpm test
 
-  # Split by device so the three run side by side (one job took ~13 minutes, nearly all of it the tests). Each
-  # job installs only its browser. The offline check needs a production build and Chromium, so it rides with the
-  # laptop.
+  # Split by device so they run side by side (one job took ~13 minutes, nearly all of it the tests). Each job
+  # installs only its browser. The laptop is split again: the 3D games, drawn without a GPU here, run one at a time
+  # in their own job so they don't starve each other or the rest of the suite. The offline check needs a production
+  # build and Chromium, so it rides with the laptop's other tests.
   e2e-device:
     name: e2e (${{ matrix.device }})
     runs-on: ubuntu-latest
@@ -44,7 +45,12 @@ jobs:
           - device: laptop
             browser: chromium
             projects: --project=laptop
+            group: other
             offline: true
+          - device: laptop-games
+            browser: chromium
+            projects: --project=laptop
+            group: games
           - device: ipad
             browser: webkit
             projects: --project=ipad --project=ipad-landscape
@@ -55,6 +61,7 @@ jobs:
       # Remote bindings off: the dev server starts without Cloudflare credentials. Workers AI is unreachable, and
       # the tests stub speech and word info in the browser, so nothing is billed.
       JADE_LOCAL_ONLY: "1"
+      E2E_GROUP: ${{ matrix.group }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -67,8 +74,20 @@ jobs:
         run: printf 'BETTER_AUTH_SECRET=ci-only-not-a-secret-%s\nBETTER_AUTH_URL=http://localhost:5190\n' "${{ github.run_id }}" > apps/web/.dev.vars
       - name: Local D1 migrations
         run: pnpm db:migrate:local
+      # The browser download is cached by the lockfile (it pins Playwright's version); its system packages still
+      # install every time, since the runner starts clean.
+      - name: Cache Playwright browser
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Playwright browser
+        if: steps.pw-cache.outputs.cache-hit != 'true'
         run: pnpm --filter @jade/web exec playwright install --with-deps ${{ matrix.browser }}
+      - name: Playwright system packages
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter @jade/web exec playwright install-deps ${{ matrix.browser }}
       - name: e2e
         run: pnpm --filter @jade/web exec playwright test ${{ matrix.projects }}
       - name: e2e offline (production build, service worker)

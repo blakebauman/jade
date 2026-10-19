@@ -4,16 +4,19 @@ import {
 	type ClientMsg,
 	type Clock,
 	cellOf,
+	D,
 	type Emote,
 	type Figure,
 	generate,
 	type Inventory,
+	isPlant,
 	type Lost,
 	NO_STATS,
 	packEdit,
 	type ServerMsg,
 	unpackEdit,
 	type Volume,
+	W,
 	type WoodsStats,
 } from "@jade/core/woods";
 
@@ -40,6 +43,11 @@ export type WorldEvent =
 	| { t: "dawn"; night: number; kept: boolean }
 	| { t: "home"; animal: Animal; mine: boolean; at: [number, number, number] }
 	| { t: "fed"; added: number }
+	/** A kid patted an animal living at camp (this screen only). */
+	| { t: "pat"; at: [number, number, number] }
+	/** Something this kid did, now the island has agreed. */
+	| { t: "did"; what: "dug" | "built" | "fed" }
+	| { t: "crafted"; recipe: string; ok: boolean; why?: "inventory" | "fire" }
 	| { t: "snuffed"; at: [number, number, number] }
 	| { t: "follow"; animal: Animal }
 	| { t: "goal"; key: string; tickets: number; label: string }
@@ -148,8 +156,34 @@ export class IslandState {
 	}
 
 	/** Mines or builds now, on this screen, and asks the island; it's taken back if the island says no. */
+	/** Where each animal living at camp is just now (the scene moves them; the HUD offers a pat when close). */
+	homeSpots: { x: number; y: number; z: number }[] = [];
+	/** When each animal at camp was last patted (performance.now), for its happy hop. */
+	patted = new Map<number, number>();
+
+	pat(k: number) {
+		const at = this.homeSpots[k];
+		if (!at) return;
+		this.patted.set(k, performance.now());
+		this.emit({ t: "pat", at: [at.x, at.y, at.z] });
+	}
+
+	/** The highest block in each column that rain can't fall through (or -1): kept as the island changes. */
+	tops = new Int16Array(0);
+
+	private retop(x: number, z: number) {
+		if (!this.volume) return;
+		let y = 47;
+		while (y >= 0 && !blocksRain(this.volume.get(x, y, z))) y--;
+		this.tops[x + W * z] = y;
+	}
+
+	/** The last cell this screen built in (for tests). */
+	lastBuilt = -1;
+
 	edit(i: number, b: number) {
 		if (!this.volume) return;
+		if (b !== B.air) this.lastBuilt = i;
 		if (!this.pending.has(i)) this.pending.set(i, this.volume.data[i]!);
 		if (b === B.air) this.send({ t: "mine", i });
 		else {
@@ -163,6 +197,8 @@ export class IslandState {
 		if (!this.volume) return;
 		this.volume.data[i] = b;
 		this.track(i, b);
+		const [x, , z] = cellOf(i);
+		this.retop(x, z);
 		this.onEdits?.(Int32Array.of(packEdit(i, b)));
 	}
 
@@ -181,6 +217,8 @@ export class IslandState {
 			island.volume.apply(packed);
 			this.volume = island.volume;
 			this.torches.clear();
+			this.tops = new Int16Array(W * D);
+			for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) this.retop(x, z);
 			for (let i = 0; i < island.volume.data.length; i++) if (island.volume.data[i] === B.torch) this.torches.add(i);
 			this.fire = island.fire;
 			this.pending.clear();
@@ -196,6 +234,7 @@ export class IslandState {
 			const [i, b] = unpackEdit(e);
 			this.volume.data[i] = b;
 			this.track(i, b);
+			this.retop(i % W, Math.floor(i / W) % D);
 			this.pending.delete(i);
 		}
 		this.onEdits?.(packed);
@@ -237,6 +276,8 @@ export class IslandState {
 			}
 			case "edit":
 				if (m.seat === this.seat && this.pending.has(m.i)) {
+					// Only what this kid aimed at counts (not the flower that came up with the ground under it).
+					this.emit({ t: "did", what: m.b === B.air ? "dug" : "built" });
 					this.pending.delete(m.i);
 					return;
 				}
@@ -294,6 +335,10 @@ export class IslandState {
 				if (o) o.emote = { e: m.e, until };
 				return;
 			}
+			case "fed":
+				return this.emit({ t: "did", what: "fed" });
+			case "crafted":
+				return this.emit({ t: "crafted", recipe: m.recipe, ok: m.ok, why: m.why });
 			case "kicked":
 				this.status = "kicked";
 				this.emit({ t: "kicked", why: m.why });
@@ -301,6 +346,9 @@ export class IslandState {
 		}
 	}
 }
+
+/** Rain stops at anything solid or leafy (and runs off a roof); plants and torches don't keep it off. */
+const blocksRain = (b: number) => b !== B.air && b !== B.water && !isPlant(b) && b !== B.torch;
 
 const other = (f: Figure): Other => ({ ...f, shown: [...f.p], emote: null });
 

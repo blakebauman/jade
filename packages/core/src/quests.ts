@@ -7,7 +7,7 @@ import { seedFrom } from "./roxy/look.ts";
  * progress is counted from what the games report as they're played.
  */
 
-export const QUEST_GAMES = ["gobble", "jelly", "town", "studio"] as const;
+export const QUEST_GAMES = ["gobble", "jelly", "town", "studio", "woods"] as const;
 export type QuestGame = (typeof QUEST_GAMES)[number];
 
 /** What a game reports: the end of a go, a place visited, something tried on. */
@@ -15,7 +15,9 @@ export type QuestEvent =
 	| { game: "gobble"; score: number; ate: Partial<Record<string, number>>; holes: number }
 	| { game: "jelly"; rows: number; score: number }
 	| { game: "town"; place: string }
-	| { game: "studio"; item: string };
+	| { game: "studio"; item: string }
+	/** Campfire Woods reports each thing done as it happens. */
+	| { game: "woods"; did: "dug" | "built" | "fed" | "rescued" | "crafted"; n: number };
 
 /**
  * One quest. `sum` adds up across goes, `best` keeps the best single go, `distinct` counts different things (places,
@@ -33,6 +35,7 @@ export type Quest = {
 
 const gobble = (f: (e: Extract<QuestEvent, { game: "gobble" }>) => number) => (e: QuestEvent) => (e.game === "gobble" ? f(e) : null);
 const jelly = (f: (e: Extract<QuestEvent, { game: "jelly" }>) => number) => (e: QuestEvent) => (e.game === "jelly" ? f(e) : null);
+const woods = (did: Extract<QuestEvent, { game: "woods" }>["did"]) => (e: QuestEvent) => (e.game === "woods" && e.did === did ? e.n : null);
 const place = (id?: string) => (e: QuestEvent) => (e.game === "town" && (!id || e.place === id) ? e.place : null);
 
 export const QUESTS: readonly Quest[] = [
@@ -74,6 +77,19 @@ export const QUESTS: readonly Quest[] = [
 		mode: "distinct",
 		value: (e) => (e.game === "studio" ? e.item : null),
 	},
+	{
+		id: "woods-build",
+		game: "woods",
+		label: "Build 15 blocks in Campfire Woods",
+		need: 15,
+		tickets: 8,
+		mode: "sum",
+		value: woods("built"),
+	},
+	{ id: "woods-dig", game: "woods", label: "Dig 20 blocks in Campfire Woods", need: 20, tickets: 8, mode: "sum", value: woods("dug") },
+	{ id: "woods-feed", game: "woods", label: "Feed the campfire 3 times", need: 3, tickets: 8, mode: "sum", value: woods("fed") },
+	{ id: "woods-make", game: "woods", label: "Make something at camp", need: 1, tickets: 5, mode: "sum", value: woods("crafted") },
+	{ id: "woods-rescue", game: "woods", label: "Bring a lost animal home", need: 1, tickets: 10, mode: "sum", value: woods("rescued") },
 ];
 
 export const QUEST_BY_ID: Record<string, Quest> = Object.fromEntries(QUESTS.map((q) => [q.id, q]));

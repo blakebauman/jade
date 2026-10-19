@@ -1,19 +1,26 @@
 import {
 	ANIMAL_LABEL,
+	ANIMALS,
+	type Animal,
 	B,
 	BLOCKS,
 	blockInfo,
 	CYCLE_S,
 	canPlace,
+	craftUses,
 	DAY_S,
 	deerAt,
 	EMOTES,
 	type Emote,
 	FUEL_LOW,
 	FUEL_MAX,
+	indexOf,
 	phaseAt,
 	REACH_ANIMAL,
 	REACH_FIRE,
+	RECIPE_BY_ID,
+	RECIPES,
+	rainAt,
 } from "@jade/core/woods";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -32,6 +39,7 @@ import { api } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { useCoarsePointer } from "#/lib/hooks.ts";
 import { earnTickets, useGamesFree } from "#/lib/play.ts";
+import { questEvent } from "#/lib/quests.ts";
 
 const scene = () => import("#/components/woods/WoodsScene.tsx");
 // three.js only loads on game screens.
@@ -56,13 +64,22 @@ type Hud = {
 	minutes: number;
 	fuel: number;
 	nights: number;
-	home: number;
 	inv: Record<number, number>;
 	others: number;
+	/** Standing by the lit fire: recipes that need its heat can be made. */
+	byFire: boolean;
 	/** At night: the nearest lost animal nobody's found yet, and which way it is from where the kid is looking. */
 	lostNear: { label: string; blocks: number; turn: number } | null;
 	/** What E (or the Use button) would do here. */
-	use: { kind: "feed"; block: number } | { kind: "pickup"; id: string; label: string } | null;
+	use:
+		| { kind: "feed"; block: number }
+		| { kind: "pickup"; id: string; label: string }
+		| { kind: "pat"; index: number; label: string }
+		| null;
+	/** The kid's eyes are under water. */
+	underwater: boolean;
+	/** The animals living at camp. */
+	home: Animal[];
 };
 
 const MOUSE_TURN = 0.0024;
@@ -133,6 +150,15 @@ function WoodsScreen() {
 	}, []);
 	useEffect(() => () => clearTimeout(messageTimer.current), []);
 
+	/** Counts something done toward today's quests (and says when one's finished). */
+	const report = useCallback(
+		(did: "dug" | "built" | "fed" | "rescued" | "crafted") => {
+			const done = questEvent(child.id, { game: "woods", did, n: 1 }, free.current);
+			for (const q of done) say(`Quest done: ${q.label}!`, 4000);
+		},
+		[child.id, free, say],
+	);
+
 	/** Once per go, on a friend's island: whose it is, and whether visitors can build. */
 	const greeted = useRef(false);
 	const greet = useCallback(() => {
@@ -155,13 +181,19 @@ function WoodsScreen() {
 	useEffect(
 		() =>
 			world.listen((e: WorldEvent) => {
-				if (e.t === "ready" && !world.island.mine)
-					say(
-						world.island.build
-							? `You’re visiting ${world.island.label}!`
-							: `You’re visiting ${world.island.label}. You can look round, but not build here.`,
-						4500,
-					);
+				if (e.t === "did") report(e.what);
+				else if (e.t === "home" && e.mine) report("rescued");
+				else if (e.t === "crafted") {
+					if (e.ok) {
+						sound.chime();
+						report("crafted");
+						const r = RECIPE_BY_ID[e.recipe];
+						if (r)
+							say(
+								`You made ${r.gives.n} ${blockInfo(r.gives.b).label.toLowerCase()}${r.gives.n > 1 && !/s$/.test(blockInfo(r.gives.b).label) ? "s" : ""}!`,
+							);
+					} else say(e.why === "fire" ? "That needs the fire’s heat: stand by the lit campfire." : "You haven’t got enough for that yet.");
+				}
 				// A friend's island that finished loading after Start: say whose it is now.
 				else if (e.t === "ready" && phaseRef.current === "play") greet();
 				else if (e.t === "join") say(`${e.label} is here!`);
@@ -204,18 +236,27 @@ function WoodsScreen() {
 					);
 				}
 			}),
-		[world, say, free, child.id, greet],
+		[world, say, free, child.id, greet, report],
 	);
 
 	// The HUD and the island's sounds, a few times a second.
 	const lowWarned = useRef(false);
+	const raining = useRef(false);
 	useEffect(() => {
 		const timer = setInterval(() => {
 			const p = phaseAt(world.elapsed());
 			const body = controls.body?.p;
 			const [fx, , fz] = world.fire;
 			const fuel = world.clock.fuel;
+			const wet = rainAt(world.seed, world.elapsed());
+			if (wet > 0 && !raining.current && phaseRef.current === "play") say("A rain shower! It won’t last long.", 3500);
+			raining.current = wet > 0;
 			sound.ambience({
+				rain: wet,
+				underwater:
+					!!controls.body &&
+					world.volume?.get(Math.floor(controls.body.p[0]), Math.floor(controls.body.p[1] + 1.55), Math.floor(controls.body.p[2])) ===
+						B.water,
 				sun: p.sun,
 				fireDistance: body ? Math.hypot(body[0] - fx - 0.5, body[2] - fz - 0.5) : 30,
 				fireStrength: fuel <= 0 ? 0 : 0.3 + 0.7 * Math.min(1, fuel / (FUEL_MAX * 0.6)),
@@ -258,8 +299,11 @@ function WoodsScreen() {
 		if (u.kind === "feed") {
 			world.send({ t: "feed", b: u.block });
 			sound.feed();
+		} else if (u.kind === "pat") {
+			world.pat(u.index);
+			sound.home();
 		} else world.send({ t: "pickup", id: u.id });
-	}, [world, controls]);
+	}, [world, controls, report]);
 
 	const emote = useCallback((e: Emote) => world.send({ t: "emote", e }), [world]);
 
@@ -445,6 +489,7 @@ function WoodsScreen() {
 				stats: world.stats,
 				others: [...world.others.values()].map((o) => ({ label: o.label, p: o.p })),
 				body: controls.body?.p,
+				lastBuilt: world.lastBuilt,
 				look: { ...controls.look },
 				target: controls.target,
 				elapsed: world.elapsed(),
@@ -475,6 +520,20 @@ function WoodsScreen() {
 			 * just ahead).
 			 */
 			setState: async (name: string) => {
+				if (name === "rain") {
+					// Jump to the middle of the next shower on this island.
+					for (let t = 0; t < CYCLE_S * 30; t += 5)
+						if (rainAt(world.seed, t) >= 1) {
+							await new Promise((r) => setTimeout(r, 0));
+							for (let k = 0; k < 100 && world.status !== "open"; k++) await new Promise((r) => setTimeout(r, 100));
+							setKicked(null);
+							setPhase("play");
+							world.shift = t + 20 - world.elapsed() + world.shift;
+							for (let k = 0; k < 60 && !controls.body; k++) await new Promise((r) => setTimeout(r, 50));
+							await new Promise((r) => setTimeout(r, 600));
+							return { state: name };
+						}
+				}
 				const at = {
 					"active-play": 60,
 					day: 60,
@@ -483,6 +542,8 @@ function WoodsScreen() {
 					"low-fire": DAY_S + 90,
 					deer: DAY_S + 90,
 					"lost-animal": DAY_S + 90,
+					torches: DAY_S + 90,
+					"camp-animals": 90,
 				}[name];
 				if (at === undefined) throw new Error(`Unknown state ${name}`);
 				for (let k = 0; k < 100 && world.status !== "open"; k++) await new Promise((r) => setTimeout(r, 100));
@@ -496,6 +557,24 @@ function WoodsScreen() {
 				if (name === "lost-animal" && controls.body) {
 					const [x, y, z] = controls.body.p;
 					world.lost = [{ id: "dev-0", animal: "fox", at: [x - 1.5, y, z - 3], follows: null }];
+				}
+				if (name === "torches" && world.volume) {
+					// A ring of torches round the camp, real ones (they go to the island like any build).
+					const [fx, fy, fz] = world.fire;
+					for (let k = 0; k < 8; k++) {
+						const a = (k / 8) * Math.PI * 2;
+						const x = Math.round(fx + Math.cos(a) * 6.5);
+						const z = Math.round(fz + Math.sin(a) * 6.5);
+						if (world.volume.get(x, fy, z) === B.air) world.edit(indexOf(x, fy, z), B.torch);
+						// Under the island's limit on edits a second.
+						await new Promise((r) => setTimeout(r, 120));
+					}
+				}
+				if (name === "camp-animals") {
+					// Animals living at camp, on this screen only; then pat the nearest so it hops.
+					world.home = ["bunny", "fox", "lamb", "owl", "hedgehog", "duckling"];
+					await new Promise((r) => setTimeout(r, 300));
+					world.pat(0);
 				}
 				if (name === "deer" && controls.body) {
 					// Face the Night Deer where she is right now.
@@ -545,6 +624,9 @@ function WoodsScreen() {
 							<WoodsScene world={world} controls={controls} running={running} playing={playing && ready} label={sceneLabel(hud)} />
 						</Suspense>
 					</NoWebGL>
+					{playing && hud.underwater && (
+						<div className="pointer-events-none absolute inset-0 bg-[#1f6f8f]/25 mix-blend-multiply" aria-hidden />
+					)}
 					{playing && !coarse && <Crosshair />}
 					{playing && !coarse && !captured && ready && !message && (
 						<p className="glass glass-pill pointer-events-none absolute top-[calc(max(1.5rem,var(--safe-top))+4.2rem)] left-1/2 -translate-x-1/2 text-sm font-medium">
@@ -632,7 +714,18 @@ function WoodsScreen() {
 				</span>
 			}
 			touch={playing && <TouchControls drive={drive} />}
-			panel={<Things inv={hud.inv} tiles={tiles} selected={selected} onPick={setSelected} onEmote={emote} />}
+			panel={
+				<Things
+					inv={hud.inv}
+					tiles={tiles}
+					selected={selected}
+					onPick={setSelected}
+					onEmote={emote}
+					byFire={hud.byFire}
+					home={hud.home}
+					onCraft={(recipe) => world.send({ t: "craft", recipe })}
+				/>
+			}
 			prompt={
 				<div aria-live="polite" className="flex flex-col items-center gap-2">
 					{phase === "ready" && (
@@ -686,8 +779,18 @@ function WoodsScreen() {
 					running &&
 					hud.use && (
 						<button type="button" className="key" onClick={use}>
-							{hud.use.kind === "feed" ? <Flame className="size-5" aria-hidden /> : <Hand className="size-5" aria-hidden />}
-							{hud.use.kind === "feed" ? `Feed the fire (${blockInfo(hud.use.block).label.toLowerCase()})` : `Pick up the ${hud.use.label}`}
+							{hud.use.kind === "feed" ? (
+								<Flame className="size-5" aria-hidden />
+							) : hud.use.kind === "pat" ? (
+								<Heart className="size-5" aria-hidden />
+							) : (
+								<Hand className="size-5" aria-hidden />
+							)}
+							{hud.use.kind === "feed"
+								? `Feed the fire (${blockInfo(hud.use.block).label.toLowerCase()})`
+								: hud.use.kind === "pat"
+									? `Pat the ${hud.use.label}`
+									: `Pick up the ${hud.use.label}`}
 							{!coarse && <kbd className="ml-1 text-xs opacity-70">E</kbd>}
 						</button>
 					)
@@ -746,6 +849,12 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 			const near = world.lost.find((a) => a.follows === null && Math.hypot(a.at[0] - body[0], a.at[2] - body[2]) <= REACH_ANIMAL);
 			if (near) use = { kind: "pickup", id: near.id, label: ANIMAL_LABEL[near.animal] };
 		}
+		if (!use) {
+			// An animal living at camp, close enough to pat.
+			const k = world.homeSpots.findIndex((a) => Math.hypot(a.x - body[0], a.z - body[2]) <= 1.8);
+			const kind = world.home[k];
+			if (k >= 0 && kind) use = { kind: "pat", index: k, label: ANIMAL_LABEL[kind] };
+		}
 	}
 	let lostNear: Hud["lostNear"] = null;
 	if (body && p.phase === "night") {
@@ -764,7 +873,9 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 			lostNear = { label: ANIMAL_LABEL[best.a.animal], blocks: Math.round(best.d), turn: Math.round(turn * 10) / 10 };
 		}
 	}
+	const byFire = !!body && world.clock.fuel > 0 && Math.hypot(body[0] - world.fire[0] - 0.5, body[2] - world.fire[2] - 0.5) <= REACH_FIRE;
 	return {
+		byFire,
 		lostNear,
 		status: world.status,
 		night: p.phase === "night",
@@ -774,12 +885,16 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 		minutes: Math.max(1, Math.ceil(p.left / 60)),
 		fuel: world.clock.fuel,
 		nights: world.clock.nights,
-		home: world.home.length,
+		home: world.home,
+		underwater: !!body && world.volume?.get(Math.floor(body[0]), Math.floor(body[1] + 1.55), Math.floor(body[2])) === B.water,
 		inv: world.inv,
 		others: world.others.size,
 		use,
 	};
 }
+
+/** "fox cub" → "fox cubs", "bunny" → "bunnies". */
+const animalPlural = (label: string) => (label.endsWith("y") ? `${label.slice(0, -1)}ies` : `${label}s`);
 
 const sceneLabel = (h: Hud) =>
 	`Campfire Woods. ${h.night ? `Night ${h.nightNo}` : "Daytime"}. The fire is ${h.fuel <= 0 ? "out" : h.fuel < FUEL_MAX / 4 ? "low" : "burning"}.${h.others ? ` ${h.others} others here.` : ""}`;
@@ -803,10 +918,10 @@ function IslandStatus({ hud }: { hud: Hud }) {
 				)}
 			</span>
 			<FireMeter fuel={hud.fuel} />
-			{hud.home > 0 && (
+			{hud.home.length > 0 && (
 				<span className="inline-flex items-center gap-1" title="Animals brought home">
 					<PawPrint className="size-4" aria-hidden />
-					<span className="tabular-nums">{hud.home}</span>
+					<span className="tabular-nums">{hud.home.length}</span>
 				</span>
 			)}
 		</GameStatus>
@@ -934,13 +1049,20 @@ function Things({
 	selected,
 	onPick,
 	onEmote,
+	byFire,
+	onCraft,
+	home,
 }: {
 	inv: Record<number, number>;
 	tiles: Map<number, string>;
 	selected: number;
 	onPick: (b: number) => void;
 	onEmote: (e: Emote) => void;
+	byFire: boolean;
+	onCraft: (recipe: string) => void;
+	home: Animal[];
 }) {
+	const living = ANIMALS.map((a) => ({ a, n: home.filter((h) => h === a).length })).filter((x) => x.n > 0);
 	const carried = BLOCKS.filter((b) => (inv[b.id] ?? 0) > 0);
 	return (
 		<div className="space-y-4">
@@ -953,6 +1075,58 @@ function Things({
 						</button>
 					))}
 				</div>
+			</section>
+			<section aria-label="Living at camp">
+				<h3 className="text-sm font-semibold">Living at camp</h3>
+				{living.length === 0 ? (
+					<p className="mt-1 text-sm text-page-muted">Nobody yet. At night, find lost animals in the woods and lead them to the fire.</p>
+				) : (
+					<p className="mt-1 text-sm">
+						{living.map((x, k) => (
+							<span key={x.a}>
+								{k > 0 && ", "}
+								<span className="font-semibold tabular-nums">{x.n}</span> {x.n === 1 ? ANIMAL_LABEL[x.a] : animalPlural(ANIMAL_LABEL[x.a])}
+							</span>
+						))}
+					</p>
+				)}
+			</section>
+			<section aria-label="Make things">
+				<h3 className="text-sm font-semibold">Make things</h3>
+				<ul className="mt-2 space-y-1.5">
+					{RECIPES.map((r) => {
+						const uses = craftUses(r, inv);
+						const blocked = !uses ? "Not enough yet" : r.fire && !byFire ? "Stand by the lit fire" : null;
+						return (
+							<li key={r.id} className="flex items-center gap-2">
+								<span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
+									{r.takes.map((t) => (
+										<span key={t.b} className="inline-flex items-center gap-0.5">
+											<img src={tiles.get(t.b)} alt="" className="size-5 [image-rendering:pixelated]" />
+											<span className="tabular-nums">×{t.n}</span>
+										</span>
+									))}
+									<span aria-hidden>→</span>
+									<img src={tiles.get(r.gives.b)} alt="" className="size-5 [image-rendering:pixelated]" />
+									<span className="tabular-nums">×{r.gives.n}</span>
+									<span className="sr-only">
+										{r.label}: uses {r.takes.map((t) => `${t.n} ${blockInfo(t.b).label}`).join(" and ")}, makes {r.gives.n}
+									</span>
+								</span>
+								<button
+									type="button"
+									className="key"
+									data-variant="felt"
+									disabled={!!blocked}
+									title={blocked ?? undefined}
+									onClick={() => onCraft(r.id)}
+								>
+									{r.fire && <Flame className="size-4" aria-hidden />} Make {r.label.toLowerCase()}
+								</button>
+							</li>
+						);
+					})}
+				</ul>
 			</section>
 			<section aria-label="What you’re carrying">
 				<h3 className="text-sm font-semibold">What you’re carrying</h3>
@@ -986,6 +1160,9 @@ function Things({
 					<li>Logs, planks and coal keep the campfire going. Stand by it and press Use.</li>
 					<li>At night, find lost animals in the woods and lead them to the firelight.</li>
 					<li>Wool and torches top up every morning.</li>
+					<li>
+						Split logs into planks, and make torches from coal and planks. By the fire, sand melts into glass and stone bakes into brick.
+					</li>
 				</ul>
 			</section>
 		</div>

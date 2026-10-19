@@ -47,3 +47,23 @@ export const feed = (fuel: number, add: number) => Math.min(FUEL_MAX, fuel + add
 
 /** How far the firelight reaches, in blocks: a lost animal brought inside it is home. Even embers light a little. */
 export const fireRadius = (fuel: number) => (fuel <= 0 ? 0 : 3 + 9 * Math.min(1, fuel / FUEL_MAX));
+
+/** A shower lasts this long, easing in and out over `RAIN_EASE_S`. */
+export const RAIN_S = 75;
+export const RAIN_EASE_S = 8;
+
+/**
+ * How hard it's raining, 0 (dry) to 1, `elapsed` seconds into an island's time: about four days in ten have one
+ * gentle shower in the middle of the day, never at night (nights are for the fire). The same on every screen.
+ */
+export function rainAt(seed: number, elapsed: number): number {
+	const cycle = Math.floor(Math.max(0, elapsed) / CYCLE_S);
+	let h = Math.imul(seed ^ Math.imul(cycle + 1, 0x9e3779b1), 0x85ebca6b);
+	h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+	const r1 = ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+	if (r1 > 0.4) return 0;
+	const start = 60 + (r1 / 0.4) * (DAY_S - RAIN_S - 120);
+	const t = Math.max(0, elapsed) - cycle * CYCLE_S - start;
+	if (t <= 0 || t >= RAIN_S) return 0;
+	return Math.min(1, t / RAIN_EASE_S, (RAIN_S - t) / RAIN_EASE_S);
+}

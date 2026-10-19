@@ -6,7 +6,8 @@ type Peek = {
 	inv: Record<number, number>;
 	others: { label: string; p: number[] }[];
 	body?: [number, number, number];
-	target: { cell: number[]; normal: number[] } | null;
+	target: { cell: number[]; normal: number[]; block: number } | null;
+	lastBuilt: number;
 	look: { yaw: number; pitch: number };
 };
 type Hooks = {
@@ -96,14 +97,14 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	await hooks(page, (h) => h.mine(false));
 	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), [x, y, z]), SLOW).toBe(0);
 
-	// Build red wool back in the hole, on the dirt below it.
+	// Build red wool back in the hole, on the dirt below it, and see it on the other screen where it went.
 	await hooks(page, (h, b) => h.select(b as number), WOOL_RED);
 	await hooks(page, (h, a) => h.lookAt(...(a as [number, number, number])), [x, y - 1, z]);
-	// What it aims at is worked out each frame: let a couple go by.
 	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-	const aim = (await hooks(page, (h) => h.peek().target))!;
-	const spot = [0, 1, 2].map((k) => aim.cell[k]! + aim.normal[k]!);
 	await hooks(page, (h) => h.place());
+	await expect.poll(() => hooks(page, (h) => h.peek().lastBuilt), SLOW).toBeGreaterThanOrEqual(0);
+	const built = (await hooks(page, (h) => h.peek().lastBuilt))!;
+	const spot = [built % 96, Math.floor(built / (96 * 96)), Math.floor(built / 96) % 96];
 	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), spot), SLOW).toBe(WOOL_RED);
 	await expect.poll(() => hooks(page, (h, b) => h.peek().inv[b as number], WOOL_RED), SLOW).toBe(63);
 	// The dug-up dirt is on the hotbar to build with (one block or more, as the dig carries on down while held).
@@ -123,6 +124,13 @@ test("the island grows dark at night, with the fire still on the status", async 
 			.first(),
 	).toBeVisible();
 	await expect(page.getByRole("meter", { name: "Campfire" }).first()).toBeAttached();
+
+	// The panel can make things, once there's something to make them from. Where the browser really holds the
+	// pointer for looking round (Linux CI does), it's let go first, as a kid would with Escape.
+	await page.evaluate(() => document.exitPointerLock?.());
+	await page.getByRole("button", { name: /Show your things/ }).click();
+	await expect(page.getByRole("button", { name: "Make planks" })).toBeDisabled();
+	await expect(page.getByRole("button", { name: /Make glass/ })).toBeDisabled();
 });
 
 test("a parent links with a friend's family, and their kid visits our island", async ({ page, browser }) => {

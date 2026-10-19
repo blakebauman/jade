@@ -4,6 +4,7 @@ import {
 	CYCLE_S,
 	canMine,
 	cellOf,
+	D,
 	DAY_S,
 	deerAt,
 	FUEL_LOW,
@@ -16,7 +17,9 @@ import {
 	isPlant,
 	MOVE_HZ,
 	phaseAt,
+	rainAt,
 	spawnPoint,
+	W,
 } from "@jade/core/woods";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { memo, useEffect, useMemo, useRef } from "react";
@@ -61,6 +64,7 @@ import { type Buffers, type ColumnMesh, tileUv } from "./mesher.ts";
 import type { FromMesher, ToMesher } from "./mesher.worker.ts";
 import { animal, deer, deerWalk, emoteTexture, type FigureModel, figure, swing } from "./models.ts";
 import { EYE, HALF, lost, newBody, step, TALL } from "./physics.ts";
+import { Rain } from "./rain.ts";
 import { raycast } from "./raycast.ts";
 import { Sky as SkyDome } from "./sky.ts";
 import * as sound from "./sound.ts";
@@ -146,6 +150,7 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 		() =>
 			world.listen((e) => {
 				if (e.t === "fed") fx.sparks(world.fire, Math.min(1, e.added / 45));
+				else if (e.t === "pat") fx.stars([Math.floor(e.at[0]), Math.floor(e.at[1]), Math.floor(e.at[2])]);
 				else if (e.t === "snuffed") fx.smokePuff(e.at);
 				else if (e.t === "home") {
 					const p = e.mine && controls.body ? controls.body.p : e.at;
@@ -154,9 +159,23 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 			}),
 		[world, fx, controls],
 	);
+	const rain = useMemo(() => new Rain({ mobile: quality !== "high", reducedMotion: prefersReducedMotion() }), [quality]);
+	const roofAt = useMemo(
+		() => (x: number, z: number) => (x < 0 || z < 0 || x >= W || z >= D ? -1 : (world.tops[x + W * z] ?? -1)),
+		[world],
+	);
+	useEffect(() => {
+		scene.add(rain.mesh);
+		return () => {
+			scene.remove(rain.mesh);
+			rain.dispose();
+		};
+	}, [scene, rain]);
 	useFrame(({ camera, clock }, dt) => {
 		fx.update(dt, camera, clock.elapsedTime);
+		rain.update(dt, camera, rainAt(world.seed, world.elapsed()), roofAt);
 		waterTime.value = clock.elapsedTime;
+		torchGlow.value = 0.12 + 0.6 * (1 - phaseAt(world.elapsed()).sun);
 		const { sun } = phaseAt(world.elapsed());
 		const p = controls.body?.p;
 		fx.setFireflies(p ? Math.max(0, Math.min(1, (0.45 - sun) * 2.5)) : 0, p ?? ORIGIN);
@@ -197,6 +216,15 @@ function Island({ world, controls, running, playing, quality }: Omit<Props, "lab
 
 function Terrain({ world }: { world: IslandState }) {
 	const { invalidate } = useThree();
+	/** Whether the fire's light is in the meshes, and how to tell the worker it changed. */
+	const lit = useRef(true);
+	const sendFire = useRef<(on: boolean) => void>(() => {});
+	useFrame(() => {
+		const on = world.clock.fuel > 0;
+		if (on === lit.current || !world.volume) return;
+		lit.current = on;
+		sendFire.current(on);
+	});
 	const group = useMemo(() => {
 		const g = new Group();
 		g.name = "terrain";
@@ -205,8 +233,8 @@ function Terrain({ world }: { world: IslandState }) {
 	const materials = useMemo(() => {
 		const map = atlasTexture();
 		return {
-			solid: new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.5 }),
-			clear: waterShimmer(new MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false })),
+			solid: blockLight(new MeshLambertMaterial({ map, vertexColors: true, alphaTest: 0.5 })),
+			clear: blockLight(waterShimmer(new MeshLambertMaterial({ map, vertexColors: true, transparent: true, depthWrite: false }))),
 		};
 	}, []);
 
@@ -219,6 +247,7 @@ function Terrain({ world }: { world: IslandState }) {
 			g.setAttribute("normal", new BufferAttribute(b.normal, 3));
 			g.setAttribute("uv", new BufferAttribute(b.uv, 2));
 			g.setAttribute("color", new BufferAttribute(b.color, 3));
+			g.setAttribute("blockLight", new BufferAttribute(b.light, 1));
 			g.setIndex(new BufferAttribute(b.index, 1));
 			g.computeBoundingSphere();
 			return g;
@@ -245,7 +274,11 @@ function Terrain({ world }: { world: IslandState }) {
 			invalidate();
 		};
 		const send = (m: ToMesher, transfer: Transferable[] = []) => worker.postMessage(m, transfer);
-		world.onIsland = (data) => send({ t: "load", data: data.slice() });
+		world.onIsland = (data) => {
+			lit.current = world.clock.fuel > 0;
+			send({ t: "load", data: data.slice(), fire: [...world.fire], lit: lit.current });
+		};
+		sendFire.current = (on: boolean) => send({ t: "fire", lit: on });
 		world.onEdits = (edits) => send({ t: "edits", edits: edits.slice() });
 		if (world.volume) world.onIsland(world.volume.data);
 		return () => {
@@ -261,6 +294,32 @@ function Terrain({ world }: { world: IslandState }) {
 	}, [world, group, materials, invalidate]);
 
 	return <primitive object={group} />;
+}
+
+/** How strongly firelight shows: a little by day, fully at night. The terrain's shader reads it. */
+const torchGlow = { value: 0.3 };
+
+/**
+ * Adds the firelight the mesher worked out (`blockLight`, 0–1 per corner) as a warm glow, falling off with the square
+ * so it pools round each torch, and stronger as the night deepens.
+ */
+function blockLight(m: MeshLambertMaterial) {
+	const before = m.onBeforeCompile.bind(m);
+	m.onBeforeCompile = (shader, renderer) => {
+		before(shader, renderer);
+		shader.uniforms.torchGlow = torchGlow;
+		shader.vertexShader = shader.vertexShader
+			.replace("#include <common>", "#include <common>\nattribute float blockLight;\nvarying float vBlockLight;")
+			.replace("#include <begin_vertex>", "#include <begin_vertex>\nvBlockLight = blockLight;");
+		shader.fragmentShader = shader.fragmentShader
+			.replace("#include <common>", "#include <common>\nvarying float vBlockLight;\nuniform float torchGlow;")
+			.replace(
+				"#include <opaque_fragment>",
+				"outgoingLight += diffuseColor.rgb * vec3(1.0, 0.56, 0.26) * vBlockLight * vBlockLight * torchGlow;\n#include <opaque_fragment>",
+			);
+	};
+	m.customProgramCacheKey = () => `woods-${m.transparent ? "clear" : "solid"}`;
+	return m;
 }
 
 /** Water's time: the shimmer below reads it. */
@@ -344,12 +403,14 @@ function Sky({ world, quality }: { world: IslandState; quality: Quality }) {
 	);
 	useFrame(({ camera, clock }) => {
 		const p = phaseAt(world.elapsed());
-		const { sun } = p;
+		const wet = rainAt(world.seed, world.elapsed());
+		// A shower greys the day a little.
+		const sun = p.sun * (1 - 0.42 * wet);
 		const night = p.phase === "night";
-		rig.sky.update(camera, sun, p.progress, night, clock.elapsedTime);
+		rig.sky.update(camera, sun, p.progress, night, clock.elapsedTime, wet);
 		const fog = scene.fog as Fog;
 		fog.color.copy(rig.sky.colours.horizon);
-		const reach = quality === "low" ? 0.6 : 1;
+		const reach = (quality === "low" ? 0.6 : 1) * (1 - 0.35 * wet);
 		fog.near = (14 + 12 * sun) * reach;
 		fog.far = (38 + 36 * sun) * reach;
 		rig.ambient.intensity = 0.13 + 0.49 * sun;
@@ -379,6 +440,13 @@ function Sky({ world, quality }: { world: IslandState; quality: Quality }) {
 		rig.sun.position.copy(focus).addScaledVector(dir, 60);
 		(rig.stars.material as PointsMaterial).opacity = Math.max(0, 1 - sun * 2.5);
 		rig.stars.position.copy(camera.position);
+		// Under water: a close blue-green murk instead of the sky's haze.
+		const eye = world.volume?.get(Math.floor(camera.position.x), Math.floor(camera.position.y), Math.floor(camera.position.z));
+		if (eye === B.water) {
+			fog.color.set(night ? "#0b2a3f" : "#1f6f8f");
+			fog.near = 0.5;
+			fog.far = 12;
+		}
 	});
 	return null;
 }
@@ -556,6 +624,7 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 		// Those at home amble round the fire (the first sixteen; a big crowd would hide it).
 		const living = world.home.slice(0, 16);
 		while (home.current.length > living.length) group.remove(home.current.pop()!);
+		world.homeSpots.length = living.length;
 		living.forEach((kind, k) => {
 			let g = home.current[k];
 			if (!g || g.userData.kind !== kind) {
@@ -566,13 +635,19 @@ function Animals({ world, controls }: { world: IslandState; controls: Controls }
 				group.add(g);
 			}
 			const [fx, fy, fz] = world.fire;
-			const r = 3 + (k % 4) * 0.9;
+			const r = 3 + (k % 3) * 0.5;
 			const a = (k / living.length) * Math.PI * 2 + t * 0.05 * (k % 2 ? 1 : -1);
 			g.position.set(fx + 0.5 + Math.cos(a) * r, fy, fz + 0.5 + Math.sin(a) * r);
+			world.homeSpots[k] = { x: g.position.x, y: g.position.y, z: g.position.z };
 			g.rotation.y = -a + (k % 2 ? 0 : Math.PI);
-			// Just home: a few happy hops (not those already living here when the kid arrived).
+			// Just home, or just patted: a few happy hops (not those already living here when the kid arrived).
 			if (settled.current < 0 && world.volume) settled.current = world.home.length;
 			if (g.userData.arrived === undefined) g.userData.arrived = k < settled.current ? -10 : t;
+			const patted = world.patted.get(k);
+			if (patted !== undefined && patted !== g.userData.pattedAt) {
+				g.userData.pattedAt = patted;
+				g.userData.arrived = t;
+			}
 			const arrived = g.userData.arrived as number;
 			const happy = t - arrived < 2.5 ? Math.abs(Math.sin((t - arrived) * 7)) * 0.45 * (1 - (t - arrived) / 2.5) : 0;
 			g.children[0]!.position.y = Math.abs(Math.sin(t * 3 + k)) * 0.05 + happy;
@@ -729,6 +804,7 @@ function Player({ world, controls, running, playing, fx }: Omit<Props, "label"> 
 		wasGround: true,
 		fallFrom: 0,
 		stride: 0,
+		wet: false,
 	});
 
 	useEffect(() => {
@@ -768,6 +844,13 @@ function Player({ world, controls, running, playing, fx }: Omit<Props, "label"> 
 				s.fallFrom = body.p[1];
 			}
 			if (!grounded && body.ground) sound.land(Math.min(1, Math.max(0, (s.fallFrom - body.p[1]) / 6)));
+			// Into the water: a splash.
+			if (body.water && !s.wet) {
+				const cell: [number, number, number] = [Math.floor(body.p[0]), Math.floor(body.p[1] + 0.6), Math.floor(body.p[2])];
+				fx.burst(cell, B.water);
+				sound.step(B.water);
+			}
+			s.wet = body.water;
 			if (body.ground) s.fallFrom = body.p[1];
 			else s.fallFrom = Math.max(s.fallFrom, body.p[1]);
 			if (lost(body)) {

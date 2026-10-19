@@ -51,6 +51,15 @@ describe("quests", () => {
 		for (const p of PLACES) expect(q("town-places").value({ game: "town", place: p })).toBe(p);
 	});
 
+	it("counts what's done in Campfire Woods as it happens", () => {
+		const quests = [q("woods-build"), q("woods-rescue")];
+		let s = emptyQuestDay("2026-10-19");
+		for (let k = 0; k < 15; k++) s = recordQuestEvent(s, quests, { game: "woods", did: "built", n: 1 }).state;
+		expect(questDone(q("woods-build"), s)).toBe(true);
+		expect(questDone(q("woods-rescue"), s)).toBe(false);
+		expect(recordQuestEvent(s, quests, { game: "woods", did: "rescued", n: 1 }).done.map((x) => x.id)).toEqual(["woods-rescue"]);
+	});
+
 	it("adds up across goes, keeps the best go, and counts different things once", () => {
 		const quests = [q("gobble-cars"), q("gobble-score"), q("town-places")];
 		let s = emptyQuestDay("2026-10-18");

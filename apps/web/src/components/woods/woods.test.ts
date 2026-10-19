@@ -1,8 +1,10 @@
 import { B, generate, indexOf, spawnPoint, TILE_NAMES, Volume } from "@jade/core/woods";
+import { Matrix4, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { PAINTED } from "./atlas.ts";
-import { columnsAround, meshColumn, showsFace, tileUv, WATER_TOP } from "./mesher.ts";
+import { columnsAround, LIGHT_LEVELS, lightAround, meshColumn, showsFace, tileUv, WATER_TOP } from "./mesher.ts";
 import { newBody, overlaps, step } from "./physics.ts";
+import { Rain } from "./rain.ts";
 import { raycast } from "./raycast.ts";
 
 const faces = (m: { index: Uint32Array }) => m.index.length / 6;
@@ -46,6 +48,19 @@ describe("woods mesher", () => {
 
 	it("paints every tile a block uses", () => {
 		for (const name of TILE_NAMES) expect(PAINTED).toContain(name);
+	});
+
+	it("spreads torchlight a level a block, and never through a wall", () => {
+		const v = new Volume();
+		v.set(8, 5, 8, B.torch);
+		const lit = lightAround(v, 0, 0);
+		expect(lit.at(8, 5, 8)).toBeCloseTo(LIGHT_LEVELS.torch / 15);
+		expect(lit.at(11, 5, 8)).toBeCloseTo((LIGHT_LEVELS.torch - 3) / 15);
+		expect(lit.at(8 + LIGHT_LEVELS.torch, 5, 8)).toBe(0);
+		// A sealed stone room next door stays dark.
+		for (let y = 3; y <= 7; y++) for (let z = 6; z <= 10; z++) for (let x = 12; x <= 16; x++) v.set(x, y, z, B.stone);
+		for (let y = 4; y <= 6; y++) for (let z = 7; z <= 9; z++) for (let x = 13; x <= 15; x++) v.set(x, y, z, B.air);
+		expect(lightAround(v, 0, 0).at(14, 5, 8)).toBe(0);
 	});
 
 	it("maps each tile inside the atlas", () => {
@@ -128,5 +143,27 @@ describe("woods raycast", () => {
 		v.set(5, 3, 5, B.sand);
 		v.set(5, 4, 5, B.water);
 		expect(raycast(v, [5.5, 6.5, 5.5], [0, -1, 0])?.block).toBe(B.sand);
+	});
+});
+
+describe("woods rain", () => {
+	it("falls in the open, and not under a roof", () => {
+		const rain = new Rain();
+		const camera = { position: new Vector3(40, 20, 40) };
+		const visible = () => {
+			const m = new Matrix4();
+			let n = 0;
+			for (let k = 0; k < rain.mesh.count; k++) {
+				rain.mesh.getMatrixAt(k, m);
+				if (m.elements[0] !== 0) n++;
+			}
+			return n;
+		};
+		rain.update(0.016, camera, 1, () => -1);
+		expect(visible()).toBeGreaterThan(100);
+		rain.update(0.016, camera, 1, () => 100);
+		expect(visible()).toBe(0);
+		rain.update(0.016, camera, 0);
+		expect(rain.mesh.visible).toBe(false);
 	});
 });

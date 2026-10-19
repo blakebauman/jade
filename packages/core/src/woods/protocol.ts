@@ -38,6 +38,7 @@ export const clientMsg = z.discriminatedUnion("t", [
 	z.object({ t: z.literal("feed"), b: block }),
 	z.object({ t: z.literal("pickup"), id: z.string().max(16) }),
 	z.object({ t: z.literal("emote"), e: z.enum(EMOTES) }),
+	z.object({ t: z.literal("craft"), recipe: z.string().max(24) }),
 ]);
 export type ClientMsg = z.infer<typeof clientMsg>;
 
@@ -71,6 +72,9 @@ export type ServerMsg =
 	| { t: "move"; seat: number; p: [number, number, number]; yaw: number }
 	| { t: "edit"; i: number; b: number; seat: number }
 	| { t: "refused"; i: number; b: number; why: "reach" | "inventory" | "occupied" | "visit" | "full" | "fast" | "fixed" }
+	| { t: "crafted"; recipe: string; ok: boolean; why?: "inventory" | "fire" }
+	/** To the kid who fed the fire: it took the log. */
+	| { t: "fed" }
 	| { t: "inv"; inv: Inventory; stats: WoodsStats }
 	| { t: "tick"; clock: Clock }
 	| { t: "night"; night: number; lost: Lost[] }
