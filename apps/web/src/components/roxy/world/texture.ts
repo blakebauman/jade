@@ -14,8 +14,9 @@ const SCALE = 1.6;
 export function figureTexture(
 	look: Look,
 	view: { x: number; y: number; w: number; h: number },
-	opts: { omit?: Slot[]; only?: Slot[] } = {},
+	opts: { omit?: Slot[]; only?: Slot[]; after?: (ctx: CanvasRenderingContext2D) => void } = {},
 ) {
+	const { after, ...slots } = opts;
 	const width = Math.round(view.w * SCALE);
 	const height = Math.round(view.h * SCALE);
 	const canvas = document.createElement("canvas");
@@ -27,7 +28,7 @@ export function figureTexture(
 	texture.generateMipmaps = false;
 
 	const svg = renderToStaticMarkup(
-		createElement(RoxyFigure, { look, viewBox: `${view.x} ${view.y} ${view.w} ${view.h}`, size: { width, height }, ...opts }),
+		createElement(RoxyFigure, { look, viewBox: `${view.x} ${view.y} ${view.w} ${view.h}`, size: { width, height }, ...slots }),
 	);
 	const img = new Image();
 	// Wait until it has loaded before drawing; until then the texture is clear, never a broken image.
@@ -36,6 +37,14 @@ export function figureTexture(
 			const ctx = canvas.getContext("2d");
 			ctx?.clearRect(0, 0, width, height);
 			ctx?.drawImage(img, 0, 0, width, height);
+			if (ctx && after) {
+				// In the SVG's own units, so drawing on top lines up with the art.
+				ctx.save();
+				ctx.scale(SCALE, SCALE);
+				ctx.translate(-view.x, -view.y);
+				after(ctx);
+				ctx.restore();
+			}
 			texture.needsUpdate = true;
 			resolve();
 		};
