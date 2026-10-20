@@ -712,7 +712,7 @@
 	}
 	.shelf-tile:focus-visible { outline-color: var(--color-select); border-radius: 1.4rem; }
 	.shelf-tile:active { transform: scale(0.98); }
-	/* A shut game shakes once when pressed: it heard her, and the line under the shelf says why. */
+	/* A shut game shakes once when pressed: it heard the kid, and the line under the shelf says why. */
 	.shelf-tile[data-nudge] { animation: tile-nudge 360ms var(--ease-out-expo); }
 	/* With focus on a button below, the lit tile keeps its place but its ring steps back, so only one ring is bright. */
 	main:has(.home-action:focus-visible) .shelf-tile[data-lit] { outline-color: color-mix(in oklab, var(--color-select) 35%, transparent); }

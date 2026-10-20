@@ -196,8 +196,8 @@ function Landing() {
 				<div className="space-y-3">
 					<h3 className="text-2xl font-semibold">Spelling</h3>
 					<p className="text-pretty text-page-muted">
-						This week’s school list, from a paste or a photo of the sheet, spoken aloud. She spells each word tile by tile, with feedback on
-						every letter, and missed words come back until they stick.
+						This week’s school list, from a paste or a photo of the sheet, spoken aloud. Your kid spells each word tile by tile, with
+						feedback on every letter, and missed words come back until they stick.
 					</p>
 					<DemoRow />
 					<p className="text-sm text-page-muted">

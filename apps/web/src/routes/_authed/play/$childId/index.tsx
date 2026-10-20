@@ -38,7 +38,7 @@ type TileId = "roxy" | "town" | "gobble" | "jelly" | "woods" | "spelling" | "mat
 const TILE_IDS: TileId[] = ["roxy", "gobble", "jelly", "spelling", "woods", "math", "town"];
 const GAMES = new Set<TileId>(["roxy", "town", "gobble", "jelly", "woods"]);
 
-/** The shelf leads with what she played last, as a console's home does; a new kid starts from the games. */
+/** The shelf leads with what the kid played last, as a console's home does; a new kid starts from the games. */
 const orderKey = (childId: string) => `jade.shelf.${childId}`;
 function readOrder(childId: string): TileId[] {
 	try {
@@ -279,7 +279,7 @@ function Home() {
 							: `${newest.name}: ${newest.wordCount} new ${newest.wordCount === 1 ? "word" : "words"}.`
 						: "Hear the word, then spell it, like a real bee.",
 			art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} />,
-			// What's waiting: words due again, else this week's words she hasn't started.
+			// What's waiting: words due again, else this week's words they haven't started.
 			// The bar speaks for a waiting round, so the count only shows when there isn't one.
 			count: spellingLeft ? undefined : spellingDue || (newest && !played ? newest.wordCount : undefined),
 			progress: spellingLeft ? spellingLeft.done / spellingLeft.total : undefined,
@@ -342,7 +342,7 @@ function Home() {
 						},
 		};
 	});
-	// A kid whose games are shut starts lit on the first thing she can open.
+	// A kid whose games are shut starts lit on the first thing they can open.
 	const [nudged, setNudged] = useState<number | null>(null);
 	const [lit, setLit] = useState(() =>
 		Math.max(
@@ -357,7 +357,7 @@ function Home() {
 		const root = shelfRef.current;
 		if (!root) return;
 		let timer = 0;
-		// Only a scroll she makes moves the light; a scroll position the browser restores on back or reload doesn't.
+		// Only a scroll the kid makes moves the light; a scroll position the browser restores on back or reload doesn't.
 		let touched = false;
 		const touch = () => {
 			touched = true;
@@ -409,7 +409,7 @@ function Home() {
 
 	// Arrows, Home and End move the light along the shelf from anywhere on the page, unless a field, a list or a sheet
 	// has the keys. Enter or Space on the lit tile opens it, as a press does.
-	// A key let go on this page arms Enter, so the Enter that picked her on "Who's playing?" can't also start a game.
+	// A key let go on this page arms Enter, so the Enter that picked them on "Who's playing?" can't also start a game.
 	const armed = useRef(false);
 	useEffect(() => {
 		const arm = () => {
@@ -452,7 +452,7 @@ function Home() {
 	const badges = useRef<HTMLDialogElement>(null);
 	const quests = useRef<HTMLDialogElement>(null);
 	const time = useRef<HTMLDialogElement>(null);
-	// Where a shut Play sends her: the subject nearest the front of her shelf.
+	// Where a shut Play sends the kid: the subject nearest the front of their shelf.
 	const subject = shelf.find((t) => !GAMES.has(t.id));
 	const timeCosts = !!play?.settings.timeCosts && !play.settings.free;
 
@@ -460,7 +460,7 @@ function Home() {
 		<main className="grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto] gap-y-4 py-safe-5 md:py-safe-7">
 			<h1 className="sr-only">{child.name}’s games</h1>
 
-			{/* Who's playing, and what she has: her sticker and name, then her stars and tickets as big numerals. */}
+			{/* Who's playing, and what they have: their sticker and name, then their stars and tickets as big numerals. */}
 			<header className="flex items-center justify-between gap-4 px-safe-5 md:px-safe-12">
 				<div className="flex min-w-0 items-center gap-3">
 					<span aria-hidden className="shrink-0">
@@ -491,7 +491,7 @@ function Home() {
 			</header>
 
 			<section aria-label="Your games" className="flex min-w-0 flex-col justify-center gap-4">
-				{/* The shelf: one row of big tiles, the one she played last first. One is lit at a time; the ring moves with
+				{/* The shelf: one row of big tiles, the one the kid played last first. One is lit at a time; the ring moves with
 				    arrows, hover and focus, and a press goes. */}
 				<ul ref={shelfRef} className="shelf" aria-label="Games, Spelling and Math">
 					{shelf.map((t, i) => (
@@ -637,7 +637,7 @@ function Home() {
 						</>
 					}
 				>
-					{/* Her record of practice: every star ever earned (games never take from it) and the days in a row. */}
+					{/* Their record of practice: every star ever earned (games never take from it) and the days in a row. */}
 					{stars > 0 ? (
 						<div className="mb-6 flex flex-wrap gap-2.5">
 							<span className="foil inline-flex items-center gap-2 px-4 py-2">
