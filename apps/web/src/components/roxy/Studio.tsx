@@ -1,5 +1,7 @@
 import { seeded } from "@jade/core/math";
 import {
+	characterName,
+	DEFAULT_NAME,
 	HOLIDAY_LABEL,
 	ITEMS,
 	type Item,
@@ -7,6 +9,7 @@ import {
 	LOOK_NAME_MAX,
 	type Look,
 	lockedItemsIn,
+	NAME_MAX,
 	PALETTES,
 	type PaletteName,
 	PET_NAME_MAX,
@@ -18,6 +21,7 @@ import {
 	type SkinId,
 	SLOT_LABEL,
 	type Slot,
+	starterChoices,
 	TABS,
 	wear,
 } from "@jade/core/roxy";
@@ -106,6 +110,22 @@ function itemsFor(slot: Slot, off: ReadonlySet<string>) {
 	return [...all.filter((i) => !i.holiday), ...all.filter((i) => i.holiday)];
 }
 
+const askedKey = (childId: string) => `jade.roxy.named.${childId}`;
+function nameAsked(childId: string) {
+	try {
+		return localStorage.getItem(askedKey(childId)) === "1";
+	} catch {
+		return true;
+	}
+}
+function markNameAsked(childId: string) {
+	try {
+		localStorage.setItem(askedKey(childId), "1");
+	} catch {
+		// Blocked storage: the nudge may come back next time, which is harmless.
+	}
+}
+
 export function Studio({ childId, data, initialTab }: { childId: string; data: StudioData; initialTab?: string }) {
 	const qc = useQueryClient();
 	const online = useOnline();
@@ -129,6 +149,24 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	const [saving, setSaving] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
+	const name = characterName(draft.look);
+	// Once, until the kid names their character or keeps Roxy: a nudge that the name is theirs to change.
+	const [askName, setAskName] = useState(() => !draft.look.name && !nameAsked(childId));
+	const [naming, setNaming] = useState(false);
+	// A new kid starts by picking one of a few looks, rather than being handed one.
+	const [starting, setStarting] = useState(() => !!data.fresh && !draft.wornLookId);
+	const keepName = () => {
+		setAskName(false);
+		markNameAsked(childId);
+	};
+	const startNaming = () => {
+		setTab("body");
+		setTrying(null);
+		setNaming(true);
+		keepName();
+		// The panel opens (reveal), then the name row comes into view.
+		requestAnimationFrame(() => document.getElementById(`${id}-name`)?.scrollIntoView({ block: "start" }));
+	};
 
 	const shown = trying ? tryOn(draft.look, trying.slot, trying.item) : draft.look;
 	const locked = lockedItemsIn(draft.look, unlocked);
@@ -254,8 +292,29 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 					<ArrowLeft aria-hidden />
 				</Link>
 			}
-			eyebrow="Roxy’s studio"
-			title={<>Roxy{shown.slots.pet && shown.petName && <span> and {shown.petName}</span>}</>}
+			eyebrow={`${name}’s studio`}
+			title={
+				<>
+					{name}
+					{shown.slots.pet && shown.petName && <span> and {shown.petName}</span>}
+				</>
+			}
+			reveal={naming ? "name" : null}
+			prompt={
+				// After a new kid's first look is picked, so the two never pile up over the stage.
+				askName &&
+				!starting && (
+					<div className="glass flex items-center gap-2 rounded-[1.4rem] p-1.5 pl-4">
+						<span className="font-medium max-md:text-sm">Call {DEFAULT_NAME} something else?</span>
+						<button type="button" className="key !min-h-11 shrink-0 whitespace-nowrap max-md:!px-3" onClick={startNaming}>
+							Pick a name
+						</button>
+						<button type="button" className="key !min-h-11 shrink-0 whitespace-nowrap max-md:!px-3" onClick={keepName}>
+							Keep {DEFAULT_NAME}
+						</button>
+					</div>
+				)
+			}
 			orbs={
 				<>
 					<CornerWallet wallet={data.wallet} />
@@ -264,7 +323,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 						params={{ childId }}
 						className="orb glass max-md:hidden"
 						aria-label="Home"
-						title="Roxy’s home"
+						title={`${name}’s home`}
 					>
 						<House aria-hidden />
 					</Link>
@@ -288,7 +347,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 					<Destinations childId={childId} here="studio" />
 				</>
 			}
-			hints={<Hint keys={["Drag"]}>turn Roxy round</Hint>}
+			hints={<Hint keys={["Drag"]}>turn {name} round</Hint>}
 			actions={
 				<>
 					{/* One Pose key, with the poses on a small glass row above it, so the bar stays one row and off Roxy's feet. */}
@@ -355,6 +414,21 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 			}
 			panel={
 				<>
+					{starting && (
+						<StartFrom
+							childId={childId}
+							chosen={draft.look}
+							onPick={(look) => {
+								const { name: _, ...rest } = look;
+								draft.set(draft.look.name ? { ...rest, name: draft.look.name } : rest);
+							}}
+							onDone={() => {
+								setStarting(false);
+								// Keeping the first one is a choice too: saved, so the kid isn't asked again.
+								draft.set(draft.look);
+							}}
+						/>
+					)}
 					{/* On an upright phone the tabs are one row that scrolls sideways, so they don't fill the sheet. */}
 					<div
 						role="tablist"
@@ -399,7 +473,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 								if (saved) {
 									draft.settle(saved.look, saved.id);
 									setFlash((n) => n + 1);
-									setMessage(`Saved “${saved.name}” to your looks. No one else in Jade’s World has this exact Roxy.`);
+									setMessage(`Saved “${saved.name}” to your looks. No one else in Jade’s World has this exact look.`);
 									await refresh();
 								}
 							}}
@@ -423,6 +497,22 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 									onPick={pick}
 								/>
 							))}
+						{current.id === "body" && (
+							<NameRow
+								id={`${id}-name`}
+								heading="Name"
+								legend="Pick a name"
+								names={NAMES}
+								name={draft.look.name ?? DEFAULT_NAME}
+								max={NAME_MAX}
+								onName={(n) => {
+									const { name: _, ...rest } = draft.look;
+									// Unset is the default name, so picking (or unpicking) Roxy stores nothing.
+									draft.set(n && n !== DEFAULT_NAME ? { ...rest, name: n } : rest, null, "name");
+									keepName();
+								}}
+							/>
+						)}
 						{current.id === "body" && <SkinRow skin={draft.look.skin} onPick={(skin) => draft.set({ ...draft.look, skin })} />}
 						{current.slots.map((slot) => (
 							<SlotPicker
@@ -437,8 +527,12 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 							/>
 						))}
 						{current.id === "pets" && draft.look.slots.pet && (
-							<PetName
-								name={draft.look.petName}
+							<NameRow
+								heading="Pet’s name"
+								legend="Pick a name for your pet"
+								names={PET_NAMES}
+								name={draft.look.petName ?? ""}
+								max={PET_NAME_MAX}
 								onName={(petName) => {
 									const { petName: _, ...rest } = draft.look;
 									draft.set(petName ? { ...rest, petName } : rest, null, "petName");
@@ -479,17 +573,81 @@ class NoWebGL extends Component<{ children: ReactNode; fallback: ReactNode }, { 
 
 const PET_NAMES = ["Biscuit", "Mochi", "Pepper", "Ziggy", "Noodle", "Sprout", "Pickle", "Luna", "Taco", "Bean"];
 
-/** Name the pet with a tap, or type one. */
-function PetName({ name, onName }: { name: string | undefined; onName: (name: string) => void }) {
+/** A few looks to start from, side by side; tap one to try it, then "Start with this one" to put the row away. */
+function StartFrom({
+	childId,
+	chosen,
+	onPick,
+	onDone,
+}: {
+	childId: string;
+	chosen: Look;
+	onPick: (look: Look) => void;
+	onDone: () => void;
+}) {
 	const headingId = useId();
-	const [typed, setTyped] = useState(name && !PET_NAMES.includes(name) ? name : "");
+	const choices = useMemo(() => starterChoices(childId), [childId]);
+	const same = (a: Look, b: Look) => a.skin === b.skin && JSON.stringify(a.slots) === JSON.stringify(b.slots);
 	return (
-		<section aria-labelledby={headingId}>
+		<section aria-labelledby={headingId} className="mb-6">
 			<h2 id={headingId} className="font-display text-xl font-semibold">
-				Pet’s name
+				Pick a look to start from
 			</h2>
-			<fieldset aria-label="Pick a name for your pet" className="mt-3 flex flex-wrap gap-2">
-				{PET_NAMES.map((n) => (
+			<p className="text-sm text-page-muted">You can change everything after.</p>
+			<fieldset aria-label="Looks to start from" className="mt-3 grid grid-cols-4 gap-2">
+				{choices.map((look, i) => {
+					const on = same(look, chosen);
+					return (
+						<button
+							key={i}
+							type="button"
+							aria-pressed={on}
+							data-pressed={on}
+							className="overflow-hidden rounded-xl bg-page-deep ring-offset-2 data-[pressed=true]:ring-4 data-[pressed=true]:ring-select"
+							onClick={() => onPick(look)}
+						>
+							<RoxyFigure look={look} title={`Look ${i + 1}`} className="block h-auto w-full" />
+						</button>
+					);
+				})}
+			</fieldset>
+			<button type="button" className="key mt-3" onClick={onDone}>
+				<Check className="size-5" aria-hidden /> Start with this one
+			</button>
+		</section>
+	);
+}
+
+/** Names for the character: Roxy first, then a mix, so every kid sees one that suits them. */
+const NAMES = [DEFAULT_NAME, "Max", "Juno", "Kai", "Rosa", "Leo", "Pip", "Sky", "Milo", "Zara"];
+
+/** Name the character or the pet with a tap, or type one. */
+function NameRow({
+	id,
+	heading,
+	legend,
+	names,
+	name,
+	max,
+	onName,
+}: {
+	id?: string;
+	heading: string;
+	legend: string;
+	names: string[];
+	name: string;
+	max: number;
+	onName: (name: string) => void;
+}) {
+	const headingId = useId();
+	const [typed, setTyped] = useState(name && !names.includes(name) ? name : "");
+	return (
+		<section id={id} aria-labelledby={headingId} className="scroll-mt-4">
+			<h2 id={headingId} className="font-display text-xl font-semibold">
+				{heading}
+			</h2>
+			<fieldset aria-label={legend} className="mt-3 flex flex-wrap gap-2">
+				{names.map((n) => (
 					<button
 						key={n}
 						type="button"
@@ -497,7 +655,10 @@ function PetName({ name, onName }: { name: string | undefined; onName: (name: st
 						data-toggle
 						data-pressed={name === n}
 						className="key !min-h-11"
-						onClick={() => onName(name === n ? "" : n)}
+						onClick={() => {
+							setTyped("");
+							onName(name === n ? "" : n);
+						}}
 					>
 						{n}
 					</button>
@@ -508,7 +669,7 @@ function PetName({ name, onName }: { name: string | undefined; onName: (name: st
 				<input
 					className="field"
 					value={typed}
-					maxLength={PET_NAME_MAX}
+					maxLength={max}
 					autoComplete="off"
 					onChange={(e) => {
 						setTyped(e.target.value);
@@ -520,12 +681,12 @@ function PetName({ name, onName }: { name: string | undefined; onName: (name: st
 	);
 }
 
-/** One line for screen readers: what this Roxy looks like right now. */
+/** One line for screen readers: what the character looks like right now. */
 function describe(look: Look) {
 	const names = (["form", "hair", "dress", "top", "bottom", "outer", "shoes", "hat", "pet"] as const)
 		.map((s) => look.slots[s] && ITEMS.find((i) => i.id === look.slots[s]!.item)?.label)
 		.filter(Boolean);
-	return `Your Roxy: ${names.join(", ")}`;
+	return `${characterName(look)}: ${names.join(", ")}`;
 }
 
 function SkinRow({ skin, onPick }: { skin: SkinId; onPick: (s: SkinId) => void }) {
@@ -602,9 +763,9 @@ function SlotPicker({
 				{SLOT_LABEL[slot]}
 			</h2>
 			{slot === "form" && (
-				<p className="text-sm text-page-muted">The moon gem turns your Roxy into an animal. Tap it again to turn back.</p>
+				<p className="text-sm text-page-muted">The moon gem turns your character into an animal. Tap it again to turn back.</p>
 			)}
-			{slot === "gem" && <p className="text-sm text-page-muted">Each gem gives your Roxy animal ears and a tail.</p>}
+			{slot === "gem" && <p className="text-sm text-page-muted">Each gem gives your character animal ears and a tail.</p>}
 			<ul className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2.5">
 				{OPTIONAL(slot) && slot !== "background" && (
 					<li>
@@ -856,7 +1017,7 @@ function SaveLook({
 				code === "taken"
 					? mine
 						? "You’ve already saved this exact look. Change one thing to make a new one."
-						: "Someone already made this exact Roxy! Change one thing to make it yours."
+						: "Someone already made this exact look! Change one thing to make it yours."
 					: code === "full"
 						? "Your gallery is full. Delete a look in My looks to make room."
 						: "Couldn’t save. Check the connection and try again.",
@@ -903,7 +1064,7 @@ function SaveLook({
 					{error}
 				</p>
 			)}
-			{!online && <p className="text-page-muted">Saving needs the internet. Your Roxy is kept on this device until then.</p>}
+			{!online && <p className="text-page-muted">Saving needs the internet. Your look is kept on this device until then.</p>}
 			<div className="flex flex-wrap gap-2">
 				<button type="button" className="key" onClick={() => onDone(null)}>
 					Cancel

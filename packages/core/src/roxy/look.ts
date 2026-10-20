@@ -4,6 +4,7 @@ import { EXCLUSIVE, ITEM, ITEMS, type Item, NEEDS, REQUIRED_SLOTS, SLOTS, type S
 import { PALETTES, SKIN, type SkinId } from "./palettes.ts";
 
 const PET_NAME_MAX_ = 16;
+const NAME_MAX_ = 16;
 const colorKey = z.string().max(4).optional();
 export const WornSchema = z.object({ item: z.string().max(40), c1: colorKey, c2: colorKey });
 export type Worn = z.infer<typeof WornSchema>;
@@ -17,6 +18,11 @@ export const LookSchema = z.object({
 	v: z.literal(1),
 	skin: z.enum(Object.keys(SKIN) as [SkinId, ...SkinId[]]),
 	slots: z.partialRecord(z.enum(SLOTS), WornSchema),
+	/**
+	 * What the kid calls their character (unset: "Roxy", `characterName`). Like the pet's name it isn't part of the
+	 * fingerprint, and it stays with the kid when they put on a saved look.
+	 */
+	name: z.string().trim().max(NAME_MAX_).optional(),
 	/** The pet's name. It isn't part of the fingerprint: renaming a pet doesn't make a new look. */
 	petName: z.string().trim().max(PET_NAME_MAX_).optional(),
 	pose: z.enum(POSES).optional(),
@@ -25,6 +31,13 @@ export type Look = z.infer<typeof LookSchema>;
 
 export const LOOK_NAME_MAX = 24;
 export const PET_NAME_MAX = PET_NAME_MAX_;
+export const NAME_MAX = NAME_MAX_;
+/** The character's name until the kid picks one. */
+export const DEFAULT_NAME = "Roxy";
+/** What the kid calls their character. */
+export const characterName = (look: Pick<Look, "name"> | undefined) => look?.name?.trim() || DEFAULT_NAME;
+/** `text` (written about Roxy) with the kid's own name for their character in it, say for a quest. */
+export const withName = (text: string, name: string) => text.replace(/\bRoxy\b/g, name);
 export const MAX_SAVED_LOOKS = 12;
 
 /** Items that are free, or that this child has unlocked. Holiday gifts are never free: they're claimed, never bought. */
@@ -58,7 +71,8 @@ export function normalizeLook(input: unknown): Look | null {
 	for (const [slot, needs] of Object.entries(NEEDS) as [Slot, Slot][]) if (!slots[needs]) delete slots[slot];
 	const petName = slots.pet ? parsed.data.petName?.trim() : undefined;
 	const pose = parsed.data.pose && parsed.data.pose !== "stand" ? parsed.data.pose : undefined;
-	return { v: 1, skin: parsed.data.skin, slots, ...(petName && { petName }), ...(pose && { pose }) };
+	const name = parsed.data.name?.trim();
+	return { v: 1, skin: parsed.data.skin, slots, ...(name && { name }), ...(petName && { petName }), ...(pose && { pose }) };
 }
 
 /**
@@ -183,3 +197,33 @@ export function randomLook(rng: Rng, unlocked: ReadonlySet<string> = new Set()):
 
 /** Each child's first look, the same every time for that child and different from everyone else's. */
 export const starterLook = (childId: string): Look => randomLook(seeded(seedFrom(childId)));
+
+const SPARKLE: Slot[] = ["earrings", "necklace", "blush"];
+const SHORT_HAIR = new Set(["hair-buzz", "hair-pixie", "hair-cornrows", "hair-curly", "hair-coily"]);
+const LEGS = new Set(["bottom-jeans", "bottom-cargo", "bottom-shorts"]);
+/**
+ * A few looks a new kid can start from instead: their own starter, then (seeded, the same each time) one with short hair
+ * and trousers or shorts, one in other separates, each with no jewellery or blush, and one in a dress, all with
+ * different hair. However a kid sees themselves, one is close.
+ */
+export function starterChoices(childId: string): Look[] {
+	const first = starterLook(childId);
+	const rng = seeded(seedFrom(`${childId}|choices`));
+	const picked = [first];
+	const plain = (l: Look) => !l.slots.dress && SPARKLE.every((s) => !l.slots[s]);
+	const fits = [
+		(l: Look) => plain(l) && SHORT_HAIR.has(l.slots.hair?.item ?? "") && LEGS.has(l.slots.bottom?.item ?? ""),
+		plain,
+		(l: Look) => !!l.slots.dress,
+	];
+	for (const fit of fits)
+		for (let tries = 0; tries < 1000; tries++) {
+			const look = randomLook(rng);
+			const hairs = picked.map((l) => l.slots.hair?.item);
+			if (fit(look) && !hairs.includes(look.slots.hair?.item)) {
+				picked.push(look);
+				break;
+			}
+		}
+	return picked;
+}

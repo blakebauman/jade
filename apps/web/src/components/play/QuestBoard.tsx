@@ -1,9 +1,11 @@
 import { type Quest, type QuestDay, questCollectable, questDone, questHave } from "@jade/core";
+import { withName } from "@jade/core/roxy";
 import { useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Ticket } from "lucide-react";
 import { useId, useState } from "react";
 import { type PlayStatus, playQuery } from "#/lib/play.ts";
 import { collectQuest, useQuests } from "#/lib/quests.ts";
+import { useCharacterName } from "#/lib/roxy.ts";
 import { Tickets } from "./PlayBits.tsx";
 
 const TILTS = ["-1.5deg", "1deg", "-0.75deg"];
@@ -47,11 +49,13 @@ function QuestCard({ childId, quest, state, free, tilt }: { childId: string; que
 	const [busy, setBusy] = useState(false);
 	const have = questHave(quest, state);
 	const collected = state.collected.includes(quest.id);
+	// Quests are written about Roxy; they say whatever this kid calls their character.
+	const label = withName(quest.label, useCharacterName(childId));
 
 	if (!questDone(quest, state))
 		return (
 			<li className="grid min-h-32 content-center justify-items-center gap-2 rounded-2xl bg-page-deep p-4 text-center">
-				<span className="font-display text-lg font-medium text-page-ink">{quest.label}</span>
+				<span className="font-display text-lg font-medium text-page-ink">{label}</span>
 				<span className="text-sm font-medium text-page-muted tabular-nums">
 					{have} of {quest.need}
 					<span className="sr-only"> (not yet)</span>
@@ -80,7 +84,7 @@ function QuestCard({ childId, quest, state, free, tilt }: { childId: string; que
 			data-place="roxy"
 			style={{ "--tilt": tilt } as React.CSSProperties}
 		>
-			<span className="font-display text-lg font-medium">{quest.label}</span>
+			<span className="font-display text-lg font-medium">{label}</span>
 			{/* Finished while games were Free: done, and never paid (as a go on Free never is). */}
 			{free || !questCollectable(quest, state) ? (
 				<span className="inline-flex items-center gap-1.5 text-sm font-semibold">
