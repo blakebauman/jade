@@ -56,6 +56,25 @@ test("today's quests show on the Play page, and a finished one pays its tickets 
 	expect(await wallet()).toBe(tickets);
 });
 
+test("a quest still to do takes the kid straight to its game", async ({ page }) => {
+	const id = await setup(page);
+	await page.goto(`/play/${id}/games`);
+	await page.getByRole("button", { name: "Quests" }).click();
+	const board = page.getByRole("region", { name: "Today’s quests" });
+	const card = board.getByRole("button").first();
+	const label = (await card.locator("span").first().textContent())!;
+	const game = QUESTS.find((q) => q.label === label)!.game;
+	await card.click();
+	const where = {
+		gobble: /\/games\/gobble$/,
+		jelly: /\/games\/jelly$/,
+		town: /\/games\/roxy\/town$/,
+		studio: /\/games\/roxy$/,
+		woods: /\/games\/woods$/,
+	};
+	await expect(page).toHaveURL(where[game]);
+});
+
 test("visiting a place in town counts toward today's town quests", async ({ page }) => {
 	const id = await setup(page);
 	await page.goto(`/play/${id}/games/roxy/place/park`);

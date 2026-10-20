@@ -4,7 +4,6 @@ import { type FormEvent, useState } from "react";
 import { z } from "zod";
 import { Brand } from "#/components/Brand.tsx";
 import { fitTile } from "#/components/round/AnswerRow.tsx";
-import { SubjectArt } from "#/components/SubjectArt.tsx";
 import { authClient, signIn, signUp } from "#/lib/auth.ts";
 import { rememberedUser } from "#/lib/device.ts";
 import { useElementWidth } from "#/lib/hooks.ts";
@@ -54,9 +53,9 @@ function DemoRow() {
 /** The home shelf as a kid sees it, lit on a game: real art from each game, one tile with words waiting. */
 const DEMO: { name: string; art: React.ReactNode; count?: number }[] = [
 	{ name: "Gobble Town", art: <img src="/tiles/gobble.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
-	{ name: "Spelling", art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} />, count: 6 },
+	{ name: "Spelling", art: <img src="/tiles/spelling.webp" alt="" className="absolute inset-0 size-full object-cover" />, count: 6 },
 	{ name: "Jelly Blocks", art: <img src="/tiles/jelly.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
-	{ name: "Math", art: <SubjectArt hue="math" tiles={["7", "×", "8"]} answer /> },
+	{ name: "Math", art: <img src="/tiles/math.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
 ];
 
 /** Ends on whole tiles: four across the column (three on a phone), each a quarter of it, the first one lit. */

@@ -27,6 +27,9 @@
 	/* #d62c27 keeps white type at AA (4.9:1) on the counts and the wordmark. */
 	--color-brand: #d62c27;
 	--color-select: #1d9bf0;
+	/* The silver star beside a kid's star count: not marigold, which only ever means right. */
+	--color-silver: #d9dee8;
+	--color-silver-edge: #8e97a8;
 
 	/* Stickers: the white vinyl rim, and one printed hue per place. None of them is a law colour. */
 	--color-vinyl: #dfe8e3;
@@ -646,7 +649,11 @@
 	/* A phone: tiles take most of the width, so the next one peeks in from the edge. */
 	@media (max-width: 40rem) { .shelf { --tile: min(62vw, 38dvh); } }
 	/* A tablet held upright: tall and narrow, so the tiles grow to fill the height the row would leave empty. */
-	@media (orientation: portrait) and (min-width: 40rem) { .shelf { --tile: min(72vw, 50dvh); } }
+	@media (orientation: portrait) and (min-width: 40rem) { .shelf { --tile: min(60vw, 40dvh); } }
+	/* A phone on its side: the shelf, its line and the buttons all fit without the page scrolling. */
+	@media (orientation: landscape) and (max-height: 32rem) and (width < 64rem) {
+		.shelf { --tile: min(30dvh, 28vw); padding-block: 2.4rem 0.5rem; }
+	}
 	.shelf-slot {
 		position: relative;
 		flex: none;
@@ -722,7 +729,7 @@
 	}
 	/* A game while Play is shut: its art greyed and a lock on it, never hidden. */
 	.shelf-tile[data-locked] > img,
-	.shelf-tile[data-locked] > svg { filter: grayscale(0.85) brightness(0.8); }
+	.shelf-tile[data-locked] > svg { filter: saturate(0.35) brightness(0.85); }
 	.shelf-lock {
 		position: absolute;
 		left: 50%;
@@ -754,6 +761,20 @@
 		color: #fff;
 		background: var(--color-brand);
 		box-shadow: 0 0 0 0.18rem #fff, 0 0.2rem 0.4rem rgb(0 0 0 / 0.3);
+	}
+	/* A game with one of today's quests in it: a small white disc on the corner, the Quests button's own face. */
+	.shelf-quest {
+		position: absolute;
+		top: 0.65rem;
+		left: 0.65rem;
+		width: 2rem;
+		height: 2rem;
+		display: grid;
+		place-items: center;
+		border-radius: 9999px;
+		color: #1b2130;
+		background: radial-gradient(120% 120% at 30% 15%, #ffffff, #e9ecf1);
+		box-shadow: 0 0.2rem 0.4rem rgb(0 0 0 / 0.3);
 	}
 	/* A round to finish: how far it has come, a red bar along the tile's foot. */
 	.shelf-progress {
@@ -792,7 +813,20 @@
 	}
 	@media (hover: hover) { .home-action:hover > span { transform: translateY(-2px); } }
 	.home-action:active > span { transform: scale(0.95); }
-	.home-action:focus-visible { outline-color: var(--color-select); }
+	.home-action:focus-visible { outline-color: var(--color-select); outline-offset: 0.4rem; }
+	@media (orientation: landscape) and (max-height: 32rem) and (width < 64rem) {
+		.home-action > span { width: 2.75rem; height: 2.75rem; }
+	}
+	/* A quest still to do, in the Quests sheet: a card that takes the kid to its game, lit like a shelf tile. */
+	.quest-go {
+		outline: 0.2rem solid transparent;
+		outline-offset: 0.2rem;
+		transition: transform 160ms var(--ease-out-expo), outline-color 120ms ease-out;
+		touch-action: manipulation;
+	}
+	@media (hover: hover) { .quest-go:hover { outline-color: var(--color-select); } }
+	.quest-go:focus-visible { outline-color: var(--color-select); }
+	.quest-go:active { transform: scale(0.98); }
 	.home-action-count {
 		position: absolute;
 		top: -0.35rem;

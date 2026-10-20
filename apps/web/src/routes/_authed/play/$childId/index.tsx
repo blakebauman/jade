@@ -1,4 +1,4 @@
-import { BADGES, goalProgress, questCollectable, type SPELLING_MODES } from "@jade/core";
+import { BADGES, goalProgress, type Quest, questCollectable, questDone, type SPELLING_MODES, TIME_BLOCK } from "@jade/core";
 import { TOPIC_LABEL } from "@jade/core/math";
 import { characterName, FINDS } from "@jade/core/roxy";
 import { KidTile } from "@jade/ui/components/kid-tile";
@@ -11,7 +11,6 @@ import { Brand } from "#/components/Brand.tsx";
 import { MoreTime } from "#/components/play/PlayBits.tsx";
 import { QuestBoard } from "#/components/play/QuestBoard.tsx";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
-import { SubjectArt } from "#/components/SubjectArt.tsx";
 import { listIsFor, newestFirst, type Progress } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
 import { resumableMath } from "#/lib/mathRound.ts";
@@ -55,6 +54,9 @@ function markPlayed(childId: string, id: TileId) {
 	} catch {}
 }
 
+/** The shelf tile a quest's game lives on: the studio's is Roxy's. */
+const tileOf = (q: Quest): TileId => (q.game === "studio" ? "roxy" : q.game);
+
 function readNumber(key: string) {
 	try {
 		return Number(localStorage.getItem(key)) || 0;
@@ -91,7 +93,7 @@ function BadgeSheet({ badges }: { badges: Progress["badges"] }) {
 						{b.label}
 						{!b.earned && <span className="sr-only"> (not yet)</span>}
 					</span>
-					{!b.earned && hint(b.id) && <span className="text-xs leading-tight text-balance text-page-muted">{hint(b.id)}</span>}
+					{!b.earned && hint(b.id) && <span className="text-sm leading-tight text-balance text-page-muted">{hint(b.id)}</span>}
 				</li>
 			))}
 		</ul>
@@ -145,6 +147,8 @@ type Tile = {
 	/** Where the tile goes; a game while Play is shut goes nowhere. */
 	go?: () => void;
 	locked?: boolean;
+	/** One of today's quests is in this game and not done yet. */
+	quest?: boolean;
 };
 
 /**
@@ -153,31 +157,34 @@ type Tile = {
  */
 function ClosedLine({ play, childId, go }: { play: PlayStatus; childId: string; go?: React.ReactNode }) {
 	const p = goalProgress(play.settings.goal, play.today);
+	const left = Math.max(1, p.need - p.have);
+	// The goal in words is the line; a star goal's strip comes after it, as how far today has come.
 	return (
 		<div className="flex flex-wrap items-center gap-x-5 gap-y-3">
 			<p id="shelf-shut" className="flex flex-wrap items-center gap-x-4 gap-y-2">
-				<span className="flex items-center gap-2.5 text-lg font-medium">
-					<Lock className="size-5 shrink-0" aria-hidden />
-					{play.shut ? "Games open after practice" : "Out of play time"}
+				<span className="flex items-center gap-2.5 text-lg font-medium text-balance">
+					<Lock className="size-5 shrink-0 text-page-muted" aria-hidden />
+					{!play.shut
+						? "Out of play time for today"
+						: p.unit === "star"
+							? `Earn ${left} more ${left === 1 ? "star" : "stars"} to open the games`
+							: "Finish a round to open the games"}
 				</span>
-				{play.shut &&
-					(p.unit === "star" ? (
-						<span className="flex items-center gap-2.5 text-sm font-semibold text-page-muted tabular-nums">
-							<span className="block h-2 w-28 overflow-hidden rounded-full bg-page-line" aria-hidden>
-								<span className="block h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (p.have / p.need) * 100)}%` }} />
-							</span>
-							{p.have} of {p.need} stars today
+				{play.shut && p.unit === "star" && (
+					<span className="flex items-center gap-2.5 text-sm font-semibold text-page-muted tabular-nums">
+						<span className="block h-2 w-28 overflow-hidden rounded-full bg-page-line" aria-hidden>
+							<span className="block h-full rounded-full bg-brand" style={{ width: `${Math.min(100, (p.have / p.need) * 100)}%` }} />
 						</span>
-					) : (
-						<span className="text-sm font-semibold text-page-muted">Finish 1 round today</span>
-					))}
+						{p.have} of {p.need} today
+					</span>
+				)}
 			</p>
 			{play.shut ? go : <MoreTime childId={childId} status={play} />}
 		</div>
 	);
 }
 
-/** Key art from the game itself (public/tiles), edge to edge. */
+/** Key art from the game or round itself (public/tiles), edge to edge. */
 function Art({ src }: { src: string }) {
 	return <img src={src} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />;
 }
@@ -279,7 +286,7 @@ function Home() {
 							? `${newest.name}: ${played.mastered} of ${newest.wordCount} mastered.`
 							: `${newest.name}: ${newest.wordCount} new ${newest.wordCount === 1 ? "word" : "words"}.`
 						: "Hear the word, then spell it, like a real bee.",
-			art: <SubjectArt hue="spell" tiles={["r", "h", "y", "t", "h", "m"]} />,
+			art: <Art src="/tiles/spelling.webp" />,
 			// What's waiting: words due again, else this week's words they haven't started.
 			// The bar speaks for a waiting round, so the count only shows when there isn't one.
 			count: spellingLeft ? undefined : spellingDue || (newest && !played ? newest.wordCount : undefined),
@@ -301,7 +308,7 @@ function Home() {
 				: factsDue > 0
 					? `${factsDue} ${factsDue === 1 ? "fact wants" : "facts want"} another go.`
 					: "Times tables, mental math, fractions and story problems.",
-			art: <SubjectArt hue="math" tiles={["7", "×", "8"]} answer />,
+			art: <Art src="/tiles/math.webp" />,
 			count: mathLeft ? undefined : factsDue || undefined,
 			progress: mathLeft ? mathLeft.done / mathLeft.total : undefined,
 			go: mathLeft
@@ -326,13 +333,18 @@ function Home() {
 			.map((w) => w.id);
 		return [...new Set<TileId>([...waiting, ...readOrder(child.id)])];
 	});
-	const shelf = order.map((id) => {
+	// While games are shut, Spelling and Math lead, so the shelf opens on what the kid can do, nothing cut off.
+	const ordered = locked ? [...order.filter((id) => !GAMES.has(id)), ...order.filter((id) => GAMES.has(id))] : order;
+	const { quests: today, state: questState } = useQuests(child.id);
+	const questIn = new Set(today.filter((q) => !questDone(q, questState)).map((q) => tileOf(q)));
+	const shelf = ordered.map((id) => {
 		const t = tiles[id];
 		const shut = locked && GAMES.has(id);
 		const go = t.go;
 		return {
 			...t,
 			locked: shut,
+			quest: !locked && questIn.has(id),
 			go:
 				shut || !go
 					? undefined
@@ -392,6 +404,37 @@ function Home() {
 	const buttons = useRef<(HTMLElement | null)[]>([]);
 	const current = shelf[lit] ?? shelf[0]!;
 
+	// The line under the shelf stands under the lit tile's left edge, as its name does above it, and rides along as the
+	// shelf scrolls; near the end it stops where it still fits.
+	const lineRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const root = shelfRef.current;
+		const line = lineRef.current;
+		const box = line?.parentElement;
+		if (!root || !line || !box) return;
+		let frame = 0;
+		const place = () => {
+			frame = 0;
+			const tile = buttons.current[lit]?.getBoundingClientRect();
+			if (!tile) return;
+			const b = box.getBoundingClientRect();
+			const pad = Number.parseFloat(getComputedStyle(box).paddingLeft) || 0;
+			const room = b.width - pad * 2 - line.offsetWidth;
+			line.style.setProperty("--lit-x", `${Math.max(0, Math.min(tile.left - b.left - pad, room))}px`);
+		};
+		const queue = () => {
+			if (!frame) frame = requestAnimationFrame(place);
+		};
+		place();
+		root.addEventListener("scroll", queue, { passive: true });
+		window.addEventListener("resize", queue);
+		return () => {
+			root.removeEventListener("scroll", queue);
+			window.removeEventListener("resize", queue);
+			cancelAnimationFrame(frame);
+		};
+	});
+
 	function light(i: number) {
 		const next = Math.max(0, Math.min(shelf.length - 1, i));
 		setLit(next);
@@ -448,7 +491,6 @@ function Home() {
 		return () => window.removeEventListener("keydown", onKey);
 	});
 
-	const { quests: today, state: questState } = useQuests(child.id);
 	const ready = play && !play.settings.free ? today.filter((q) => questCollectable(q, questState)).length : 0;
 	const badges = useRef<HTMLDialogElement>(null);
 	const quests = useRef<HTMLDialogElement>(null);
@@ -456,9 +498,15 @@ function Home() {
 	// Where a shut Play sends the kid: the subject nearest the front of their shelf.
 	const subject = shelf.find((t) => !GAMES.has(t.id));
 	const timeCosts = !!play?.settings.timeCosts && !play.settings.free;
+	const minutesLeft = play ? Math.ceil(play.time.secondsLeft / 60) : 0;
+	// A quest card goes straight to its game, lit and remembered as a tile press would.
+	const goQuest = (q: Quest) => {
+		quests.current?.close();
+		shelf.find((t) => t.id === tileOf(q))?.go?.();
+	};
 
 	return (
-		<main className="grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto] gap-y-4 py-safe-5 md:py-safe-7">
+		<main className="grid min-h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_1fr_auto] gap-y-4 py-safe-5 short:gap-y-2 short:py-safe-3 md:py-safe-7 short:md:py-safe-3">
 			<h1 className="sr-only">{child.name}’s games</h1>
 
 			{/* Who's playing, and what they have: their sticker and name, then their stars and tickets as big numerals. */}
@@ -472,7 +520,7 @@ function Home() {
 				<dl className="flex shrink-0 items-center gap-5 font-display md:gap-7">
 					<div className="flex items-center gap-2">
 						<dt>
-							<Star className="size-6 fill-[#d9dee8] text-[#8e97a8]" aria-hidden />
+							<Star className="size-6 fill-silver text-silver-edge" aria-hidden />
 							<span className="sr-only">Stars</span>
 						</dt>
 						<dd className={`text-2xl font-semibold tabular-nums md:text-3xl ${stars ? "" : "text-page-muted"}`}>{stars}</dd>
@@ -485,6 +533,18 @@ function Home() {
 							</dt>
 							<dd className={`text-2xl font-semibold tabular-nums md:text-3xl ${play.wallet.tickets ? "" : "text-page-muted"}`}>
 								{play.wallet.tickets}
+							</dd>
+						</div>
+					)}
+					{timeCosts && (
+						<div className="flex items-center gap-2">
+							<dt>
+								<Clock className="size-6 text-page-muted" aria-hidden />
+								<span className="sr-only">Play time left</span>
+							</dt>
+							<dd className={`text-2xl font-semibold tabular-nums md:text-3xl ${minutesLeft ? "" : "text-page-muted"}`}>
+								{minutesLeft}
+								<span className="ml-1 text-base font-medium text-page-muted md:text-lg">min</span>
 							</dd>
 						</div>
 					)}
@@ -512,7 +572,7 @@ function Home() {
 								aria-disabled={t.locked || undefined}
 								onAnimationEnd={() => setNudged(null)}
 								tabIndex={i === lit ? 0 : -1}
-								aria-label={`${t.name}${t.count ? `, ${t.count} waiting` : ""}${t.locked ? ", opens after practice" : ""}`}
+								aria-label={`${t.name}${t.count ? `, ${t.count} waiting` : ""}${t.quest ? ", a quest today" : ""}${t.locked ? (play?.shut ? ", opens after practice" : ", out of time") : ""}`}
 								aria-describedby={t.locked ? "shelf-shut" : "shelf-line"}
 								onFocus={() => setLit(i)}
 								onPointerEnter={(e) => {
@@ -535,6 +595,11 @@ function Home() {
 										{t.count > 99 ? "99+" : t.count}
 									</span>
 								) : null}
+								{t.quest && (
+									<span className="shelf-quest" aria-hidden>
+										<Target className="size-4" />
+									</span>
+								)}
 								{t.progress !== undefined && (
 									<span className="shelf-progress" aria-hidden>
 										<span style={{ width: `${Math.max(6, t.progress * 100)}%` }} />
@@ -543,7 +608,8 @@ function Home() {
 								{t.locked && (
 									<span className="shelf-lock" aria-hidden>
 										<Lock className="size-4" />
-										<span className="max-sm:sr-only">{play?.shut ? "After practice" : "Out of time"}</span>
+										{/* Every shut game shows its lock; only the lit one says why, so the shelf isn't a row of the same words. */}
+										{i === lit && <span>{play?.shut ? "After practice" : "Out of time"}</span>}
 									</span>
 								)}
 							</button>
@@ -552,36 +618,44 @@ function Home() {
 				</ul>
 
 				{/* What the lit tile is: one line, and a fact when there is one. A shut game says what opens it instead. */}
-				<div className="min-h-20 space-y-3 px-safe-5 md:px-safe-12">
-					{!current.locked && (
-						<p id="shelf-line" className="flex max-w-3xl flex-wrap items-baseline gap-x-4 gap-y-1">
-							<span className="text-lg font-medium text-balance">{current.line}</span>
-							{current.stat && (
-								<span className="inline-flex items-center gap-1.5 text-sm font-semibold text-page-muted tabular-nums">{current.stat}</span>
-							)}
-						</p>
-					)}
-					{/* While games are shut it always says what opens them, whichever tile is lit; a lit game adds the way there. */}
-					{locked && play && (
-						<ClosedLine
-							play={play}
-							childId={child.id}
-							go={
-								current.locked &&
-								subject?.go && (
-									<button type="button" className="key" data-variant="go" onClick={subject.go}>
-										Go to {subject.name}
-									</button>
-								)
-							}
-						/>
-					)}
+				<div className="min-h-20 px-safe-5 short:min-h-0 md:px-safe-12">
+					<div
+						ref={lineRef}
+						className="w-fit max-w-[min(44rem,100%)] space-y-3 transition-[translate] duration-300 ease-out-expo motion-reduce:transition-none"
+						style={{ translate: "var(--lit-x, 0px) 0" }}
+					>
+						{!current.locked && (
+							<p id="shelf-line" className="flex max-w-3xl flex-wrap items-baseline gap-x-4 gap-y-1">
+								<span className="text-lg font-medium text-balance short:text-base">{current.line}</span>
+								{current.stat && (
+									<span className="inline-flex items-center gap-1.5 text-sm font-semibold text-page-muted tabular-nums">
+										{current.stat}
+									</span>
+								)}
+							</p>
+						)}
+						{/* While games are shut it always says what opens them, whichever tile is lit; a lit game adds the way there. */}
+						{locked && play && (
+							<ClosedLine
+								play={play}
+								childId={child.id}
+								go={
+									current.locked &&
+									subject?.go && (
+										<button type="button" className="key" data-variant="go" onClick={subject.go}>
+											Go to {subject.name}
+										</button>
+									)
+								}
+							/>
+						)}
+					</div>
 				</div>
 			</section>
 
 			<footer className="flex flex-wrap items-end justify-between gap-6 px-safe-5 md:px-safe-12">
 				<nav aria-label="More" className="flex items-start gap-5 md:gap-7">
-					{play?.open && (
+					{play && (
 						<button
 							type="button"
 							className="home-action"
@@ -611,16 +685,19 @@ function Home() {
 							More time
 						</button>
 					)}
-					<Link to="/profiles" className="home-action" aria-label={`Switch from ${child.name}`}>
+					<Link to="/profiles" className="home-action" aria-label={`Who’s playing? Now ${child.name}`}>
 						<span aria-hidden>
 							<Users className="size-6" />
 						</span>
-						Switch
+						Who’s playing?
 					</Link>
 				</nav>
-				<div className="flex items-center gap-5">
+				<div className="flex items-center gap-8">
 					<p className="hidden text-sm text-page-muted lg:[@media(pointer:fine)]:block" aria-hidden>
 						<kbd className="kbd">←</kbd> <kbd className="kbd">→</kbd> choose · <kbd className="kbd">Enter</kbd> play
+					</p>
+					<p className="hidden text-sm text-page-muted md:[@media(pointer:coarse)]:block" aria-hidden>
+						Swipe to look · tap a game to play
 					</p>
 					<Brand size={18} />
 				</div>
@@ -660,13 +737,28 @@ function Home() {
 					<BadgeSheet badges={progress.badges} />
 				</Sheet>
 			)}
-			{play?.open && (
+			{play && (
 				<Sheet sheetRef={quests} title="Today’s quests">
-					<QuestBoard childId={child.id} status={play} heading={false} />
+					{locked && (
+						<p className="mb-5 text-page-muted">
+							{play.shut
+								? "Games open after practice, then these are waiting."
+								: "Out of play time for today. These are waiting for next time."}
+						</p>
+					)}
+					<QuestBoard childId={child.id} status={play} heading={false} onGo={locked ? undefined : goQuest} />
 				</Sheet>
 			)}
 			{timeCosts && play && (
 				<Sheet sheetRef={time} title="More play time">
+					<p className="mb-5 text-pretty">
+						{minutesLeft > 0
+							? `You have ${minutesLeft} ${minutesLeft === 1 ? "minute" : "minutes"} of play left today.`
+							: "Your play time for today is used up."}{" "}
+						<span className="text-page-muted">
+							Every {TIME_BLOCK.stars} stars from Spelling and Math buy {TIME_BLOCK.minutes} more minutes.
+						</span>
+					</p>
 					<MoreTime childId={child.id} status={play} />
 				</Sheet>
 			)}

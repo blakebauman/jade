@@ -1,7 +1,7 @@
 import { type Quest, type QuestDay, questCollectable, questDone, questHave } from "@jade/core";
 import { withName } from "@jade/core/roxy";
 import { useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Ticket } from "lucide-react";
+import { BadgeCheck, Play, Ticket } from "lucide-react";
 import { useId, useState } from "react";
 import { type PlayStatus, playQuery } from "#/lib/play.ts";
 import { collectQuest, useQuests } from "#/lib/quests.ts";
@@ -12,10 +12,21 @@ const TILTS = ["-1.5deg", "1deg", "-0.75deg"];
 
 /**
  * Today's three quests, in the home shelf's Quests sheet. One still to do is a solid card with how far along it is; a
- * finished one is a berry sticker with its tickets to collect (or just "Done" while games are Free).
+ * finished one is a berry sticker with its tickets to collect (or just "Done" while games are Free). With `onGo`, a card
+ * still to do is a button that takes the kid to its game.
  */
 /** `heading={false}` inside a sheet that already says "Today's quests". */
-export function QuestBoard({ childId, status, heading = true }: { childId: string; status: PlayStatus; heading?: boolean }) {
+export function QuestBoard({
+	childId,
+	status,
+	heading = true,
+	onGo,
+}: {
+	childId: string;
+	status: PlayStatus;
+	heading?: boolean;
+	onGo?: (quest: Quest) => void;
+}) {
 	const id = useId();
 	const { quests, state } = useQuests(childId);
 	const done = quests.filter((q) => questDone(q, state)).length;
@@ -37,14 +48,36 @@ export function QuestBoard({ childId, status, heading = true }: { childId: strin
 			</div>
 			<ul className="mt-3 grid gap-4 sm:grid-cols-3">
 				{quests.map((q, i) => (
-					<QuestCard key={q.id} childId={childId} quest={q} state={state} free={status.settings.free} tilt={TILTS[i % TILTS.length]!} />
+					<QuestCard
+						key={q.id}
+						childId={childId}
+						quest={q}
+						state={state}
+						free={status.settings.free}
+						tilt={TILTS[i % TILTS.length]!}
+						onGo={onGo}
+					/>
 				))}
 			</ul>
 		</section>
 	);
 }
 
-function QuestCard({ childId, quest, state, free, tilt }: { childId: string; quest: Quest; state: QuestDay; free: boolean; tilt: string }) {
+function QuestCard({
+	childId,
+	quest,
+	state,
+	free,
+	tilt,
+	onGo,
+}: {
+	childId: string;
+	quest: Quest;
+	state: QuestDay;
+	free: boolean;
+	tilt: string;
+	onGo?: (quest: Quest) => void;
+}) {
 	const qc = useQueryClient();
 	const [busy, setBusy] = useState(false);
 	const have = questHave(quest, state);
@@ -52,9 +85,9 @@ function QuestCard({ childId, quest, state, free, tilt }: { childId: string; que
 	// Quests are written about Roxy; they say whatever this kid calls their character.
 	const label = withName(quest.label, useCharacterName(childId));
 
-	if (!questDone(quest, state))
-		return (
-			<li className="grid min-h-32 content-center justify-items-center gap-2 rounded-2xl bg-page-deep p-4 text-center">
+	if (!questDone(quest, state)) {
+		const body = (
+			<>
 				<span className="font-display text-lg font-medium text-page-ink">{label}</span>
 				<span className="text-sm font-medium text-page-muted tabular-nums">
 					{have} of {quest.need}
@@ -65,8 +98,24 @@ function QuestCard({ childId, quest, state, free, tilt }: { childId: string; que
 						<Ticket className="size-4" aria-hidden /> {quest.tickets} tickets
 					</span>
 				)}
-			</li>
+				{onGo && (
+					<span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-page-ink" aria-hidden>
+						<Play className="size-4 fill-current" /> Play
+					</span>
+				)}
+			</>
 		);
+		const card = "grid min-h-32 w-full content-center justify-items-center gap-2 rounded-2xl bg-page-deep p-4 text-center";
+		return onGo ? (
+			<li className="flex">
+				<button type="button" className={`quest-go ${card}`} onClick={() => onGo(quest)}>
+					{body}
+				</button>
+			</li>
+		) : (
+			<li className={card}>{body}</li>
+		);
+	}
 
 	async function collect() {
 		setBusy(true);
