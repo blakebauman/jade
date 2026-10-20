@@ -1,6 +1,6 @@
 import { BADGES, goalProgress, questCollectable, type SPELLING_MODES } from "@jade/core";
 import { TOPIC_LABEL } from "@jade/core/math";
-import { FINDS } from "@jade/core/roxy";
+import { characterName, FINDS } from "@jade/core/roxy";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -187,6 +187,7 @@ function Home() {
 	const navigate = useNavigate();
 	const { data: progress } = useQuery(progressQuery(child.id));
 	const { data: roxy } = useQuery(roxyQuery(child.id));
+	const roxyName = characterName(roxy && shownLook(child.id, roxy));
 	const { data: play } = useQuery(playQuery(child.id));
 	const { data: lists } = useQuery(listsQuery);
 	const spellingLeft = resumableRound(child.id);
@@ -220,7 +221,7 @@ function Home() {
 	const tiles: Record<TileId, Tile> = {
 		roxy: {
 			id: "roxy",
-			name: "Roxy",
+			name: roxyName,
 			line: "Style your own character, then turn them into an animal with a magic gem.",
 			stat: holiday && (
 				<>
@@ -236,8 +237,8 @@ function Home() {
 		},
 		town: {
 			id: "town",
-			name: "Roxy’s town",
-			line: "Take Roxy and your pet to the park, the pet shop and school, and find what’s hidden.",
+			name: `${roxyName}’s town`,
+			line: `Take ${roxyName} and your pet to the park, the pet shop and school, and find what’s hidden.`,
 			stat: roxy && `${roxy.finds.length} of ${FINDS.length} found`,
 			art: <Art src="/tiles/town.webp" />,
 			go: game("/play/$childId/games/roxy/town"),

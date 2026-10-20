@@ -6,6 +6,7 @@ import { call, signUp } from "./helpers.ts";
 type Studio = {
 	current: Look;
 	wornLookId: string | null;
+	fresh: boolean;
 	looks: { id: string; name: string; look: Look }[];
 	unlocked: string[];
 	wallet: { free: boolean; tickets: number; stars: number | null };
@@ -45,11 +46,20 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 describe("roxy", () => {
 	it("starts each child from their own look, and keeps other families out", async () => {
-		const { id, studio, base } = await family();
+		const { id, studio, base, cookie } = await family();
 		const first = await studio();
 		expect(first.current).toEqual(starterLook(id));
-		expect(first).toMatchObject({ looks: [], unlocked: [], wallet: { free: false, tickets: 0, stars: null }, wornLookId: null });
+		expect(first).toMatchObject({
+			looks: [],
+			unlocked: [],
+			wallet: { free: false, tickets: 0, stars: null },
+			wornLookId: null,
+			fresh: true,
+		});
 		expect((await call(base, { cookie: await signUp() })).status).toBe(404);
+		// Once anything is saved, the kid isn't new.
+		await call(`${base}/current`, { method: "PUT", cookie, json: { look: first.current } });
+		expect((await studio()).fresh).toBe(false);
 	});
 
 	it("spends tickets once per item, and never more than the child has", async () => {
@@ -137,6 +147,18 @@ describe("roxy", () => {
 		const gone = await studio();
 		expect(gone.looks).toHaveLength(11);
 		expect(gone.wornLookId).toBeNull();
+	});
+
+	it("keeps the character's name when a saved look goes back on", async () => {
+		const { id, base, cookie, post, studio } = await family();
+		const saved = (await (await post("/looks", { name: "Old", look: { ...starterLook(id), name: "Pip" } })).json()) as { id: string };
+		const put = await call(`${base}/current`, { method: "PUT", cookie, json: { look: { ...starterLook(id), name: "Max" } } });
+		expect(put.status).toBe(200);
+		expect((await studio()).current.name).toBe("Max");
+		await call(`${base}/looks/${saved.id}`, { method: "PATCH", cookie, json: { wear: true } });
+		const after = await studio();
+		expect(after.wornLookId).toBe(saved.id);
+		expect(after.current.name).toBe("Max");
 	});
 
 	it("gives a holiday's gift free while it's open, unless the family turned it off", async () => {

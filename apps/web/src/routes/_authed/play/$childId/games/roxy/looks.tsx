@@ -1,4 +1,4 @@
-import { MAX_SAVED_LOOKS } from "@jade/core/roxy";
+import { characterName, MAX_SAVED_LOOKS } from "@jade/core/roxy";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, House, Pencil, Shirt, Star, Ticket, Trash2 } from "lucide-react";
@@ -52,14 +52,14 @@ function MyLooks() {
 		<main className="mx-auto min-h-dvh max-w-6xl px-safe-5 py-safe-6 md:px-safe-10">
 			<header className="flex flex-wrap items-center gap-3">
 				<Link to="/play/$childId/games/roxy" params={{ childId: child.id }} className="key" data-variant="felt">
-					<ArrowLeft className="size-5" aria-hidden /> Roxy
+					<ArrowLeft className="size-5" aria-hidden /> {characterName(look)}
 				</Link>
 				<h1 className="font-display text-3xl font-semibold">{child.name}’s looks</h1>
 			</header>
 
 			<section aria-label={`${child.name}’s profile`} className="patch mt-8 flex flex-wrap items-center gap-6 p-5 md:p-6">
 				<div className="w-36 shrink-0 overflow-hidden rounded-xl md:w-44">
-					<RoxyFigure look={look} title={`${child.name}’s Roxy`} className="block h-auto w-full" />
+					<RoxyFigure look={look} title={`${child.name}’s ${characterName(look)}`} className="block h-auto w-full" />
 				</div>
 				<div className="min-w-0 flex-1 space-y-4">
 					<div>
@@ -116,10 +116,10 @@ function MyLooks() {
 				<section className="patch mt-10 flex flex-wrap items-center justify-between gap-5 p-6">
 					<div>
 						<h2 className="text-2xl font-semibold">No saved looks yet</h2>
-						<p className="text-page-muted">Style your Roxy, then tap Save look to keep it here.</p>
+						<p className="text-page-muted">Style {characterName(look)}, then tap Save look to keep it here.</p>
 					</div>
 					<Link to="/play/$childId/games/roxy" params={{ childId: child.id }} className="key" data-variant="go">
-						<Shirt className="size-5" aria-hidden /> Style Roxy
+						<Shirt className="size-5" aria-hidden /> Style {characterName(look)}
 					</Link>
 				</section>
 			) : (

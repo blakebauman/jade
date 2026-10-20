@@ -88,6 +88,8 @@ async function studio(db: Db, parentId: string, childId: string, day: string) {
 		finds: finds.map((f) => f.findId),
 		current: current ? withoutHolidays(JSON.parse(current.lookJson) as Look, off) : starterLook(childId),
 		wornLookId: current?.wornLookId ?? null,
+		/** Nothing saved yet: a new kid, who's offered a few looks to start from. */
+		fresh: !current,
 		looks: looks.map((l) => ({ id: l.id, name: l.name, look: JSON.parse(l.lookJson) as Look, createdAt: l.createdAt.getTime() })),
 		unlocked: [...unlocked],
 		wallet,
@@ -245,12 +247,17 @@ export const roxyRoutes = new Hono<AppEnv>()
 			const { name, wear } = c.req.valid("json");
 			if (name) await db.update(schema.roxyLooks).set({ name }).where(where);
 			if (wear) {
+				// The character keeps the name the kid calls them now, whatever it was when this look was saved.
+				const current = await db.query.roxyCurrent.findFirst({ where: eq(schema.roxyCurrent.childId, child.id) });
+				const { name: _, ...saved } = JSON.parse(row.lookJson) as Look;
+				const name = current && (JSON.parse(current.lookJson) as Look).name;
+				const lookJson = JSON.stringify(name ? { ...saved, name } : saved);
 				await db
 					.insert(schema.roxyCurrent)
-					.values({ childId: child.id, lookJson: row.lookJson, wornLookId: row.id })
+					.values({ childId: child.id, lookJson, wornLookId: row.id })
 					.onConflictDoUpdate({
 						target: schema.roxyCurrent.childId,
-						set: { lookJson: row.lookJson, wornLookId: row.id, updatedAt: new Date() },
+						set: { lookJson, wornLookId: row.id, updatedAt: new Date() },
 					});
 			}
 			return c.json({ ok: true });

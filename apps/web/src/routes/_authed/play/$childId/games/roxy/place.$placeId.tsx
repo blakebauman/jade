@@ -1,5 +1,5 @@
 import { FIND_TICKETS } from "@jade/core";
-import { FIND_BY_ID, FINDS, PLACE_INFO, PLACES, type PlaceId } from "@jade/core/roxy";
+import { characterName, FIND_BY_ID, FINDS, PLACE_INFO, PLACES, type PlaceId } from "@jade/core/roxy";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, Calculator, Gift, PawPrint, Search } from "lucide-react";
@@ -65,6 +65,7 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 	const id = useId();
 	const info = PLACE_INFO[place];
 	const look = shownLook(childId, data);
+	const name = characterName(look);
 	const finds = FINDS.filter((f) => f.place === place);
 	// Finds this device hasn't got onto the server yet count too, so they survive a reload offline.
 	const [found, setFound] = useState(() => new Set([...data.finds, ...pendingFinds(childId)]));
@@ -212,7 +213,7 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 					<ArrowLeft aria-hidden />
 				</Link>
 			}
-			eyebrow="Roxy’s town"
+			eyebrow={`${name}’s town`}
 			title={accent(info.label)}
 			orbs={<Destinations childId={childId} here={place} />}
 			status={
@@ -265,7 +266,7 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 							<h2 id={`${id}-board`} className="font-display text-xl font-semibold">
 								The chalkboard
 							</h2>
-							<p className="text-page-muted">Practice earns stars for Roxy’s wardrobe and home.</p>
+							<p className="text-page-muted">Practice earns stars for {name}’s wardrobe and home.</p>
 							<div className="flex flex-wrap gap-2">
 								<Link to="/play/$childId/spelling" params={{ childId }} className="key" onClick={() => speaker.unlock()}>
 									<BookOpen className="size-5" aria-hidden /> Spelling
@@ -281,7 +282,7 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 							<h2 id={`${id}-adopt`} className="font-display text-xl font-semibold">
 								Adopt a pet
 							</h2>
-							<p className="text-page-muted">Cats, dogs, bunnies, lizards and more. Pick one to walk with Roxy.</p>
+							<p className="text-page-muted">Cats, dogs, bunnies, lizards and more. Pick one to walk with {name}.</p>
 							<Link to="/play/$childId/games/roxy" params={{ childId }} search={{ tab: "pets" }} className="key">
 								<PawPrint className="size-5" aria-hidden /> Choose a pet
 							</Link>

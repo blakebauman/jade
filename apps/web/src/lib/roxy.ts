@@ -1,4 +1,5 @@
 import {
+	characterName,
 	type HolidayId,
 	type Home,
 	ITEM,
@@ -10,7 +11,7 @@ import {
 	type Worn,
 	wear,
 } from "@jade/core/roxy";
-import { type QueryClient, queryOptions, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api.ts";
 import { dayKey, prefersReducedMotion } from "./hooks.ts";
@@ -32,6 +33,8 @@ export type OpenHoliday = {
 export type Studio = {
 	current: Look;
 	wornLookId: string | null;
+	/** Nothing saved for this kid yet (missing from copies cached before it existed). */
+	fresh?: boolean;
 	looks: SavedLook[];
 	/** Everything sold, too, while this kid's games are free. */
 	unlocked: string[];
@@ -109,6 +112,12 @@ function writeDraft(childId: string, d: Draft) {
 export function shownLook(childId: string, server: Studio): Look {
 	const local = readDraft(childId);
 	return local?.dirty ? local.look : server.current;
+}
+
+/** What this kid calls their character ("Roxy" until they pick a name), for titles and lines around the games. */
+export function useCharacterName(childId: string) {
+	const { data } = useQuery(roxyQuery(childId));
+	return characterName(data ? shownLook(childId, data) : (readDraft(childId)?.look ?? undefined));
 }
 
 const UNDO_LIMIT = 40;

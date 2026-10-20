@@ -44,7 +44,7 @@ export function BuyChoice({
 					) : (
 						<>
 							<span className="font-display text-lg font-semibold">{name[0]!.toUpperCase() + name.slice(1)}</span> costs{" "}
-							{plural(cost, "ticket", "tickets")}. Earn {cost - wallet.tickets} more in Roxy’s town or Gobble Town
+							{plural(cost, "ticket", "tickets")}. Earn {cost - wallet.tickets} more in the town or Gobble Town
 							{wallet.stars !== null && <>, or use stars from Spelling and Math once you have {cost}</>}.
 						</>
 					)}

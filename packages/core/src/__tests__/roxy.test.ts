@@ -3,6 +3,7 @@ import { seeded } from "../math/rng.ts";
 import {
 	activeHolidays,
 	canonicalLook,
+	characterName,
 	easter,
 	fingerprint,
 	HOLIDAYS,
@@ -12,15 +13,18 @@ import {
 	isOwned,
 	type Look,
 	lockedItemsIn,
+	NAME_MAX,
 	normalizeLook,
 	PALETTES,
 	REQUIRED_SLOTS,
 	randomLook,
 	SLOTS,
+	starterChoices,
 	starterLook,
 	TABS,
 	thanksgiving,
 	wear,
+	withName,
 	withoutHolidays,
 } from "../roxy/index.ts";
 
@@ -159,6 +163,46 @@ describe("pets", () => {
 		const pet = wear(base, "pet", { item: "pet-cat", c1: "p4", c2: "p6" });
 		expect(await fingerprint({ ...pet, petName: "Biscuit" })).toBe(await fingerprint({ ...pet, petName: "Mochi" }));
 		expect(await fingerprint(pet)).not.toBe(await fingerprint(wear(pet, "pet", { item: "pet-cat", c1: "p1", c2: "p6" })));
+	});
+});
+
+describe("starter choices", () => {
+	it("offer a new kid their own starter and three others: two in separates with nothing sparkly (one with short hair and trousers or shorts), one in a dress", () => {
+		for (const childId of Array.from({ length: 60 }, (_, i) => `kid-${i}`)) {
+			const choices = starterChoices(childId);
+			expect(choices).toHaveLength(4);
+			expect(choices[0]).toEqual(starterLook(childId));
+			expect(starterChoices(childId)).toEqual(choices);
+			const plain = choices.slice(1, 3);
+			for (const l of plain) {
+				expect(l.slots.dress).toBeUndefined();
+				expect([l.slots.earrings, l.slots.necklace, l.slots.blush]).toEqual([undefined, undefined, undefined]);
+			}
+			expect(["hair-buzz", "hair-pixie", "hair-cornrows", "hair-curly", "hair-coily"]).toContain(choices[1]!.slots.hair?.item);
+			expect(["bottom-jeans", "bottom-cargo", "bottom-shorts"]).toContain(choices[1]!.slots.bottom?.item);
+			expect(choices[3]!.slots.dress).toBeDefined();
+			expect(new Set(choices.map((l) => l.slots.hair?.item)).size).toBe(4);
+			for (const l of choices) expect(normalizeLook(l)).toEqual(l);
+		}
+	});
+});
+
+describe("the character's name", () => {
+	const look = starterLook("namer");
+
+	it("is Roxy until the kid picks one, and isn't part of the look", async () => {
+		expect(characterName(look)).toBe("Roxy");
+		const named = normalizeLook({ ...look, name: "  Max " })!;
+		expect(named.name).toBe("Max");
+		expect(characterName(named)).toBe("Max");
+		expect(characterName(normalizeLook({ ...look, name: "   " })!)).toBe("Roxy");
+		expect(normalizeLook({ ...look, name: "x".repeat(NAME_MAX + 1) })).toBeNull();
+		expect(await fingerprint(named)).toBe(await fingerprint(look));
+	});
+
+	it("goes into lines written about Roxy", () => {
+		expect(withName("Take Roxy to the park", "Kai")).toBe("Take Kai to the park");
+		expect(withName("Take Roxy to the park", "Roxy")).toBe("Take Roxy to the park");
 	});
 });
 

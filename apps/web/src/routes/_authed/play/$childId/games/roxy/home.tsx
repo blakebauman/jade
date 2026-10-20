@@ -1,4 +1,5 @@
 import {
+	characterName,
 	FLOORS,
 	FURNITURE,
 	FURNITURE_BY_ID,
@@ -109,6 +110,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 	useSendFinds(childId);
 	const home = draft.home;
 	const look = shownLook(childId, data);
+	const name = characterName(look);
 	const [mode, setMode] = useState<"play" | "decorate">("play");
 	const [walkTo, setWalkTo] = useState<{ x: number; z: number } | null>(null);
 	const [selected, setSelected] = useState<string | null>(null);
@@ -201,7 +203,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 							walkTo={walkTo}
 							drive={drive}
 							selected={mode === "decorate" ? selected : null}
-							label={`Roxy’s home: ${home.items.length} things in the room`}
+							label={`${name}’s home: ${home.items.length} things in the room`}
 							onFloor={(spot) => {
 								if (mode === "decorate" && picked && pickedItem && pickedItem.kind !== "wall") {
 									const turned = picked.rot % 2 === 1;
@@ -245,7 +247,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 					<ArrowLeft aria-hidden />
 				</Link>
 			}
-			eyebrow="Roxy’s world"
+			eyebrow={`${name}’s world`}
 			title={
 				<>
 					Roxy’s <span>home</span>
@@ -295,7 +297,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 					<p role="status" className="text-sm">
 						{message ??
 							(mode === "play"
-								? "Tap the floor and Roxy walks there."
+								? `Tap the floor and ${name} walks there.`
 								: picked
 									? "Tap the floor (or a wall) to move it there, or use the keys."
 									: "Pick something to add, or tap a piece in the room to move it.")}

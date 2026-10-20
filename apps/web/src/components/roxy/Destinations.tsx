@@ -2,6 +2,7 @@ import { PLACE_INFO, PLACES, type PlaceId } from "@jade/core/roxy";
 import { Link } from "@tanstack/react-router";
 import { MapPinned } from "lucide-react";
 import { useRef } from "react";
+import { useCharacterName } from "#/lib/roxy.ts";
 
 /** Where Roxy is now: the studio, her home, or a place in town. */
 export type Here = "studio" | "home" | PlaceId;
@@ -12,6 +13,7 @@ export type Here = "studio" | "home" | PlaceId;
  */
 export function Destinations({ childId, here }: { childId: string; here: Here }) {
 	const dialog = useRef<HTMLDialogElement>(null);
+	const name = useCharacterName(childId);
 	const close = () => dialog.current?.close();
 	const row = "key w-full !justify-between";
 	const mark = (id: Here) =>
@@ -45,7 +47,7 @@ export function Destinations({ childId, here }: { childId: string; here: Here })
 				<h2 id="destinations-title" className="mb-4 font-display text-xl font-semibold">
 					Where to?
 				</h2>
-				<nav aria-label="Places in Roxy’s world" className="grid gap-2">
+				<nav aria-label={`Places in ${name}’s world`} className="grid gap-2">
 					<Link
 						to="/play/$childId/games/roxy"
 						params={{ childId }}
@@ -64,7 +66,7 @@ export function Destinations({ childId, here }: { childId: string; here: Here })
 						aria-current={here === "home" ? "page" : undefined}
 						onClick={close}
 					>
-						Roxy’s home {mark("home")}
+						{name}’s home {mark("home")}
 					</Link>
 					{PLACES.map((p) => (
 						<Link

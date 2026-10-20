@@ -82,7 +82,7 @@ test("locked items cost tickets, stars too once a parent links them, and an exac
 	await page.goto(`/play/${ava}/games/roxy`);
 	await page.getByRole("tab", { name: "Face" }).click();
 	await page.getByRole("button", { name: "Starry, 15 tickets" }).click();
-	await expect(page.getByText(/Earn 15 more in Roxy’s town or Gobble Town/)).toBeVisible();
+	await expect(page.getByText(/Earn 15 more in the town or Gobble Town/)).toBeVisible();
 	await page.getByRole("button", { name: "Not now", exact: true }).click();
 
 	// Stars from practice don't spend in games until a parent links them.
@@ -116,7 +116,7 @@ test("locked items cost tickets, stars too once a parent links them, and an exac
 	await page.goto(`/play/${ava}/games/roxy`);
 	await page.getByRole("button", { name: "Save look" }).click();
 	await page.getByRole("button", { name: "Save", exact: true }).click();
-	await expect(page.getByText("Someone already made this exact Roxy! Change one thing to make it yours.")).toBeVisible();
+	await expect(page.getByText("Someone already made this exact look! Change one thing to make it yours.")).toBeVisible();
 });
 
 test("a holiday's collection shows in its week, and a parent can turn it off", async ({ page }) => {
@@ -165,7 +165,7 @@ test("decorate Roxy's home, and it's still there after a reload", async ({ page 
 	await page.getByRole("button", { name: "Dots", exact: true }).click();
 	// Locked furniture asks for tickets it doesn't have yet.
 	await page.getByRole("button", { name: "Add Piano, 30 tickets" }).click();
-	await expect(page.getByText(/Earn 30 more in Roxy’s town or Gobble Town/)).toBeVisible();
+	await expect(page.getByText(/Earn 30 more in the town or Gobble Town/)).toBeVisible();
 
 	await saved;
 	await page.evaluate((id) => localStorage.removeItem(`jade.roxyhome.${id}`), ids[0]!);
