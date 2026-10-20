@@ -17,7 +17,6 @@ colors:
   page-muted-day: "#555e70"
   page-pit-day: "#d5d9e1"
   brand: "#d62c27"
-  brand-deep: "#ab1d19"
   select: "#1d9bf0"
   select-day-name: "color-mix(in oklab, #1d9bf0 78%, black)"
   action-white: "#ffffff"
@@ -97,7 +96,7 @@ typography:
     fontSize: "18px to 36px"
     fontWeight: 700
     lineHeight: 1
-    letterSpacing: "-0.01em"
+    letterSpacing: "0.005em"
   tile:
     fontFamily: "var(--tile-face, Fredoka Variable), ui-rounded, system-ui, sans-serif"
     fontSize: "0.56em of tile edge"
@@ -149,12 +148,9 @@ components:
     backgroundColor: "{colors.brand}"
     rounded: "{rounded.pill}"
     height: "0.45rem"
-  brand-plate:
-    backgroundColor: "{colors.brand}"
-    textColor: "{colors.action-white}"
+  brand-sticker:
+    textColor: "{colors.brand}"
     typography: "{typography.wordmark}"
-    rounded: "{rounded.pill}"
-    padding: "0.16em 0.62em 0.24em"
   home-action:
     backgroundColor: "{colors.action-white}"
     textColor: "{colors.action-ink}"
@@ -266,7 +262,7 @@ components:
 
 **Creative North Star: "Console Home"**
 
-Jade's World is a games portal laid out as a console's home menu. A plain shell holds one shelf of big glossy square tiles: every game (Roxy, Roxy's town, Gobble Town, Jelly Blocks, Campfire Woods) and Spelling and Math among them, the one the kid pressed last first. One tile is lit at a time. The lit tile wears a thick select-blue ring standing off its corners, grows a touch on a quick spring, and shows its name above it in blue. Under the shelf sit one line about the lit tile and a row of round white action buttons. One brand red owns the wordmark plate, the counts on tiles and the progress bars. Nothing else is on the shell. There is no texture, no paper and no decoration.
+Jade's World is a games portal laid out as a console's home menu. A plain shell holds one shelf of big glossy square tiles: every game (Roxy, Roxy's town, Gobble Town, Jelly Blocks, Campfire Woods) and Spelling and Math among them, the one the kid pressed last first. One tile is lit at a time. The lit tile wears a thick select-blue ring standing off its corners, grows a touch on a quick spring, and shows its name above it in blue. Under the shelf sit one line about the lit tile and a row of round white action buttons. One brand red owns the wordmark sticker, the counts on tiles and the progress bars. Nothing else is on the shell. There is no texture, no paper and no decoration.
 
 The shell has two lights and one set of token names. **Night** (the CSS default) is neutral charcoal, lit a touch from above. **Day** is a pale cool grey, a touch brighter at the top. The parent picks Auto, Day or Night in Settings, and Auto follows the device live. The tiles carry the colour: real art captured from each game, edge to edge, or for Spelling and Math, the round's own maple tiles on the subject hue. Rounds are where the quiet craft lives: maple letter tiles judged by four law colours, unchanged from before the portal. Game screens are unchanged too: the scene fills the window, always daylit, with small glass chrome in the corners. What a kid earns keeps its material: badges are stickers, stars and streak are silver foil, tickets are berry stubs.
 
@@ -276,7 +272,7 @@ Density is low and scale is big. A tile is about 40% of the viewport tall, so a 
 - A plain shell in two lights: Night charcoal, Day pale cool grey. No texture, no paper.
 - One shelf of big square tiles (1.4rem corners, a top-corner gloss), each filled edge to edge with art from its game. Spelling and Math are two tiles among the games.
 - One lit tile at a time: a 0.3rem select-blue ring 0.35rem off its corners, a 1.035 scale on a spring, and its name above in Fredoka.
-- One brand red for the wordmark plate, the corner counts and the progress bars.
+- One brand red for the wordmark sticker, the corner counts and the progress bars.
 - Round white action buttons with their word beneath (Quests, Badges, More time, Switch).
 - "Who's playing?": each kid a big round vinyl sticker that takes the same select ring.
 - Maple tiles and the four law colours inside rounds, and as the picture of a round on the Spelling and Math tiles.
@@ -296,7 +292,7 @@ Night values are the unsuffixed keys and the CSS default. The Day values (`-day`
 - **Shell Pit** (page-pit / page-pit-day): where a tile goes. Empty squares, fields and the disabled Check recess.
 
 ### Secondary (brand and select)
-- **Brand Red** (brand, with **Brand Red Deep** brand-deep at the plate's foot): the wordmark plate, the app icon and launch-screen tile, the round count on a shelf tile's corner (with a white 0.18rem ring), the progress bar along a waiting round's tile, and the filling strip of a star goal while Play is shut. The same in both lights.
+- **Brand Red** (brand): the wordmark sticker's letters, the app icon and launch-screen tile, the round count on a shelf tile's corner (with a white 0.18rem ring), the progress bar along a waiting round's tile, and the filling strip of a star goal while Play is shut. The same in both lights.
 - **Select Blue** (select): the lit tile's ring, the lit tile's name at Night, and the ring on "Who's playing?" and on focused action buttons. By Day the name darkens to **Select Name Day** (select-day-name, 4.7:1 on the Day shell); the ring stays select.
 - **Action White** (action-white, shaded to #f1f3f6 and #e3e7ec) with **Action Ink** (action-ink): the face and glyph of the round action buttons. They are fixed in both lights.
 
@@ -322,7 +318,7 @@ Night values are the unsuffixed keys and the CSS default. The Day values (`-day`
 ### Named Rules
 **The One Light Rule.** Exactly one tile on the shelf is lit, and select blue marks only that tile (its ring and its name) or the thing under the keyboard or pointer on a picker. Blue is never decoration, a link colour or a fill.
 
-**The One Red Rule.** Brand red is the wordmark plate, a count of what's waiting, and how far something has come. It never marks an error and never appears in a round or on a tile's letters, so it can't be read beside coral as "wrong".
+**The One Red Rule.** Brand red is the wordmark sticker, a count of what's waiting, and how far something has come. It never marks an error and never appears in a round or on a tile's letters, so it can't be read beside coral as "wrong".
 
 **The One Law Rule.** Each law colour means one thing everywhere: marigold is right, coral is a wrong letter, sky is a missing letter, stone is an extra letter. Test: if you can't finish "this colour here means ___" with its law, the colour is wrong.
 
@@ -352,7 +348,7 @@ Night values are the unsuffixed keys and the CSS default. The Day values (`-day`
 - **Body** (Lexend 400, 1rem; 1.125rem for the sign-in lede, max 48ch): sheet copy, helper text and parent screens.
 - **Action label** (Lexend 600, 0.875rem): the word under each round action button.
 - **Label** (Fredoka 600, 1.05rem): every key label.
-- **Wordmark** (Fredoka 700, -0.01em): "jade's world" on the red plate. 36px on sign-in, 26px on the kid picker, 22px in the parent header, 18px in the home's footer.
+- **Wordmark** (Fredoka 700, 0.005em): "jade's world" as a red die-cut sticker. 36px on sign-in, 26px on the kid picker, 22px in the parent header, 18px in the home's footer.
 - **Tile letter** (tile face 600, 0.56 of the edge): debossed, with a light lower lip and a shadowed upper lip.
 
 ### Named Rules
@@ -392,7 +388,7 @@ Depth is soft and low. The shell is flat, with one gradient of light from the to
 ### Shadow Vocabulary
 - **Shelf tile** (`0 0.5rem 1rem -0.4rem var(--tone-drop-deep), 0 0.08rem 0.2rem var(--tone-drop)`; lit `0 0.9rem 1.8rem -0.6rem …, 0 0.1rem 0.25rem …`): the lit tile casts further as it grows. A gloss band sits on top (`linear-gradient(150deg, white 22% → 4% by 28%, clear from 29%)` with a 1px inner white line at 12%).
 - **Action button** (`inset 0 -0.15rem 0 rgb(27 33 48 / 0.08), 0 0.35rem 0.7rem -0.25rem var(--tone-drop-deep), 0 0.05rem 0.12rem var(--tone-drop)`).
-- **Brand plate** (`inset 0 0.06em 0 rgb(255 255 255 / 0.35), inset 0 -0.06em 0 rgb(0 0 0 / 0.12), 0 0.12em 0.3em -0.05em var(--tone-drop-deep)`).
+- **Brand sticker** (an SVG filter in `Brand`: an edge of black at 0.3, blur 0.018em, and a drop of black at 0.32, 0.05em down, blur 0.03em): both are cast by the cut line, not the letters. The faint edge keeps the white line visible on Day's pale shell; the soft drop lifts it. Fixed in both lights.
 - **Shelf count** (`0 0 0 0.18rem #fff, 0 0.2rem 0.4rem rgb(0 0 0 / 0.3)`): a white ring that separates the red from any art.
 - **Key** (`inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 0.25em 0.5em -0.2em var(--tone-drop-deep)`). The `go` key adds a bevel of its own ink.
 - **Tile** (`inset 0 -0.3em 0 var(--tile-edge), inset 0 1px 0 rgb(255 255 255 / .6), inset 0 0 0 1px rgb(120 78 34 / .12), 0 .35em .7em -.1em var(--tone-drop)`): the bevel colour is the law slot.
@@ -407,9 +403,9 @@ Depth is soft and low. The shell is flat, with one gradient of light from the to
 
 ## Shapes
 
-Corners are soft. Shelf tiles are squares with 1.4rem corners, clipping their art. Keys are 0.85rem, fields 0.8rem, patches 1.25rem and sheets 1.75rem. Letter tiles and squares use an 18% radius at every size. Action buttons, kid stickers, shelf counts, progress bars, lock pills, the brand plate, foil chips and glass orbs are full rounds. The select ring is an outline 0.3rem wide standing 0.35rem off a tile's corners (0.4rem off a kid sticker), so it follows the corner rather than hugging it.
+Corners are soft. Shelf tiles are squares with 1.4rem corners, clipping their art. Keys are 0.85rem, fields 0.8rem, patches 1.25rem and sheets 1.75rem. Letter tiles and squares use an 18% radius at every size. Action buttons, kid stickers, shelf counts, progress bars, lock pills, foil chips and glass orbs are full rounds. The select ring is an outline 0.3rem wide standing 0.35rem off a tile's corners (0.4rem off a kid sticker), so it follows the corner rather than hugging it.
 
-Tilt survives only on earned stickers: badge stickers cycle through -5, 4, -3, 6, -4, 3, -6, 4deg by position, and finished quest stickers sit at -1.5, 1 and -0.75deg. Shelf tiles, action buttons and the wordmark are square to the screen. In Tiles mode the bank's tiles are scattered at -4 to +4deg, deterministically.
+Tilt survives only on the wordmark and earned stickers: the wordmark sits at -3deg, badge stickers cycle through -5, 4, -3, 6, -4, 3, -6, 4deg by position, and finished quest stickers sit at -1.5, 1 and -0.75deg. Shelf tiles and action buttons are square to the screen. In Tiles mode the bank's tiles are scattered at -4 to +4deg, deterministically.
 
 ## Components
 
@@ -434,7 +430,7 @@ A native `<dialog>` in the shell's light: Raised Shell, a 1.75rem radius, up to 
 - **Quests:** three cards. One still to do is a Shell Shadow card with "n of N" and its tickets. A finished one is a berry sticker with Collect (a `go` key with its ticket) or "Done!".
 
 ### Wordmark (`Brand`)
-"jade's world" in white Fredoka 700 on one brand-red pill plate. The plate runs a vertical gradient from red lightened 12% to brand to brand-deep, with a lit lip on top. The j is dotless, and a white five-point star (0.36em) dots it, as on the app icon. It is fixed in both lights.
+"jade's world" as a die-cut vinyl sticker (`.brand-sticker`), the kind a kid sticks on a laptop. The letters are brand-red Fredoka 700 at 0.005em, inside one white cut line drawn by an SVG filter in `Brand`: the letters' shape grown by 0.12em (`feMorphology` dilate, worked out from the `size` prop in pixels), rounded off and filled white. It is a filter, not a text stroke, because Fredoka's outlines overlap and a stroke leaves specks of shell where they cross. The sticker is turned -3deg and casts the brand sticker shadow. The j is dotless, and a red five-point star (0.36em) dots it, inside the same cut line, as on the app icon. Red on the white line is 4.9:1. It is fixed in both lights. It belongs with the earned stickers' material, not the shell's.
 
 ### Buttons (the key)
 One class, `.key`, with variants in `data-variant`.
@@ -488,7 +484,7 @@ Every shipping raster and its source:
 - **Game tiles** (`apps/web/public/tiles/town.webp`, `gobble.webp`, `jelly.webp`, `woods.webp`): 720×720 WebP at quality 82, captured 2026-10-18 with headless Playwright Chromium (SwiftShader WebGL) from the app's own dev server. The viewport was 1200×1200, with every DOM element but the canvas hidden. town is `/games/roxy/place/park` after 9s. gobble is `/games/gobble` with the test hooks `setSeed(7)` and `setState("late-game")`, paused. jelly is `/games/jelly` with `setSeed(3)` and `setState("late-game")`, paused. woods is `/games/woods` after Start, with `setState("dusk")`. Each was cropped and resized with ImageMagick: town 1000×1000+100+60, gobble 860×860+176+200, jelly 700×700+250+450 (recropped 2026-10-19 to the stack), woods 1000×1000+100+150. No generated imagery and no third-party assets.
 - **Spelling and Math tiles:** not rasters. `SubjectArt` draws the round's own maple `Tile` components on the subject hue.
 - **Roxy's tile:** her live SVG look (`RoxyFigure`, viewBox `40 20 320 320`).
-- **Icons** (`public/favicon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`): authored in `apps/web/scripts/icon-mark.mjs`, a white rounded-stroke j with a white star dot on a brand-red rounded square (gradient #ee5a52 → #e5322d → #c4231f; the icon keeps the brighter red, where the white j is far past any contrast floor), turned -6deg. They are rendered by `scripts/icons.sh` with rsvg-convert. The favicon draws a larger star, the maskable icon keeps the mark inside the 80% circle, and the touch icon is full bleed on brand red.
+- **Icons** (`public/favicon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`): authored in `apps/web/scripts/icon-mark.mjs`, the wordmark's j and its star as one die-cut sticker (red ink stroke 72 inside a white cut 140; the favicon is heavier at 84/156 with a larger star), turned -8deg with a soft shadow under it, on a rounded square a shade under brand red (gradient #bf2a25 → #8f1814), so the brand-red j reads as a letter, not a white outline. They are rendered by `scripts/icons.sh` with rsvg-convert. The favicon draws a larger star, the maskable icon scales the mark to 0.76 to stay inside the 80% circle, and the touch icon is full bleed on #a8201c.
 - **Launch screens** (`public/splash/*.png`): from `scripts/splash.mjs`, the red tile at 30% of the short side on the Night shell gradient (#28292c → #212224 → #18191b). They are rendered with rsvg-convert and quantised to 256 colours, undithered, with ImageMagick.
 - **Textures:** maple grain is authored SVG `feTurbulence` in `index.css`. Town props and pets are generated 3D models documented in CLAUDE.md, not shell rasters.
 
@@ -497,7 +493,7 @@ Every shipping raster and its source:
 ### Do:
 - **Do** keep exactly one tile lit, marked by the select ring, the 1.035 spring and its name above. Test: arrows, Home, End, hover and focus all move the same single light.
 - **Do** fill a shelf tile edge to edge with real art from its game, or for Spelling and Math, the round's own maple tiles on the subject hue.
-- **Do** use brand red only for the wordmark plate, waiting counts and progress.
+- **Do** use brand red only for the wordmark sticker, waiting counts and progress.
 - **Do** put feedback colour only on tile edges, underlines and corner marks. Test: with the law colours desaturated, every judged tile still shows its mark and its aria-label names the law.
 - **Do** keep maple to rounds and to the picture of a round (the Spelling and Math tiles, the sign-in demo row). Those pictures are `aria-hidden` and never pressed as tiles.
 - **Do** print stars, streak and milestone badges on silver foil, and other earned badges as subject-hue stickers.

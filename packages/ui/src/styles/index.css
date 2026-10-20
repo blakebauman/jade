@@ -26,7 +26,6 @@
 	/* The brand: one red for the wordmark plate, counts on tiles and progress; one blue for the lit tile's ring. */
 	/* #d62c27 keeps white type at AA (4.9:1) on the counts and the wordmark. */
 	--color-brand: #d62c27;
-	--color-brand-deep: #ab1d19;
 	--color-select: #1d9bf0;
 
 	/* Stickers: the white vinyl rim, and one printed hue per place. None of them is a law colour. */
@@ -909,26 +908,21 @@
 	}
 
 	/*
-	 * The wordmark: "jade's world" in white on one brand-red plate, like the badge on a console's lid. A thin lit lip on
-	 * top and a soft drop under it; the red is the same in both lights.
+	 * The wordmark: "jade's world" as a die-cut vinyl sticker, red letters inside a white cut line, stuck on a little
+	 * crooked. The cut line and its shadows are an SVG filter drawn by Brand.tsx. Red on the white line is 4.9:1, and the
+	 * sticker is the same in both lights.
 	 */
-	.brand-plate {
+	.brand-sticker {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
-		padding: 0.16em 0.62em 0.24em;
-		border-radius: 9999px;
 		font-family: var(--font-display);
 		font-weight: 700;
 		line-height: 1;
-		letter-spacing: -0.01em;
+		letter-spacing: 0.005em;
 		white-space: nowrap;
-		color: #ffffff;
-		/* Brand red down to its deep, never lighter, so the white word holds AA across the whole plate. */
-		background: linear-gradient(to bottom, var(--color-brand) 45%, var(--color-brand-deep));
-		box-shadow:
-			inset 0 0.06em 0 rgb(255 255 255 / 0.35),
-			inset 0 -0.06em 0 rgb(0 0 0 / 0.12),
-			0 0.12em 0.3em -0.05em var(--tone-drop-deep);
+		color: var(--color-brand);
+		transform: rotate(-3deg);
 	}
 
 	/*

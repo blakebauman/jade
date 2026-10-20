@@ -1,12 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <title>Jade's World</title>
-  <!-- Jade's World mark: a white "j" dotted with a white star on a brand-red rounded square. Authored SVG, no external
-       source or font. Generated with the PNG icons; regenerate with apps/web/scripts/icons.sh. -->
+  <!-- Jade's World mark: a red "j" dotted with a red star, cut out as one white-edged sticker on a brand-red rounded
+       square. Authored SVG, no external source or font. Generated with the PNG icons; regenerate with
+       apps/web/scripts/icons.sh. -->
   <defs>
     <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ee5a52"/>
-      <stop offset="0.55" stop-color="#e5322d"/>
-      <stop offset="1" stop-color="#c4231f"/>
+      <!-- A shade under brand red, so the sticker's brand-red j reads as a letter, not a white outline. -->
+      <stop offset="0" stop-color="#bf2a25"/>
+      <stop offset="1" stop-color="#8f1814"/>
     </linearGradient>
     <filter id="lift" x="-30%" y="-30%" width="160%" height="170%">
       <feGaussianBlur stdDeviation="6"/>
@@ -17,12 +18,14 @@
     <rect width="512" height="512" fill="url(#red)"/>
     
   </g>
-  <g transform="translate(256 256) scale(1) translate(-256 -256) rotate(-6 256 270)">
-    <g opacity="0.35" filter="url(#lift)" transform="translate(0 12)">
-      <path d="M292 214 V318 Q292 388 226 388 Q196 388 178 372" fill="none" stroke="#5c0d0b" stroke-width="82" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M292.0 52.0L314.9 96.4L364.3 104.5L329.1 140.1L336.7 189.5L292.0 167.0L247.3 189.5L254.9 140.1L219.7 104.5L269.1 96.4Z" fill="#5c0d0b" stroke="#5c0d0b" stroke-width="10" stroke-linejoin="round"/>
+  <g transform="translate(256 256) scale(1) translate(-256 -256) rotate(-8 256 256) translate(-22 6)">
+    <g opacity="0.32" filter="url(#lift)" transform="translate(6 16)">
+    <path d="M292 214 V318 Q292 388 226 388 Q196 388 178 372" fill="none" stroke="#5c0d0b" stroke-width="156" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M292.0 58.0L313.2 98.9L358.6 106.4L326.2 139.1L333.1 184.6L292.0 164.0L250.9 184.6L257.8 139.1L225.4 106.4L270.8 98.9Z" fill="#5c0d0b" stroke="#5c0d0b" stroke-width="82" stroke-linejoin="round"/>
     </g>
-    <path d="M292 214 V318 Q292 388 226 388 Q196 388 178 372" fill="none" stroke="#ffffff" stroke-width="82" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M292.0 52.0L314.9 96.4L364.3 104.5L329.1 140.1L336.7 189.5L292.0 167.0L247.3 189.5L254.9 140.1L219.7 104.5L269.1 96.4Z" fill="#ffffff" stroke="#ffffff" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M292 214 V318 Q292 388 226 388 Q196 388 178 372" fill="none" stroke="#ffffff" stroke-width="156" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M292.0 58.0L313.2 98.9L358.6 106.4L326.2 139.1L333.1 184.6L292.0 164.0L250.9 184.6L257.8 139.1L225.4 106.4L270.8 98.9Z" fill="#ffffff" stroke="#ffffff" stroke-width="82" stroke-linejoin="round"/>
+    <path d="M292 214 V318 Q292 388 226 388 Q196 388 178 372" fill="none" stroke="#d62c27" stroke-width="84" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M292.0 58.0L313.2 98.9L358.6 106.4L326.2 139.1L333.1 184.6L292.0 164.0L250.9 184.6L257.8 139.1L225.4 106.4L270.8 98.9Z" fill="#d62c27" stroke="#d62c27" stroke-width="10" stroke-linejoin="round"/>
   </g>
 </svg>
