@@ -138,14 +138,6 @@
 				"tonalRamp": ["#340000", "#620000", "#930000", "#c40006", "#ef3e36", "#ff6b5d", "#ff9a8a", "#ffbfae"],
 				"cssVar": "--color-brand"
 			},
-			"brand-deep": {
-				"role": "secondary",
-				"displayName": "Brand Red Deep",
-				"canonical": "#ab1d19",
-				"oklch": "oklch(50.5% 0.188 28.2)",
-				"tonalRamp": ["#300000", "#5d0000", "#8c0000", "#ba211d", "#e44e43", "#ff7667", "#ffa291", "#ffc5b4"],
-				"cssVar": "--color-brand-deep"
-			},
 			"select": {
 				"role": "secondary",
 				"displayName": "Select Blue",
@@ -384,7 +376,7 @@
 			},
 			"wordmark": {
 				"displayName": "Wordmark",
-				"purpose": "jade's world on the red plate: 36px sign-in, 26px picker, 22px parent header, 18px home footer."
+				"purpose": "jade's world as a red die-cut sticker (0.005em): 36px sign-in, 26px picker, 22px parent header, 18px home footer."
 			},
 			"tile": {
 				"displayName": "Tile letter",
@@ -418,9 +410,9 @@
 				"purpose": "Round white action buttons."
 			},
 			{
-				"name": "brand-plate",
-				"value": "inset 0 0.06em 0 rgb(255 255 255 / 0.35), inset 0 -0.06em 0 rgb(0 0 0 / 0.12), 0 0.12em 0.3em -0.05em var(--tone-drop-deep)",
-				"purpose": "The wordmark plate."
+				"name": "brand-sticker",
+				"value": "SVG filter in Brand: edge rgb(0 0 0 / 0.3) blur 0.018em, drop rgb(0 0 0 / 0.32) 0 0.05em blur 0.03em, both cast by the cut line",
+				"purpose": "The wordmark sticker, as a filter so it follows the cut line. Fixed in both lights."
 			},
 			{
 				"name": "shelf-count",
@@ -580,7 +572,7 @@
 			"gameTiles": "public/tiles/{town,gobble,jelly,woods}.webp: 720x720 WebP q82, captured 2026-10-18 with headless Playwright Chromium (SwiftShader) from the app's dev server at 1200x1200, canvas only; cropped/resized with ImageMagick. No generated or third-party imagery.",
 			"subjectTiles": "SubjectArt: the round's own maple Tile components on spell/math hue (no raster).",
 			"roxyTile": "Live RoxyFigure SVG, viewBox 40 20 320 320.",
-			"icons": "scripts/icon-mark.mjs (white j + white star on brand-red rounded square) -> scripts/icons.sh (rsvg-convert).",
+			"icons": "scripts/icon-mark.mjs (the red j + star as one white-edged sticker, -8deg, on a brand-red rounded square) -> scripts/icons.sh (rsvg-convert).",
 			"splash": "scripts/splash.mjs: red tile on the Night shell gradient, rsvg-convert + ImageMagick 256 colours."
 		}
 	},
@@ -604,10 +596,10 @@
 		{
 			"name": "Wordmark",
 			"kind": "custom",
-			"refersTo": "brand-plate",
-			"description": "jade's world in white Fredoka 700 on the brand-red pill plate, a white star dotting the j.",
+			"refersTo": "brand-sticker",
+			"description": "jade's world as a die-cut vinyl sticker: brand-red Fredoka 700 inside a white cut line, turned -3deg, a red star in its own cut line dotting the j.",
 			"html": "<span class=\"ds-brand\" role=\"img\" aria-label=\"Jade's World\">&#567;ade&rsquo;s world</span>",
-			"css": ".ds-brand{display:inline-flex;align-items:center;padding:.16em .62em .24em;border-radius:9999px;font:700 26px/1 'Fredoka Variable',Fredoka,ui-rounded,system-ui,sans-serif;letter-spacing:-.01em;color:#fff;background:linear-gradient(to bottom,#d62c27 45%,#ab1d19);box-shadow:inset 0 .06em 0 rgb(255 255 255/.35),inset 0 -.06em 0 rgb(0 0 0/.12),0 .12em .3em -.05em rgb(6 6 7/.6)}"
+			"css": ".ds-brand{display:inline-flex;align-items:center;font:700 26px/1 'Fredoka Variable',Fredoka,ui-rounded,system-ui,sans-serif;letter-spacing:.005em;white-space:nowrap;color:#d62c27;transform:rotate(-3deg);filter:drop-shadow(0 0 .04em #fff) drop-shadow(0 0 .04em #fff) drop-shadow(0 0 .03em #fff) drop-shadow(0 .05em .06em rgb(0 0 0/.32))}"
 		},
 		{
 			"name": "Who's Playing (kid pick)",
@@ -660,12 +652,12 @@
 	],
 	"narrative": {
 		"northStar": "Console Home",
-		"overview": "Jade's World is a games portal laid out as a console's home menu. A plain shell holds one shelf of big glossy square tiles: every game (Roxy, Roxy's town, Gobble Town, Jelly Blocks, Campfire Woods) and Spelling and Math among them, the one she pressed last first. One tile is lit at a time. The lit tile wears a thick select-blue ring standing off its corners, grows a touch on a quick spring, and shows its name above it in blue. Under the shelf sit one line about the lit tile and a row of round white action buttons. One brand red owns the wordmark plate, the counts on tiles and the progress bars. Nothing else is on the shell. There is no texture, no paper and no decoration.\n\nThe shell has two lights and one set of token names. **Night** (the CSS default) is neutral charcoal, lit a touch from above. **Day** is a pale cool grey, a touch brighter at the top. The parent picks Auto, Day or Night in Settings, and Auto follows the device live. The tiles carry the colour: real art captured from each game, edge to edge, or for Spelling and Math, the round's own maple tiles on the subject hue. Rounds are where the quiet craft lives: maple letter tiles judged by four law colours, unchanged from before the portal. Game screens are unchanged too: the scene fills the window, always daylit, with small glass chrome in the corners. What a kid earns keeps its material: badges are stickers, stars and streak are silver foil, tickets are berry stubs.\n\nDensity is low and scale is big. A tile is about 40% of the viewport tall, so a kid can pick one from across the table. Motion is short: the ring springs, the name fades up, tiles drop and flip in rounds, and nothing loops.",
+		"overview": "Jade's World is a games portal laid out as a console's home menu. A plain shell holds one shelf of big glossy square tiles: every game (Roxy, Roxy's town, Gobble Town, Jelly Blocks, Campfire Woods) and Spelling and Math among them, the one she pressed last first. One tile is lit at a time. The lit tile wears a thick select-blue ring standing off its corners, grows a touch on a quick spring, and shows its name above it in blue. Under the shelf sit one line about the lit tile and a row of round white action buttons. One brand red owns the wordmark sticker, the counts on tiles and the progress bars. Nothing else is on the shell. There is no texture, no paper and no decoration.\n\nThe shell has two lights and one set of token names. **Night** (the CSS default) is neutral charcoal, lit a touch from above. **Day** is a pale cool grey, a touch brighter at the top. The parent picks Auto, Day or Night in Settings, and Auto follows the device live. The tiles carry the colour: real art captured from each game, edge to edge, or for Spelling and Math, the round's own maple tiles on the subject hue. Rounds are where the quiet craft lives: maple letter tiles judged by four law colours, unchanged from before the portal. Game screens are unchanged too: the scene fills the window, always daylit, with small glass chrome in the corners. What a kid earns keeps its material: badges are stickers, stars and streak are silver foil, tickets are berry stubs.\n\nDensity is low and scale is big. A tile is about 40% of the viewport tall, so a kid can pick one from across the table. Motion is short: the ring springs, the name fades up, tiles drop and flip in rounds, and nothing loops.",
 		"keyCharacteristics": [
 			"A plain shell in two lights: Night charcoal, Day pale cool grey. No texture, no paper.",
 			"One shelf of big square tiles (1.4rem corners, a top-corner gloss), each filled edge to edge with art from its game. Spelling and Math are two tiles among the games.",
 			"One lit tile at a time: a 0.3rem select-blue ring 0.35rem off its corners, a 1.035 scale on a spring, and its name above in Fredoka.",
-			"One brand red for the wordmark plate, the corner counts and the progress bars.",
+			"One brand red for the wordmark sticker, the corner counts and the progress bars.",
 			"Round white action buttons with their word beneath (Quests, Badges, More time, Switch).",
 			"\"Who's playing?\": each kid a big round vinyl sticker that takes the same select ring.",
 			"Maple tiles and the four law colours inside rounds, and as the picture of a round on the Spelling and Math tiles.",
@@ -680,7 +672,7 @@
 			},
 			{
 				"name": "The One Red Rule",
-				"body": "Brand red is the wordmark plate, a count of what's waiting, and how far something has come. It never marks an error and never appears in a round or on a tile's letters, so it can't be read beside coral as \"wrong\".",
+				"body": "Brand red is the wordmark sticker, a count of what's waiting, and how far something has come. It never marks an error and never appears in a round or on a tile's letters, so it can't be read beside coral as \"wrong\".",
 				"section": "colors"
 			},
 			{
@@ -732,7 +724,7 @@
 		"dos": [
 			"Do keep exactly one tile lit, marked by the select ring, the 1.035 spring and its name above. Test: arrows, Home, End, hover and focus all move the same single light.",
 			"Do fill a shelf tile edge to edge with real art from its game, or for Spelling and Math, the round's own maple tiles on the subject hue.",
-			"Do use brand red only for the wordmark plate, waiting counts and progress.",
+			"Do use brand red only for the wordmark sticker, waiting counts and progress.",
 			"Do put feedback colour only on tile edges, underlines and corner marks. Test: with the law colours desaturated, every judged tile still shows its mark and its aria-label names the law.",
 			"Do keep maple to rounds and to the picture of a round (the Spelling and Math tiles, the sign-in demo row). Those pictures are `aria-hidden` and never pressed as tiles.",
 			"Do print stars, streak and milestone badges on silver foil, and other earned badges as subject-hue stickers.",
