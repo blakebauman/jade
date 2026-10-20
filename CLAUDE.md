@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Jade's World is a kids' games portal with practice built in. Its home (`/play/$childId`) is one shelf of tiles, laid out like a console's home: every game (Roxy's studio, the town, Gobble Town, Jelly Blocks, Campfire Woods) plus **Spelling** and **Math**, the one she played last first (`jade.shelf.{childId}`), one lit at a time. The old Play home (`games/`) redirects to it; quests, badges and more time are its buttons. Spelling and Math share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
+Jade's World is a kids' games portal with practice built in. Its home (`/play/$childId`) is one shelf of tiles, laid out like a console's home: every game (Roxy's studio, the town, Gobble Town, Jelly Blocks, Campfire Woods) plus **Spelling** and **Math**, the one the kid played last first (`jade.shelf.{childId}`), one lit at a time. The old Play home (`games/`) redirects to it; quests, badges and more time are its buttons. Spelling and Math share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
 
 Jade's World is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
@@ -280,6 +280,7 @@ Read `PRODUCT.md` (product truth) and `DESIGN.md` (the visual system) before any
 - Feedback colour goes on tile edges and corner marks. Letter ink stays dark.
 - No emoji as icons; use lucide.
 - Kids are identified by their initial on a round vinyl sticker plus a chosen number on a foil chip (`KidTile`).
+- **Coed:** copy never assumes the kid's gender. Say "your kid", "they" or the kid's name, never "she" or "he" for the player, in the UI, docs and code comments alike. Roxy is a character; her pronouns are hers.
 
 **iPad and iPhone:**
 - The round screen sizes itself to `--vvh` (`useVisualViewport`) so the answer row stays above the on-screen keyboard. `compact` (keyboard up, or under 480px tall: a phone on its side) tightens both rounds.

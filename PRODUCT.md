@@ -21,7 +21,8 @@ web
 ## Users
 
 **Primary: the child.** In spelling they're the speller; the UI calls them kids.
-- Built first for one 4th grader, who was 9 in October 2026. The design, content and games grow with her: pitch them at her age now, not younger, and let them get older as she does.
+- Built first for one 4th grader, who was 9 in October 2026. The design, content and games grow with that child: pitch them at that age now, not younger, and let them get older as the child does.
+- **Coed:** Jade's World is for boys and girls alike. Copy never assumes the kid's gender: it says "your kid", "they" or the kid's own name. (Roxy is a character, and her pronouns are hers.)
 - Aged 8–11, in the middle grades.
 - Practices on a family laptop with a physical keyboard, or on an iPad using touch, the on-screen keyboard, or a keyboard case.
 - Usually practices at home after school, or before a class spelling test, a spelling bee or a math quiz.
@@ -39,7 +40,7 @@ web
 
 ## Product Purpose
 
-Jade's World is a kids' games portal with practice built in. Its home is one shelf of tiles, every game plus Spelling and Math, the one she played last first. The games are up front; Spelling and Math are two tiles among them, and they share rounds, saving, rewards and voice.
+Jade's World is a kids' games portal with practice built in. Its home is one shelf of tiles, every game plus Spelling and Math, the one the kid played last first. The games are up front; Spelling and Math are two tiles among them, and they share rounds, saving, rewards and voice.
 
 **Spelling** works the way a spelling bee works:
 1. Hear the word.
@@ -51,7 +52,7 @@ Success means the child spells the week's list correctly and without help. Misse
 
 **Math** reads each problem aloud and lays it out as tiles; the child answers on an on-screen keypad. A first miss gets another go. A second miss shows the answer, how to get it, and a picture where one helps (a dot array for a fact, fraction bars for fractions). Levels adjust on their own, and missed times-table and division facts come back through the same spaced review as words.
 
-**Play** is pure play, never built on her lists, facts or practice: Roxy's dress-up studio, home and town; Gobble Town; Jelly Blocks; and Campfire Woods, a block island the family plays on live, with linked friends. Three daily quests run across the games. Games pay their own tickets; how play meets practice is the parent's choice.
+**Play** is pure play, never built on the kid's lists, facts or practice: Roxy's dress-up studio, home and town; Gobble Town; Jelly Blocks; and Campfire Woods, a block island the family plays on live, with linked friends. Three daily quests run across the games. Games pay their own tickets; how play meets practice is the parent's choice.
 
 ## Positioning
 
