@@ -1,5 +1,15 @@
 import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
-import { type BufferGeometry, Float32BufferAttribute, FrontSide, type Group, Matrix4, Mesh, MeshToonMaterial } from "three";
+import {
+	type BufferGeometry,
+	DoubleSide,
+	Float32BufferAttribute,
+	FrontSide,
+	type Group,
+	type Material,
+	Matrix4,
+	Mesh,
+	MeshToonMaterial,
+} from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { toonGradient } from "./Furniture.tsx";
 
@@ -17,10 +27,16 @@ import { toonGradient } from "./Furniture.tsx";
 export function Static({
 	children,
 	cast = true,
+	twoSided = false,
+	material,
 }: {
 	children: ReactNode;
 	/** False for low ground detail whose shadow no one would see. */
 	cast?: boolean;
+	/** Bake two-sided shapes too, as their front and a turned-round copy (thin shells: hair, clothes). */
+	twoSided?: boolean;
+	/** What the baked mesh is drawn with, if not the shared town toon (it must use vertex colours). */
+	material?: Material;
 }) {
 	const holder = useRef<Group>(null);
 	const [baked, setBaked] = useState<Mesh | null>(null);
@@ -43,7 +59,7 @@ export function Static({
 				!mat.isMeshToonMaterial ||
 				mat.map ||
 				mat.transparent ||
-				mat.side !== FrontSide ||
+				(mat.side !== FrontSide && !(twoSided && mat.side === DoubleSide)) ||
 				mat.emissiveIntensity * mat.emissive.getHex() > 0 ||
 				mesh.matrixWorld.determinant() < 0
 			)
@@ -63,13 +79,14 @@ export function Static({
 			}
 			geo.setAttribute("color", new Float32BufferAttribute(colour, 3));
 			parts.push(geo);
+			if (mat.side === DoubleSide) parts.push(inside(geo));
 			taken.push(mesh);
 		});
 		if (!parts.length) return;
 		const merged = mergeGeometries(parts);
 		for (const p of parts) p.dispose();
 		if (!merged) return;
-		const mesh = new Mesh(merged, bakedMaterial());
+		const mesh = new Mesh(merged, material ?? bakedMaterial());
 		mesh.castShadow = cast;
 		mesh.receiveShadow = true;
 		mesh.userData.noCast = !cast;
@@ -80,13 +97,33 @@ export function Static({
 			merged.dispose();
 			setBaked(null);
 		};
-	}, [children, cast]);
+	}, [children, cast, twoSided, material]);
 	return (
 		<>
 			<group ref={holder}>{children}</group>
 			{baked && <primitive object={baked} />}
 		</>
 	);
+}
+
+/** The same triangles facing the other way (each triangle's winding and every normal turned round). */
+function inside(geo: BufferGeometry) {
+	const back = geo.clone();
+	const flip = (name: string) => {
+		const a = back.attributes[name]!;
+		const n = a.itemSize;
+		const v = a.array as Float32Array;
+		for (let i = 0; i < a.count; i += 3)
+			for (let k = 0; k < n; k++) {
+				const t = v[(i + 1) * n + k]!;
+				v[(i + 1) * n + k] = v[(i + 2) * n + k]!;
+				v[(i + 2) * n + k] = t;
+			}
+	};
+	for (const name of Object.keys(back.attributes)) flip(name);
+	const normal = back.attributes.normal!.array as Float32Array;
+	for (let i = 0; i < normal.length; i++) normal[i] = -normal[i]!;
+	return back;
 }
 
 let shared: MeshToonMaterial | undefined;

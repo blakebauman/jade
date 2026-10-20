@@ -30,10 +30,11 @@ import {
 	Vector3,
 } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
+import { Diagnostics } from "../roxy/world/diagnostics.tsx";
 import { toonGradient } from "../roxy/world/Furniture.tsx";
 import { useNight } from "../roxy/world/light.tsx";
 import { useContextLoss } from "../roxy/world/pace.tsx";
-import { Diagnostics, softwareGl, Thrift } from "../roxy/world/stage.tsx";
+import { softwareGl, Thrift } from "../roxy/world/stage.tsx";
 import { groundTexture } from "./ground.ts";
 import { KIND_IDS, KINDS, type KindId } from "./kinds.ts";
 import { propGeometry } from "./props.ts";

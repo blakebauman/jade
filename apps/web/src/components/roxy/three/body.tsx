@@ -1,5 +1,10 @@
 import type { Look, Slot } from "@jade/core/roxy";
-import { useEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import type { MeshBasicMaterial } from "three";
+import { prefersReducedMotion } from "#/lib/hooks.ts";
+import { CX, EYE_DX, EYE_Y, INK } from "../geometry.ts";
+import { useWake } from "../world/pace.tsx";
 import { figureTexture } from "../world/texture.ts";
 import { lathe, M, type V3 } from "./shapes.tsx";
 
@@ -82,7 +87,26 @@ export function onFace(svgX: number, svgY: number, out = 0): V3 {
 	return [-r * Math.cos(phi) * Math.sin(theta), r * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta)];
 }
 
-/** The eyes, brows, mouth and makeup, wrapped onto the front of the head. */
+/** Eyes that are already shut (happy arcs) don't blink. */
+const NO_BLINK = new Set(["eyes-happy"]);
+
+/** Closed eyes for a blink: a soft downward curve with a lash at the outer corner, where the open eyes were. */
+function closedEyes(ctx: CanvasRenderingContext2D) {
+	ctx.strokeStyle = INK;
+	ctx.lineWidth = 3.5;
+	ctx.lineCap = "round";
+	for (const s of [-1, 1]) {
+		const x = CX + s * EYE_DX;
+		ctx.beginPath();
+		ctx.moveTo(x - 15, EYE_Y + 1);
+		ctx.quadraticCurveTo(x, EYE_Y + 11, x + 15, EYE_Y + 1);
+		ctx.moveTo(x + s * 14, EYE_Y + 2);
+		ctx.lineTo(x + s * 19, EYE_Y - 2);
+		ctx.stroke();
+	}
+}
+
+/** The eyes, brows, mouth and makeup, wrapped onto the front of the head. Every few seconds, a blink. */
 export function Face({ look }: { look: Look }) {
 	const key = JSON.stringify([
 		look.slots.eyes,
@@ -98,9 +122,30 @@ export function Face({ look }: { look: Look }) {
 		look.skin,
 		look.slots.hair?.c1,
 	]);
+	const reduced = useMemo(() => prefersReducedMotion(), []);
+	const blinks = !reduced && !!look.slots.eyes && !NO_BLINK.has(look.slots.eyes.item);
 	// Keyed on `key`, the part of the look the face uses.
 	const face = useMemo(() => figureTexture(look, FACE_VIEW, { only: FACE_SLOTS }), [key]);
+	const shut = useMemo(
+		() => (blinks ? figureTexture(look, FACE_VIEW, { only: FACE_SLOTS.filter((s) => s !== "eyes"), after: closedEyes }) : null),
+		[key, blinks],
+	);
 	useEffect(() => () => face.texture.dispose(), [face]);
+	useEffect(() => () => shut?.texture.dispose(), [shut]);
+	const mat = useRef<MeshBasicMaterial>(null);
+	const next = useRef(2 + Math.random() * 3);
+	const wake = useWake();
+	useFrame(({ clock }) => {
+		const m = mat.current;
+		if (!m || !shut) return;
+		const t = clock.elapsedTime;
+		// A blink is about a tenth of a second; now and then two in a row.
+		if (t > next.current + 0.12) next.current = t + (Math.random() < 0.2 ? 0.25 : 2.5 + Math.random() * 3.5);
+		const closed = t >= next.current && t < next.current + 0.12;
+		if (closed || t > next.current - 0.1) wake();
+		const want = closed ? shut.texture : face.texture;
+		if (m.map !== want) m.map = want;
+	});
 	return (
 		<mesh>
 			<sphereGeometry
@@ -114,7 +159,7 @@ export function Face({ look }: { look: Look }) {
 					FACE_PATCH.thetaLength,
 				]}
 			/>
-			<meshBasicMaterial map={face.texture} transparent alphaTest={0.05} depthWrite={false} />
+			<meshBasicMaterial ref={mat} map={face.texture} transparent alphaTest={0.05} depthWrite={false} />
 		</mesh>
 	);
 }
