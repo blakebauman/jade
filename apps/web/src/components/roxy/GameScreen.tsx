@@ -5,7 +5,7 @@ import { usePlayClockValue } from "#/lib/play.ts";
 
 /**
  * A game screen: the 3D scene is the screen, and everything else floats small in its corners on frosted glass.
- * - Top-left: the way back (a round key) and the masthead, a tiny eyebrow over a big title.
+ * - Top-left: the way back (a round key) and the masthead, the title on a glass pill (the eyebrow is its spoken context).
  * - Top-right: round icon keys (`orbs`, then Full screen and Show/Hide panel).
  * - Bottom-left: keyboard hints on a mouse-and-keyboard screen, or the touch controls on a touch one.
  * - Bottom-centre: a prompt ("Press E to…") over the action row (Undo, Save look…).
@@ -26,7 +26,6 @@ export function GameScreen({
 	prompt,
 	actions,
 	panel,
-	sceneDark = false,
 	panelLabel,
 	panelKey,
 	panelOpen = true,
@@ -50,8 +49,6 @@ export function GameScreen({
 	actions?: ReactNode;
 	panel?: ReactNode;
 	panelLabel: string;
-	/** The scene is dark just now (a game's own night): words printed on it switch to light ink. */
-	sceneDark?: boolean;
 	/** Remembers the panel open or closed per screen (`jade.roxy.panel.{key}`). */
 	panelKey?: string;
 	/** Whether the panel starts open the first time. */
@@ -87,10 +84,11 @@ export function GameScreen({
 			>
 				<div className="flex min-w-0 items-start gap-3">
 					<div className="pointer-events-auto">{back}</div>
-					{/* Printed on the scene itself, which is daylit in both themes: Day's ink (`.scene-day`), so it reads at Night. */}
-					<div className={`scene-day ${sceneDark ? "scene-dark" : ""} min-w-0 select-none pt-0.5 text-page-ink`}>
-						<p className="eyebrow">{eyebrow}</p>
-						<h1 className="mt-1 font-display text-[clamp(1.6rem,4vw,2.75rem)] font-semibold leading-[0.95] tracking-tight [&>span]:text-roxy">
+					{/* On glass, like the rest of the chrome, so it reads on any scene: a daylit park, Campfire Woods at night, or a
+					    stage the kid painted navy. The eyebrow is said, not shown: a kicker over a title is one label too many. */}
+					<div className="glass min-w-0 select-none rounded-[1.25rem] px-4 py-2.5 text-page-ink">
+						<h1 className="font-display text-[clamp(1.4rem,3.4vw,2.25rem)] font-semibold leading-[1] tracking-tight [&>span]:text-roxy">
+							<span className="sr-only">{eyebrow}: </span>
 							{title}
 						</h1>
 					</div>
@@ -134,7 +132,7 @@ export function GameScreen({
 					<div className="@container flex min-w-0 items-end">
 						{hints && (
 							<div
-								className={`scene-day ${sceneDark ? "scene-dark" : ""} ${FINE_ONLY} flex-wrap items-center gap-x-3 gap-y-1.5 text-xs whitespace-nowrap text-page-muted`}
+								className={`glass ${FINE_ONLY} flex-wrap items-center gap-x-3 gap-y-1.5 rounded-full px-3.5 py-2 text-xs whitespace-nowrap text-page-muted`}
 							>
 								{hints}
 							</div>

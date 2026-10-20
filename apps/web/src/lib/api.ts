@@ -4,6 +4,8 @@ export class ApiError extends Error {
 	constructor(
 		readonly status: number,
 		message: string,
+		/** The rest of the error's body, for the few that say more (a 409 "taken" says whether the twin is `mine`). */
+		readonly data: Record<string, unknown> = {},
 	) {
 		super(message);
 	}
@@ -18,8 +20,8 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
 	}
 	const res = await fetch(path, { ...init, headers, body, credentials: "same-origin" });
 	if (res.status === 204) return undefined as T;
-	const data = (await res.json().catch(() => ({}))) as { error?: string };
-	if (!res.ok) throw new ApiError(res.status, data.error ?? `Request failed (${res.status})`);
+	const data = (await res.json().catch(() => ({}))) as { error?: string } & Record<string, unknown>;
+	if (!res.ok) throw new ApiError(res.status, data.error ?? `Request failed (${res.status})`, data);
 	return data as T;
 }
 

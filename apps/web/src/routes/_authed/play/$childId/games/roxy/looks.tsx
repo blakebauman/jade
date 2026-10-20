@@ -90,7 +90,7 @@ function MyLooks() {
 							</dd>
 						</div>
 						<div>
-							<dt className="text-sm text-page-muted">Stickers</dt>
+							<dt className="text-sm text-page-muted">Badges</dt>
 							<dd className="font-display text-2xl font-semibold tabular-nums">{stickers}</dd>
 						</div>
 					</dl>

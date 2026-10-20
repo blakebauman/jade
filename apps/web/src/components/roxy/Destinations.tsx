@@ -80,7 +80,7 @@ export function Destinations({ childId, here }: { childId: string; here: Here })
 						</Link>
 					))}
 				</nav>
-				<button type="button" className="mt-3 w-full py-2 text-center text-sm text-page-muted" onClick={close}>
+				<button type="button" className="mt-3 min-h-11 w-full text-center text-sm font-medium text-page-ink" onClick={close}>
 					Cancel
 				</button>
 			</dialog>
