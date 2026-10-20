@@ -1,4 +1,4 @@
-import { bodyProfile, type Dims3, Y } from "./body.tsx";
+import { bodyProfile, type Dims3, radiusAt, Y } from "./body.tsx";
 import { Ball, Cone, darker, Flat, fabric, Hang, heartShape, lathe, lighter, M, type Pattern, Ring, starShape } from "./shapes.tsx";
 
 /**
@@ -120,6 +120,20 @@ function shell(d: Dims3, y0: number, y1: number, c: string, pattern: Pattern = "
 	);
 }
 
+/**
+ * A rolled edge where fabric ends (a neckline, a hem, a cuff), a shade darker than the cloth, so each piece reads as
+ * something worn rather than painted on. Flat round the body at height `y`, `r` out from the middle.
+ */
+function Hem({ r, y = 0, c, depth = 1, tube = 0.02 }: { r: number; y?: number; c: string; depth?: number; tube?: number }) {
+	return (
+		<group position={[0, y, 0]} scale={[1, 1, depth]}>
+			<Ring r={r} tube={tube} c={c} rot={[Math.PI / 2, 0, 0]} seg={36} />
+		</group>
+	);
+}
+/** The edge of a shell around the body at height y. */
+const edge = (d: Dims3, y: number, c: string, extra = EXTRA) => <Hem r={radiusAt(d, y) + extra} y={y} c={c} depth={d.depth} />;
+
 /** The front of the chest, for motifs and buttons: on the surface, facing forward. */
 const chest = (d: Dims3, _y: number) => (d.waist + (d.shoulder - d.waist) * 0.7 + EXTRA + 0.01) * d.depth;
 
@@ -148,6 +162,8 @@ export function Top({ item, d, w }: { item: string; d: Dims3; w: Wear }) {
 	return (
 		<group>
 			{shell(d, y0, Y.neck - 0.03, c1, spec.pattern, c2)}
+			{!spec.collar && !spec.hood && edge(d, Y.neck - 0.04, darker(c1, 0.14))}
+			{spec.hem !== "tunic" && edge(d, y0 + 0.012, darker(c1, 0.14))}
 			{spec.hem === "tunic" && <Cone r={d.hip + 0.07} r2={d.hip + EXTRA} h={0.24} p={[0, Y.hip - 0.1, 0]} c={c1} />}
 			{spec.motif && motif(spec.motif, d, c2)}
 			{spec.collar &&
@@ -180,14 +196,17 @@ export function Dress({ item, d, w }: { item: string; d: Dims3; w: Wear }) {
 	if (spec.pants) return <>{shell(d, Y.hip - 0.05, Y.neck - 0.03, c1)}</>;
 	const top = Y.waist + 0.02;
 	const skirtH = top - spec.hem;
+	const skirtR = d.hip + EXTRA + spec.flare + skirtH * 0.12;
 	return (
 		<group>
 			{shell(d, Y.waist - 0.06, Y.neck - 0.03, c1, spec.pattern ?? "plain", c2)}
 			<group position={[0, top - skirtH / 2, 0]} scale={[1, 1, d.depth + 0.08]}>
 				<M c={c1} map={fabric(spec.skirt ?? spec.pattern ?? "plain", c1, c2, [8, 2])} side="double">
-					<cylinderGeometry args={[d.waist + EXTRA + 0.01, d.hip + EXTRA + spec.flare + skirtH * 0.12, skirtH, 36, 1, true]} />
+					<cylinderGeometry args={[d.waist + EXTRA + 0.01, skirtR, skirtH, 36, 1, true]} />
 				</M>
+				<Hem r={skirtR} y={-skirtH / 2} c={darker(c1, 0.16)} tube={0.026} />
 			</group>
+			{!spec.trim && edge(d, Y.neck - 0.04, darker(c1, 0.14))}
 			{spec.sash && <Ring r={d.waist + EXTRA + 0.02} tube={0.035} p={[0, Y.waist, 0]} c={c2} rot={[Math.PI / 2, 0, 0]} />}
 			{spec.trim && <Ring r={0.13} tube={0.022} p={[0, Y.neck - 0.04, 0]} c="#e8b93c" rot={[Math.PI / 2, 0, 0]} />}
 		</group>
@@ -240,6 +259,7 @@ export function Outer({ item, d, w }: { item: string; d: Dims3; w: Wear }) {
 	return (
 		<group>
 			{shell(d, hem, Y.neck - 0.04, c1, spec.pattern ?? "plain", darker(c1, 0.15), EXTRA + 0.035, spec.kind === "open" ? 0.32 : undefined)}
+			{spec.kind === "closed" && edge(d, hem + 0.012, darker(c1, 0.16), EXTRA + 0.035)}
 			{spec.collar &&
 				[-1, 1].map((s) => (
 					<M key={s} c={darker(c1, 0.15)} p={[s * 0.12, Y.neck - 0.1, chest(d, 1.55) * 0.82]} r={[0.3, s * 0.4, s * 0.5]} s={[1, 1, 0.3]}>
@@ -285,8 +305,13 @@ export function Sleeve({
 	puffy?: boolean;
 }) {
 	if (puffy) return <Ball r={armR * 2} p={[0, -armR * 0.8, 0]} c={c} s={[1, 0.9, 1]} />;
+	const l = Math.max(armR * 2.4, armLen * len);
 	return (
-		<Hang r={armR + 0.025} len={Math.max(armR * 2.4, armLen * len)} c={c} p={[0, armR * 0.6, 0]} {...(map !== undefined && { map })} />
+		<>
+			<Hang r={armR + 0.025} len={l} c={c} p={[0, armR * 0.6, 0]} {...(map !== undefined && { map })} />
+			{/* The cuff, where the sleeve's round end would be. */}
+			<Hem r={armR + 0.022} y={armR * 0.6 - l + armR + 0.02} c={darker(c, 0.16)} tube={0.018} />
+		</>
 	);
 }
 
@@ -303,6 +328,7 @@ export function LegWear({ bottom, dress, d, w, dressW }: { bottom?: string; dres
 	return (
 		<group>
 			<Hang r={d.leg + (b.tight ? 0.015 : 0.045)} len={len} c={w.c1} p={[0, 0.06, 0]} />
+			{!b.tight && <Hem r={d.leg + 0.043} y={0.06 - len + d.leg + 0.05} c={darker(w.c1, 0.16)} tube={0.02} />}
 			{b.pockets && (
 				<M c={darker(w.c1, 0.12)} p={[d.leg * 0.9, -0.45, 0]} s={[0.4, 1, 1]}>
 					{<boxGeometry args={[0.1, 0.16, 0.14]} />}
@@ -418,6 +444,20 @@ export function Foot({ item, d, w, skin }: { item?: string; d: Dims3; w: Wear; s
 			<M c={soleC} p={[0, -0.1, 0.06]} s={[1, 0.18, 1.5]}>
 				<sphereGeometry args={[fw / 2 + 0.02, 18, 10]} />
 			</M>
+			{s.boot && <Hem r={d.leg + 0.036} y={s.boot - 0.02 - d.leg - 0.03} c={darker(w.c1, 0.18)} tube={0.022} />}
+			{/* Trainers: a rubber toe cap and two laces across the top. */}
+			{(item === "shoes-sneakers" || item === "shoes-hightops" || item === "shoes-skates") && (
+				<>
+					<M c={s.sole === "c2" ? w.c2 : "#f7f3ea"} p={[0, -0.075, 0.17]} s={[1.05, 0.6, 0.95]}>
+						<sphereGeometry args={[fw / 2 - 0.01, 14, 10]} />
+					</M>
+					{[0.05, 0.11].map((z) => (
+						<M key={z} c="#f7f3ea" p={[0, 0.024 - (z - 0.05) * 0.25, z]} r={[-0.25, 0, 0]}>
+							<boxGeometry args={[fw * 0.62, 0.016, 0.026]} />
+						</M>
+					))}
+				</>
+			)}
 			{s.ears && [-1, 1].map((e) => <Ball key={e} r={0.04} p={[e * 0.05, 0.04, 0.12]} c={w.c1} s={[0.8, 2, 0.6]} />)}
 			{s.wheels && [-0.08, 0.2].map((z) => <Ball key={z} r={0.045} p={[0, -0.14, z]} c={w.c2} />)}
 			{s.curl && <Cone r={0.05} h={0.2} p={[0, 0, 0.26]} rot={[-1.1, 0, 0]} c={w.c1} />}

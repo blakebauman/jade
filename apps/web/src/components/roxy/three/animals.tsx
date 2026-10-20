@@ -46,7 +46,9 @@ export function Ears({ animal, fur, patch }: { animal: Animal; fur: string; patc
 			return (
 				<>
 					{[-1, 1].map((s) => (
-						<Ball key={s} r={0.18} p={[s * R * 0.95, R * 0.15, 0]} c={darker(fur, 0.25)} s={[0.6, 1.6, 1]} />
+						<group key={s} position={[s * R * 0.8, R * 0.55, 0]} rotation={[0, 0, s * 0.3]}>
+							<Ball r={0.19} p={[0, -0.24, 0]} c={darker(fur, 0.25)} s={[0.55, 1.5, 0.9]} />
+						</group>
 					))}
 				</>
 			);
@@ -106,22 +108,69 @@ export function Tail({ animal, fur, patch }: { animal: Animal; fur: string; patc
 /** Fur for the body; a panda is white with dark patches. */
 export const fur3 = (animal: Animal, c1: string) => (animal === "panda" ? "#f4f1ea" : c1);
 
-/** The moon gem's animal head (head coordinates). Roxy's eyes, brows and mouth still go on top. */
+/** The moon gem's animal head (head coordinates). Roxy's eyes and brows still go on top; the muzzle covers the mouth. */
 export function AnimalHead({ animal, fur, patch }: { animal: Animal; fur: string; patch: string }) {
 	const muzzle = animal === "panda" ? "#ffffff" : animal === "fox" ? "#fbf4ec" : lighter(fur, 0.5);
 	const nose = animal === "cat" || animal === "bunny" ? "#e98a9c" : INK;
-	const snout = onFace(200, 232, -0.04);
+	const [x, y, z] = onFace(200, 232, -0.04);
 	return (
 		<group>
 			<Ball r={R} c={fur} s={animal === "fox" ? [1.08, 0.96, 1] : [1.04, 0.98, 1]} />
-			{animal === "fox" &&
-				[-1, 1].map((s) => <Ball key={s} r={0.2} p={[s * R * 0.62, -R * 0.38, R * 0.42]} c="#fbf4ec" s={[1, 0.6, 0.6]} />)}
-			{animal === "panda" && [163, 237].map((x) => <Ball key={x} r={0.14} p={onFace(x, 190, -0.06)} c={patch} s={[1, 1.25, 0.5]} />)}
-			<Ball r={0.22} p={snout} c={muzzle} s={[1.2, 0.85, 0.75]} />
-			<Ball r={0.06} p={[snout[0], snout[1] + 0.08, snout[2] + 0.13]} c={nose} s={[1.3, 0.9, 0.9]} />
+			{animal === "panda" &&
+				[-1, 1].map((s) => (
+					// Eye patches droop outward, as a panda's do.
+					<group key={s} position={onFace(200 + s * 37, 192, -0.06)} rotation={[0, 0, s * 0.5]}>
+						<Ball r={0.14} c={patch} s={[0.95, 1.35, 0.5]} />
+					</group>
+				))}
+			<Muzzle animal={animal} at={[x, y, z]} c={muzzle} fur={fur} />
+			<Ball r={0.06} p={[x, y + 0.08, z + (animal === "fox" ? 0.24 : 0.14)]} c={nose} s={[1.3, 0.9, 0.9]} />
 			<Ears animal={animal} fur={fur} patch={patch} />
 		</group>
 	);
+}
+
+/** Each animal's snout: a cat's and a bunny's whisker pads, a fox's point and cheek ruff, a puppy's and a bear's round one. */
+function Muzzle({ animal, at, c, fur }: { animal: Animal; at: V3; c: string; fur: string }) {
+	const [x, y, z] = at;
+	if (animal === "cat" || animal === "bunny")
+		return (
+			<>
+				{[-1, 1].map((s) => (
+					<group key={s}>
+						<Ball r={0.12} p={[x + s * 0.09, y, z + 0.02]} c={c} s={[1, 0.85, 0.8]} />
+						{/* Whiskers fan out from each pad. */}
+						{animal === "cat" &&
+							[-0.18, 0, 0.18].map((a) => (
+								<M key={a} c={darker(fur, 0.35)} p={[x + s * 0.3, y + 0.01 + a * 0.2, z - 0.01]} r={[0, 0, Math.PI / 2 + s * a]}>
+									<cylinderGeometry args={[0.007, 0.007, 0.24, 4]} />
+								</M>
+							))}
+					</group>
+				))}
+				<Ball r={0.07} p={[x, y - 0.1, z - 0.01]} c={c} s={[1, 0.8, 0.8]} />
+			</>
+		);
+	if (animal === "fox")
+		return (
+			<>
+				{/* A pointed snout, and white fur sweeping out to a point at each cheek. */}
+				<Ball r={0.19} p={[x, y - 0.01, z + 0.06]} c={c} s={[1.05, 0.78, 1.45]} />
+				{[-1, 1].map((s) => (
+					<group key={s} position={[s * R * 0.98, -R * 0.36, R * 0.42]} rotation={[0, s * 0.35, -s * 2.0]} scale={[1, 1, 0.55]}>
+						<Cone r={0.15} h={0.3} c={c} />
+					</group>
+				))}
+			</>
+		);
+	if (animal === "puppy")
+		return (
+			<>
+				<Ball r={0.24} p={[x, y - 0.02, z]} c={c} s={[1.2, 0.85, 0.85]} />
+				<Ball r={0.06} p={[x, y - 0.17, z + 0.02]} c="#e9798c" s={[1, 0.7, 0.6]} />
+			</>
+		);
+	return <Ball r={0.21} p={[x, y - 0.01, z + 0.02]} c={c} s={[1.2, 0.88, 0.9]} />;
 }
 
 // ── Pets ──

@@ -5,6 +5,7 @@ import {
 	Color,
 	DoubleSide,
 	LatheGeometry,
+	MeshToonMaterial,
 	NearestFilter,
 	RepeatWrapping,
 	Shape,
@@ -32,7 +33,34 @@ export function colours(look: Look, slot: Slot): { c1: string; c2: string } {
 export const darker = (c: string, amount = 0.25) => `#${new Color(c).multiplyScalar(1 - amount).getHexString()}`;
 export const lighter = (c: string, amount = 0.35) => `#${new Color(c).lerp(new Color("#ffffff"), amount).getHexString()}`;
 
-/** The one material: toon-shaded colour, optionally with a pattern. */
+/**
+ * A soft rim of light round Roxy's edges, strongest where a surface turns away from the camera: it lifts her off
+ * busy grass or a painted backdrop the way a toy catches the light. Added to the toon shader after its lighting.
+ */
+export function rimLight(shader: { fragmentShader: string }) {
+	shader.fragmentShader = shader.fragmentShader.replace(
+		"#include <opaque_fragment>",
+		`{
+			float edge = 1.0 - saturate(dot(geometryNormal, geometryViewDir));
+			outgoingLight += vec3(1.0, 0.97, 0.92) * pow(edge, 3.0) * 0.3;
+		}
+		#include <opaque_fragment>`,
+	);
+}
+const rimKey = () => "roxy-rim";
+
+let baked: MeshToonMaterial | undefined;
+/** What Roxy's baked parts are drawn with: the toon of the town's baked scenery, plus the rim. */
+export function roxyBaked() {
+	if (!baked) {
+		baked = new MeshToonMaterial({ vertexColors: true, gradientMap: toonGradient() });
+		baked.onBeforeCompile = rimLight;
+		baked.customProgramCacheKey = rimKey;
+	}
+	return baked;
+}
+
+/** The one material: toon-shaded colour, optionally with a pattern, with the rim. */
 export function Mat({
 	c,
 	map,
@@ -54,6 +82,8 @@ export function Mat({
 			{...(side && { side: DoubleSide })}
 			{...(opacity !== undefined && { transparent: true, opacity })}
 			{...(emissive && { emissive: new Color(c), emissiveIntensity: emissive })}
+			onBeforeCompile={rimLight}
+			customProgramCacheKey={rimKey}
 		/>
 	);
 }
