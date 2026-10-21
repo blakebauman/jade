@@ -1,61 +1,64 @@
-import chime from "./audio/chime.mp3";
-import dawn from "./audio/dawn.mp3";
-import day from "./audio/day.mp3";
-import digGlass from "./audio/dig-glass.mp3";
-import digLeaves1 from "./audio/dig-leaves-1.mp3";
-import digLeaves2 from "./audio/dig-leaves-2.mp3";
-import digSand from "./audio/dig-sand.mp3";
-import digSoil1 from "./audio/dig-soil-1.mp3";
-import digSoil2 from "./audio/dig-soil-2.mp3";
-import digStone1 from "./audio/dig-stone-1.mp3";
-import digStone2 from "./audio/dig-stone-2.mp3";
-import digWood1 from "./audio/dig-wood-1.mp3";
-import digWood2 from "./audio/dig-wood-2.mp3";
-import feed from "./audio/feed.mp3";
-import fire from "./audio/fire.mp3";
-import home from "./audio/home.mp3";
-import night from "./audio/night.mp3";
-import owl from "./audio/owl.mp3";
-import place1 from "./audio/place-1.mp3";
-import place2 from "./audio/place-2.mp3";
-import rain from "./audio/rain.mp3";
-import snuff from "./audio/snuff.mp3";
-import splash from "./audio/splash.mp3";
-
 /**
  * Campfire Woods' recorded sounds (ElevenLabs sound effects, trimmed and levelled; one-shots peak at -1dBFS, loops sit
- * at about -24dBFS). Each one-shot lists its variants, played at random. The loops carry 0.1s of wrap-around either
- * side, so the decoder's padding never lands inside `loopStart`–`loopEnd` and the seam doesn't click.
+ * at about -24dBFS). Every `audio/*.mp3` is one: `name.mp3` is a one-shot, and `name-1.mp3`, `name-2.mp3`… are takes of
+ * the same one, played at random. The loops carry 0.1s of wrap-around either side, so the decoder's padding never lands
+ * inside `loopStart`–`loopEnd` and the seam doesn't click. Prompts are in `audio/prompts.tsv`.
  *
- * They load after `unlock()`, about 860KB in all; until one has arrived (or if it never does) `sound.ts` makes that
+ * They load after `unlock()`, about 1MB in all; until one has arrived (or if it never does) `sound.ts` makes that
  * sound itself, as it always has.
  */
-export const SHOTS = {
-	"dig-stone": [digStone1, digStone2],
-	"dig-wood": [digWood1, digWood2],
-	"dig-soil": [digSoil1, digSoil2],
-	"dig-leaves": [digLeaves1, digLeaves2],
-	"dig-sand": [digSand],
-	"dig-glass": [digGlass],
-	place: [place1, place2],
-	feed: [feed],
-	chime: [chime],
-	home: [home],
-	owl: [owl],
-	dawn: [dawn],
-	snuff: [snuff],
-	splash: [splash],
-} as const;
+
+const FILES = import.meta.glob<string>("./audio/*.mp3", { eager: true, query: "?url", import: "default" });
 
 export const LOOPS = {
-	day: { url: day, loopStart: 0.1, loopEnd: 20.04 },
-	night: { url: night, loopStart: 0.1, loopEnd: 20.04 },
-	fire: { url: fire, loopStart: 0.1, loopEnd: 12.04 },
-	rain: { url: rain, loopStart: 0.1, loopEnd: 15.04 },
+	day: { loopStart: 0.1, loopEnd: 20.04 },
+	night: { loopStart: 0.1, loopEnd: 20.04 },
+	fire: { loopStart: 0.1, loopEnd: 12.04 },
+	rain: { loopStart: 0.1, loopEnd: 15.04 },
 } as const;
 
-export type Shot = keyof typeof SHOTS;
+export const SHOT_IDS = [
+	"dig-stone",
+	"dig-wood",
+	"dig-soil",
+	"dig-leaves",
+	"dig-sand",
+	"dig-glass",
+	"place",
+	"feed",
+	"chime",
+	"home",
+	"owl",
+	"dawn",
+	"snuff",
+	"splash",
+	"step-grass",
+	"step-stone",
+	"step-wood",
+	"step-sand",
+	"step-water",
+	"call-bunny",
+	"call-fox",
+	"call-owl",
+	"call-lamb",
+	"call-hedgehog",
+	"call-duckling",
+] as const;
+
+export type Shot = (typeof SHOT_IDS)[number];
 export type Loop = keyof typeof LOOPS;
+
+/** Each file's URL by its name: one-shots by id (all their takes), loops by name. */
+export const SHOT_URLS = new Map<string, string[]>();
+export const LOOP_URLS = new Map<string, string>();
+for (const [path, url] of Object.entries(FILES)) {
+	const name = path.slice("./audio/".length, -".mp3".length);
+	if (name in LOOPS) LOOP_URLS.set(name, url);
+	else {
+		const id = name.replace(/-\d+$/, "");
+		SHOT_URLS.set(id, [...(SHOT_URLS.get(id) ?? []), url]);
+	}
+}
 
 const shots = new Map<Shot, AudioBuffer[]>();
 const loops = new Map<Loop, AudioBuffer>();
@@ -72,26 +75,22 @@ async function decode(c: BaseAudioContext, url: string) {
 	});
 }
 
+const warn = (e: unknown) => console.warn("[woods sound]", e);
+
 /** Fetches and decodes everything, once. Failures are left out quietly: their sounds stay synthesised. */
 export function loadSamples(c: BaseAudioContext) {
 	if (started || typeof fetch !== "function") return;
 	started = true;
-	for (const [id, urls] of Object.entries(SHOTS) as [Shot, readonly string[]][]) {
-		for (const url of urls)
-			decode(c, url).then(
-				(b) => shots.set(id, [...(shots.get(id) ?? []), b]),
-				(e) => console.warn("[woods sound]", e),
-			);
+	for (const id of SHOT_IDS) {
+		for (const url of SHOT_URLS.get(id) ?? []) decode(c, url).then((b) => shots.set(id, [...(shots.get(id) ?? []), b]), warn);
 	}
-	for (const [id, l] of Object.entries(LOOPS) as [Loop, (typeof LOOPS)[Loop]][]) {
-		decode(c, l.url).then(
-			(b) => loops.set(id, b),
-			(e) => console.warn("[woods sound]", e),
-		);
+	for (const id of Object.keys(LOOPS) as Loop[]) {
+		const url = LOOP_URLS.get(id);
+		if (url) decode(c, url).then((b) => loops.set(id, b), warn);
 	}
 }
 
-/** One of a one-shot's variants, or null while none has loaded. */
+/** One of a one-shot's takes, or null while none has loaded. */
 export function shotBuffer(id: Shot) {
 	const all = shots.get(id);
 	return all?.length ? all[Math.floor(Math.random() * all.length)]! : null;

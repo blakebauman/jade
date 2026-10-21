@@ -1,4 +1,4 @@
-import { B, isLeaves, isLog, isPlant } from "@jade/core/woods";
+import { type Animal, B, isLeaves, isLog, isPlant } from "@jade/core/woods";
 import { LOOPS, type Loop, loadSamples, loopBuffer, type Shot, shotBuffer } from "./samples.ts";
 
 /**
@@ -152,10 +152,14 @@ type ShotOpts = {
 	gain?: number;
 	at?: number;
 	dest?: AudioNode;
+	/** Playback speed (and so pitch); 1 as recorded. */
+	rate?: number;
 	/** Up to this much faster or slower, at random. */
 	vary?: number;
 	/** Decibels added below about 250Hz. */
 	bass?: number;
+	/** -1 (left) to 1 (right). */
+	pan?: number;
 };
 
 /** Plays a recording, if it's loaded. False when it isn't, so the caller can make the sound instead. */
@@ -167,7 +171,7 @@ function shot(id: Shot, opts: ShotOpts = {}) {
 	const t = ctx.currentTime + (opts.at ?? 0);
 	const src = ctx.createBufferSource();
 	src.buffer = buf;
-	if (opts.vary) src.playbackRate.value = rand(1 - opts.vary, 1 + opts.vary);
+	src.playbackRate.value = (opts.rate ?? 1) * (opts.vary ? rand(1 - opts.vary, 1 + opts.vary) : 1);
 	const g = ctx.createGain();
 	g.gain.value = opts.gain ?? 0.5;
 	const nodes: AudioNode[] = [src, g];
@@ -179,6 +183,12 @@ function shot(id: Shot, opts: ShotOpts = {}) {
 		shelf.gain.value = opts.bass;
 		head = head.connect(shelf);
 		nodes.push(shelf);
+	}
+	if (opts.pan && ctx.createStereoPanner) {
+		const panner = ctx.createStereoPanner();
+		panner.pan.value = Math.max(-1, Math.min(1, opts.pan));
+		head = head.connect(panner);
+		nodes.push(panner);
 	}
 	head.connect(g).connect(opts.dest ?? out);
 	release(src, nodes);
@@ -236,13 +246,26 @@ export function chime() {
 	tone(1175, 1175, 0.35, { gain: 0.14, at: 0.1 });
 }
 
-export function home() {
+/** An animal coming home: the rising four notes, and the animal itself, glad, a moment later. */
+export function home(animal?: Animal) {
+	if (animal) call(animal, { gain: 0.35, at: 0.45, glad: true });
 	if (shot("home", { gain: 0.45 })) return;
 	for (const [k, f] of [523, 659, 784, 1047].entries()) tone(f, f, 0.22, { gain: 0.16, at: k * 0.09 });
 }
 
 /** A rescued animal's sparkle is the same rising four notes as coming home. */
 export const rescueSparkle = home;
+
+/** Patting an animal at camp: just its happy call. */
+export const pat = (animal: Animal) => call(animal, { gain: 0.35, glad: true }) || home();
+
+/**
+ * An animal's call (recorded only: there's no synthesised one). `glad` lifts it a little, for home and pats; `pan`
+ * places it left or right of where the kid is looking.
+ */
+function call(animal: Animal, opts: { gain: number; at?: number; pan?: number; glad?: boolean; dest?: AudioNode }) {
+	return shot(`call-${animal}`, { ...opts, rate: opts.glad ? 1.12 : 1, vary: 0.04 });
+}
 
 function hoot(gain: number, dest?: AudioNode) {
 	// The recording sits about 6dB above the synthesised hoot at the same `gain`.
@@ -258,12 +281,22 @@ export function dawn() {
 	for (const [k, f] of [392, 494, 587, 784].entries()) tone(f, f, 0.4, { type: "triangle", gain: 0.12, at: k * 0.14 });
 }
 
+/** Which recorded footsteps a block makes underfoot. */
+export function stepSound(surface: number): Shot {
+	if (surface === B.water) return "step-water";
+	if (surface === B.planks || isLog(surface)) return "step-wood";
+	if (HARD.has(surface)) return "step-stone";
+	if (surface === B.sand) return "step-sand";
+	return "step-grass";
+}
+
 /**
- * One footstep on the block underfoot: a soft thump on grass, dirt, sand, leaves and wool; a harder tick on stone,
+ * One footstep on the block underfoot (recorded, or else made here): a soft thump on grass, dirt, sand, leaves and wool; a harder tick on stone,
  * brick, ore, glass and bedrock; a hollow knock on planks and logs; a little splash in water. Each one varies a bit.
  */
 export function step(surface: number) {
 	if (surface === B.air) return;
+	if (shot(stepSound(surface), { gain: surface === B.water ? 0.16 : 0.14, vary: 0.07 })) return;
 	const v = rand(0.85, 1.15);
 	if (surface === B.water) {
 		noise(0.16, 1400 * v, { gain: 0.12, q: 0.8, attack: 0.02, sweep: 700 });
@@ -318,6 +351,11 @@ export type AmbienceState = {
 	rain?: number;
 	/** Muffles the bed. */
 	underwater?: boolean;
+	/**
+	 * At night, the nearest lost animal: it calls every few seconds, louder the nearer it is, from its side (`turn`,
+	 * radians from where the kid is looking, left positive).
+	 */
+	lost?: { animal: Animal; blocks: number; turn: number } | null;
 	/** False while paused or hidden: everything fades out, and fades back in when it's true again. */
 	running: boolean;
 };
@@ -341,9 +379,12 @@ type Bed = {
 	playing: Set<Loop>;
 	nextBird: number;
 	nextOwl: number;
+	nextCall: number;
 };
 
 let bed: Bed | null = null;
+/** How far a lost animal can be heard, in blocks. */
+const CALL_RANGE = 48;
 /** How far the fire can be heard, in blocks. */
 const FIRE_RANGE = 18;
 /** Time constant for every level change: about a second to settle, so nothing clicks. */
@@ -465,6 +506,7 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 		playing: new Set(),
 		nextBird: now + rand(1, 3),
 		nextOwl: now + rand(20, 40),
+		nextCall: now + rand(2, 4),
 	};
 }
 
@@ -569,6 +611,14 @@ export function ambience(state: AmbienceState) {
 		birdsong(b.birds);
 		b.nextBird = now + rand(2, 6);
 	}
+	const lost = state.lost;
+	if (lost && lost.blocks <= CALL_RANGE && now >= b.nextCall) {
+		const near = clamp01(1 - lost.blocks / CALL_RANGE);
+		// A touch quieter from behind, so turning towards it is rewarded.
+		const behind = Math.cos(lost.turn) < 0 ? 0.7 : 1;
+		call(lost.animal, { gain: (0.05 + 0.4 * near * near) * behind, pan: -Math.sin(lost.turn) * 0.8, dest: b.master });
+		b.nextCall = now + rand(5, 8);
+	} else if (!lost) b.nextCall = Math.max(b.nextCall, now + rand(2, 4));
 	if (nightness > 0.7 && now >= b.nextOwl) {
 		hoot(0.05, b.night);
 		b.nextOwl = now + rand(25, 50);

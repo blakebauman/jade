@@ -43,6 +43,9 @@ describe("woods sound", () => {
 			s.lowFire();
 			s.splash();
 			s.tap(B.stone);
+			s.home("fox");
+			s.pat("lamb");
+			s.ambience({ sun: 0, fireDistance: 10, fireStrength: 1, lost: { animal: "duckling", blocks: 12, turn: 1 }, running: true });
 			s.ambience({ sun: 0.5, fireDistance: 3, fireStrength: 1, running: true });
 			s.ambience({ sun: 0, fireDistance: 30, fireStrength: 0, underwater: true, running: false });
 			s.stopAmbience();
@@ -60,6 +63,16 @@ describe("woods sound", () => {
 		expect(digSound(B.leaves)).toBe("dig-leaves");
 		expect(digSound(B.sand)).toBe("dig-sand");
 		expect(digSound(B.grass)).toBe("dig-soil");
+	});
+
+	it("picks footsteps by the ground underfoot", async () => {
+		const { stepSound } = await import("./sound.ts");
+		expect(stepSound(B.grass)).toBe("step-grass");
+		expect(stepSound(B.leaves)).toBe("step-grass");
+		expect(stepSound(B.stone)).toBe("step-stone");
+		expect(stepSound(B.planks)).toBe("step-wood");
+		expect(stepSound(B.sand)).toBe("step-sand");
+		expect(stepSound(B.water)).toBe("step-water");
 	});
 
 	it("remembers muting on the device", async () => {

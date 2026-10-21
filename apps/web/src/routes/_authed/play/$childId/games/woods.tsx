@@ -69,12 +69,12 @@ type Hud = {
 	/** Standing by the lit fire: recipes that need its heat can be made. */
 	byFire: boolean;
 	/** At night: the nearest lost animal nobody's found yet, and which way it is from where the kid is looking. */
-	lostNear: { label: string; blocks: number; turn: number } | null;
+	lostNear: { animal: Animal; label: string; blocks: number; turn: number } | null;
 	/** What E (or the Use button) would do here. */
 	use:
 		| { kind: "feed"; block: number }
 		| { kind: "pickup"; id: string; label: string }
-		| { kind: "pat"; index: number; label: string }
+		| { kind: "pat"; index: number; animal: Animal; label: string }
 		| null;
 	/** The kid's eyes are under water. */
 	underwater: boolean;
@@ -209,7 +209,7 @@ function WoodsScreen() {
 					);
 				} else if (e.t === "follow") say(`The ${ANIMAL_LABEL[e.animal]} is following you. Bring it to the fire!`);
 				else if (e.t === "home") {
-					sound.home();
+					sound.home(e.animal);
 					say(e.mine ? `You brought the ${ANIMAL_LABEL[e.animal]} home!` : `The ${ANIMAL_LABEL[e.animal]} is home!`);
 				} else if (e.t === "goal") {
 					sound.chime();
@@ -251,7 +251,9 @@ function WoodsScreen() {
 			const wet = rainAt(world.seed, world.elapsed());
 			if (wet > 0 && !raining.current && phaseRef.current === "play") say("A rain shower! It won’t last long.", 3500);
 			raining.current = wet > 0;
+			const next = readHud(world, controls);
 			sound.ambience({
+				lost: next.lostNear,
 				rain: wet,
 				underwater:
 					!!controls.body &&
@@ -269,7 +271,6 @@ function WoodsScreen() {
 				say("The fire’s getting low! Feed it a log.", 4000);
 			}
 			lowWarned.current = low;
-			const next = readHud(world, controls);
 			// The Play home shows how many nights this kid has kept the fire going.
 			if (world.stats.nights > 0)
 				try {
@@ -301,7 +302,7 @@ function WoodsScreen() {
 			sound.feed();
 		} else if (u.kind === "pat") {
 			world.pat(u.index);
-			sound.home();
+			sound.pat(u.animal);
 		} else world.send({ t: "pickup", id: u.id });
 	}, [world, controls, report]);
 
@@ -850,7 +851,7 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 			// An animal living at camp, close enough to pat.
 			const k = world.homeSpots.findIndex((a) => Math.hypot(a.x - body[0], a.z - body[2]) <= 1.8);
 			const kind = world.home[k];
-			if (k >= 0 && kind) use = { kind: "pat", index: k, label: ANIMAL_LABEL[kind] };
+			if (k >= 0 && kind) use = { kind: "pat", index: k, animal: kind, label: ANIMAL_LABEL[kind] };
 		}
 	}
 	let lostNear: Hud["lostNear"] = null;
@@ -867,7 +868,12 @@ function readHud(world: IslandState, controls: Controls | null): Hud {
 			const want = Math.atan2(-(best.a.at[0] - body[0]), -(best.a.at[2] - body[2]));
 			let turn = want - yaw;
 			turn = Math.atan2(Math.sin(turn), Math.cos(turn));
-			lostNear = { label: ANIMAL_LABEL[best.a.animal], blocks: Math.round(best.d), turn: Math.round(turn * 10) / 10 };
+			lostNear = {
+				animal: best.a.animal,
+				label: ANIMAL_LABEL[best.a.animal],
+				blocks: Math.round(best.d),
+				turn: Math.round(turn * 10) / 10,
+			};
 		}
 	}
 	const byFire = !!body && world.clock.fuel > 0 && Math.hypot(body[0] - world.fire[0] - 0.5, body[2] - world.fire[2] - 0.5) <= REACH_FIRE;

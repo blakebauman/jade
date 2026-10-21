@@ -1,5 +1,5 @@
 id	seconds	prompt_influence	loop	prompt
-night	20	0.45	loop	seamless calm summer night forest ambience, soft steady crickets chirping, faint breeze, peaceful, no owls, no music, no voice
+night	20	0.5	loop	seamless calm summer night ambience in the woods, soft low tree frogs croaking gently, a few mellow distant crickets far away, warm and quiet, no high-pitched whine, no owls, no music, no voice (then low-passed at 4.5kHz, 24dB/octave)
 fire	12	0.5	loop	seamless close campfire crackling loop, warm wood fire, soft pops and gentle hiss, steady, no wind, no music, no voice
 rain	15	0.45	loop	seamless gentle light rain falling on leaves and grass in a forest, soft steady patter, no thunder, no music, no voice
 dig-stone-1	0.6	0.7	-	short stone block breaking in a cozy block building game, crumbly rock crunch, clear transient, short tail, no music, no voice
@@ -22,3 +22,14 @@ snuff	0.8	0.7	-	small torch flame being blown out, soft breathy puff and fizzle,
 splash	1.0	0.7	-	small gentle splash of someone hopping into a pond, kids game, no music, no voice
 day	20	0.55	loop	seamless loop of a sunny forest meadow by day, clearly audible cheerful songbirds chirping nearby and farther off, soft rustling leaves in a light breeze, no music, no voice, no people
 owl	2.5	0.6	-	single soft distant owl hooting twice at night in a quiet forest, gentle and calm, natural, no music, no voice
+call-bunny	1.0	0.7	-	a tiny lost baby bunny making a soft high squeak, cute and gentle, close, single short call, no music, no voice
+call-fox	1.0	0.7	-	a small lost fox cub giving a soft little yip, cute, single short call, gentle, no music, no voice
+call-owl	1.0	0.7	-	a baby owlet giving a soft tiny chirping hoot, cute and gentle, single short call, no music, no voice
+call-lamb	1.2	0.7	-	a small lost lamb giving a soft short baa bleat, cute and gentle, single call, no music, no voice
+call-hedgehog	1.0	0.7	-	a little hedgehog making soft snuffly squeaks and sniffs, cute, single short call, no music, no voice
+call-duckling	1.0	0.7	-	a tiny lost duckling peeping two soft high peeps, cute and gentle, no music, no voice
+steps-grass	5	0.6	-	footsteps of one child walking slowly on soft grass and earth, eight evenly spaced separate steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
+steps-stone	5	0.6	-	footsteps of one child in soft shoes walking slowly on hard stone, eight evenly spaced separate steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
+steps-wood	5	0.6	-	footsteps of one child walking slowly on a wooden plank floor, hollow soft knocks, eight evenly spaced separate steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
+steps-sand	5	0.6	-	footsteps of one child walking slowly on dry sand, soft grainy crunch, eight evenly spaced separate steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
+steps-water	5	0.6	-	one child wading slowly through shallow water, eight evenly spaced separate gentle splashy steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
