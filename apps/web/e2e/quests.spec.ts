@@ -62,8 +62,8 @@ test("a quest still to do takes the kid straight to its game", async ({ page }) 
 	await page.getByRole("button", { name: "Quests" }).click();
 	const board = page.getByRole("region", { name: "Today’s quests" });
 	const card = board.getByRole("button").first();
-	const label = (await card.locator("span").first().textContent())!;
-	const game = QUESTS.find((q) => q.label === label)!.game;
+	const text = (await card.textContent())!;
+	const game = QUESTS.find((q) => text.includes(q.label))!.game;
 	await card.click();
 	const where = {
 		gobble: /\/games\/gobble$/,
