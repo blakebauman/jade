@@ -148,7 +148,8 @@ test("decorate Roxy's home, and it's still there after a reload", async ({ page 
 	// On a phone the studio's corner keeps Home in Go to….
 	if (await page.getByRole("link", { name: "Home" }).isVisible()) await page.getByRole("link", { name: "Home" }).click();
 	else await page.goto(`/play/${ids[0]}/games/roxy/home`);
-	await expect(page.getByRole("heading", { name: "Roxy’s home" })).toBeVisible();
+	// Attached, not visible: on an upright phone the keys beside it leave the masthead no room, so only a reader hears it.
+	await expect(page.getByRole("heading", { name: "Roxy’s home" })).toBeAttached();
 	await expect(page.getByText("Tap the floor and Roxy walks there.")).toBeVisible();
 
 	await page.getByRole("button", { name: "Decorate" }).click();
