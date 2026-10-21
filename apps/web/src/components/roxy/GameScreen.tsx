@@ -1,5 +1,5 @@
 import { Clock, Maximize, Minimize, PanelRightClose, PanelRightOpen } from "lucide-react";
-import { type ReactNode, useEffect, useId, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useWakeLock } from "#/lib/hooks.ts";
 import { usePlayClockValue } from "#/lib/play.ts";
 
@@ -64,6 +64,8 @@ export function GameScreen({
 	// A game is played at arm's length with long pauses to look; the screen stays on while it's open.
 	useWakeLock(true);
 	const sheet = open && !!panel;
+	const masthead = useRef<HTMLDivElement>(null);
+	const titled = useFitTitle(masthead);
 	const clock = usePlayClockValue();
 	// A go under way holds off the time-up sheet until it's over.
 	const { hold } = clock;
@@ -82,18 +84,21 @@ export function GameScreen({
 			<header
 				className={`pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 ${GUTTER_TOP} ${sheet ? "short:right-[21rem] lg:right-[29.5rem]" : ""}`}
 			>
-				<div className="flex min-w-0 items-start gap-3">
+				<div ref={masthead} className="flex min-w-0 flex-1 items-start gap-3 max-md:gap-2">
 					<div className="pointer-events-auto">{back}</div>
 					{/* On glass, like the rest of the chrome, so it reads on any scene: a daylit park, Campfire Woods at night, or a
-					    stage the kid painted navy. The eyebrow is said, not shown: a kicker over a title is one label too many. */}
-					<div className="glass min-w-0 select-none rounded-[1.25rem] px-4 py-2.5 text-page-ink">
-						<h1 className="font-display text-[clamp(1.4rem,3.4vw,2.25rem)] font-semibold leading-[1] tracking-tight [&>span]:text-roxy">
+					    stage the kid painted navy. The eyebrow is said, not shown: a kicker over a title is one label too many.
+					    Always one line: it shrinks to what the keys leave, and where even that's too little only a reader hears it. */}
+					<div
+						className={`glass min-w-0 select-none overflow-hidden rounded-[1.25rem] px-4 py-2.5 text-page-ink max-md:px-3 max-md:py-2 ${titled ? "" : "sr-only"}`}
+					>
+						<h1 className="font-display text-[clamp(1.4rem,3.4vw,2.25rem)] font-semibold leading-[1] tracking-tight whitespace-nowrap transition-none [&_*]:transition-none [&>span]:text-roxy">
 							<span className="sr-only">{eyebrow}: </span>
 							{title}
 						</h1>
 					</div>
 				</div>
-				<div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
+				<div className="pointer-events-auto flex flex-none items-center justify-end gap-2 max-md:gap-1.5">
 					{clock.metered && <PlayTime minutes={clock.minutes} warn={clock.warn} />}
 					{orbs}
 					{full.supported && (
@@ -235,6 +240,48 @@ const PANEL =
 /** A mouse and keyboard on a window wide enough for hints; otherwise touch controls. */
 const FINE_ONLY = "hidden [@media(pointer:fine)_and_(min-width:701px)]:@min-[10rem]:flex";
 const TOUCH_ONLY = "[@media(pointer:fine)_and_(min-width:701px)]:hidden";
+
+/**
+ * The masthead's title kept on one line: smaller (down to 1rem) when the keys beside it leave too little room, else
+ * hidden. The h1 has no transition, or the fit would measure between two sizes (reduced motion gives every property a 1ms one).
+ */
+function useFitTitle(slot: RefObject<HTMLDivElement | null>) {
+	const [shown, setShown] = useState(true);
+	useLayoutEffect(() => {
+		const el = slot.current;
+		const h1 = el?.querySelector("h1");
+		const pill = h1?.parentElement;
+		if (!el || !h1 || !pill) return;
+		const fit = () => {
+			h1.style.fontSize = "";
+			pill.classList.remove("sr-only");
+			let size = Number.parseFloat(getComputedStyle(h1).fontSize);
+			const least = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+			// A pixel's grace: widths are fractional on a 2x screen, and scrollWidth rounds up.
+			const over = () => pill.scrollWidth > pill.clientWidth + 1;
+			while (over() && size > least) {
+				size = Math.max(least, size - 1);
+				h1.style.fontSize = `${size}px`;
+			}
+			const fits = !over();
+			if (!fits) pill.classList.add("sr-only");
+			setShown(fits);
+		};
+		fit();
+		const watch = new ResizeObserver(fit);
+		watch.observe(el);
+		// The keys beside it come and go (Pause once a go starts), which may leave the same width but changed contents.
+		if (el.nextElementSibling) watch.observe(el.nextElementSibling);
+		const words = new MutationObserver(fit);
+		words.observe(h1, { childList: true, subtree: true, characterData: true });
+		void document.fonts?.ready.then(fit);
+		return () => {
+			watch.disconnect();
+			words.disconnect();
+		};
+	}, [slot]);
+	return shown;
+}
 
 /** The panel open or closed, remembered on this device per screen (and fine without storage). */
 function usePanelOpen(key: string | undefined, initial: boolean): [boolean, (open: boolean) => void] {
