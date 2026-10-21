@@ -108,7 +108,7 @@ function Settings() {
 					)}
 					<p className="text-page-muted">
 						{parent?.hasPin
-							? "Kids need the PIN to get in here. It’s asked for again when you go back to Practice, sign out, or leave this area alone for a while. Forgot it? Your account password always works instead."
+							? "Kids need the PIN to get in here. It’s asked for again when you hand back to the kids, sign out, or leave this area alone for a while. Forgot it? Your account password always works instead."
 							: "On a shared laptop or iPad, a 4-digit PIN keeps kids out of list editing. It’s a speed bump, not a password, and your account password always opens the parent area if you forget it."}
 					</p>
 					<form onSubmit={submit} className="space-y-3">

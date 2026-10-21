@@ -114,7 +114,7 @@ Secrets:
 **Parent PIN** (optional, `parent_settings.pin_hash`):
 - It's a speed bump for kids, not a security boundary. Only `POST /api/parent/verify-pin` checks it; the parent APIs don't.
 - The unlock lives in sessionStorage (`jade.parent-unlocked`, `lib/parentLock.ts`) with the user id and the time of the last tap or key press.
-- It locks again when the parent area unmounts (going to Practice), on sign-out (`forgetDevice`), in a new tab, and after `pinRelockMinutes` idle. The parent picks 1, 5, 15 or 30 minutes (default 5) in Settings.
+- It locks again when the parent area unmounts (going to Who’s playing?), on sign-out (`forgetDevice`), in a new tab, and after `pinRelockMinutes` idle. The parent picks 1, 5, 15 or 30 minutes (default 5) in Settings.
 - The gate fails closed: nothing shows until `/api/parent` answers, and if it can't be read the gate asks for the PIN.
 - It can never strand a family: "Forgot the PIN?" takes the account password (`POST /api/parent/verify-password`) and lands on Settings (`?newPin=true`) to choose a new one, and the gate has its own Sign out. Setting a PIN asks for it twice.
 

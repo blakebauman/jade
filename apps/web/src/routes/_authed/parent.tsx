@@ -1,7 +1,7 @@
 import { DEFAULT_PIN_RELOCK_MINUTES } from "@jade/core";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { Lock, Users } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { Brand } from "#/components/Brand.tsx";
 import { InstallHint } from "#/components/InstallHint.tsx";
@@ -112,8 +112,8 @@ function PinGate({ onUnlock }: { onUnlock: (forgotPin: boolean) => void }) {
 					</button>
 				</form>
 				<div className="flex flex-wrap items-start justify-center gap-3">
-					<Link to="/profiles" className="key" data-variant="felt">
-						<ArrowLeft className="size-5" aria-hidden /> Back to practice
+					<Link to="/profiles" className="key">
+						<Users className="size-5" aria-hidden /> Who’s playing?
 					</Link>
 					<SignOut className="flex flex-col items-center" />
 				</div>
@@ -125,7 +125,7 @@ function PinGate({ onUnlock }: { onUnlock: (forgotPin: boolean) => void }) {
 /**
  * Keeps an unlocked parent area unlocked while the parent is using it: any tap or key restarts the idle clock. It locks
  * once the clock runs out (checked on a timer and whenever the tab comes back, since a sleeping iPad pauses timers) and
- * whenever the parent area is left, e.g. for Practice.
+ * whenever the parent area is left, such as for the kid picker.
  */
 function useParentUnlock(user: string, idleMs: number) {
 	const [unlocked, setUnlocked] = useState(() => isParentUnlocked(user, idleMs));
@@ -206,7 +206,7 @@ function ParentLayout() {
 	return (
 		<div className="mx-auto min-h-dvh max-w-6xl px-safe-5 pt-safe-0 pb-safe-16 md:px-safe-10">
 			<header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 py-5 md:py-6">
-				{/* The brand is a mark, not a second way to Practice: the Practice key is the one exit. */}
+				{/* The brand is a mark, not a second way out: the Who’s playing? key is the one exit, the kid side’s own key back. */}
 				<Brand size={22} />
 				<nav
 					className={`order-last grid w-full ${nav.length === 4 ? "grid-cols-4" : "grid-cols-3"} gap-2 sm:order-none sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center`}
@@ -218,7 +218,7 @@ function ParentLayout() {
 							<Link
 								key={n.to}
 								to={n.to}
-								className="key"
+								className="key max-sm:px-2"
 								data-variant="felt"
 								data-pressed={current || undefined}
 								aria-current={current ? "page" : undefined}
@@ -228,9 +228,25 @@ function ParentLayout() {
 						);
 					})}
 				</nav>
-				{/* The way out of the parent area, set apart from the section keys it could be mistaken for. */}
-				<Link to="/profiles" className="key sm:ml-3">
-					<ArrowLeft className="size-5" aria-hidden /> Practice
+				{/* The way out of the parent area, set apart from the section keys it could be mistaken for. Where it can't share
+				    the brand's row it goes after the sections, so a phone reads where you are before the way out. With a PIN,
+				    leaving locks the area, and the key says so: a lock on its mark, and in its name. */}
+				<Link
+					to="/profiles"
+					className="key max-[22.25rem]:order-last sm:ml-3"
+					aria-label={parent?.hasPin ? "Who’s playing? Locks the parent area" : undefined}
+				>
+					<span className="relative inline-flex">
+						<Users className="size-5" aria-hidden />
+						{parent?.hasPin && (
+							<Lock
+								className="absolute -right-1.5 -bottom-1 size-3.5 rounded-full bg-page-raised p-px text-page-ink"
+								strokeWidth={2.75}
+								aria-hidden
+							/>
+						)}
+					</span>
+					Who’s playing?
 				</Link>
 			</header>
 			<InstallHint />
