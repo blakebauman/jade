@@ -4,12 +4,12 @@ import { LOOPS, type Loop, loadSamples, loopBuffer, type Shot, shotBuffer } from
 /**
  * Campfire Woods' sounds. The ones that carry the island are recordings (`samples.ts`): blocks giving way by what
  * they're made of, a block set down, a log on the fire, chimes, the owl, morning, a torch snuffed, a splash, and the
- * day, night, rain and campfire beds. Until a recording has loaded, or if it never does, its sound is made here on the
+ * day, night, rain and campfire beds, and a quiet tune by night. Until a recording has loaded, or if it never does, its sound is made here on the
  * spot, and the quick, frequent ones always are: taps while mining, a crunch when a block gives (lower for
  * stone, softer for leaves), a clunk when one's placed, the fire taking a log, a chime when an animal comes home or a
  * goal is met, and an owl at nightfall. Footsteps, hops and landings follow the ground underfoot. Under it all runs a
- * soft bed: birds and a breeze by day, crickets and a far-off owl by night, and the campfire crackling when you're
- * near it. Quiet by design; muting is remembered on the device.
+ * soft bed: birds and a breeze by day, crickets, a far-off owl and a lullaby by night, and the campfire crackling when
+ * you're near it. Quiet by design; muting is remembered on the device.
  *
  * Nothing here plays until `unlock()` has run from a tap or key press: before that every call is a no-op.
  */
@@ -373,8 +373,10 @@ type Bed = {
 	fire: GainNode;
 	/** The recorded day bed (breeze and birds), faded by day like the birds. */
 	day: GainNode;
+	/** The night's tune, once night is properly down; it has no synthesised stand-in. */
+	music: GainNode;
 	/** The synthesised layers, faded out as each recording that replaces it starts. */
-	synth: Record<Loop, GainNode>;
+	synth: Record<Exclude<Loop, "music">, GainNode>;
 	/** Recordings already playing. */
 	playing: Set<Loop>;
 	nextBird: number;
@@ -409,7 +411,7 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 	};
 
 	const master = gain(0);
-	const synth: Record<Loop, GainNode> = { day: gain(1), night: gain(1), fire: gain(1), rain: gain(1) };
+	const synth: Bed["synth"] = { day: gain(1), night: gain(1), fire: gain(1), rain: gain(1) };
 	const muffle = c.createBiquadFilter();
 	muffle.type = "lowpass";
 	muffle.frequency.value = 18000;
@@ -461,6 +463,10 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 		crickets.push(gate);
 	}
 
+	// The night's tune: recorded only, so it simply isn't there until it's loaded.
+	const music = gain(0);
+	music.connect(master);
+
 	// Campfire: a low rumble and a brighter hiss from the same noise, with pops added by `ambience`.
 	const fire = gain(0);
 	fire.connect(master);
@@ -502,6 +508,7 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 		crickets,
 		fire,
 		day,
+		music,
 		synth,
 		playing: new Set(),
 		nextBird: now + rand(1, 3),
@@ -514,7 +521,7 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
  * Each recorded bed's level against the layer it joins, set from measured levels to sit where the synthesised one it
  * takes over from did (tune these by ear). The day bed is the only one with a layer of its own (and the wind stays under it, softly).
  */
-const LOOP_TRIM: Record<Loop, number> = { day: 0.3, night: 0.22, fire: 1.2, rain: 4 };
+const LOOP_TRIM: Record<Loop, number> = { day: 0.3, night: 0.22, fire: 1.2, rain: 4, music: 0.14 };
 
 /** Starts any recorded bed that's loaded since the last tick, and fades out the synthesised layer it replaces. */
 function startLoops(c: AudioContext, b: Bed) {
@@ -529,12 +536,12 @@ function startLoops(c: AudioContext, b: Bed) {
 		src.loopStart = LOOPS[id].loopStart;
 		src.loopEnd = LOOPS[id].loopEnd;
 		const trim = c.createGain();
-		src.connect(trim).connect(id === "day" ? b.day : b[id]);
+		src.connect(trim).connect(b[id]);
 		// From somewhere in the middle, so the beds never start together; fading in under the synth fading out.
 		src.start(c.currentTime, LOOPS[id].loopStart + Math.random() * (LOOPS[id].loopEnd - LOOPS[id].loopStart));
 		trim.gain.setValueAtTime(0, c.currentTime);
 		trim.gain.setTargetAtTime(LOOP_TRIM[id], c.currentTime, 0.4);
-		b.synth[id].gain.setTargetAtTime(id === "day" ? 0.5 : 0, c.currentTime, 0.4);
+		if (id !== "music") b.synth[id].gain.setTargetAtTime(id === "day" ? 0.5 : 0, c.currentTime, 0.4);
 		b.sources.push(src);
 		b.nodes.push(src, trim);
 	}
@@ -598,6 +605,9 @@ export function ambience(state: AmbienceState) {
 	const strength = clamp01(state.fireStrength);
 	const fireLevel = strength * near * near * 0.35;
 	b.fire.gain.setTargetAtTime(fireLevel, now, EASE);
+	// The tune comes in once dusk is over, and steps back a little right by the fire so the crackle stays in front.
+	const deep = clamp01((nightness - 0.6) / 0.4);
+	b.music.gain.setTargetAtTime(deep * deep * (1 - 0.35 * near * strength), now, EASE * 3);
 
 	if (muted) return;
 

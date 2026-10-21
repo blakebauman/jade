@@ -2,8 +2,9 @@ import { samples } from "#/lib/samples.ts";
 
 /**
  * Campfire Woods' recorded sounds (ElevenLabs sound effects, trimmed and levelled; one-shots peak at -1dBFS, loops sit
- * at about -24dBFS). Every `audio/*.mp3` is one (see `lib/samples.ts`); prompts are in `audio/prompts.tsv`. About 1MB
- * in all, loaded after `unlock()`.
+ * at about -24dBFS), and the night's music: 8 bars at 80 BPM, cut on the bar lines from a Music API track, stereo.
+ * Every `audio/*.mp3` is one (see `lib/samples.ts`); prompts are in `audio/prompts.tsv`. About 1.3MB in all, loaded
+ * after `unlock()`.
  */
 
 export const LOOPS = {
@@ -11,6 +12,7 @@ export const LOOPS = {
 	night: { loopStart: 0.1, loopEnd: 20.04 },
 	fire: { loopStart: 0.1, loopEnd: 12.04 },
 	rain: { loopStart: 0.1, loopEnd: 15.04 },
+	music: { loopStart: 0.1, loopEnd: 24.1 },
 } as const;
 
 export const SHOT_IDS = [
