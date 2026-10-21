@@ -21,6 +21,8 @@ import { BuyChoice, CornerWallet } from "#/components/play/BuyChoice.tsx";
 import { Destinations } from "#/components/roxy/Destinations.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
 import { GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
+import { SoundOrb } from "#/components/roxy/SoundOrb.tsx";
+import * as sound from "#/components/roxy/sound.ts";
 import { TouchControls } from "#/components/roxy/TouchControls.tsx";
 import { useDrive } from "#/components/roxy/world/useDrive.ts";
 import { ApiError } from "#/lib/api.ts";
@@ -132,9 +134,12 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 		if (!picked || !pickedItem) return;
 		const next = { ...picked, ...change };
 		if (!fits(others(picked.uid), next, pickedItem)) {
+			sound.nope();
 			setMessage("It doesn’t fit there. Try another spot.");
 			return;
 		}
+		if (change.rot !== undefined) sound.turned();
+		else sound.nudged();
 		setMessage(null);
 		update(home.items.map((p) => (p.uid === picked.uid ? next : p)));
 	}
@@ -151,17 +156,20 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 	/** Put a piece in the first spot it fits in `room`. Says why not, and returns false, when it can't go in. */
 	function place(item: Furniture, room: Home): boolean {
 		if (room.items.length >= MAX_FURNITURE) {
+			sound.nope();
 			setMessage(`The room holds ${MAX_FURNITURE} things. Take one out first.`);
 			return false;
 		}
 		const spot = freeSpot(room, item);
 		if (!spot) {
+			sound.nope();
 			setMessage(`There’s no room for the ${item.label.toLowerCase()}. Move something first.`);
 			return false;
 		}
 		const placed: Placed = { uid: newUid(), item: item.id, ...spot, ...(item.colour && { c1: item.colour }) };
 		draft.set({ ...room, items: [...room.items, placed] });
 		setSelected(placed.uid);
+		sound.placed();
 		return true;
 	}
 
@@ -169,12 +177,14 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 		setBusy(true);
 		try {
 			await roxyApi.unlock(childId, item.id, pay);
+			sound.bought();
 			await qc.invalidateQueries({ queryKey: roxyQuery(childId).queryKey });
 			await qc.invalidateQueries({ queryKey: ["progress", childId] });
 			setUnlocking(null);
 			// Unlocked to be used: it goes straight into the room, like tapping a piece already owned.
 			if (place(item, draft.current())) setMessage(`The ${item.label.toLowerCase()} is yours, and it’s in the room!`);
 		} catch (err) {
+			sound.nope();
 			setMessage(
 				err instanceof ApiError && err.status === 409
 					? "That costs a bit more than you have right now."
@@ -255,6 +265,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 			}
 			orbs={
 				<>
+					<SoundOrb scene="home" />
 					<CornerWallet wallet={data.wallet} />
 					<fieldset aria-label="What to do" className="glass flex gap-1 rounded-full p-1">
 						<button
@@ -263,7 +274,10 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 							aria-pressed={mode === "play"}
 							aria-label="Play"
 							title="Play"
-							onClick={() => setMode("play")}
+							onClick={() => {
+								if (mode !== "play") sound.tap();
+								setMode("play");
+							}}
 						>
 							<Footprints aria-hidden />
 						</button>
@@ -273,7 +287,10 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 							aria-pressed={mode === "decorate"}
 							aria-label="Decorate"
 							title="Decorate"
-							onClick={() => setMode("decorate")}
+							onClick={() => {
+								if (mode !== "decorate") sound.tap();
+								setMode("decorate");
+							}}
 						>
 							<Paintbrush aria-hidden />
 						</button>
@@ -340,6 +357,7 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 											type="button"
 											className="key"
 											onClick={() => {
+												sound.putAway();
 												update(home.items.filter((p) => p.uid !== picked.uid));
 												setSelected(null);
 											}}
@@ -351,7 +369,10 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 										<Swatches
 											value={picked.c1}
 											label={`${pickedItem.label} colour`}
-											onPick={(c1) => update(home.items.map((p) => (p.uid === picked.uid ? { ...p, c1 } : p)))}
+											onPick={(c1) => {
+												sound.decorated();
+												update(home.items.map((p) => (p.uid === picked.uid ? { ...p, c1 } : p)));
+											}}
 										/>
 									)}
 								</section>
@@ -371,13 +392,23 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 										data-toggle
 										aria-pressed={home.wall.pattern === w}
 										data-pressed={home.wall.pattern === w}
-										onClick={() => draft.set({ ...home, wall: { ...home.wall, pattern: w } })}
+										onClick={() => {
+											sound.decorated();
+											draft.set({ ...home, wall: { ...home.wall, pattern: w } });
+										}}
 									>
 										{PATTERN_LABEL[w]}
 									</button>
 								))}
 							</fieldset>
-							<Swatches value={home.wall.c1} label="Wall colour" onPick={(c1) => draft.set({ ...home, wall: { ...home.wall, c1 } })} />
+							<Swatches
+								value={home.wall.c1}
+								label="Wall colour"
+								onPick={(c1) => {
+									sound.decorated();
+									draft.set({ ...home, wall: { ...home.wall, c1 } });
+								}}
+							/>
 							<fieldset aria-label="Floor" className="flex flex-wrap gap-2">
 								{FLOORS.map((fl) => (
 									<button
@@ -387,9 +418,10 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 										data-toggle
 										aria-pressed={home.floor.style === fl}
 										data-pressed={home.floor.style === fl}
-										onClick={() =>
-											draft.set({ ...home, floor: fl === "carpet" ? { style: fl, c1: home.floor.c1 ?? "f11" } : { style: fl } })
-										}
+										onClick={() => {
+											sound.decorated();
+											draft.set({ ...home, floor: fl === "carpet" ? { style: fl, c1: home.floor.c1 ?? "f11" } : { style: fl } });
+										}}
 									>
 										{FLOOR_LABEL[fl]}
 									</button>
@@ -399,7 +431,10 @@ function HomeScreen({ childId, data }: { childId: string; data: Studio }) {
 								<Swatches
 									value={home.floor.c1}
 									label="Carpet colour"
-									onPick={(c1) => draft.set({ ...home, floor: { style: "carpet", c1 } })}
+									onPick={(c1) => {
+										sound.decorated();
+										draft.set({ ...home, floor: { style: "carpet", c1 } });
+									}}
 								/>
 							)}
 						</section>

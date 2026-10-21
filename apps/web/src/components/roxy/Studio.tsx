@@ -73,6 +73,8 @@ import { Destinations } from "./Destinations.tsx";
 import { GameLoading } from "./GameLoading.tsx";
 import { GameScreen, Hint } from "./GameScreen.tsx";
 import { RoxyFigure, SLOT_VIEW } from "./RoxyFigure.tsx";
+import { SoundOrb } from "./SoundOrb.tsx";
+import * as sound from "./sound.ts";
 
 // three.js only loads on game screens.
 const StudioStage = lazy(() => import("./three/StudioStage.tsx").then((m) => ({ default: m.StudioStage })));
@@ -178,8 +180,10 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		if (!item) {
 			setTrying(null);
 			draft.set(wear(draft.look, slot, null));
+			sound.takeOff();
 			return;
 		}
+		sound.tryOn();
 		if (!isOwned(item, unlocked)) {
 			setTrying({ slot, item });
 			return;
@@ -198,6 +202,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	function colour(slot: Slot, which: "c1" | "c2", key: string) {
 		const worn = draft.look.slots[slot];
 		if (!worn) return;
+		sound.tap();
 		draft.set(wear(draft.look, slot, { ...worn, [which]: key }));
 	}
 
@@ -205,12 +210,14 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		setBusy(true);
 		try {
 			await roxyApi.unlock(childId, item.id, pay);
+			sound.bought();
 			// The look as it is now, not as it was when "Unlock" was tapped.
 			draft.set((look) => tryOn(look, slot, item));
 			setTrying(null);
 			triedOn(item);
 			await Promise.all([refresh(), progressRefresh()]);
 		} catch (err) {
+			sound.nope();
 			setMessage(
 				err instanceof ApiError && err.status === 409
 					? "That costs a bit more than you have right now."
@@ -226,11 +233,13 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		setMessage(null);
 		try {
 			await roxyApi.claim(childId, holiday.id);
+			sound.gift();
 			const gift = ITEMS.find((i) => i.id === holiday.gift)!;
 			draft.set((look) => tryOn(look, gift.slot, gift));
 			setTrying(null);
 			await refresh();
 		} catch (err) {
+			sound.nope();
 			// The server says why it refused (say, the device's date is off); anything else is the connection.
 			setMessage(
 				err instanceof ApiError && err.status >= 400 && err.status < 500 && err.status !== 429
@@ -243,6 +252,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	}
 
 	function surprise() {
+		sound.tryOn();
 		setTrying(null);
 		setMessage(null);
 		draft.set(randomLook(seeded(Date.now() >>> 0), unlocked));
@@ -262,6 +272,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 		if (to === null) return;
 		e.preventDefault();
 		const next = tabs[(to + tabs.length) % tabs.length]!;
+		sound.tap();
 		setTab(next.id);
 		setTrying(null);
 		tabRefs.current.get(next.id)?.focus();
@@ -269,6 +280,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 	const pose = draft.look.pose ?? "stand";
 	function setPose(p: (typeof POSES)[number]) {
 		const { pose: _, ...rest } = draft.look;
+		sound.tap();
 		draft.set(p === "stand" ? rest : { ...rest, pose: p });
 	}
 
@@ -317,6 +329,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 			}
 			orbs={
 				<>
+					<SoundOrb scene="studio" />
 					<CornerWallet wallet={data.wallet} />
 					<Link
 						to="/play/$childId/games/roxy/home"
@@ -419,6 +432,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 							childId={childId}
 							chosen={draft.look}
 							onPick={(look) => {
+								sound.tryOn();
 								const { name: _, ...rest } = look;
 								draft.set(draft.look.name ? { ...rest, name: draft.look.name } : rest);
 							}}
@@ -453,6 +467,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 									data-pressed={t.id === current.id}
 									className="key !min-h-11 shrink-0 !px-3.5 text-base"
 									onClick={() => {
+										if (t.id !== current.id) sound.tap();
 										setTab(t.id);
 										setTrying(null);
 									}}
@@ -471,6 +486,7 @@ export function Studio({ childId, data, initialTab }: { childId: string; data: S
 							onDone={async (saved) => {
 								setSaving(false);
 								if (saved) {
+									sound.saved();
 									draft.settle(saved.look, saved.id);
 									setFlash((n) => n + 1);
 									setMessage(`Saved “${saved.name}” to your looks. No one else in Jade’s World has this exact look.`);
@@ -1011,6 +1027,7 @@ function SaveLook({
 			const saved = await roxyApi.save(childId, name.trim(), look);
 			onDone(saved);
 		} catch (err) {
+			sound.nope();
 			const code = err instanceof ApiError ? err.message : "";
 			const mine = err instanceof ApiError && err.data.mine === true;
 			setError(

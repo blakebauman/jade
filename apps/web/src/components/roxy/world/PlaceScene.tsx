@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { type CanvasTexture, DoubleSide, type Group, type Material, type Mesh, type MeshBasicMaterial, Shape, ShapeGeometry } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
+import * as sound from "../sound.ts";
 import type { DriveInput } from "./drive.ts";
 import { GOLD, lighter, Toon } from "./Furniture.tsx";
 import type { Target } from "./near.ts";
@@ -14,6 +15,7 @@ import { park } from "./place/park.tsx";
 import { petshop } from "./place/petshop.tsx";
 import { school } from "./place/school.tsx";
 import { canvasTexture, type Spot, Walkers, WorldCanvas } from "./stage.tsx";
+import { surfaceAt } from "./surface.ts";
 
 export type { Hotspot } from "./place/kit.tsx";
 
@@ -365,6 +367,8 @@ export function PlaceScene({ place, look, found, walkTo, onGround, onFind, onHot
 				onArrive={onArrive}
 				drive={drive}
 				onMove={onMove}
+				onStep={(spot) => sound.step(surfaceAt(place, spot))}
+				onHop={sound.hop}
 			/>
 		</WorldCanvas>
 	);

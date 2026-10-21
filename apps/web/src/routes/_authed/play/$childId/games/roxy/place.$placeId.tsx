@@ -8,6 +8,8 @@ import { z } from "zod";
 import { Destinations } from "#/components/roxy/Destinations.tsx";
 import { GameLoading } from "#/components/roxy/GameLoading.tsx";
 import { accent, GameScreen, GameStatus, Hint } from "#/components/roxy/GameScreen.tsx";
+import { SoundOrb } from "#/components/roxy/SoundOrb.tsx";
+import * as sound from "#/components/roxy/sound.ts";
 import { TouchControls } from "#/components/roxy/TouchControls.tsx";
 import { nearest, type Target } from "#/components/roxy/world/near.ts";
 import type { Hotspot } from "#/components/roxy/world/PlaceScene.tsx";
@@ -123,6 +125,7 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 	function pickUp(findId: string) {
 		const find = FIND_BY_ID.get(findId);
 		if (!find || found.has(findId)) return;
+		sound.found();
 		setFound((s) => new Set([...s, findId]));
 		const left = finds.filter((f) => f.id !== findId && !found.has(f.id)).length;
 		// Free games have no tickets to count.
@@ -139,6 +142,7 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 	const hidden = finds.filter((f) => !found.has(f.id));
 
 	function openHotspot(spot: Hotspot) {
+		sound.tap();
 		setPanel(spot);
 		setReveal(`${spot}:${Date.now()}`);
 	}
@@ -215,7 +219,12 @@ function Place({ childId, place, data }: { childId: string; place: PlaceId; data
 			}
 			eyebrow={`${name}’s town`}
 			title={accent(info.label)}
-			orbs={<Destinations childId={childId} here={place} />}
+			orbs={
+				<>
+					<SoundOrb scene={place} />
+					<Destinations childId={childId} here={place} />
+				</>
+			}
 			status={
 				<GameStatus>
 					{finds.length - hidden.length} of {finds.length} found

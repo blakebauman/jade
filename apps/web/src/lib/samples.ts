@@ -27,6 +27,7 @@ export function samples<S extends string, L extends string>(
 	const shots = new Map<S, AudioBuffer[]>();
 	const loops = new Map<L, AudioBuffer>();
 	let started = false;
+	const loaded = new Set<() => void>();
 	const warn = (e: unknown) => console.warn("[game sound]", e);
 
 	return {
@@ -41,7 +42,11 @@ export function samples<S extends string, L extends string>(
 			}
 			for (const id of Object.keys(loopTimes) as L[]) {
 				const url = loopUrls.get(id);
-				if (url) decode(c, url).then((b) => loops.set(id, b), warn);
+				if (url)
+					decode(c, url).then((b) => {
+						loops.set(id, b);
+						for (const fn of loaded) fn();
+					}, warn);
 			}
 		},
 		/** One of a one-shot's takes, or null while none has loaded. */
@@ -50,6 +55,11 @@ export function samples<S extends string, L extends string>(
 			return all?.length ? all[Math.floor(Math.random() * all.length)]! : null;
 		},
 		loop: (id: L) => loops.get(id) ?? null,
+		/** Hears each loop as it finishes loading, so a game can start one it asked for before it arrived. */
+		onLoop(fn: () => void) {
+			loaded.add(fn);
+			return () => void loaded.delete(fn);
+		},
 	};
 }
 

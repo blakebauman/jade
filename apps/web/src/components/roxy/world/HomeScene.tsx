@@ -1,6 +1,7 @@
 import { FURNITURE_BY_ID, footprint, type Home, hex, type Look, type Placed, ROOM } from "@jade/core/roxy";
 import type { ThreeEvent } from "@react-three/fiber";
 import { type RefObject, useEffect, useMemo } from "react";
+import * as sound from "../sound.ts";
 import type { DriveInput } from "./drive.ts";
 import { FurnitureMesh, Toon } from "./Furniture.tsx";
 import type { Block } from "./path.ts";
@@ -35,10 +36,21 @@ export function HomeScene(props: Props) {
 			{props.home.items.map((p) => (
 				<PlacedThing key={p.uid} placed={p} selected={p.uid === props.selected} onPick={props.onFurniture} />
 			))}
-			<Walkers look={props.look} walkTo={props.walkTo} area={ROOM} blocks={blocks} drive={props.drive} />
+			<Walkers
+				look={props.look}
+				walkTo={props.walkTo}
+				area={ROOM}
+				blocks={blocks}
+				drive={props.drive}
+				onStep={() => sound.step(FLOOR_SURFACE[props.home.floor.style])}
+				onHop={sound.hop}
+			/>
 		</WorldCanvas>
 	);
 }
+
+/** What each floor sounds like underfoot. */
+const FLOOR_SURFACE: Record<Home["floor"]["style"], sound.Surface> = { wood: "wood", darkwood: "wood", checker: "tile", carpet: "carpet" };
 
 /** Floor furniture is in Roxy's way; rugs and wall things aren't. */
 function furnitureBlocks(home: Home): Block[] {

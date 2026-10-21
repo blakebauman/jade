@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { MapPinned } from "lucide-react";
 import { useRef } from "react";
 import { useCharacterName } from "#/lib/roxy.ts";
+import * as sound from "./sound.ts";
 
 /** Where Roxy is now: the studio, her home, or a place in town. */
 export type Here = "studio" | "home" | PlaceId;
@@ -15,6 +16,11 @@ export function Destinations({ childId, here }: { childId: string; here: Here })
 	const dialog = useRef<HTMLDialogElement>(null);
 	const name = useCharacterName(childId);
 	const close = () => dialog.current?.close();
+	/** Off somewhere else: a whoosh, unless it's where she already is. */
+	const go = (to: Here) => () => {
+		if (to !== here) sound.travel();
+		close();
+	};
 	const row = "key w-full !justify-between";
 	const mark = (id: Here) =>
 		id === here ? (
@@ -54,7 +60,7 @@ export function Destinations({ childId, here }: { childId: string; here: Here })
 						activeOptions={{ exact: true }}
 						className={row}
 						aria-current={here === "studio" ? "page" : undefined}
-						onClick={close}
+						onClick={go("studio")}
 					>
 						Studio {mark("studio")}
 					</Link>
@@ -64,7 +70,7 @@ export function Destinations({ childId, here }: { childId: string; here: Here })
 						activeOptions={{ exact: true }}
 						className={row}
 						aria-current={here === "home" ? "page" : undefined}
-						onClick={close}
+						onClick={go("home")}
 					>
 						{name}’s home {mark("home")}
 					</Link>
@@ -76,7 +82,7 @@ export function Destinations({ childId, here }: { childId: string; here: Here })
 							activeOptions={{ exact: true }}
 							className={row}
 							aria-current={here === p ? "page" : undefined}
-							onClick={close}
+							onClick={go(p)}
 						>
 							{PLACE_INFO[p].label} {mark(p)}
 						</Link>
