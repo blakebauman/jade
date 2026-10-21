@@ -17,6 +17,41 @@ function memoryStorage(): Storage {
 	};
 }
 
+/** Just enough Web Audio to count what's made: oscillators (tones) and noise buffers played. */
+function fakeAudio() {
+	const made = { tones: 0, noises: 0 };
+	const param = () => ({
+		value: 0,
+		setValueAtTime() {},
+		linearRampToValueAtTime() {},
+		exponentialRampToValueAtTime() {},
+		setTargetAtTime() {},
+		cancelScheduledValues() {},
+	});
+	const node = () => ({ connect: (n: unknown) => n, disconnect() {}, gain: param(), frequency: param(), Q: param(), type: "" });
+	class Fake {
+		currentTime = 1;
+		state = "running";
+		sampleRate = 8000;
+		destination = node();
+		resume() {}
+		createGain = node;
+		createBiquadFilter = node;
+		createBuffer = (_ch: number, len: number) => ({ getChannelData: () => new Float32Array(len) });
+		createOscillator() {
+			made.tones++;
+			return { ...node(), start() {}, stop() {} };
+		}
+		createBufferSource() {
+			made.noises++;
+			return { ...node(), playbackRate: param(), loop: false, start() {}, stop() {} };
+		}
+	}
+	vi.stubGlobal("AudioContext", Fake);
+	vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")));
+	return made;
+}
+
 describe("roxy sound", () => {
 	beforeEach(() => {
 		vi.stubGlobal("localStorage", memoryStorage());
@@ -50,6 +85,48 @@ describe("roxy sound", () => {
 			s.scene("town");
 			s.leave();
 		}).not.toThrow();
+	});
+
+	it("makes every one-shot and footstep up when its recording hasn't loaded", async () => {
+		const made = fakeAudio();
+		const s = await import("./sound.ts");
+		s.unlock();
+		const sounds = [
+			s.tryOn,
+			s.takeOff,
+			s.tap,
+			s.bought,
+			s.nope,
+			s.gift,
+			s.saved,
+			s.found,
+			s.travel,
+			s.hop,
+			s.placed,
+			s.turned,
+			s.nudged,
+			s.putAway,
+			s.decorated,
+		];
+		for (const play of sounds) {
+			const before = made.tones + made.noises;
+			play();
+			expect(made.tones + made.noises).toBeGreaterThan(before);
+		}
+		const before = made.noises;
+		s.step("wood");
+		expect(made.noises).toBeGreaterThan(before);
+	});
+
+	it("stays silent while muted, recording or not", async () => {
+		const made = fakeAudio();
+		const s = await import("./sound.ts");
+		s.setMuted(true);
+		s.unlock();
+		s.tryOn();
+		s.found();
+		s.step("grass");
+		expect(made).toEqual({ tones: 0, noises: 0 });
 	});
 
 	it("remembers muting on the device", async () => {
