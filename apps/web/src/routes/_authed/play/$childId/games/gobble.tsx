@@ -197,6 +197,7 @@ function GobbleScreen() {
 
 	const onTick = useCallback((g: Game) => {
 		const next = snapshot(g);
+		sound.keepMusic();
 		// Countdown pips, once per second.
 		if (g.phase === "countdown" && next.countdown !== lastPip.current && next.countdown > 0) {
 			lastPip.current = next.countdown;
@@ -303,6 +304,9 @@ function GobbleScreen() {
 
 	const me = game.holes[PLAYER]!;
 	const running = phase === "play" && !frozen;
+	// Music while a round is played; quiet when paused, hidden or over, and gone when leaving the game.
+	useEffect(() => sound.setMusic(running), [running]);
+	useEffect(() => () => sound.stopMusic(), []);
 	const out = hud.back > 0;
 	const won = phase === "over" && hud.rank === 1;
 

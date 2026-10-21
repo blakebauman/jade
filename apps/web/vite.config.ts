@@ -44,6 +44,17 @@ export default defineConfig({
 				globIgnores: ["**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,hebrew}-*.woff2", "splash/**"],
 				runtimeCaching: [
 					{
+						// The games' recorded sounds (about 1.6MB, so not precached). Their names are hashed, so a copy never goes
+						// stale; once a game has been played online, it sounds the same offline.
+						urlPattern: ({ url }) => url.pathname.startsWith("/assets/") && url.pathname.endsWith(".mp3"),
+						handler: "CacheFirst",
+						options: {
+							cacheName: "jade-game-audio",
+							expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 },
+							cacheableResponse: { statuses: [200] },
+						},
+					},
+					{
 						// Spoken words never change for a given text+voice; once heard, a round replays offline.
 						urlPattern: ({ url }) => url.pathname === "/api/tts",
 						handler: "CacheFirst",
