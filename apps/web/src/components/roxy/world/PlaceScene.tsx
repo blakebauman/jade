@@ -12,10 +12,10 @@ import { useWake } from "./pace.tsx";
 import { Board } from "./place/board.tsx";
 import type { Hotspot, Place, V3 } from "./place/kit.tsx";
 import { park } from "./place/park.tsx";
-import { PATH } from "./place/parkKit.tsx";
 import { petshop } from "./place/petshop.tsx";
 import { school } from "./place/school.tsx";
 import { canvasTexture, type Spot, Walkers, WorldCanvas } from "./stage.tsx";
+import { surfaceAt } from "./surface.ts";
 
 export type { Hotspot } from "./place/kit.tsx";
 
@@ -285,13 +285,6 @@ export function placeTargets(place: PlaceId, found: ReadonlySet<string>): Target
 			.map(([id, f]) => ({ kind: "find" as const, id, stand: { x: f.at[0], z: f.at[2] + 0.6 } })),
 		...(def.hotspots ?? []).map((h) => ({ kind: "hotspot" as const, id: h.id, stand: { x: h.at[0], z: h.at[2] + 0.6 } })),
 	];
-}
-
-/** What Roxy's walking on: the park's lawn, or the cobbled path across it; the pet shop's tiles; the school's boards. */
-export function surfaceAt(place: PlaceId, spot: Spot): sound.Surface {
-	if (place === "petshop") return "tile";
-	if (place === "school") return "wood";
-	return spot.z >= PATH.z0 && spot.z <= PATH.z1 ? "path" : "grass";
 }
 
 type Props = {

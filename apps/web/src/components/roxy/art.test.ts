@@ -20,7 +20,8 @@ describe("Roxy art", () => {
 				expect(svg, `${item.id} on ${body}`).not.toMatch(/NaN|undefined/);
 			}
 		}
-	});
+		// Hundreds of whole figures: well under a second here, but about 5s on a busy CI runner, so it gets room.
+	}, 30_000);
 
 	it("keeps clip ids apart when two figures share a page", () => {
 		const look = wear(starterLook("a"), "top", { item: "top-stripes" });

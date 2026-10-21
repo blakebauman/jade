@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LOOP_URLS, LOOPS, SHOT_IDS, SHOT_URLS } from "./samples.ts";
-import { surfaceAt } from "./world/PlaceScene.tsx";
-import { PATH } from "./world/place/parkKit.tsx";
+import { PARK_PATH as PATH, surfaceAt } from "./world/surface.ts";
 
 /** A plain in-memory store: some jsdom setups leave `localStorage` undefined. */
 function memoryStorage(): Storage {

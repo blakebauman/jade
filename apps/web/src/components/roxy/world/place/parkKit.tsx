@@ -21,6 +21,7 @@ import { useNight } from "../light.tsx";
 import { useWake } from "../pace.tsx";
 import type { Block } from "../path.ts";
 import { type Area, canvasTexture, Shadow } from "../stage.tsx";
+import { PARK_PATH } from "../surface.ts";
 
 /**
  * The park's own pieces: mown grass, a cobbled path with an edging, the pond, the picket fence, planting, the lamp,
@@ -209,7 +210,7 @@ export function Lawn({ area, avoid }: { area: Area; avoid: readonly Block[] }) {
 // ── The path ──
 
 /** Where the path runs: the whole width of the park. */
-export const PATH = { z0: 4.5, z1: 5.9 } as const;
+export const PATH = PARK_PATH;
 
 /** Rounded cobbles in warm stone, set in sandy joints. One tile is a square of path. */
 const cobbles = canvasTexture(
