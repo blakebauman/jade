@@ -145,6 +145,8 @@ test("a holiday's collection shows in its week, and a parent can turn it off", a
 test("decorate Roxy's home, and it's still there after a reload", async ({ page }) => {
 	const { ids } = await setup(page);
 	await page.goto(`/play/${ids[0]}/games/roxy`);
+	// Let the studio settle first: isVisible doesn't wait, and going home while it still loads gets interrupted.
+	await expect(page.getByRole("button", { name: "Save look" })).toBeVisible();
 	// On a phone the studio's corner keeps Home in Go to….
 	if (await page.getByRole("link", { name: "Home" }).isVisible()) await page.getByRole("link", { name: "Home" }).click();
 	else await page.goto(`/play/${ids[0]}/games/roxy/home`);

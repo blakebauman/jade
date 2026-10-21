@@ -66,10 +66,13 @@ describe("woods terrain", () => {
 	const island = generate(12345);
 	const v = island.volume;
 
+	// Byte by byte in a loop: toEqual walks a 442k-cell array slowly enough to time out on a busy CI runner.
+	const same = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((c, i) => c === b[i]);
+
 	it("makes the same island from the same seed, and another from another", () => {
-		expect(generate(12345).volume.data).toEqual(v.data);
-		expect(generate(54321).volume.data).not.toEqual(v.data);
-	});
+		expect(same(generate(12345).volume.data, v.data)).toBe(true);
+		expect(same(generate(54321).volume.data, v.data)).toBe(false);
+	}, 20_000);
 
 	it("has bedrock under everything and sea round the edge", () => {
 		for (let x = 0; x < W; x += 7) expect(v.get(x, 0, 5)).toBe(B.bedrock);
