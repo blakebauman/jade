@@ -1,3 +1,4 @@
+import { musicLoop } from "#/lib/music.ts";
 import { LOOPS, loadSamples, loopBuffer, type Shot, shotBuffer } from "./samples.ts";
 
 /**
@@ -17,9 +18,7 @@ let out: GainNode | null = null;
 let muted = readMuted();
 /** Gulps come in bursts; this keeps a sweep of flowers from turning into a roar. */
 let lastGulp = 0;
-let music: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
-/** Whether the game wants music now: it starts as soon as the loop has loaded. */
-let wantMusic = false;
+const music = musicLoop(MUSIC_LEVEL, () => loopBuffer("music"), LOOPS.music);
 
 function readMuted() {
 	try {
@@ -150,49 +149,11 @@ export function finish(won: boolean) {
 	});
 }
 
-/**
- * The music loop: on while a round is being played, faded out when paused, hidden or over (it carries on silently
- * underneath, and fades back in). `keepMusic` starts it if it finishes loading after it was asked for.
- */
-export function setMusic(on: boolean) {
-	wantMusic = on;
-	if (!ctx || !out) return;
-	const now = ctx.currentTime;
-	if (!music) {
-		const buf = loopBuffer("music");
-		if (!on || !buf) return;
-		const src = ctx.createBufferSource();
-		src.buffer = buf;
-		src.loop = true;
-		src.loopStart = LOOPS.music.loopStart;
-		src.loopEnd = LOOPS.music.loopEnd;
-		const gain = ctx.createGain();
-		gain.gain.value = 0;
-		src.connect(gain).connect(out);
-		src.start(now, LOOPS.music.loopStart);
-		music = { src, gain };
-	}
-	music.gain.gain.cancelScheduledValues(now);
-	music.gain.gain.setTargetAtTime(on ? MUSIC_LEVEL : 0, now, on ? 0.3 : 0.12);
-}
+/** The music loop, on while a round is being played (see `lib/music.ts`). */
+export const setMusic = (on: boolean) => music.set(ctx, out, on);
 
 /** Call now and then while playing: starts the music if it was asked for before the loop had loaded. */
-export function keepMusic() {
-	if (wantMusic && !music) setMusic(true);
-}
+export const keepMusic = () => music.keep(ctx, out);
 
-/** Leaving the game: the loop is stopped for good (`setMusic(true)` makes a new one). */
-export function stopMusic() {
-	wantMusic = false;
-	if (!music || !ctx) return;
-	const m = music;
-	music = null;
-	m.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
-	try {
-		m.src.stop(ctx.currentTime + 0.3);
-	} catch {}
-	setTimeout(() => {
-		m.src.disconnect();
-		m.gain.disconnect();
-	}, 400);
-}
+/** Leaving the game. */
+export const stopMusic = () => music.stop(ctx);
