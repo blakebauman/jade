@@ -5,6 +5,8 @@ import { ArrowLeft, House, Pencil, Shirt, Star, Ticket, Trash2 } from "lucide-re
 import { useState } from "react";
 import { Confirm } from "#/components/Confirm.tsx";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
+import { SoundOrb } from "#/components/roxy/SoundOrb.tsx";
+import * as sound from "#/components/roxy/sound.ts";
 import { useChild } from "#/lib/child.ts";
 import { useOnline } from "#/lib/hooks.ts";
 import { progressQuery } from "#/lib/queries.ts";
@@ -45,7 +47,10 @@ function MyLooks() {
 	const wearAndEdit = (look: SavedLook) =>
 		act(
 			() => roxyApi.wear(child.id, look.id),
-			() => void navigate({ to: "/play/$childId/games/roxy", params: { childId: child.id } }),
+			() => {
+				sound.tryOn();
+				void navigate({ to: "/play/$childId/games/roxy", params: { childId: child.id } });
+			},
 		);
 
 	return (
@@ -55,6 +60,9 @@ function MyLooks() {
 					<ArrowLeft className="size-5" aria-hidden /> {characterName(look)}
 				</Link>
 				<h1 className="font-display text-3xl font-semibold">{child.name}’s looks</h1>
+				<div className="ml-auto">
+					<SoundOrb scene="gallery" />
+				</div>
 			</header>
 
 			<section aria-label={`${child.name}’s profile`} className="patch mt-8 flex flex-wrap items-center gap-6 p-5 md:p-6">
@@ -146,7 +154,10 @@ function MyLooks() {
 										onConfirm={() =>
 											void act(
 												() => roxyApi.remove(child.id, look.id),
-												() => setDeleting(null),
+												() => {
+													sound.putAway();
+													setDeleting(null);
+												},
 											)
 										}
 										onCancel={() => setDeleting(null)}
