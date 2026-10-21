@@ -39,7 +39,7 @@ test("parent sets up a list, speller plays a Bee round and sees missed words", a
 	await expect(page.getByText("Jade can practice it now", { exact: false })).toBeVisible();
 
 	// Speller picks their tile and starts a Bee round.
-	await page.getByRole("link", { name: "Practice", exact: true }).click();
+	await page.getByRole("link", { name: "Who’s playing?", exact: true }).click();
 	await page.screenshot({ path: `test-results/${info.project.name}-profiles.png` });
 	await page.getByRole("link", { name: "Jade" }).click();
 	// Home shelf → Spelling → Bee.

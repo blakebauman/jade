@@ -35,12 +35,13 @@ test("the parent area asks for the PIN, rejects a wrong one, and stays open acro
 	await expect(settings(page)).toBeVisible();
 });
 
-test("going back to Practice locks the parent area again", async ({ page }) => {
+test("handing back to Who’s playing? locks the parent area again", async ({ page }) => {
 	await parentWithPin(page);
 	await page.goto("/parent/settings");
 	await enterPin(page);
 	await expect(settings(page)).toBeVisible();
-	await page.getByRole("link", { name: "Practice", exact: true }).click();
+	// With a PIN, the way out says it locks.
+	await page.getByRole("link", { name: "Who’s playing? Locks the parent area", exact: true }).click();
 	await expect(page.getByRole("heading", { name: "Who’s playing?" })).toBeVisible();
 	await page.getByRole("link", { name: "Parents" }).click();
 	await expect(gate(page)).toBeVisible();

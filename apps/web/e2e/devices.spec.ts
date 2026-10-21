@@ -60,7 +60,7 @@ test("nothing sits under the notch or the home bar", async ({ page }) => {
 	expect(main.y + main.height - (box.y + box.height)).toBeGreaterThanOrEqual(BOTTOM);
 
 	await page.goto("/parent");
-	expect(await top(page.getByRole("link", { name: "Practice" }))).toBeGreaterThanOrEqual(TOP);
+	expect(await top(page.getByRole("link", { name: "Who’s playing?", exact: true }))).toBeGreaterThanOrEqual(TOP);
 });
 
 test("a phone on its side keeps the studio's panel beside the scene", async ({ page }, info) => {
