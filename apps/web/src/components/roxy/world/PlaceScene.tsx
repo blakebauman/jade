@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { type CanvasTexture, DoubleSide, type Group, type Material, type Mesh, type MeshBasicMaterial, Shape, ShapeGeometry } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
+import * as sound from "../sound.ts";
 import type { DriveInput } from "./drive.ts";
 import { GOLD, lighter, Toon } from "./Furniture.tsx";
 import type { Target } from "./near.ts";
@@ -11,6 +12,7 @@ import { useWake } from "./pace.tsx";
 import { Board } from "./place/board.tsx";
 import type { Hotspot, Place, V3 } from "./place/kit.tsx";
 import { park } from "./place/park.tsx";
+import { PATH } from "./place/parkKit.tsx";
 import { petshop } from "./place/petshop.tsx";
 import { school } from "./place/school.tsx";
 import { canvasTexture, type Spot, Walkers, WorldCanvas } from "./stage.tsx";
@@ -285,6 +287,13 @@ export function placeTargets(place: PlaceId, found: ReadonlySet<string>): Target
 	];
 }
 
+/** What Roxy's walking on: the park's lawn, or the cobbled path across it; the pet shop's tiles; the school's boards. */
+export function surfaceAt(place: PlaceId, spot: Spot): sound.Surface {
+	if (place === "petshop") return "tile";
+	if (place === "school") return "wood";
+	return spot.z >= PATH.z0 && spot.z <= PATH.z1 ? "path" : "grass";
+}
+
 type Props = {
 	place: PlaceId;
 	look: Look;
@@ -365,6 +374,8 @@ export function PlaceScene({ place, look, found, walkTo, onGround, onFind, onHot
 				onArrive={onArrive}
 				drive={drive}
 				onMove={onMove}
+				onStep={(spot) => sound.step(surfaceAt(place, spot))}
+				onHop={sound.hop}
 			/>
 		</WorldCanvas>
 	);

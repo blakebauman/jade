@@ -287,6 +287,8 @@ export function Shadow({ r, s, ref }: { r: number; s?: [number, number, number];
  * between renders (memoise it); the route grid is rebuilt when it changes.
  * `drive` walks her directly (the keys or the touch stick), sliding along whatever's in the way, and hops her;
  * `onMove` hears where she is a few times a second while she moves, for "Press E" when she's beside something.
+ * `onStep` hears each footfall (where it landed), in time with her walking bob, and `onHop` each hop as it leaves the
+ * ground: for sound.
  */
 export function Walkers({
 	look,
@@ -297,6 +299,8 @@ export function Walkers({
 	onArrive,
 	drive,
 	onMove,
+	onStep,
+	onHop,
 }: {
 	look: Look;
 	walkTo: Spot | null;
@@ -306,6 +310,8 @@ export function Walkers({
 	onArrive?: (spot: Spot) => void;
 	drive?: RefObject<DriveInput>;
 	onMove?: (spot: Spot) => void;
+	onStep?: (spot: Spot) => void;
+	onHop?: () => void;
 }) {
 	const roxy = useRef<Group>(null);
 	const roxyTurn = useRef<Group>(null);
@@ -327,6 +333,12 @@ export function Walkers({
 	arrive.current = onArrive;
 	const moved = useRef(onMove);
 	moved.current = onMove;
+	const stepped = useRef(onStep);
+	stepped.current = onStep;
+	const hopped = useRef(onHop);
+	hopped.current = onHop;
+	/** Which half-stride of the walking bob she's in: a footfall each time it changes. */
+	const stride = useRef(-1);
 	const reduced = useMemo(() => prefersReducedMotion(), []);
 	const focus = useContext(Focus);
 	const view = useContext(ViewContext);
@@ -387,7 +399,10 @@ export function Walkers({
 		}
 		// One hop per press of Space or Hop: a short arc up and down (none with reduced motion).
 		const h = hop.current;
-		if (d?.hop && !h.held && h.t < 0 && !reduced) h.t = 0;
+		if (d?.hop && !h.held && h.t < 0 && !reduced) {
+			h.t = 0;
+			hopped.current?.();
+		}
 		h.held = !!d?.hop;
 		let lift = 0;
 		if (h.t >= 0) {
@@ -423,6 +438,10 @@ export function Walkers({
 		}
 		focus?.current.copy(r.position);
 		if (roxyTurn.current) roxyTurn.current.position.y = lift || (moving ? Math.abs(Math.sin(t * 9)) * 0.04 : 0);
+		// A footfall each time the bob touches down (|sin| at zero), on the ground only.
+		const half = Math.floor((t * 9) / Math.PI);
+		if (moving && !lift && half !== stride.current) stepped.current?.({ x: r.position.x, z: r.position.z });
+		stride.current = moving ? half : -1;
 		// Tell the place where she is, a few times a second while she's moving.
 		const k = told.current;
 		const now = state.clock.elapsedTime;

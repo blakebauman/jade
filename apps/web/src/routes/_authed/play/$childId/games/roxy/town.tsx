@@ -2,6 +2,7 @@ import { FINDS, PLACE_INFO, PLACES } from "@jade/core/roxy";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, PawPrint, Trees } from "lucide-react";
+import * as sound from "#/components/roxy/sound.ts";
 import { useChild } from "#/lib/child.ts";
 import { roxyQuery } from "#/lib/roxy.ts";
 
@@ -41,6 +42,7 @@ function Town() {
 								params={{ childId: child.id, placeId: id }}
 								className="sticker flex h-full flex-col gap-4 p-5"
 								data-place="roxy"
+								onClick={sound.travel}
 								style={{ "--tilt": `${(i - 1) * 1.5}deg` } as React.CSSProperties}
 							>
 								<Icon className="size-10" aria-hidden />
