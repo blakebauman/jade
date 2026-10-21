@@ -41,11 +41,25 @@ describe("woods sound", () => {
 			s.land(0.5);
 			s.snuff();
 			s.lowFire();
+			s.splash();
+			s.tap(B.stone);
 			s.ambience({ sun: 0.5, fireDistance: 3, fireStrength: 1, running: true });
 			s.ambience({ sun: 0, fireDistance: 30, fireStrength: 0, underwater: true, running: false });
 			s.stopAmbience();
 			s.stopAmbience();
 		}).not.toThrow();
+	});
+
+	it("picks a block's breaking sound by what it's made of", async () => {
+		const { digSound } = await import("./sound.ts");
+		expect(digSound(B.stone)).toBe("dig-stone");
+		expect(digSound(B.gold)).toBe("dig-stone");
+		expect(digSound(B.glass)).toBe("dig-glass");
+		expect(digSound(B.planks)).toBe("dig-wood");
+		expect(digSound(B.birchLog)).toBe("dig-wood");
+		expect(digSound(B.leaves)).toBe("dig-leaves");
+		expect(digSound(B.sand)).toBe("dig-sand");
+		expect(digSound(B.grass)).toBe("dig-soil");
 	});
 
 	it("remembers muting on the device", async () => {

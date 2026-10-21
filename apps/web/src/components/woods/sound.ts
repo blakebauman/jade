@@ -1,7 +1,11 @@
 import { B, isLeaves, isLog, isPlant } from "@jade/core/woods";
+import { LOOPS, type Loop, loadSamples, loopBuffer, type Shot, shotBuffer } from "./samples.ts";
 
 /**
- * Campfire Woods' sounds, made on the spot with Web Audio: taps while mining, a crunch when a block gives (lower for
+ * Campfire Woods' sounds. The ones that carry the island are recordings (`samples.ts`): blocks giving way by what
+ * they're made of, a block set down, a log on the fire, chimes, the owl, morning, a torch snuffed, a splash, and the
+ * day, night, rain and campfire beds. Until a recording has loaded, or if it never does, its sound is made here on the
+ * spot, and the quick, frequent ones always are: taps while mining, a crunch when a block gives (lower for
  * stone, softer for leaves), a clunk when one's placed, the fire taking a log, a chime when an animal comes home or a
  * goal is met, and an owl at nightfall. Footsteps, hops and landings follow the ground underfoot. Under it all runs a
  * soft bed: birds and a breeze by day, crickets and a far-off owl by night, and the campfire crackling when you're
@@ -50,6 +54,7 @@ export function unlock() {
 			out = ctx.createGain();
 			out.gain.value = muted ? 0 : LEVEL;
 			out.connect(ctx.destination);
+			loadSamples(ctx);
 		}
 		if (ctx.state !== "running") void ctx.resume();
 	} catch {
@@ -143,33 +148,96 @@ function noise(dur: number, freq: number, opts: NoiseOpts = {}) {
 	src.start(t, Math.random() * 1.5, dur + 0.02);
 }
 
-export const tap = () => noise(0.05, 1800, { gain: 0.18 });
+type ShotOpts = {
+	gain?: number;
+	at?: number;
+	dest?: AudioNode;
+	/** Up to this much faster or slower, at random. */
+	vary?: number;
+	/** Decibels added below about 250Hz. */
+	bass?: number;
+};
+
+/** Plays a recording, if it's loaded. False when it isn't, so the caller can make the sound instead. */
+function shot(id: Shot, opts: ShotOpts = {}) {
+	if (!ctx || !out) return false;
+	const buf = shotBuffer(id);
+	if (!buf) return false;
+	if (!claim()) return true;
+	const t = ctx.currentTime + (opts.at ?? 0);
+	const src = ctx.createBufferSource();
+	src.buffer = buf;
+	if (opts.vary) src.playbackRate.value = rand(1 - opts.vary, 1 + opts.vary);
+	const g = ctx.createGain();
+	g.gain.value = opts.gain ?? 0.5;
+	const nodes: AudioNode[] = [src, g];
+	let head: AudioNode = src;
+	if (opts.bass) {
+		const shelf = ctx.createBiquadFilter();
+		shelf.type = "lowshelf";
+		shelf.frequency.value = 250;
+		shelf.gain.value = opts.bass;
+		head = head.connect(shelf);
+		nodes.push(shelf);
+	}
+	head.connect(g).connect(opts.dest ?? out);
+	release(src, nodes);
+	src.start(t);
+	return true;
+}
+
+/** A tap while mining: on rock and ore, a knock with some weight to it; on anything else, a light tick. */
+export function tap(block?: number) {
+	if (block !== undefined && HARD.has(block) && block !== B.glass) {
+		const v = rand(0.9, 1.1);
+		tone(150 * v, 75 * v, 0.09, { gain: 0.22 });
+		noise(0.06, 260 * v, { gain: 0.2, type: "lowpass", q: 0.8 });
+		noise(0.04, 1400 * v, { gain: 0.1, q: 1.4 });
+	} else noise(0.05, 1800, { gain: 0.18 });
+}
 
 const HARD = new Set<number>([B.stone, B.mossyStone, B.coal, B.iron, B.gold, B.gem, B.brick, B.bedrock, B.glass]);
 
+/** Which recording a block makes as it gives way. */
+export function digSound(block: number): Shot {
+	if (block === B.glass) return "dig-glass";
+	if (HARD.has(block)) return "dig-stone";
+	if (block === B.planks || isLog(block)) return "dig-wood";
+	if (isLeaves(block) || isPlant(block)) return "dig-leaves";
+	if (block === B.sand) return "dig-sand";
+	return "dig-soil";
+}
+
 export function dig(block: number) {
-	const low = HARD.has(block) && block !== B.glass && block !== B.bedrock;
-	const soft = isLeaves(block) || isPlant(block) || block === B.sand;
-	noise(soft ? 0.12 : 0.18, low ? 700 : soft ? 2600 : 1200, { gain: 0.45 });
+	const kind = digSound(block);
+	if (!shot(kind, { gain: 0.45, vary: 0.06, bass: kind === "dig-stone" ? 8 : 0 })) {
+		const low = HARD.has(block) && block !== B.glass && block !== B.bedrock;
+		const soft = isLeaves(block) || isPlant(block) || block === B.sand;
+		noise(soft ? 0.12 : 0.18, low ? 700 : soft ? 2600 : 1200, { gain: 0.45 });
+	}
 	if (block === B.gem) chime();
 }
 
 export const place = () => {
+	if (shot("place", { gain: 0.4, vary: 0.05 })) return;
 	tone(220, 140, 0.09, { type: "triangle", gain: 0.25 });
 	noise(0.05, 900, { gain: 0.2 });
 };
 
 export function feed() {
+	if (shot("feed", { gain: 0.5 })) return;
 	for (let k = 0; k < 6; k++) noise(0.04, 2400 + Math.random() * 1200, { gain: 0.25, at: k * 0.05 + Math.random() * 0.03 });
 	tone(160, 90, 0.4, { gain: 0.12 });
 }
 
 export function chime() {
+	if (shot("chime", { gain: 0.4 })) return;
 	tone(784, 784, 0.25, { gain: 0.18 });
 	tone(1175, 1175, 0.35, { gain: 0.14, at: 0.1 });
 }
 
 export function home() {
+	if (shot("home", { gain: 0.45 })) return;
 	for (const [k, f] of [523, 659, 784, 1047].entries()) tone(f, f, 0.22, { gain: 0.16, at: k * 0.09 });
 }
 
@@ -177,6 +245,8 @@ export function home() {
 export const rescueSparkle = home;
 
 function hoot(gain: number, dest?: AudioNode) {
+	// The recording sits about 6dB above the synthesised hoot at the same `gain`.
+	if (shot("owl", { gain: gain * 2.5, dest, vary: 0.04 })) return;
 	tone(420, 380, 0.35, { gain, dest });
 	tone(400, 340, 0.5, { gain, at: 0.45, dest });
 }
@@ -184,6 +254,7 @@ function hoot(gain: number, dest?: AudioNode) {
 export const owl = () => hoot(0.12);
 
 export function dawn() {
+	if (shot("dawn", { gain: 0.4 })) return;
 	for (const [k, f] of [392, 494, 587, 784].entries()) tone(f, f, 0.4, { type: "triangle", gain: 0.12, at: k * 0.14 });
 }
 
@@ -220,7 +291,13 @@ export function land(hard: number) {
 }
 
 /** A soft "fff" as a torch is blown out. */
-export const snuff = () => noise(0.4, 3200, { gain: 0.14, type: "highpass", q: 0.5, attack: 0.06, sweep: 2200 });
+export const snuff = () =>
+	shot("snuff", { gain: 0.45 }) || noise(0.4, 3200, { gain: 0.14, type: "highpass", q: 0.5, attack: 0.06, sweep: 2200 });
+
+/** A splash, jumping into water. */
+export function splash() {
+	if (!shot("splash", { gain: 0.35, vary: 0.05 })) step(B.water);
+}
 
 /** Two gentle falling notes: the fire's getting low. */
 export function lowFire() {
@@ -256,6 +333,12 @@ type Bed = {
 	night: GainNode;
 	crickets: GainNode[];
 	fire: GainNode;
+	/** The recorded day bed (breeze and birds), faded by day like the birds. */
+	day: GainNode;
+	/** The synthesised layers, faded out as each recording that replaces it starts. */
+	synth: Record<Loop, GainNode>;
+	/** Recordings already playing. */
+	playing: Set<Loop>;
 	nextBird: number;
 	nextOwl: number;
 };
@@ -285,6 +368,7 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 	};
 
 	const master = gain(0);
+	const synth: Record<Loop, GainNode> = { day: gain(1), night: gain(1), fire: gain(1), rain: gain(1) };
 	const muffle = c.createBiquadFilter();
 	muffle.type = "lowpass";
 	muffle.frequency.value = 18000;
@@ -302,7 +386,7 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 	const swayDepth = gain(160);
 	sway.connect(swayDepth).connect(windFilter.frequency);
 	const wind = gain(0);
-	windSrc.connect(windFilter).connect(wind).connect(master);
+	windSrc.connect(windFilter).connect(synth.day).connect(wind).connect(master);
 	sources.push(windSrc, sway);
 	nodes.push(windSrc, windFilter, sway);
 
@@ -313,7 +397,7 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 	rainFilter.frequency.value = 3200;
 	rainFilter.Q.value = 0.4;
 	const rain = gain(0);
-	rainSrc.connect(rainFilter).connect(rain).connect(master);
+	rainSrc.connect(rainFilter).connect(synth.rain).connect(rain).connect(master);
 	sources.push(rainSrc);
 	nodes.push(rainSrc, rainFilter);
 
@@ -324,12 +408,13 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 	// Night: two crickets, each a steady high tone whose gate is opened in little pulses by `chirp`.
 	const night = gain(0);
 	night.connect(master);
+	synth.night.connect(night);
 	const crickets: GainNode[] = [];
 	for (const f of [4400, 4750]) {
 		const osc = c.createOscillator();
 		osc.frequency.value = f;
 		const gate = gain(0);
-		osc.connect(gate).connect(night);
+		osc.connect(gate).connect(synth.night);
 		sources.push(osc);
 		nodes.push(osc);
 		crickets.push(gate);
@@ -338,21 +423,25 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 	// Campfire: a low rumble and a brighter hiss from the same noise, with pops added by `ambience`.
 	const fire = gain(0);
 	fire.connect(master);
+	synth.fire.connect(fire);
 	const rumbleSrc = loop(c, nb);
 	const rumble = c.createBiquadFilter();
 	rumble.type = "lowpass";
 	rumble.frequency.value = 260;
 	const rumbleGain = gain(0.6);
-	rumbleSrc.connect(rumble).connect(rumbleGain).connect(fire);
+	rumbleSrc.connect(rumble).connect(rumbleGain).connect(synth.fire);
 	const hissSrc = loop(c, nb);
 	const hiss = c.createBiquadFilter();
 	hiss.type = "bandpass";
 	hiss.frequency.value = 2400;
 	hiss.Q.value = 0.7;
 	const hissGain = gain(0.12);
-	hissSrc.connect(hiss).connect(hissGain).connect(fire);
+	hissSrc.connect(hiss).connect(hissGain).connect(synth.fire);
 	sources.push(rumbleSrc, hissSrc);
 	nodes.push(rumbleSrc, rumble, hissSrc, hiss);
+
+	const day = gain(0);
+	day.connect(master);
 
 	for (const [k, s] of sources.entries()) {
 		// Offset the noise loops so they don't line up with each other.
@@ -371,9 +460,42 @@ function buildBed(c: AudioContext, dest: AudioNode): Bed {
 		night,
 		crickets,
 		fire,
+		day,
+		synth,
+		playing: new Set(),
 		nextBird: now + rand(1, 3),
 		nextOwl: now + rand(20, 40),
 	};
+}
+
+/**
+ * Each recorded bed's level against the layer it joins, set from measured levels to sit where the synthesised one it
+ * takes over from did (tune these by ear). The day bed is the only one with a layer of its own (and the wind stays under it, softly).
+ */
+const LOOP_TRIM: Record<Loop, number> = { day: 0.3, night: 0.22, fire: 1.2, rain: 4 };
+
+/** Starts any recorded bed that's loaded since the last tick, and fades out the synthesised layer it replaces. */
+function startLoops(c: AudioContext, b: Bed) {
+	for (const id of Object.keys(LOOPS) as Loop[]) {
+		if (b.playing.has(id)) continue;
+		const buf = loopBuffer(id);
+		if (!buf) continue;
+		b.playing.add(id);
+		const src = c.createBufferSource();
+		src.buffer = buf;
+		src.loop = true;
+		src.loopStart = LOOPS[id].loopStart;
+		src.loopEnd = LOOPS[id].loopEnd;
+		const trim = c.createGain();
+		src.connect(trim).connect(id === "day" ? b.day : b[id]);
+		// From somewhere in the middle, so the beds never start together; fading in under the synth fading out.
+		src.start(c.currentTime, LOOPS[id].loopStart + Math.random() * (LOOPS[id].loopEnd - LOOPS[id].loopStart));
+		trim.gain.setValueAtTime(0, c.currentTime);
+		trim.gain.setTargetAtTime(LOOP_TRIM[id], c.currentTime, 0.4);
+		b.synth[id].gain.setTargetAtTime(id === "day" ? 0.5 : 0, c.currentTime, 0.4);
+		b.sources.push(src);
+		b.nodes.push(src, trim);
+	}
 }
 
 /** A cricket's chirp: three quick pulses, eased on and off so they don't click. */
@@ -414,6 +536,7 @@ export function ambience(state: AmbienceState) {
 	}
 	const b = bed;
 	const now = ctx.currentTime;
+	startLoops(ctx, b);
 	const running = state.running && ctx.state === "running";
 	b.master.gain.setTargetAtTime(running ? 1 : 0, now, running ? EASE * 2 : 0.15);
 	if (!running) return;
@@ -426,6 +549,7 @@ export function ambience(state: AmbienceState) {
 	const wet = clamp01(state.rain ?? 0);
 	b.rain.gain.setTargetAtTime(wet * 0.09, now, EASE);
 	b.birds.gain.setTargetAtTime(day * (1 - wet), now, EASE);
+	b.day.gain.setTargetAtTime(day * (1 - 0.6 * wet), now, EASE);
 	b.night.gain.setTargetAtTime(nightness, now, EASE);
 
 	const near = clamp01(1 - state.fireDistance / FIRE_RANGE);
@@ -436,12 +560,12 @@ export function ambience(state: AmbienceState) {
 	if (muted) return;
 
 	// Crickets chirp in their own rhythm, a little out of step with each other.
-	if (nightness > 0.05) {
+	if (nightness > 0.05 && !b.playing.has("night")) {
 		for (const [k, gate] of b.crickets.entries()) {
 			if (Math.random() < 0.7) chirp(gate, now + 0.02 + k * 0.11 + Math.random() * 0.06);
 		}
 	}
-	if (day > 0.3 && now >= b.nextBird) {
+	if (day > 0.3 && now >= b.nextBird && !b.playing.has("day")) {
 		birdsong(b.birds);
 		b.nextBird = now + rand(2, 6);
 	}
@@ -449,7 +573,7 @@ export function ambience(state: AmbienceState) {
 		hoot(0.05, b.night);
 		b.nextOwl = now + rand(25, 50);
 	}
-	if (fireLevel > 0.005) {
+	if (fireLevel > 0.005 && !b.playing.has("fire")) {
 		// A couple of pops a tick at full strength, fewer as it dies down.
 		const pops = Math.random() < strength ? 1 + Math.floor(Math.random() * 2 * strength) : 0;
 		for (let k = 0; k < pops; k++) {
