@@ -1,0 +1,16 @@
+id	seconds	prompt_influence	loop	prompt
+gulp-s-1	0.5	0.7	-	tiny cartoon plop of a small toy dropping into a hole in the ground, quick bubbly pop, bright and cute, no music, no voice
+gulp-s-2	0.5	0.7	-	tiny cartoon plop of a small toy dropping into a hole in the ground, quick bubbly pop, bright and cute, no music, no voice
+gulp-s-3	0.5	0.7	-	tiny cartoon plop of a small toy dropping into a hole in the ground, quick bubbly pop, bright and cute, no music, no voice
+gulp-m-1	0.8	0.7	-	cartoon gulp as a bush or park bench falls into a hole, soft rustle then a bubbly gloop, playful kids arcade game, no music, no voice
+gulp-m-2	0.8	0.7	-	cartoon gulp as a bush or park bench falls into a hole, soft rustle then a bubbly gloop, playful kids arcade game, no music, no voice
+gulp-l-1	1.0	0.7	-	cartoon gulp as a toy car falls into a hole, a short clatter then a big bubbly gloop, playful kids arcade game, no music, no voice
+gulp-l-2	1.0	0.7	-	cartoon gulp as a toy car falls into a hole, a short clatter then a big bubbly gloop, playful kids arcade game, no music, no voice
+gulp-xl-1	1.8	0.65	-	a toy house tumbling into a giant hole, wooden crumble and soft rumble, then a huge deep cartoon gulp, playful kids arcade game, no music, no voice
+gulp-xl-2	1.8	0.65	-	a toy house tumbling into a giant hole, wooden crumble and soft rumble, then a huge deep cartoon gulp, playful kids arcade game, no music, no voice
+milestone	1.2	0.7	-	bright cheerful level up sparkle, rising glockenspiel arpeggio with a soft whoosh, kids arcade game, no voice
+gobble-win	1.0	0.7	-	playful cartoon chomp and slurp, then a happy rising boing, kids arcade game, no music, no voice
+gobble-lose	1.2	0.7	-	cartoon descending slide whistle and a soft bloop, gentle not scary, kids arcade game, no voice
+win	3.0	0.65	-	short cheerful victory fanfare, toy xylophone and bright brass, kids arcade game, clear ending, no voice
+lose	2.5	0.65	-	short gentle good try jingle, soft xylophone falling then a friendly resolving note, kids game, no voice
+music	40	-	loop	Music API (instrumental): playful bouncy toy-town arcade groove for a kids game, exactly 120 BPM in 4/4, marimba melody, pizzicato strings, light brushed drums, round bass, cheerful and steady, constant energy from start to end, no intro, no outro, no fade, no tempo changes, designed to loop (cut to bars 7-18, 12.02s-36.02s, 15ms blend at the seam)
