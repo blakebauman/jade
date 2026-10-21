@@ -1,0 +1,35 @@
+id	seconds	prompt_influence	loop	prompt
+night	20	0.5	loop	seamless calm summer night ambience in the woods, soft low tree frogs croaking gently, a few mellow distant crickets far away, warm and quiet, no high-pitched whine, no owls, no music, no voice (then low-passed at 4.5kHz, 24dB/octave)
+fire	12	0.5	loop	seamless close campfire crackling loop, warm wood fire, soft pops and gentle hiss, steady, no wind, no music, no voice
+rain	15	0.45	loop	seamless gentle light rain falling on leaves and grass in a forest, soft steady patter, no thunder, no music, no voice
+dig-stone-1	0.6	0.7	-	short stone block breaking in a cozy block building game, crumbly rock crunch, clear transient, short tail, no music, no voice
+dig-stone-2	0.6	0.7	-	short small rock block cracking apart, gravelly crunch with pebbles, cozy block building game, no music, no voice
+dig-wood-1	0.6	0.7	-	short wooden block breaking in a cozy block building game, dry wood crack and creak, clear transient, short tail, no music, no voice
+dig-wood-2	0.6	0.7	-	short snap of a wooden log block coming apart, hollow woody crunch, cozy block building game, no music, no voice
+dig-soil-1	0.6	0.7	-	short dirt and grass block being dug up, soft earthy crunch, cozy block building game, no music, no voice
+dig-soil-2	0.6	0.7	-	short soft scoop of soil breaking loose, muffled crumbly earth, cozy block building game, no music, no voice
+dig-leaves-1	0.6	0.7	-	short rustle of a leafy bush block being picked, crisp leaves swish, cozy block building game, no music, no voice
+dig-leaves-2	0.6	0.7	-	short crunchy leaves and twigs rustling apart, light and airy, cozy block building game, no music, no voice
+dig-sand	0.6	0.7	-	short sand block crumbling away, soft grainy shhh, cozy block building game, no music, no voice
+dig-glass	0.7	0.7	-	small glass block breaking with a gentle tinkle, cartoonish and soft, not harsh, cozy block building game, no music, no voice
+place-1	0.5	0.75	-	short soft clunk of a toy block set down firmly on the ground, solid and satisfying, no music, no voice
+place-2	0.5	0.75	-	short muted wooden block placed onto another block, gentle knock, cozy building game, no music, no voice
+feed	1.6	0.6	-	tossing a log onto a campfire, soft thud then a whoosh of flames catching with crackling sparks, no music, no voice
+chime	1.0	0.7	-	soft magical sparkle chime, two bright bell notes, gentle, cozy kids game reward, no voice
+home	1.6	0.7	-	joyful rising four note sparkle arpeggio on glockenspiel, kids game success, warm and gentle, no voice
+dawn	3.0	0.6	-	gentle morning wake up cue, soft rising flute and glockenspiel phrase, sunrise in the woods, calm cozy kids game, no voice
+snuff	0.8	0.7	-	small torch flame being blown out, soft breathy puff and fizzle, no music, no voice
+splash	1.0	0.7	-	small gentle splash of someone hopping into a pond, kids game, no music, no voice
+day	20	0.55	loop	seamless loop of a sunny forest meadow by day, clearly audible cheerful songbirds chirping nearby and farther off, soft rustling leaves in a light breeze, no music, no voice, no people
+owl	2.5	0.6	-	single soft distant owl hooting twice at night in a quiet forest, gentle and calm, natural, no music, no voice
+call-bunny	1.0	0.7	-	a tiny lost baby bunny making a soft high squeak, cute and gentle, close, single short call, no music, no voice
+call-fox	1.0	0.7	-	a small lost fox cub giving a soft little yip, cute, single short call, gentle, no music, no voice
+call-owl	1.0	0.7	-	a baby owlet giving a soft tiny chirping hoot, cute and gentle, single short call, no music, no voice
+call-lamb	1.2	0.7	-	a small lost lamb giving a soft short baa bleat, cute and gentle, single call, no music, no voice
+call-hedgehog	1.0	0.7	-	a little hedgehog making soft snuffly squeaks and sniffs, cute, single short call, no music, no voice
+call-duckling	1.0	0.7	-	a tiny lost duckling peeping two soft high peeps, cute and gentle, no music, no voice
+steps-grass	5	0.6	-	footsteps of one child walking slowly on soft grass and earth, eight evenly spaced separate steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
+steps-stone	5	0.6	-	footsteps of one child in soft shoes walking slowly on hard stone, eight evenly spaced separate steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
+steps-wood	5	0.6	-	footsteps of one child walking slowly on a wooden plank floor, hollow soft knocks, eight evenly spaced separate steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
+steps-sand	5	0.6	-	footsteps of one child walking slowly on dry sand, soft grainy crunch, eight evenly spaced separate steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)
+steps-water	5	0.6	-	one child wading slowly through shallow water, eight evenly spaced separate gentle splashy steps with short gaps between, close, no music, no voice (sliced at each step into 5 takes, step-<surface>-N)

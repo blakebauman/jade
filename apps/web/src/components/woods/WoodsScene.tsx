@@ -848,7 +848,7 @@ function Player({ world, controls, running, playing, fx }: Omit<Props, "label"> 
 			if (body.water && !s.wet) {
 				const cell: [number, number, number] = [Math.floor(body.p[0]), Math.floor(body.p[1] + 0.6), Math.floor(body.p[2])];
 				fx.burst(cell, B.water);
-				sound.step(B.water);
+				sound.splash();
 			}
 			s.wet = body.water;
 			if (body.ground) s.fallFrom = body.p[1];
@@ -886,7 +886,7 @@ function Player({ world, controls, running, playing, fx }: Omit<Props, "label"> 
 			const step = Math.min(rawDt, 0.25) / (blockInfo(hit.block).hardness * DIG_SPEED);
 			controls.progress += step;
 			if (Math.floor((controls.progress - step) * 4) !== Math.floor(controls.progress * 4)) {
-				sound.tap();
+				sound.tap(hit.block);
 				fx.chips(hit.cell, hit.block, hit.normal);
 			}
 			if (controls.progress >= 1) {
