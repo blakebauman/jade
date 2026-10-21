@@ -223,6 +223,7 @@ function JellyScreen() {
 
 	const onTick = useCallback((g: Game) => {
 		if (g !== current.current) return;
+		sound.keepMusic();
 		const next = snapshot(g);
 		setHud((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
 	}, []);
@@ -547,6 +548,9 @@ function JellyScreen() {
 	}, [speed, finish]);
 
 	const running = playing && !frozen;
+	// Music while a game is played; quiet when paused, hidden or over, and gone when leaving the game.
+	useEffect(() => sound.setMusic(running), [running]);
+	useEffect(() => () => sound.stopMusic(), []);
 	// The scene is named once and kept up to date here, so a new score doesn't re-render it.
 	const label = `Jelly Blocks. Score ${hud.score}, ${hud.lines} rows, level ${hud.level}.`;
 	const firstLabel = useRef(label);

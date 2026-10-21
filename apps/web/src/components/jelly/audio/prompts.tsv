@@ -1,0 +1,16 @@
+id	seconds	prompt_influence	loop	prompt
+turn-1	0.5	0.75	-	short squishy jelly wobble as a jelly block turns, springy gummy squelch, cute puzzle game, no music, no voice (sliced into single hits of at most 0.28s; the four cleanest kept as turn-1..4)
+turn-2	0.5	0.75	-	short squishy jelly wobble as a jelly block turns, springy gummy squelch, cute puzzle game, no music, no voice (sliced into single hits of at most 0.28s; the four cleanest kept as turn-1..4)
+turn-3	0.5	0.75	-	short squishy jelly wobble as a jelly block turns, springy gummy squelch, cute puzzle game, no music, no voice (sliced into single hits of at most 0.28s; the four cleanest kept as turn-1..4)
+plop-s-1	0.6	0.7	-	soft wet plop of a small jelly cube landing in a glass jar, gummy and bouncy, cute puzzle game, no music, no voice
+plop-s-2	0.6	0.7	-	soft wet plop of a small jelly cube landing in a glass jar, gummy and bouncy, cute puzzle game, no music, no voice
+plop-s-3	0.6	0.7	-	soft wet plop of a small jelly cube landing in a glass jar, gummy and bouncy, cute puzzle game, no music, no voice
+plop-l-1	0.8	0.7	-	heavy jelly blocks slamming down into a glass jar, big squishy wet thud with a wobble, cute puzzle game, no music, no voice
+plop-l-2	0.8	0.7	-	heavy jelly blocks slamming down into a glass jar, big squishy wet thud with a wobble, cute puzzle game, no music, no voice
+pop-2	0.7	0.7	-	juicy bubbly pop of a row of jelly bursting into droplets, bright and satisfying, cute puzzle game, no music, no voice
+pop-3	0.7	0.7	-	juicy bubbly pop of a row of jelly bursting into droplets, bright and satisfying, cute puzzle game, no music, no voice
+big-clear	1.5	0.65	-	sparkling candy celebration after clearing a big combo, glittery chime cascade and a happy bubbly burst, cute puzzle game, no voice
+level	1.2	0.7	-	cheerful level up chime, sweet celesta arpeggio rising with a soft sparkle, cute puzzle game, no voice
+full	2.5	0.65	-	gentle game over jingle, a soft descending celesta phrase with a squishy jelly wobble at the end, sweet not sad, kids puzzle game, no voice
+moves	3	0.7	-	a row of tiny soft taps on a jelly cube, eight separate quiet squishy taps with short gaps between, cute puzzle game, no music, no voice (sliced into single taps of at most 0.12s; four kept as move-1..4)
+music	40	-	loop	Music API (instrumental): sweet bouncy puzzle game music for kids, exactly 100 BPM in 4/4, celesta and plucked marimba melody, soft round synth bass, light shaker and finger snaps, focused and relaxed, constant energy from start to end, no intro, no outro, no fade, no tempo changes, designed to loop (cut to bars 3-10, 4.79s-23.99s, 15ms blend at the seam)
