@@ -46,6 +46,8 @@ describe("roxy sound", () => {
 			s.decorated();
 			for (const f of ["grass", "path", "wood", "tile", "carpet"] as const) s.step(f);
 			s.scene("studio");
+			s.scene("gallery");
+			s.scene("town");
 			s.leave();
 		}).not.toThrow();
 	});

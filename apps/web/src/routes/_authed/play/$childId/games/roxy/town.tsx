@@ -2,6 +2,7 @@ import { FINDS, PLACE_INFO, PLACES } from "@jade/core/roxy";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, PawPrint, Trees } from "lucide-react";
+import { SoundOrb } from "#/components/roxy/SoundOrb.tsx";
 import * as sound from "#/components/roxy/sound.ts";
 import { useChild } from "#/lib/child.ts";
 import { roxyQuery } from "#/lib/roxy.ts";
@@ -28,6 +29,9 @@ function Town() {
 				<span className="foil px-3 py-1 text-sm">
 					{data.finds.length} of {FINDS.length} found
 				</span>
+				<div className="ml-auto">
+					<SoundOrb scene="town" />
+				</div>
 			</header>
 			<ul className="mt-8 grid gap-6 md:grid-cols-3">
 				{PLACES.map((id, i) => {

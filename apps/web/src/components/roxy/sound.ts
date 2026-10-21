@@ -4,8 +4,9 @@ import { LOOPS, type Loop, loadSamples, loopBuffer, onLoop, type Shot, shotBuffe
 /**
  * Roxy's sounds, for the studio, home, the town and its places (all recordings, `samples.ts`; nothing is synthesised,
  * so until they've loaded Roxy is quiet, as she always was). Each screen says which it is with `scene()` on mount and
- * `leave()` on unmount (`SoundOrb` does both): that picks the music (the studio's in the studio, the town's at home
- * and in the places) and the place's background. The town map and the gallery are quiet pages. Moving between Roxy's screens keeps the music going; leaving them all stops it.
+ * `leave()` on unmount (`SoundOrb` does both): that picks the music (the studio's in the studio and its gallery, the
+ * town's on the town map, at home and in the places) and the place's background. Moving between Roxy's screens keeps
+ * the music going; leaving them all stops it.
  * Sound starts on the first tap or key press anywhere (browsers only allow it from one). Muting is remembered on the
  * device.
  */
@@ -15,11 +16,13 @@ const LEVEL = 0.5;
 const MUSIC_LEVEL = 0.2;
 const AMBIENCE_LEVEL = 0.35;
 
-export type Scene = "studio" | "home" | "park" | "petshop" | "school";
+export type Scene = "studio" | "gallery" | "town" | "home" | "park" | "petshop" | "school";
 export type Surface = "grass" | "path" | "wood" | "tile" | "carpet";
 
 const SCENES: Record<Scene, Loop[]> = {
 	studio: ["music-studio"],
+	gallery: ["music-studio"],
+	town: ["music-town"],
 	home: ["music-town", "amb-home"],
 	park: ["music-town", "amb-park"],
 	petshop: ["music-town", "amb-petshop"],
