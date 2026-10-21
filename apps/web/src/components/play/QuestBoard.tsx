@@ -1,19 +1,19 @@
 import { type Quest, type QuestDay, questCollectable, questDone, questHave } from "@jade/core";
 import { withName } from "@jade/core/roxy";
 import { useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Play, Ticket } from "lucide-react";
+import { BadgeCheck, ChevronRight, Ticket } from "lucide-react";
 import { useId, useState } from "react";
 import { type PlayStatus, playQuery } from "#/lib/play.ts";
 import { collectQuest, useQuests } from "#/lib/quests.ts";
 import { useCharacterName } from "#/lib/roxy.ts";
 import { Tickets } from "./PlayBits.tsx";
 
-const TILTS = ["-1.5deg", "1deg", "-0.75deg"];
+const TILTS = ["-0.6deg", "0.5deg", "-0.4deg"];
 
 /**
- * Today's three quests, in the home shelf's Quests sheet. One still to do is a solid card with how far along it is; a
- * finished one is a berry sticker with its tickets to collect (or just "Done" while games are Free). With `onGo`, a card
- * still to do is a button that takes the kid to its game.
+ * Today's three quests, in the home shelf's Quests sheet, one row each with its game's tile art. One still to do says
+ * how far along it is; a finished one is a berry sticker with its tickets to collect (or just "Done" while games are
+ * Free). With `onGo`, a row still to do is a button that takes the kid to its game.
  */
 /** `heading={false}` inside a sheet that already says "Today's quests". */
 export function QuestBoard({
@@ -21,11 +21,14 @@ export function QuestBoard({
 	status,
 	heading = true,
 	onGo,
+	art,
 }: {
 	childId: string;
 	status: PlayStatus;
 	heading?: boolean;
 	onGo?: (quest: Quest) => void;
+	/** The quest's game, as its shelf tile shows it. */
+	art?: (quest: Quest) => React.ReactNode;
 }) {
 	const id = useId();
 	const { quests, state } = useQuests(childId);
@@ -46,7 +49,7 @@ export function QuestBoard({
 					{done} of {quests.length} done
 				</span>
 			</div>
-			<ul className="mt-3 grid gap-4 sm:grid-cols-3">
+			<ul className="mt-3 grid gap-3">
 				{quests.map((q, i) => (
 					<QuestCard
 						key={q.id}
@@ -56,6 +59,7 @@ export function QuestBoard({
 						free={status.settings.free}
 						tilt={TILTS[i % TILTS.length]!}
 						onGo={onGo}
+						art={art?.(q)}
 					/>
 				))}
 			</ul>
@@ -70,6 +74,7 @@ function QuestCard({
 	free,
 	tilt,
 	onGo,
+	art,
 }: {
 	childId: string;
 	quest: Quest;
@@ -77,6 +82,7 @@ function QuestCard({
 	free: boolean;
 	tilt: string;
 	onGo?: (quest: Quest) => void;
+	art?: React.ReactNode;
 }) {
 	const qc = useQueryClient();
 	const [busy, setBusy] = useState(false);
@@ -85,27 +91,34 @@ function QuestCard({
 	// Quests are written about Roxy; they say whatever this kid calls their character.
 	const label = withName(quest.label, useCharacterName(childId));
 
+	const thumb = art && (
+		<span className="relative size-16 shrink-0 overflow-hidden rounded-xl shadow-sm md:size-[4.5rem]" aria-hidden>
+			{art}
+		</span>
+	);
+
 	if (!questDone(quest, state)) {
 		const body = (
 			<>
-				<span className="font-display text-lg font-medium text-page-ink">{label}</span>
-				<span className="text-sm font-medium text-page-muted tabular-nums">
-					{have} of {quest.need}
-					<span className="sr-only"> (not yet)</span>
+				{thumb}
+				<span className="grid min-w-0 flex-1 gap-1">
+					<span className="font-display text-lg leading-snug font-medium text-page-ink">{label}</span>
+					<span className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm font-medium text-page-muted tabular-nums">
+						<span>
+							{have} of {quest.need}
+							<span className="sr-only"> (not yet)</span>
+						</span>
+						{!free && (
+							<span className="inline-flex items-center gap-1.5">
+								<Ticket className="size-4" aria-hidden /> {quest.tickets} tickets
+							</span>
+						)}
+					</span>
 				</span>
-				{!free && (
-					<span className="inline-flex items-center gap-1.5 text-sm font-medium text-page-muted">
-						<Ticket className="size-4" aria-hidden /> {quest.tickets} tickets
-					</span>
-				)}
-				{onGo && (
-					<span className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-page-ink" aria-hidden>
-						<Play className="size-4 fill-current" /> Play
-					</span>
-				)}
+				{onGo && <ChevronRight className="size-6 shrink-0 text-page-muted" aria-hidden />}
 			</>
 		);
-		const card = "grid min-h-32 w-full content-center justify-items-center gap-2 rounded-2xl bg-page-deep p-4 text-center";
+		const card = "flex w-full items-center gap-4 rounded-2xl bg-page-deep p-3 text-left";
 		return onGo ? (
 			<li className="flex">
 				<button type="button" className={`quest-go ${card}`} onClick={() => onGo(quest)}>
@@ -129,11 +142,12 @@ function QuestCard({
 
 	return (
 		<li
-			className="sticker flex min-h-32 flex-col items-center justify-center gap-3 p-4 text-center"
+			className="sticker flex flex-wrap items-center gap-x-4 gap-y-3 p-3"
 			data-place="roxy"
 			style={{ "--tilt": tilt } as React.CSSProperties}
 		>
-			<span className="font-display text-lg font-medium">{label}</span>
+			{thumb}
+			<span className="min-w-0 flex-1 font-display text-lg leading-snug font-medium">{label}</span>
 			{/* Finished while games were Free: done, and never paid (as a go on Free never is). */}
 			{free || !questCollectable(quest, state) ? (
 				<span className="inline-flex items-center gap-1.5 text-sm font-semibold">
