@@ -3,10 +3,18 @@ import { useEffect, useState } from "react";
 
 const APP = "Jade's World";
 
-/** The page's own h1 (a round's is screen-reader only), once it has rendered; pages that load their data draw it a moment later. */
+const text = (el: Element) => el.textContent?.replace(/\s+/g, " ").trim() ?? "";
+
+/**
+ * The page's own h1 (a round's is screen-reader only), once it has rendered; pages that load their data draw it a moment
+ * later. Words inside it that only a screen reader hears (a game title's "Games:" eyebrow) stay out of the tab title.
+ */
 function heading() {
 	const h = document.querySelector("main h1") ?? document.querySelector("h1");
-	return h?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+	if (!h) return "";
+	const seen = h.cloneNode(true) as Element;
+	for (const el of seen.querySelectorAll(".sr-only")) el.remove();
+	return text(seen) || text(h);
 }
 
 /**

@@ -4,7 +4,7 @@ import { Pips, Tile } from "@jade/ui/components/tile";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, BookOpen, Check, Delete, Landmark, MessageSquareQuote, Snail, Volume2, X } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { Confirm } from "#/components/Confirm.tsx";
 import { AnswerRow, RevealRow } from "#/components/round/AnswerRow.tsx";
@@ -53,6 +53,7 @@ function RoundScreen() {
 	const child = useChild();
 	const navigate = useNavigate();
 	const qc = useQueryClient();
+	const lookupId = useId();
 	const { keyboard, compact } = useVisualViewport();
 	const reduced = useMemo(prefersReducedMotion, []);
 
@@ -89,7 +90,7 @@ function RoundScreen() {
 
 	const current = s.words[s.index];
 	const word = current?.word ?? "";
-	const { data: info } = useQuery({ ...wordQuery(word), enabled: !!word });
+	const { data: info, isPending: lookingUp } = useQuery({ ...wordQuery(word), enabled: !!word });
 	const { data: progress } = useQuery(progressQuery(child.id));
 	const box = progress?.boxes[word] ?? 0;
 	const nextWord = s.words[s.index + 1]?.word;
@@ -461,27 +462,40 @@ function RoundScreen() {
 								<Snail className="size-5" aria-hidden /> {!compact && "Slowly"}
 							</button>
 						</div>
-						{s.phase !== "study" && (
+						{s.phase !== "study" && (definition || sentence || info?.origin || lookingUp) && (
 							<fieldset className={`rack m-0 flex min-w-0 flex-wrap justify-center gap-2 border-0 ${compact ? "!py-1.5 !px-2" : ""}`}>
 								<legend className="sr-only">Ask about the word</legend>
-								<button
-									type="button"
-									className="key"
-									data-variant="tile"
-									disabled={!definition}
-									onClick={() => ask("Definition", definition, "definition")}
-								>
-									<BookOpen className="size-4" aria-hidden /> Definition
-								</button>
-								<button
-									type="button"
-									className="key"
-									data-variant="tile"
-									disabled={!sentence}
-									onClick={() => ask("Sentence", sentence, "sentence")}
-								>
-									<MessageSquareQuote className="size-4" aria-hidden /> Sentence
-								</button>
+								{/* A question only shows when there's an answer, as Origin does. While the word is still being looked up the keys
+								    wait, greyed, and say so, rather than vanishing and popping back. */}
+								{(definition || lookingUp) && (
+									<button
+										type="button"
+										className="key"
+										data-variant="tile"
+										disabled={!definition}
+										aria-describedby={definition ? undefined : lookupId}
+										onClick={() => ask("Definition", definition, "definition")}
+									>
+										<BookOpen className="size-4" aria-hidden /> Definition
+									</button>
+								)}
+								{(sentence || lookingUp) && (
+									<button
+										type="button"
+										className="key"
+										data-variant="tile"
+										disabled={!sentence}
+										aria-describedby={sentence ? undefined : lookupId}
+										onClick={() => ask("Sentence", sentence, "sentence")}
+									>
+										<MessageSquareQuote className="size-4" aria-hidden /> Sentence
+									</button>
+								)}
+								{lookingUp && (!definition || !sentence) && (
+									<span id={lookupId} className="sr-only">
+										Looking the word up
+									</span>
+								)}
 								{/* Many everyday words have no recorded origin; the question only appears when there's an answer. */}
 								{info?.origin && (
 									<button type="button" className="key" data-variant="tile" onClick={() => ask("Origin", info.origin, "definition")}>

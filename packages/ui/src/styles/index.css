@@ -139,6 +139,10 @@
 	 * sky is a law colour.) */
 	--scene-top: #cfe9f4;
 	--scene-ground: #f4ead8;
+	/* Game glass at Night: the scene behind it is always daylit and shows through, so the glass is thicker and its muted
+	 * ink lighter than the shell's, or grey words on it sink to under 3:1 over a bright sky. */
+	--glass-alpha: 86%;
+	--glass-muted: #c6c8cc;
 }
 /* Day, and `.scene-day`: words printed straight onto a game's (always daylit) scene, like its title and keyboard hints,
  * which at Night would be light text on a light sky. */
@@ -153,6 +157,8 @@
 	--color-page-muted: #555e70;
 	--color-page-pit: #d5d9e1;
 	--color-vinyl: #fbfdfb;
+	--glass-alpha: 72%;
+	--glass-muted: #555e70;
 	--tone-drop: rgb(27 33 48 / 0.16);
 	--tone-drop-deep: rgb(27 33 48 / 0.24);
 	--tone-lit: rgb(255 255 255 / 0.85);
@@ -176,6 +182,8 @@
 	--color-page-pit: #121315;
 	--color-vinyl: #dfe8e3;
 	--tone-key-line: rgb(227 243 236 / 0.16);
+	--glass-alpha: 86%;
+	--glass-muted: #c6c8cc;
 }
 
 /*
@@ -446,7 +454,8 @@
 	 */
 	.scene-backdrop { background: linear-gradient(to bottom, var(--scene-top), var(--scene-ground)); }
 	.glass {
-		background: color-mix(in oklab, var(--color-page-raised) 72%, transparent);
+		--color-page-muted: var(--glass-muted);
+		background: color-mix(in oklab, var(--color-page-raised) var(--glass-alpha), transparent);
 		-webkit-backdrop-filter: blur(14px);
 		backdrop-filter: blur(14px);
 		box-shadow: inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 0.4em 1.2em -0.4em var(--tone-drop);

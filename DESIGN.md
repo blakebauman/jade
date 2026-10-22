@@ -393,7 +393,7 @@ Depth is soft and low. The shell is flat, with one gradient of light from the to
 - **Key** (`inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 0.25em 0.5em -0.2em var(--tone-drop-deep)`). The `go` key adds a bevel of its own ink.
 - **Tile** (`inset 0 -0.3em 0 var(--tile-edge), inset 0 1px 0 rgb(255 255 255 / .6), inset 0 0 0 1px rgb(120 78 34 / .12), 0 .35em .7em -.1em var(--tone-drop)`): the bevel colour is the law slot.
 - **Sticker** (`0 0.55rem 1.1rem -0.45rem var(--tone-drop-deep), 0 0.08rem 0.18rem var(--tone-drop)`) and **foil** (`inset 0 1px 0 rgb(255 255 255 / .8), 0 .3rem .6rem -.25rem var(--tone-drop-deep)`).
-- **Glass** (`inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 .4em 1.2em -.4em var(--tone-drop)`, over `page-raised` at 72% with a 14px blur): game-screen chrome only.
+- **Glass** (`inset 0 1px 0 var(--tone-lit), inset 0 0 0 1px var(--tone-key-line), 0 .4em 1.2em -.4em var(--tone-drop)`, over `page-raised` with a 14px blur): game-screen chrome only. By Day the glass is 72% thick; at Night it is 86% and its muted ink lightens to `#c6c8cc` (`--glass-alpha`, `--glass-muted`), because the scene behind is always daylit and shows through, and the shell's muted grey would sink under 3:1 on it. Under `prefers-reduced-transparency` it goes solid.
 - **Recessed** (square and disabled Check: `inset 0 .2em .5em var(--tone-recess), inset 0 -1px 0 var(--tone-pit-lip)`; field and pressed key: `inset 0 .15em .4em var(--tone-recess)`).
 
 ### Named Rules
