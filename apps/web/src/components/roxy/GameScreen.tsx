@@ -118,7 +118,7 @@ export function GameScreen({
 							type="button"
 							className="orb glass"
 							aria-expanded={open}
-							aria-controls={`${id}-panel`}
+							aria-controls={open ? `${id}-panel` : undefined}
 							onClick={() => setOpen(!open)}
 							aria-label={`${open ? "Hide" : "Show"} ${panelLabel.toLowerCase()}`}
 							title={`${open ? "Hide" : "Show"} ${panelLabel.toLowerCase()}`}

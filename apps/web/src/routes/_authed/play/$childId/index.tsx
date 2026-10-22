@@ -117,7 +117,7 @@ function Sheet({
 		<dialog
 			ref={sheetRef}
 			aria-labelledby={id}
-			className="m-auto max-h-[calc(100dvh-2rem)] w-[min(40rem,calc(100vw-2rem))] overflow-y-auto rounded-[1.75rem] bg-page-raised p-6 text-page-ink shadow-2xl backdrop:bg-black/55 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:pb-safe-6 md:p-8"
+			className="m-auto max-h-[calc(100dvh-2rem)] w-[min(40rem,calc(100vw-2rem))] overflow-y-auto rounded-[1.75rem] bg-page-raised p-6 text-page-ink shadow-[0_1.5rem_3rem_-1rem_var(--tone-drop-deep)] backdrop:bg-black/55 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none max-sm:pb-safe-6 md:p-8"
 			onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}
 		>
 			<div className="mb-6 flex items-center justify-between gap-4">
@@ -188,7 +188,7 @@ function ClosedLine({ play, childId, go }: { play: PlayStatus; childId: string; 
 
 /** Key art from the game or round itself (public/tiles), edge to edge. */
 function Art({ src }: { src: string }) {
-	return <img src={src} alt="" className="absolute inset-0 size-full object-cover" draggable={false} />;
+	return <img src={src} alt="" decoding="async" className="absolute inset-0 size-full object-cover" draggable={false} />;
 }
 
 function Home() {

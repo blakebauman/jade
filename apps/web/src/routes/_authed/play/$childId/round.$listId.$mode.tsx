@@ -419,10 +419,14 @@ function RoundScreen() {
 				/>
 			)}
 
+			{/* The page's name for the whole round (the tab title, the route announcer); "Ready?" is a step within it. */}
+			<h1 className="sr-only">
+				{MODE_TITLE[mode]} · {name}
+			</h1>
 			{s.phase === "ready" ? (
 				<section className="grid flex-1 place-items-center">
 					<div className="flex flex-col items-center gap-8 text-center">
-						<h1 className="text-4xl font-semibold md:text-5xl">{s.words.length} words. Ready?</h1>
+						<h2 className="text-4xl font-semibold md:text-5xl">{s.words.length} words. Ready?</h2>
 						<p className="max-w-[40ch] text-page-muted">
 							{mode === "learn"
 								? "Look at each word, hear it, then cover it and spell it."
@@ -486,12 +490,22 @@ function RoundScreen() {
 								)}
 							</fieldset>
 						)}
-						{spoken && !compact && (
-							<p className="plaque max-w-[60ch] !block px-4 py-2.5 text-center" aria-live="polite">
-								<span className="mr-2 font-display font-semibold">{spoken.label}:</span>
-								{maskWord(spoken.text, word)}
-							</p>
-						)}
+						{/* Always mounted, so each answer is announced; a smaller caption while the keyboard is up, never audio only. */}
+						<p
+							className={
+								spoken
+									? `plaque !block text-center ${compact ? "basis-full px-3 py-1.5 text-sm leading-snug" : "max-w-[60ch] px-4 py-2.5"}`
+									: "sr-only"
+							}
+							aria-live="polite"
+						>
+							{spoken && (
+								<>
+									<span className="mr-2 font-display font-semibold">{spoken.label}:</span>
+									{maskWord(spoken.text, word)}
+								</>
+							)}
+						</p>
 					</div>
 
 					{s.phase === "study" ? (
@@ -566,20 +580,20 @@ function RoundScreen() {
 								}
 							/>
 
-							<div
-								className={`flex min-h-7 flex-col items-center gap-2 text-center ${notes.length > 0 && judged ? "mt-12" : ""}`}
-								aria-live="assertive"
-							>
-								{s.phase === "correct" && (
-									<p className="font-display text-2xl font-semibold text-page-ink">{s.current.tries > 1 ? "Fixed it!" : "Spot on!"}</p>
-								)}
-								{s.phase === "retry" && (
-									<p className="text-lg">
-										Almost.{notes.length > 1 && ` Also: ${notes.slice(1).join(" · ")}.`}{" "}
-										<span className="text-page-muted">Fix the marked tiles and check again.</span>
-									</p>
-								)}
-								{s.phase === "reveal" && notes.length > 1 && <p className="text-lg">Also: {notes.slice(1).join(" · ")}</p>}
+							<div className={`flex min-h-7 flex-col items-center gap-2 text-center ${notes.length > 0 && judged ? "mt-12" : ""}`}>
+								{/* Only the verdict is assertive; the status under it would cut in on every letter typed. */}
+								<div className="flex flex-col items-center gap-2" aria-live="assertive">
+									{s.phase === "correct" && (
+										<p className="font-display text-2xl font-semibold text-page-ink">{s.current.tries > 1 ? "Fixed it!" : "Spot on!"}</p>
+									)}
+									{s.phase === "retry" && (
+										<p className="text-lg">
+											Almost.{notes.length > 1 && ` Also: ${notes.slice(1).join(" · ")}.`}{" "}
+											<span className="text-page-muted">Fix the marked tiles and check again.</span>
+										</p>
+									)}
+									{s.phase === "reveal" && notes.length > 1 && <p className="text-lg">Also: {notes.slice(1).join(" · ")}</p>}
+								</div>
 								{!judged && (
 									<span className="flex items-center gap-2 text-sm text-page-muted">
 										<Pips box={box} /> {box === 0 ? "New word" : box >= 4 ? "Nearly mastered" : "Practicing"}

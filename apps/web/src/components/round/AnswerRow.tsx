@@ -1,6 +1,6 @@
 import type { GradeResult } from "@jade/core";
 import { type Law, Square, Tile } from "@jade/ui/components/tile";
-import { type ReactNode, useRef } from "react";
+import { type KeyboardEvent, type ReactNode, useRef } from "react";
 import { useElementWidth } from "#/lib/hooks.ts";
 import type { Phase } from "#/lib/round.ts";
 import { rekey } from "./caret.ts";
@@ -126,7 +126,17 @@ export function AnswerRow({
 								className={judged ? "animate-tile-flip" : "animate-tile-drop"}
 								style={judged ? { animationDelay: `${i * 55}ms` } : undefined}
 								data-typed-index={judged ? undefined : i}
-								onClick={onTileClick ? () => onTileClick(i) : undefined}
+								{...(onTileClick && {
+									role: "button",
+									tabIndex: 0,
+									"aria-label": `${c.letter}, take it back`,
+									onClick: () => onTileClick(i),
+									onKeyDown: (e: KeyboardEvent) => {
+										if (e.key !== "Enter" && e.key !== " ") return;
+										e.preventDefault();
+										onTileClick(i);
+									},
+								})}
 							/>
 						),
 					)}
@@ -144,11 +154,15 @@ export function AnswerRow({
 						}}
 					/>
 				)}
+				{/* Always mounted, so each note is announced; the bubble below is what's seen. */}
+				<p className="sr-only" aria-live="polite">
+					{note?.text}
+				</p>
 				{note && (
 					<p
-						className="pointer-events-none absolute top-full mt-3 -translate-x-1/2 rounded-lg bg-page-deep px-3 py-1.5 text-center text-sm whitespace-nowrap shadow-md md:text-base"
+						className="pointer-events-none absolute top-full mt-3 -translate-x-1/2 rounded-lg bg-page-deep px-3 py-1.5 text-center text-sm whitespace-nowrap shadow-[0_0.3rem_0.7rem_-0.2rem_var(--tone-drop-deep)] md:text-base"
 						style={{ left: Math.max(80, Math.min(noteLeft, width - 80)) }}
-						aria-live="polite"
+						aria-hidden
 					>
 						<span aria-hidden className="absolute -top-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 bg-page-deep" />
 						<span className="relative">{note.text}</span>

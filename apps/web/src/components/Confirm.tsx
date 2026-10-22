@@ -38,6 +38,7 @@ export function Confirm({
 	useEffect(() => {
 		const me = Symbol();
 		open.push(me);
+		const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 		cancel.current?.focus();
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key === "Escape" && open.at(-1) === me) {
@@ -49,6 +50,9 @@ export function Confirm({
 		return () => {
 			window.removeEventListener("keydown", onKey);
 			open.splice(open.indexOf(me), 1);
+			// Focus went with the Confirm: hand it back to what asked, unless the answer already moved it somewhere.
+			if ((!document.activeElement || document.activeElement === document.body) && before?.isConnected)
+				before.focus({ preventScroll: true });
 		};
 	}, []);
 	return (

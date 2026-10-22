@@ -52,10 +52,20 @@ function DemoRow() {
 
 /** The home shelf as a kid sees it, lit on a game: real art from each game, one tile with words waiting. */
 const DEMO: { name: string; art: React.ReactNode; count?: number }[] = [
-	{ name: "Gobble Town", art: <img src="/tiles/gobble.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
-	{ name: "Spelling", art: <img src="/tiles/spelling.webp" alt="" className="absolute inset-0 size-full object-cover" />, count: 6 },
-	{ name: "Jelly Blocks", art: <img src="/tiles/jelly.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
-	{ name: "Math", art: <img src="/tiles/math.webp" alt="" className="absolute inset-0 size-full object-cover" /> },
+	{
+		name: "Gobble Town",
+		art: <img src="/tiles/gobble.webp" alt="" decoding="async" className="absolute inset-0 size-full object-cover" />,
+	},
+	{
+		name: "Spelling",
+		art: <img src="/tiles/spelling.webp" alt="" decoding="async" className="absolute inset-0 size-full object-cover" />,
+		count: 6,
+	},
+	{
+		name: "Jelly Blocks",
+		art: <img src="/tiles/jelly.webp" alt="" decoding="async" className="absolute inset-0 size-full object-cover" />,
+	},
+	{ name: "Math", art: <img src="/tiles/math.webp" alt="" decoding="async" className="absolute inset-0 size-full object-cover" /> },
 ];
 
 /** Ends on whole tiles: four across the column (three on a phone), each a quarter of it, the first one lit. */
@@ -113,7 +123,9 @@ function Landing() {
 						className="key md:hidden"
 						onClick={() => {
 							setMode("signin");
-							document.getElementById("account")?.scrollIntoView({ behavior: "smooth", block: "start" });
+							document
+								.getElementById("account")
+								?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 						}}
 					>
 						Sign in
@@ -154,7 +166,15 @@ function Landing() {
 					)}
 					<label className="block space-y-1.5">
 						<span className="text-sm font-medium">Email</span>
-						<input name="email" type="email" required className="field" autoComplete="email" />
+						<input
+							name="email"
+							type="email"
+							required
+							className="field"
+							autoComplete="email"
+							aria-invalid={!!error || undefined}
+							aria-describedby={error ? "account-error" : undefined}
+						/>
 					</label>
 					<label className="block space-y-1.5">
 						<span className="text-sm font-medium">Password</span>
@@ -164,11 +184,13 @@ function Landing() {
 							required
 							minLength={8}
 							className="field"
+							aria-invalid={!!error || undefined}
+							aria-describedby={error ? "account-error" : undefined}
 							autoComplete={mode === "signup" ? "new-password" : "current-password"}
 						/>
 					</label>
 					{error && (
-						<p role="alert" className="rounded-lg bg-page-deep px-3 py-2 text-sm text-page-ink">
+						<p id="account-error" role="alert" className="rounded-lg bg-page-deep px-3 py-2 text-sm text-page-ink">
 							{error}
 						</p>
 					)}

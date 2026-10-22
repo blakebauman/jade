@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { Confirm } from "#/components/Confirm.tsx";
 import { Keypad } from "#/components/math/Keypad.tsx";
-import { NumberTiles, ProblemRow, tokensText } from "#/components/math/ProblemRow.tsx";
+import { NumberTiles, ProblemRow, sayAnswer, tokensText } from "#/components/math/ProblemRow.tsx";
 import { Visual } from "#/components/math/Visual.tsx";
 import { useChild } from "#/lib/child.ts";
 import { dayKey, useVisualViewport, useWakeLock } from "#/lib/hooks.ts";
@@ -250,12 +250,14 @@ function MathRound() {
 				/>
 			)}
 
+			{/* The page's name for the whole round (the tab title, the route announcer); "Ready?" is a step within it. */}
+			<h1 className="sr-only">Math · {title}</h1>
 			{s.phase === "ready" ? (
 				<section className="grid flex-1 place-items-center">
 					<div className="flex flex-col items-center gap-8 text-center">
-						<h1 className="text-4xl font-semibold md:text-5xl">
+						<h2 className="text-4xl font-semibold md:text-5xl">
 							{s.problems.length} {s.problems.length === 1 ? "problem" : "problems"}. Ready?
-						</h1>
+						</h2>
 						<p className="max-w-[40ch] text-page-muted">Tap the number keys to answer. No clock: take your time.</p>
 						<button type="button" className="key !min-h-16 !px-10 !text-2xl" data-variant="go" onClick={begin}>
 							<Volume2 className="size-7" aria-hidden /> Start
@@ -284,6 +286,10 @@ function MathRound() {
 						<div className="flex w-full items-center justify-center py-2">
 							<ProblemRow problem={problem} typed={s.typed} law={law} />
 						</div>
+						{/* The keypad keeps focus, so the answer as it grows is read back here. Always mounted, so each change is announced. */}
+						<p className="sr-only" aria-live="polite">
+							{canAnswer && s.typed ? `Your answer: ${sayAnswer(s.typed)}` : ""}
+						</p>
 					</div>
 
 					<div className="min-h-7 text-center" aria-live="assertive">

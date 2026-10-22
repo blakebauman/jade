@@ -819,7 +819,7 @@ function Islands({
 					return (
 						<label
 							key={i.id}
-							className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 ${on ? "bg-white/50 ring-2 ring-roxy" : ""}`}
+							className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2 ${on ? "bg-page-ink/12 ring-2 ring-roxy" : ""}`}
 						>
 							<input type="radio" name="island" className="size-4" checked={on} onChange={() => onChoose(i.mine ? undefined : i.id)} />
 							<span className="min-w-0 flex-1 font-medium">{i.label}</span>
@@ -979,8 +979,8 @@ function FireMeter({ fuel }: { fuel: number }) {
 			<meter className="sr-only" aria-label="Campfire" min={0} max={100} low={25} value={Math.round(share * 100)} />
 			<span className="relative h-2 w-14 overflow-hidden rounded-full bg-[color-mix(in_oklab,currentColor_18%,transparent)]" aria-hidden>
 				<span
-					className="absolute inset-y-0 left-0 rounded-full bg-linear-to-r from-[#e0441f] via-[#f08a24] to-[#ffd04a] transition-[width] duration-700"
-					style={{ width: `${share * 100}%` }}
+					className="absolute inset-0 rounded-full bg-linear-to-r from-[#e0441f] via-[#f08a24] to-[#ffd04a] transition-transform duration-700"
+					style={{ transform: `translateX(${(share - 1) * 100}%)` }}
 				/>
 			</span>
 			{fuel <= 0 && <span>out!</span>}
@@ -1021,16 +1021,15 @@ function Hotbar({
 						key={b}
 						type="button"
 						aria-pressed={b === selected}
-						aria-label={`${blockInfo(b).label}, ${inv[b]}`}
+						aria-label={`${blockInfo(b).label}, ${inv[b]}${k < 9 ? `, key ${k + 1}` : ""}`}
 						onClick={() => onPick(b)}
-						className={`relative size-11 shrink-0 rounded-lg p-1 ${b === selected ? "bg-white/70 ring-2 ring-roxy" : ""}`}
+						className={`relative size-11 shrink-0 rounded-lg p-1 ${b === selected ? "bg-page-ink/12 ring-2 ring-roxy" : ""}`}
 						style={{ touchAction: "manipulation" }}
 					>
 						<img src={tiles.get(b)} alt="" className="size-full rounded-sm [image-rendering:pixelated]" draggable={false} />
 						<span className="absolute right-0.5 bottom-0 text-[11px] font-semibold text-white tabular-nums [text-shadow:0_1px_2px_rgb(0_0_0/0.8)]">
 							{inv[b]}
 						</span>
-						{k < 9 && <span className="sr-only">Key {k + 1}</span>}
 					</button>
 				))}
 			</fieldset>
@@ -1070,7 +1069,7 @@ function Things({
 	return (
 		<div className="space-y-4">
 			<section aria-label="Say hello">
-				<h3 className="text-sm font-semibold">Say hello</h3>
+				<h2 className="text-sm font-semibold">Say hello</h2>
 				<div className="mt-2 flex flex-wrap gap-2">
 					{EMOTES.map((e) => (
 						<button key={e} type="button" className="key" data-variant="felt" onClick={() => onEmote(e)}>
@@ -1080,7 +1079,7 @@ function Things({
 				</div>
 			</section>
 			<section aria-label="Living at camp">
-				<h3 className="text-sm font-semibold">Living at camp</h3>
+				<h2 className="text-sm font-semibold">Living at camp</h2>
 				{living.length === 0 ? (
 					<p className="mt-1 text-sm text-page-muted">Nobody yet. At night, find lost animals in the woods and lead them to the fire.</p>
 				) : (
@@ -1095,13 +1094,13 @@ function Things({
 				)}
 			</section>
 			<section aria-label="Make things">
-				<h3 className="text-sm font-semibold">Make things</h3>
+				<h2 className="text-sm font-semibold">Make things</h2>
 				<ul className="mt-2 space-y-1.5">
 					{RECIPES.map((r) => {
 						const uses = craftUses(r, inv);
 						const blocked = !uses ? "Not enough yet" : r.fire && !byFire ? "Stand by the lit fire" : null;
 						return (
-							<li key={r.id} className="flex items-center gap-2">
+							<li key={r.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
 								<span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
 									{r.takes.map((t) => (
 										<span key={t.b} className="inline-flex items-center gap-0.5">
@@ -1121,18 +1120,24 @@ function Things({
 									className="key"
 									data-variant="felt"
 									disabled={!!blocked}
-									title={blocked ?? undefined}
+									aria-describedby={blocked ? `craft-${r.id}-why` : undefined}
 									onClick={() => onCraft(r.id)}
 								>
 									{r.fire && <Flame className="size-4" aria-hidden />} Make {r.label.toLowerCase()}
 								</button>
+								{/* Why it's off, in words: a title never shows on a touch screen. */}
+								{blocked && (
+									<span id={`craft-${r.id}-why`} className="basis-full text-right text-xs text-page-muted">
+										{blocked}
+									</span>
+								)}
 							</li>
 						);
 					})}
 				</ul>
 			</section>
 			<section aria-label="What you’re carrying">
-				<h3 className="text-sm font-semibold">What you’re carrying</h3>
+				<h2 className="text-sm font-semibold">What you’re carrying</h2>
 				{carried.length === 0 ? (
 					<p className="mt-1 text-sm text-page-muted">Nothing yet. Hold on a block to dig it up.</p>
 				) : (
@@ -1144,7 +1149,7 @@ function Things({
 									disabled={!canPlace(b.id)}
 									onClick={() => onPick(b.id)}
 									aria-pressed={b.id === selected}
-									className={`flex w-full flex-col items-center gap-1 rounded-xl p-2 text-xs ${b.id === selected ? "bg-white/60 ring-2 ring-roxy" : ""}`}
+									className={`flex w-full flex-col items-center gap-1 rounded-xl p-2 text-xs ${b.id === selected ? "bg-page-ink/12 ring-2 ring-roxy" : ""}`}
 								>
 									<img src={tiles.get(b.id)} alt="" className="size-8 [image-rendering:pixelated]" />
 									<span>{b.label}</span>
@@ -1156,7 +1161,7 @@ function Things({
 				)}
 			</section>
 			<section aria-label="How to play">
-				<h3 className="text-sm font-semibold">How to play</h3>
+				<h2 className="text-sm font-semibold">How to play</h2>
 				<ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-page-muted">
 					<li>Hold on a block to dig it. It goes in your bag.</li>
 					<li>Tap (or right click) to build with the block in your hand.</li>

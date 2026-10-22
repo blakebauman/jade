@@ -270,7 +270,11 @@ function MathProgress({ childId, math, played }: { childId: string; math: Progre
 				<div className="space-y-3">
 					<div className="flex flex-wrap items-baseline justify-between gap-3">
 						<h3 className="text-lg font-semibold">Levels</h3>
-						<Link to="/parent/kids" search={{ edit: childId }} className="text-sm underline underline-offset-4 hover:text-page-ink">
+						<Link
+							to="/parent/kids"
+							search={{ edit: childId }}
+							className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 hover:text-page-ink"
+						>
 							Change in Kids
 						</Link>
 					</div>
