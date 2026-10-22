@@ -108,7 +108,7 @@ test("dig and build on the family's island, and see a brother or sister do it to
 	await expect.poll(() => hooks(other, (h, a) => h.block(...(a as [number, number, number])), spot), SLOW).toBe(WOOL_RED);
 	await expect.poll(() => hooks(page, (h, b) => h.peek().inv[b as number], WOOL_RED), SLOW).toBe(63);
 	// The dug-up dirt is on the hotbar to build with (one block or more, as the dig carries on down while held).
-	await expect(page.getByRole("button", { name: /^Dirt, \d+$/ })).toBeVisible();
+	await expect(page.getByRole("button", { name: /^Dirt, \d+(, key \d)?$/ })).toBeVisible();
 	await other.close();
 });
 

@@ -56,7 +56,7 @@ import {
 } from "three";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { useContextLoss } from "../roxy/world/pace.tsx";
-import { atlasTexture } from "./atlas.ts";
+import { atlasTexture } from "./atlasTexture.ts";
 import { camp, flicker } from "./camp.ts";
 import type { Controls } from "./controls.ts";
 import { Held } from "./held.ts";

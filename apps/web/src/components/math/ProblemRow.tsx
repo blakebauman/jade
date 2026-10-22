@@ -15,6 +15,11 @@ const OP_LABEL: Record<string, string> = {
 	of: "of",
 };
 
+/** How an answer reads aloud: "3/4" is "3 over 4", "<" is "is less than", nothing yet is "blank". */
+export function sayAnswer(typed: string): string {
+	return typed ? (OP_LABEL[typed] ?? typed.replace("/", " over ")) : "blank";
+}
+
 /** Operators sit on the felt as chalk marks, not tiles: only numbers and the answer are things you handle. */
 function OpMark({ v, size }: { v: string; size: number }) {
 	return (
@@ -122,7 +127,13 @@ export function ProblemRow({ problem, typed, law }: { problem: Problem; typed: s
 				role="img"
 				aria-label={problem.prompt
 					.map((t) =>
-						t.t === "op" ? OP_LABEL[t.v] : t.t === "num" ? t.v : t.t === "frac" ? `${t.n === "?" ? "blank" : t.n} over ${t.d}` : "blank",
+						t.t === "op"
+							? OP_LABEL[t.v]
+							: t.t === "num"
+								? t.v
+								: t.t === "frac"
+									? `${t.n === "?" ? sayAnswer(typed) : t.n} over ${t.d}`
+									: sayAnswer(typed),
 					)
 					.join(" ")}
 			>

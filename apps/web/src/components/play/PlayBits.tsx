@@ -159,7 +159,7 @@ export function PlayClosed({
 					{/* One line for what's left: a star goal says it as a filling strip, a round goal in words. */}
 					{progress.unit === "star" ? (
 						<div className="flex flex-col items-center gap-2">
-							<span className="block h-2.5 w-44 overflow-hidden rounded-full bg-black/25" aria-hidden>
+							<span className="block h-2.5 w-44 overflow-hidden rounded-full bg-page-line" aria-hidden>
 								<span
 									className="block h-full rounded-full bg-page-ink"
 									style={{ width: `${Math.min(100, (progress.have / progress.need) * 100)}%` }}

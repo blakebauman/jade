@@ -39,9 +39,9 @@ export default defineConfig({
 				navigateFallback: "/index.html",
 				navigateFallbackDenylist: [/^\/api\//, /^\/health$/],
 				globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2,glb}"],
-				// Latin type only: the other scripts' subsets load on demand (unicode-range) and would only weigh down the
+				// Basic Latin type only: latin-ext and the other scripts' subsets load on demand (unicode-range) and would only weigh down the
 				// install on a phone. Splash screens are fetched by iOS itself when the app is added, never by the app.
-				globIgnores: ["**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,hebrew}-*.woff2", "splash/**"],
+				globIgnores: ["**/*-{latin-ext,cyrillic,cyrillic-ext,greek,greek-ext,vietnamese,hebrew}-*.woff2", "splash/**"],
 				runtimeCaching: [
 					{
 						// The games' recorded sounds (about 1.6MB, so not precached). Their names are hashed, so a copy never goes

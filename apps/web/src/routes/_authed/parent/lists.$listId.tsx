@@ -714,7 +714,7 @@ function WordRow({
 				<span className="hidden w-6 shrink-0 text-right text-sm text-page-muted tabular-nums sm:block">{n}</span>
 				<button
 					type="button"
-					className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-left"
+					className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-left"
 					aria-expanded={open}
 					aria-label={check ? `Edit ${w.word}, read from the photo: check the spelling` : `Edit ${w.word}`}
 					onClick={onToggle}

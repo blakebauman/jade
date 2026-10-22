@@ -15,7 +15,8 @@ export function TileBank({
 	disabled?: boolean;
 }) {
 	const [ref, width] = useElementWidth<HTMLDivElement>();
-	const { size } = fitTile(width, Math.min(bank.length, 8), 72);
+	// Never under 44px, a fingertip on a phone: the bank wraps to a second row before tiles get smaller.
+	const size = Math.max(44, fitTile(width, Math.min(bank.length, 8), 72).size);
 	const usedSet = new Set(used);
 	return (
 		<div ref={ref} className="w-full">

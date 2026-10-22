@@ -846,7 +846,7 @@ function ItemButton({
 			aria-label={label}
 			onClick={onClick}
 			data-state={state}
-			className="studio-item relative block aspect-square w-full overflow-hidden rounded-xl bg-page-deep shadow-[inset_0_0.2em_0.5em_rgb(0_0_0/0.45)]"
+			className="studio-item relative block aspect-square w-full overflow-hidden rounded-xl bg-page-deep shadow-[inset_0_0.2em_0.5em_var(--tone-recess)]"
 		>
 			{children}
 			{state === "worn" && (

@@ -249,8 +249,10 @@ function ParentLayout() {
 					Who’s playing?
 				</Link>
 			</header>
-			<InstallHint />
-			<Outlet />
+			<main>
+				<InstallHint />
+				<Outlet />
+			</main>
 		</div>
 	);
 }
