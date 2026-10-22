@@ -1,8 +1,16 @@
 import { zValidator } from "@hono/zod-validator";
-import { BADGES, buildReviewRound, childInputSchema, childPatchSchema, childSettingsSchema, DEFAULT_SETTINGS } from "@jade/core";
+import {
+	BADGES,
+	buildReviewRound,
+	childInputSchema,
+	childPatchSchema,
+	childSettingsSchema,
+	DEFAULT_SETTINGS,
+	normalizeWord,
+} from "@jade/core";
 import { MATH_SKILLS } from "@jade/core/math";
-import { schema } from "@jade/db";
-import { and, desc, eq, gt, sql } from "drizzle-orm";
+import { type Db, schema } from "@jade/db";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { AppEnv } from "../env.ts";
@@ -13,6 +21,29 @@ import { ownedChild } from "../lib/owned.ts";
 function present(row: typeof schema.children.$inferSelect) {
 	const parsed = childSettingsSchema.safeParse(JSON.parse(row.settingsJson || "{}"));
 	return { id: row.id, name: row.name, avatar: row.avatar, grade: row.grade, settings: parsed.success ? parsed.data : DEFAULT_SETTINGS };
+}
+
+/**
+ * The latest distinct wrong first tries at each word, at most three a word. Words come from `troubleOf`, at most 15,
+ * inside D1's 100.
+ */
+async function misspellings(db: Db, childId: string, words: string[]) {
+	const out = new Map<string, string[]>();
+	if (words.length === 0) return out;
+	const rows = await db
+		.select({ word: schema.attempts.word, typed: schema.attempts.typed })
+		.from(schema.attempts)
+		.innerJoin(schema.practiceSessions, eq(schema.attempts.sessionId, schema.practiceSessions.id))
+		.where(and(eq(schema.practiceSessions.childId, childId), inArray(schema.attempts.word, words)))
+		.orderBy(desc(schema.practiceSessions.startedAt))
+		.limit(500);
+	for (const r of rows) {
+		const typed = normalizeWord(r.typed);
+		const seen = out.get(r.word) ?? [];
+		if (!typed || typed === r.word || seen.includes(typed) || seen.length >= 3) continue;
+		out.set(r.word, [...seen, typed]);
+	}
+	return out;
 }
 
 export const childrenRoutes = new Hono<AppEnv>()
@@ -104,6 +135,12 @@ export const childrenRoutes = new Hono<AppEnv>()
 				.sort((a, b) => b.misses - a.misses || a.box - b.box)
 				.slice(0, 15)
 				.map((p) => ({ word: p.word, misses: p.misses, box: p.box }));
+		const trouble = troubleOf(progress);
+		const misspelt = await misspellings(
+			c.var.db,
+			child.id,
+			trouble.map((t) => t.word),
+		);
 		const earned = new Set<string>(JSON.parse(stats?.badgesJson ?? "[]"));
 		return c.json({
 			child: present(child),
@@ -121,7 +158,8 @@ export const childrenRoutes = new Hono<AppEnv>()
 			mastered: progress.filter((p) => p.box >= 4).length,
 			/** Leitner box per practiced word, for the five-pip mastery ramp. */
 			boxes: Object.fromEntries(progress.map((p) => [p.word, p.box])),
-			trouble: troubleOf(progress),
+			/** With up to three ways each was spelled wrong, most recent first, so a parent can see what trips them up. */
+			trouble: trouble.map((t) => ({ ...t, misspelt: misspelt.get(t.word) ?? [] })),
 			math: {
 				/** Adaptive level (1–5) per skill; skills never practiced are absent (level 1). */
 				levels,

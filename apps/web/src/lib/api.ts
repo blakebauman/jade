@@ -97,7 +97,8 @@ export type Progress = {
 	reviewDue: string[];
 	mastered: number;
 	boxes: Record<string, number>;
-	trouble: { word: string; misses: number; box: number }[];
+	/** `misspelt`: up to three wrong first tries, latest first (absent from progress cached before it existed). */
+	trouble: { word: string; misses: number; box: number; misspelt?: string[] }[];
 	math: {
 		levels: Partial<Record<string, number>>;
 		factsDue: string[];

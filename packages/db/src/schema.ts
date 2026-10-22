@@ -202,6 +202,7 @@ export const attempts = sqliteTable(
 			.references(() => practiceSessions.id, { onDelete: "cascade" }),
 		/** Spelling: the word. Math: the problem key (`m:mul:7x8`). */
 		word: text("word").notNull(),
+		/** Spelling: the first try (before 2026-10-21, the right spelling when a second try got it). */
 		typed: text("typed").notNull(),
 		correct: integer("correct", { mode: "boolean" }).notNull(),
 		/** Math only: the skill and level the problem was generated at. */
