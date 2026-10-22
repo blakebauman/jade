@@ -1,3 +1,4 @@
+import { gradeAttempt } from "@jade/core";
 import { MATH_SKILLS } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { Pips } from "@jade/ui/components/tile";
@@ -26,6 +27,36 @@ const MODE_LABEL = {
 	problems: "Math · Word problems",
 	mathreview: "Math · Review",
 } as const;
+
+const Underline = ({ law, children }: { law: string; children: string }) => (
+	<span className={`underline decoration-[3px] underline-offset-4 text-page-ink ${law}`}>{children}</span>
+);
+
+const LAW_LINE = { wrong: "decoration-coral", extra: "decoration-stone" } as const;
+
+/**
+ * A wrong spelling as the kid typed it, every miss marked by the colour laws on an underline (the ink stays dark): coral
+ * a wrong letter, stone an extra one, and a sky-underlined gap where one was left out.
+ */
+function Misspelt({ word, typed }: { word: string; typed: string }) {
+	return (
+		<span className="font-display text-lg tracking-wide" role="img" aria-label={`“${typed}”`}>
+			{gradeAttempt(word, typed).letters.map((m, i) =>
+				m.mark === "missing" ? (
+					<span key={`m${i}`} aria-hidden className="mx-px inline-block w-[0.55em] border-b-[3px] border-sky" />
+				) : (
+					<span
+						key={`t${i}`}
+						aria-hidden
+						className={m.mark === "ok" ? undefined : `underline decoration-[3px] underline-offset-4 ${LAW_LINE[m.mark]}`}
+					>
+						{m.typed}
+					</span>
+				),
+			)}
+		</span>
+	);
+}
 
 function ProgressPage() {
 	const { childId } = Route.useParams();
@@ -98,16 +129,33 @@ function ProgressPage() {
 							Spelling
 						</h2>
 						<h3 className="text-lg font-semibold">Trouble words</h3>
+						{p.trouble.some((t) => t.misspelt?.length) && (
+							<p className="text-sm text-page-muted">
+								Under each, how {name} spelled it lately: <Underline law="decoration-coral">a wrong letter</Underline>,{" "}
+								<Underline law="decoration-stone">an extra one</Underline>,{" "}
+								<span className="inline-block w-[1.1em] border-b-[3px] border-sky" /> a missing one.
+							</p>
+						)}
 						{p.trouble.length === 0 ? (
 							<p className="text-page-muted">No misses yet. Words that get missed show up here with how often.</p>
 						) : (
 							<>
 								<ul className="space-y-3">
 									{p.trouble.map((t) => (
-										<li key={t.word} className="flex flex-wrap items-center gap-4">
-											<WordRack word={t.word} max={26} />
-											<span className="text-sm text-page-muted tabular-nums">missed {t.misses}×</span>
-											<Pips box={t.box} />
+										<li key={t.word} className="space-y-1.5">
+											<div className="flex flex-wrap items-center gap-4">
+												<WordRack word={t.word} max={26} />
+												<span className="text-sm text-page-muted tabular-nums">missed {t.misses}×</span>
+												<Pips box={t.box} />
+											</div>
+											{t.misspelt && t.misspelt.length > 0 && (
+												<p className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+													<span className="text-sm text-page-muted">Spelled</span>
+													{t.misspelt.map((typed) => (
+														<Misspelt key={typed} word={t.word} typed={typed} />
+													))}
+												</p>
+											)}
 										</li>
 									))}
 								</ul>

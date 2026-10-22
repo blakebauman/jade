@@ -205,7 +205,8 @@ export const useRound = create<RoundState>()(
 							{
 								clientId,
 								word: normalizeWord(target.word),
-								typed: grade.correct ? s.typed : (current.firstTyped ?? s.typed),
+								// The first try, right or not: a word got right on the second try keeps the miss for the parent's trouble words.
+								typed: current.firstTyped ?? s.typed,
 								correct: grade.correct,
 								tries,
 								hintsUsed: current.hintsUsed,

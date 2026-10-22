@@ -104,6 +104,7 @@ Secrets:
 - Everything is idempotent. Attempts are keyed by client id, and only newly inserted rows count (`recordAttempts` uses `insert … on conflict do nothing returning`), so replays and a finish that re-sends everything never double-count. Totals are incremented in SQL.
 - Writes go through an ordered op queue in IndexedDB (`lib/offline.ts`, Dexie `ops` table). Offline, they wait and flush in order on `online`. A 4xx other than 429 drops the op.
 - Learn mode records attempts but never moves Leitner boxes.
+- An attempt's `typed` is the first try, right or not (rows before 2026-10-21 hold the right spelling when a second try got it). The parent's progress page shows each trouble word's last three distinct wrong first tries (`misspelt` on `trouble`), letters underlined by the colour laws.
 - Offline, including opening the installed app with no connection:
   - `lib/device.ts` remembers the last confirmed user in localStorage (`jade.user`). `_authed` and `/` use it when the session check can't reach the server; a 401/403 always wins.
   - The service worker's `jade-data` cache (NetworkFirst) holds children, lists, list words, progress, `/api/parent` and word info. The spelling home prefetches every list's words.

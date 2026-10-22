@@ -170,7 +170,7 @@ describe("practice rounds", () => {
 		};
 		expect(progress.stats).toMatchObject({ totalStars: 3, wordsSpelled: 1, currentStreak: 1 });
 		expect(progress.reviewDue).toEqual(["friend"]);
-		expect(progress.trouble).toEqual([{ word: "friend", misses: 1, box: 1 }]);
+		expect(progress.trouble).toEqual([{ word: "friend", misses: 1, box: 1, misspelt: ["freind"] }]);
 		// The parent's list shows it has been played; nothing is mastered after one round.
 		const [summary2] = (await (await call("/api/lists", { cookie })).json()) as {
 			perChild: { childId: string; lastPlayedAt: unknown; mastered: number }[];
@@ -238,7 +238,44 @@ describe("practice rounds", () => {
 			trouble: { word: string; misses: number }[];
 		};
 		expect(after.stats).toMatchObject({ totalStars: 3, wordsSpelled: 1 });
-		expect(after.trouble).toEqual([{ word: "weird", misses: 1, box: 1 }]);
+		expect(after.trouble).toEqual([{ word: "weird", misses: 1, box: 1, misspelt: ["wierd"] }]);
+	});
+
+	it("shows parents how each trouble word was first spelled wrong: latest first, no repeats, at most three", async () => {
+		const cookie = await signUp();
+		const child = (await (await call("/api/children", { method: "POST", cookie, json: { name: "Ivy" } })).json()) as { id: string };
+		const round = async (startedAt: number, attempts: { word: string; typed: string; correct: boolean; tries: number }[]) => {
+			const id = crypto.randomUUID();
+			await call("/api/sessions", { method: "POST", cookie, json: { id, childId: child.id, listId: null, mode: "bee", startedAt } });
+			const json = {
+				finishedAt: startedAt + 1000,
+				day: "2026-10-21",
+				attempts: attempts.map((a) => ({ clientId: crypto.randomUUID(), hintsUsed: 0, replays: 0, ms: 4000, ...a })),
+			};
+			expect((await call(`/api/sessions/${id}/finish`, { method: "POST", cookie, json })).status).toBe(200);
+		};
+		const t = Date.now() - 10 * 60_000;
+		await round(t, [{ word: "necessary", typed: "neccesary", correct: false, tries: 2 }]);
+		await round(t + 60_000, [{ word: "necessary", typed: "Necesary", correct: false, tries: 2 }]);
+		await round(t + 120_000, [{ word: "necessary", typed: "neccesary", correct: false, tries: 2 }]);
+		await round(t + 180_000, [{ word: "necessary", typed: "nessesary", correct: false, tries: 2 }]);
+		await round(t + 240_000, [
+			{ word: "necessary", typed: "necessery", correct: false, tries: 2 },
+			// Right on the second try: the first try is what counts.
+			{ word: "rhythm", typed: "rythm", correct: true, tries: 2 },
+			// Saved before first tries were kept: the right spelling, so nothing to show.
+			{ word: "people", typed: "people", correct: true, tries: 2 },
+			// Gave up without typing anything.
+			{ word: "island", typed: "", correct: false, tries: 1 },
+		]);
+		const p = (await (await call(`/api/children/${child.id}/progress`, { cookie })).json()) as {
+			trouble: { word: string; misspelt: string[] }[];
+		};
+		const of = (w: string) => p.trouble.find((x) => x.word === w)?.misspelt;
+		expect(of("necessary")).toEqual(["necessery", "nessesary", "neccesary"]);
+		expect(of("rhythm")).toEqual(["rythm"]);
+		expect(of("people")).toEqual([]);
+		expect(of("island")).toEqual([]);
 	});
 
 	it("refuses sessions for another parent's child", async () => {
