@@ -27,35 +27,40 @@ describe("parity with real Python", () => {
 			return [];
 		});
 
-	it.skipIf(!python && !process.env.CI)("every solution and every bug runs the same in CPython", () => {
-		if (!python) throw new Error("CI needs python3 for the parity test");
-		const cases: { src: string; board: Board }[] = [];
-		for (const t of ALL_TEMPLATES)
-			for (const seed of [1, 2, 3, 4, 5]) {
-				const made = t.make(seeded(seed));
-				for (const board of made.boards) cases.push({ src: made.solution, board });
-				const fix = makePuzzle(t, "fix", seeded(seed));
-				if (fix) for (const board of fix.boards) cases.push({ src: fix.starter, board });
-			}
-		cases.push(
-			{ src: "print(7 // 2, -7 // 2, 7 % 3, -7 % 3, 'ab' * 2, True + 1, 1 == True)", board: open },
-			{ src: "x = 3\ndef f():\n    return x * 2\nprint(f(), str(5) + 'a', abs(-4))", board: open },
-			{ src: "forward(3)\nforward(9)", board: open },
-		);
-		const script = fileURLToPath(new URL("../code/parity/garden.py", import.meta.url));
-		const out = JSON.parse(execFileSync(python, [script], { input: JSON.stringify(cases), maxBuffer: 64 << 20 }).toString()) as {
-			events: unknown[][];
-			error: boolean;
-		}[];
-		cases.forEach((c, i) => {
-			const ours = run(c.src, c.board);
-			// Endless loops stop at different places in the two; both stopping is enough.
-			if (ours.error?.message.includes("dizzy")) {
-				expect(out[i]!.error).toBe(true);
-				return;
-			}
-			expect(trace(ours.events), c.src).toEqual(out[i]!.events);
-			expect(!!ours.error, c.src).toBe(out[i]!.error);
-		});
-	});
+	// One Python process over every case, line-traced: well under a second on a laptop, several on a CI runner.
+	it.skipIf(!python && !process.env.CI)(
+		"every solution and every bug runs the same in CPython",
+		() => {
+			if (!python) throw new Error("CI needs python3 for the parity test");
+			const cases: { src: string; board: Board }[] = [];
+			for (const t of ALL_TEMPLATES)
+				for (const seed of [1, 2, 3, 4, 5]) {
+					const made = t.make(seeded(seed));
+					for (const board of made.boards) cases.push({ src: made.solution, board });
+					const fix = makePuzzle(t, "fix", seeded(seed));
+					if (fix) for (const board of fix.boards) cases.push({ src: fix.starter, board });
+				}
+			cases.push(
+				{ src: "print(7 // 2, -7 // 2, 7 % 3, -7 % 3, 'ab' * 2, True + 1, 1 == True)", board: open },
+				{ src: "x = 3\ndef f():\n    return x * 2\nprint(f(), str(5) + 'a', abs(-4))", board: open },
+				{ src: "forward(3)\nforward(9)", board: open },
+			);
+			const script = fileURLToPath(new URL("../code/parity/garden.py", import.meta.url));
+			const out = JSON.parse(execFileSync(python, [script], { input: JSON.stringify(cases), maxBuffer: 64 << 20 }).toString()) as {
+				events: unknown[][];
+				error: boolean;
+			}[];
+			cases.forEach((c, i) => {
+				const ours = run(c.src, c.board);
+				// Endless loops stop at different places in the two; both stopping is enough.
+				if (ours.error?.message.includes("dizzy")) {
+					expect(out[i]!.error).toBe(true);
+					return;
+				}
+				expect(trace(ours.events), c.src).toEqual(out[i]!.events);
+				expect(!!ours.error, c.src).toBe(out[i]!.error);
+			});
+		},
+		60_000,
+	);
 });
