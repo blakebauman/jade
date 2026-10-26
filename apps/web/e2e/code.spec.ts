@@ -43,6 +43,13 @@ async function typeCode(page: Page, src: string) {
 	}
 }
 
+/** Skip to the end of a run, unless a short one has finished first (Skip goes when it does). */
+const skip = (page: Page) =>
+	page
+		.getByRole("button", { name: "Skip" })
+		.click({ timeout: 2000 })
+		.catch(() => {});
+
 /** Solve whatever puzzle is showing, then wait for the run to finish. */
 async function solve(page: Page) {
 	const p = await current(page);
@@ -52,12 +59,14 @@ async function solve(page: Page) {
 	} else {
 		await typeCode(page, p.solution);
 		await page.getByRole("button", { name: "Run" }).click();
-		await page.getByRole("button", { name: "Skip" }).click();
+		await skip(page);
 	}
 	await expect(page.getByRole("button", { name: /Next|Finish/ })).toBeVisible();
 }
 
 test("a Steps round: toolbox taps, a bug marked on its line, typing, predict, results", async ({ page }, info) => {
+	// A whole round of six, tap by tap: CI's iPad runner takes about a second a tap, past the default minute.
+	test.setTimeout(120_000);
 	const shot = (name: string) => page.screenshot({ path: `test-results/${info.project.name}-code-${name}.png`, fullPage: true });
 	await stubVoice(page);
 	const { childId } = await setup(page, "Max");
@@ -83,7 +92,7 @@ test("a Steps round: toolbox taps, a bug marked on its line, typing, predict, re
 	for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "Add forward()" }).click();
 	await shot("coding");
 	await page.getByRole("button", { name: "Run" }).click();
-	await page.getByRole("button", { name: "Skip" }).click();
+	await skip(page);
 	// The run's problem is marked on a line and said in words.
 	await expect(page.locator(".code-line[data-law]")).toHaveCount(1);
 	await shot("marked");
@@ -143,7 +152,10 @@ test.describe("real fingers", () => {
 		await page.getByRole("button", { name: "Start" }).click();
 		const cdp = await page.context().newCDPSession(page);
 		const tap = async (name: string) => {
-			const box = (await page.getByRole("button", { name, exact: true }).boundingBox())!;
+			const box = await page.getByRole("button", { name, exact: true }).boundingBox({ timeout: 5000 });
+			// Only Skip may be gone: a short run can finish first.
+			if (!box && name === "Skip") return;
+			if (!box) throw new Error(`no ${name} button`);
 			const p = { x: box.x + box.width / 2, y: box.y + box.height / 2, id: -3 };
 			await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [p] });
 			await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
