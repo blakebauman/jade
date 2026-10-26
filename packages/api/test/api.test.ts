@@ -647,4 +647,20 @@ describe("code", () => {
 			400,
 		);
 	});
+	it("earns the code badges from unit levels on finish", async () => {
+		const { cookie, childId, sessionId } = await codeSetup();
+		await call(`/api/children/${childId}/math-level`, { method: "PUT", cookie, json: { skill: "loops", level: 3 } });
+		await call(`/api/children/${childId}/math-level`, { method: "PUT", cookie, json: { skill: "funcs", level: 3 } });
+		const res = (await (
+			await call(`/api/sessions/${sessionId}/finish`, {
+				method: "POST",
+				cookie,
+				json: { attempts: [attempt("c:loops:square.3", true, 3)], finishedAt: Date.now(), day: "2026-10-25" },
+			})
+		).json()) as { newBadges: { id: string }[] };
+		const ids = res.newBadges.map((b) => b.id);
+		expect(ids).toContain("code-loops-3");
+		expect(ids).toContain("code-recipes-3");
+		expect(ids).not.toContain("code-10");
+	});
 });

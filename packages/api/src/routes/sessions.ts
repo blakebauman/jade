@@ -18,7 +18,7 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AppEnv } from "../env.ts";
-import { mathBadgeStats, updateSkillLevels } from "../lib/math.ts";
+import { codeBadgeStats, mathBadgeStats, updateSkillLevels } from "../lib/math.ts";
 import { ownedChild, ownedList } from "../lib/owned.ts";
 
 type Session = typeof schema.practiceSessions.$inferSelect;
@@ -40,6 +40,9 @@ function checkBadges(stats: {
 	wordsSpelled: number;
 	factsMastered?: number;
 	fractionsLevel?: number;
+	codeMastered?: number;
+	loopsLevel?: number;
+	recipesLevel?: number;
 }) {
 	const had = new Set<string>(JSON.parse(stats.badgesJson || "[]"));
 	const fresh: BadgeOut[] = BADGES.filter(
@@ -52,6 +55,9 @@ function checkBadges(stats: {
 				words: stats.wordsSpelled,
 				factsMastered: stats.factsMastered,
 				fractionsLevel: stats.fractionsLevel,
+				codeMastered: stats.codeMastered,
+				loopsLevel: stats.loopsLevel,
+				recipesLevel: stats.recipesLevel,
 			}),
 	).map(({ id, label, icon }) => ({ id, label, icon }));
 	return { fresh, badgesJson: JSON.stringify([...had, ...fresh.map((b) => b.id)]) };
@@ -227,9 +233,10 @@ export const sessionRoutes = new Hono<AppEnv>()
 		const stars = starsForRound(all.map((a) => a.stars));
 		const perfect = all.length > 0 && all.every((a) => a.stars === 3);
 
-		// Math and code: move each practiced skill's adaptive level from its recent answers, then check the math badges.
+		// Math and code: move each practiced skill's adaptive level from its recent answers, then check that subject's badges.
 		const levels = s.subject === "math" || s.subject === "code" ? await updateSkillLevels(db, s.childId, all) : null;
-		const mathStats = s.subject === "math" ? await mathBadgeStats(db, s.childId) : {};
+		const subjectStats =
+			s.subject === "math" ? await mathBadgeStats(db, s.childId) : s.subject === "code" ? await codeBadgeStats(db, s.childId) : {};
 
 		const stats = await db.query.childStats.findFirst({ where: eq(schema.childStats.childId, s.childId) });
 		const perfectRounds = (stats?.perfectRounds ?? 0) + (perfect ? 1 : 0);
@@ -239,7 +246,7 @@ export const sessionRoutes = new Hono<AppEnv>()
 			totalStars: stats?.totalStars ?? 0,
 			perfectRounds,
 			wordsSpelled: stats?.wordsSpelled ?? 0,
-			...mathStats,
+			...subjectStats,
 		});
 		await db.batch([
 			db
