@@ -65,6 +65,8 @@ async function solve(page: Page) {
 }
 
 test("a Steps round: toolbox taps, a bug marked on its line, typing, predict, results", async ({ page }, info) => {
+	// A whole round of six, tap by tap: CI's iPad runner takes about a second a tap, past the default minute.
+	test.setTimeout(120_000);
 	const shot = (name: string) => page.screenshot({ path: `test-results/${info.project.name}-code-${name}.png`, fullPage: true });
 	await stubVoice(page);
 	const { childId } = await setup(page, "Max");
