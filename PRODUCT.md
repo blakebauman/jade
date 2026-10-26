@@ -28,6 +28,7 @@ web
 - Usually practices at home after school, or before a class spelling test, a spelling bee or a math quiz.
 - **Spelling:** learn this week's words well enough to spell them from hearing them alone, the way a real bee works.
 - **Math:** get times tables and division facts fast and sure, and handle mental math, fractions, decimals and word problems at the right level.
+- **Code:** learn to write real Python, from one command a line to loops, variables, choices and their own functions.
 
 **Secondary: the parent.**
 - Signs in, sets up child profiles, and loads word lists. Lists come from the school sheet (pasted, CSV, or a photo) or from built-in grade packs.
@@ -40,7 +41,7 @@ web
 
 ## Product Purpose
 
-Jade's World is a kids' games portal with practice built in. Its home is one shelf of tiles, every game plus Spelling and Math, the one the kid played last first. The games are up front; Spelling and Math are two tiles among them, and they share rounds, saving, rewards and voice.
+Jade's World is a kids' games portal with practice built in. Its home is one shelf of tiles, every game plus Spelling, Math and Code, the one the kid played last first. The games are up front; Spelling, Math and Code are tiles among them, and they share rounds, saving, rewards and voice.
 
 **Spelling** works the way a spelling bee works:
 1. Hear the word.
@@ -51,6 +52,8 @@ Jade's World is a kids' games portal with practice built in. Its home is one she
 Success means the child spells the week's list correctly and without help. Missed words keep coming back through spaced review until they stick.
 
 **Math** reads each problem aloud and lays it out as tiles; the child answers on an on-screen keypad. A first miss gets another go. A second miss shows the answer, how to get it, and a picture where one helps (a dot array for a fact, fraction bars for fractions). Levels adjust on their own, and missed times-table and division facts come back through the same spaced review as words.
+
+**Code** has the child write real Python to steer Tuck the turtle round a small garden: to the flag, picking seeds, lighting lanterns, drawing with a chalk pen. Each puzzle's goal is read aloud; the child builds the program from a toolbox of maple keys (or types it on a keyboard), presses Run and watches Tuck act it out line by line. A run that goes wrong stops on the line that did it and says why in plain words; there's no failing, only another run. Puzzles ask the child to write, fix a bug, read code and predict where Tuck ends up, draw, and make code shorter with a loop. Six units open in order (Steps, Numbers, Loops, Names, Choices, Recipes), each with levels that adjust on their own, and tricky puzzles come back in a new garden through spaced review. Every program is valid Python.
 
 **Play** is pure play, never built on the kid's lists, facts or practice: Roxy's dress-up studio, home and town; Gobble Town; Jelly Blocks; and Campfire Woods, a block island the family plays on live, with linked friends. Three daily quests run across the games. Games pay their own tickets; how play meets practice is the parent's choice.
 
@@ -65,13 +68,13 @@ Success means the child spells the week's list correctly and without help. Misse
 ## Operating Context
 
 - Short sessions of 5–15 minutes: a list of 10–25 words, repeated across a week, or a math round of about 10 problems.
-- The parent sets up lists and math topics once, and the child starts on their own from a "Who's playing?" screen, then picks a tile from the home shelf: a game, Spelling or Math.
+- The parent sets up lists and math topics once, and the child starts on their own from a "Who's playing?" screen, then picks a tile from the home shelf: a game, Spelling, Math or Code.
 - A round can be stopped and picked up later; answers are saved as they're given.
 - Audio is essential, so the device's speakers or headphones are on.
 - **iPad is a first-class target:**
   - iPadOS Safari, and the app installed to the Home Screen as a PWA.
   - Portrait and landscape.
-  - When the on-screen keyboard is up it covers about half the screen, so the word, the audio controls and the input must stay visible above it. Math never opens it: the keypad is the only input.
+  - When the on-screen keyboard is up it covers about half the screen, so the word, the audio controls and the input must stay visible above it. Math and Code never open it: the keypad and the code toolbox are the only inputs.
   - iOS only allows audio after a tap, so every round starts with a tap.
 - **iPhone works too:** the family's phone, in Safari or installed. Nothing sits under the notch or the home bar, the rounds fit a phone on its side, and the keyboard covers about half the screen there as well.
 
@@ -105,10 +108,11 @@ Success means the child spells the week's list correctly and without help. Misse
 
 **Dictionary data:** Free Dictionary API, Merriam-Webster Elementary when a key is configured, and Workers AI for kid-friendly sentences when neither has one.
 
-**Rewards:** stars per word or problem and per round, daily streaks, and badges, shared across both subjects. Stars are a record of practice. Games pay their own tickets, spent only in games; stars spend there only if a parent links them.
+**Rewards:** stars per word or problem and per round, daily streaks, and badges, shared across the subjects. Stars are a record of practice. Games pay their own tickets, spent only in games; stars spend there only if a parent links them.
 
 **Terminology:**
-- "subject" is spelling or math.
+- "subject" is spelling, math or code.
+- "unit" is a Code area (Steps, Numbers, Loops, Names, Choices, Recipes); "puzzle" is one Code problem; Tuck is Code's turtle.
 - "round" is one pass through a list, or one set of math problems.
 - "list" is the parent's word list.
 - "pack" is a built-in list.

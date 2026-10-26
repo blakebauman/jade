@@ -32,7 +32,7 @@ test("one place to start: new words suggest Learn, and the newest list is up nex
 	await expect(page.getByText("hear the word and type it, like a real bee")).toBeVisible();
 	await expect(page.getByRole("link", { name: "Bee: Two" })).toBeVisible();
 	await page.getByRole("link", { name: "Home" }).click();
-	await expect(page.getByRole("list", { name: "Games, Spelling and Math" })).toBeVisible();
+	await expect(page.getByRole("list", { name: "Games, Spelling, Math and Code" })).toBeVisible();
 });
 
 test("an unfinished round carries on from its list, and starting another asks first", async ({ page }) => {

@@ -36,6 +36,7 @@
 	--color-spell: #17795e;
 	--color-math: #5b4bc4;
 	--color-roxy: #b8326f;
+	--color-code: #0e6b78;
 	--color-sticker-ink: #f4fbf7;
 
 	/* Tiles */
@@ -353,6 +354,46 @@
 			0 0.4rem 0.9rem -0.2rem var(--tone-drop-deep);
 	}
 
+	/*
+	 * Code: each line of a kid's program is a maple strip on a walnut rack, pushed in as far as it's indented, so blocks
+	 * read as steps. Judgement goes on the strip's lower edge like a tile's (the four laws), never on the code's ink.
+	 */
+	.code-rack {
+		padding: 0.6rem 0.6rem 0.9rem;
+		border-radius: 0.9rem;
+		background:
+			var(--tex-grain-2),
+			linear-gradient(180deg, color-mix(in oklab, var(--color-maple-deep) 45%, var(--color-maple-lo)) 0%, color-mix(in oklab, var(--color-maple-deep) 80%, var(--color-maple-lo)) 100%);
+		background-size: 320px 320px, auto;
+		box-shadow:
+			inset 0 1px 0 rgb(255 230 190 / 0.35),
+			inset 0 -0.35rem 0 rgb(80 48 18 / 0.45),
+			0 0.4rem 0.9rem -0.2rem var(--tone-drop-deep);
+	}
+	.code-line {
+		position: relative;
+		min-height: 2.6rem;
+		border-radius: 0.55rem;
+		color: var(--color-ink);
+		background:
+			var(--tex-grain-1),
+			linear-gradient(172deg, var(--color-maple-hi), var(--color-maple));
+		background-size: 320px 320px, auto;
+		text-shadow: 0 1px 0 rgb(255 240 212 / 0.7);
+		box-shadow:
+			inset 0 -0.22em 0 var(--tile-edge, var(--color-maple-lo)),
+			inset 0 1px 0 rgb(255 255 255 / 0.55),
+			0 0.2em 0.4em -0.15em var(--tone-drop);
+		touch-action: manipulation;
+	}
+	.code-line[data-law="right"] { --tile-edge: var(--color-marigold); }
+	.code-line[data-law="wrong"] { --tile-edge: var(--color-coral); }
+	.code-line[data-law="missing"] { --tile-edge: var(--color-sky); }
+	.code-line[data-law="extra"] { --tile-edge: var(--color-stone); }
+	/* The line running now, as Tuck acts it out: the active square's ink ring. */
+	.code-line[data-now] { outline: 2px solid var(--color-ink); outline-offset: 1px; }
+	.code-gutter { color: rgb(255 236 205 / 0.8); }
+
 	/* A square on the board waiting for a tile. */
 	.square {
 		border-radius: var(--radius-tile);
@@ -620,6 +661,7 @@
 	.sticker[data-place="spell"] { --sticker-face: var(--color-spell); color: var(--color-sticker-ink); }
 	.sticker[data-place="math"] { --sticker-face: var(--color-math); color: var(--color-sticker-ink); }
 	.sticker[data-place="roxy"] { --sticker-face: var(--color-roxy); color: var(--color-sticker-ink); }
+	.sticker[data-place="code"] { --sticker-face: var(--color-code); color: var(--color-sticker-ink); }
 	@media (hover: hover) {
 		a.sticker:hover,
 		button.sticker:hover:not(:disabled) {

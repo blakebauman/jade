@@ -7,7 +7,7 @@ export type SessionStart = {
 	childId: string;
 	listId: string | null;
 	mode: Mode;
-	subject?: "spelling" | "math";
+	subject?: "spelling" | "math" | "code";
 	startedAt: number;
 };
 export type SessionFinish = { attempts: AttemptInput[]; finishedAt: number; day: string };

@@ -6,6 +6,8 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const GAMES = /(gobble|jelly|woods|roxy|tickets)\.spec\.ts$/;
 const group = process.env.E2E_GROUP;
+/** Another checkout's dev server can hold 5190; `E2E_PORT=5191` points the run at this one's. */
+const origin = `http://localhost:${process.env.E2E_PORT ?? 5190}`;
 
 export default defineConfig({
 	testDir: "./e2e",
@@ -19,8 +21,8 @@ export default defineConfig({
 	// Stop early on CI once it's clearly failing, rather than grinding through every timeout and retry.
 	maxFailures: process.env.CI ? 3 : 0,
 	...(group === "games" && { workers: 1 }),
-	use: { baseURL: "http://localhost:5190", trace: "retain-on-failure" },
-	webServer: { command: "pnpm dev", url: "http://localhost:5190/health", reuseExistingServer: true, timeout: 120_000 },
+	use: { baseURL: origin, trace: "retain-on-failure" },
+	webServer: { command: "pnpm dev", url: `${origin}/health`, reuseExistingServer: true, timeout: 120_000 },
 	projects: [
 		{
 			name: "laptop",

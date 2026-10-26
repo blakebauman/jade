@@ -1,4 +1,5 @@
 import { gradeAttempt } from "@jade/core";
+import { SKILL_LABEL as CODE_LABEL, CODE_SKILLS, type CodeSkill, puzzleTitle, unitOpen } from "@jade/core/code";
 import { MATH_SKILLS } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { Pips } from "@jade/ui/components/tile";
@@ -26,6 +27,13 @@ const MODE_LABEL = {
 	fractions: "Math · Fractions",
 	problems: "Math · Word problems",
 	mathreview: "Math · Review",
+	seq: "Code · Steps",
+	args: "Code · Numbers",
+	loops: "Code · Loops",
+	vars: "Code · Names",
+	ifs: "Code · Choices",
+	funcs: "Code · Recipes",
+	codereview: "Code · Review",
 } as const;
 
 const Underline = ({ law, children }: { law: string; children: string }) => (
@@ -209,6 +217,8 @@ function ProgressPage() {
 
 			<MathProgress childId={childId} math={p.math} played={played} />
 
+			<CodeProgress childId={childId} name={name} code={p.code} />
+
 			{played && (
 				<section className="space-y-4">
 					<h2 className="text-2xl font-semibold">Badges</h2>
@@ -355,6 +365,111 @@ function MathProgress({ childId, math, played }: { childId: string; math: Progre
 								{math.trouble.length > 8 && <p className="text-sm text-page-muted">and {math.trouble.length - 8} more</p>}
 							</div>
 						)}
+					</div>
+				)}
+			</div>
+		</section>
+	);
+}
+
+/**
+ * Code: each unit's level (a parent can nudge it, which also opens a unit before its turn), and the puzzles that keep
+ * tripping the kid up, with the programs they ran first, so a parent can see the thinking.
+ */
+function CodeProgress({ childId, name, code }: { childId: string; name: string; code: Progress["code"] }) {
+	const qc = useQueryClient();
+	const levels = code?.levels ?? {};
+	const set = useMutation({
+		mutationFn: (v: { skill: CodeSkill; level: number }) => api(`/api/children/${childId}/math-level`, { method: "PUT", json: v }),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["progress", childId] }),
+	});
+	const trouble = code?.trouble ?? [];
+	return (
+		<section className="space-y-8" aria-labelledby="code-heading">
+			<div className="flex flex-wrap items-baseline justify-between gap-3">
+				<h2 id="code-heading" className="text-2xl font-semibold">
+					Code
+				</h2>
+				<span className="text-sm text-page-muted" role="status">
+					{set.isPending ? "Saving…" : set.isError ? "Couldn’t save. Try again." : set.isSuccess ? "Saved" : ""}
+				</span>
+			</div>
+			<div className="grid gap-12 lg:grid-cols-2">
+				<div className="space-y-3">
+					<h3 className="text-lg font-semibold">Units</h3>
+					<p className="max-w-prose text-sm text-page-muted">
+						{name} writes real Python to steer a turtle. Units open in order, each once the one before reaches level 2. Levels move on their
+						own; opening a unit early starts it at level 1.
+					</p>
+					<ul className="space-y-3">
+						{CODE_SKILLS.map((skill) => {
+							const open = unitOpen(skill, levels);
+							const level = levels[skill] ?? 1;
+							return (
+								<li key={skill} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+									<span>
+										{CODE_LABEL[skill]} <span className="text-page-muted">· {open ? `level ${level} of 5` : "not open yet"}</span>
+									</span>
+									<span className="flex gap-2">
+										{open ? (
+											<>
+												<button
+													type="button"
+													className="key !min-h-11 text-sm"
+													disabled={level <= 1 || set.isPending}
+													aria-label={`Make ${CODE_LABEL[skill]} easier`}
+													onClick={() => set.mutate({ skill, level: level - 1 })}
+												>
+													Easier
+												</button>
+												<button
+													type="button"
+													className="key !min-h-11 text-sm"
+													disabled={level >= 5 || set.isPending}
+													aria-label={`Make ${CODE_LABEL[skill]} harder`}
+													onClick={() => set.mutate({ skill, level: level + 1 })}
+												>
+													Harder
+												</button>
+											</>
+										) : (
+											<button
+												type="button"
+												className="key !min-h-11 text-sm"
+												disabled={set.isPending}
+												aria-label={`Open ${CODE_LABEL[skill]} now`}
+												onClick={() => set.mutate({ skill, level: 1 })}
+											>
+												Open now
+											</button>
+										)}
+									</span>
+								</li>
+							);
+						})}
+					</ul>
+				</div>
+				{trouble.length > 0 && (
+					<div className="space-y-3">
+						<h3 className="text-lg font-semibold">Tricky puzzles</h3>
+						<p className="max-w-prose text-sm text-page-muted">What {name} ran first, the last few times it didn’t work.</p>
+						<ul className="space-y-5">
+							{trouble.slice(0, 6).map((t) => (
+								<li key={t.word} className="space-y-2">
+									<p>
+										{puzzleTitle(t.word)}{" "}
+										<span className="text-sm text-page-muted">
+											· {CODE_LABEL[t.word.split(":")[1] as CodeSkill] ?? ""} · missed {t.misses}×
+										</span>
+									</p>
+									{t.programs.slice(0, 2).map((src, i) => (
+										<pre key={i} className="patch overflow-x-auto p-3 font-mono text-sm">
+											{src}
+										</pre>
+									))}
+								</li>
+							))}
+						</ul>
 					</div>
 				)}
 			</div>

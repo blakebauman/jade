@@ -106,6 +106,13 @@ export type Progress = {
 		factBoxes: Record<string, number>;
 		trouble: { word: string; misses: number; box: number }[];
 	};
+	/** Missing from progress cached before Code existed. */
+	code?: {
+		levels: Partial<Record<string, number>>;
+		due: string[];
+		mastered: number;
+		trouble: { word: string; misses: number; box: number; programs: string[] }[];
+	};
 	recent: { id: string; mode: Mode; listId: string | null; startedAt: string; correct: number; total: number; stars: number }[];
 };
 export type RoundSummary = {

@@ -3,8 +3,10 @@ import { z } from "zod";
 export const SPELLING_MODES = ["bee", "learn", "tiles", "review"] as const;
 /** Math modes are the parent-facing topics, plus a review round of due facts. */
 export const MATH_MODES = ["facts", "mental", "fractions", "problems", "mathreview"] as const;
-export const MODES = [...SPELLING_MODES, ...MATH_MODES] as const;
-export const SUBJECTS = ["spelling", "math"] as const;
+/** Code modes are the units, plus a review round of due puzzles. */
+export const CODE_MODES = ["seq", "args", "loops", "vars", "ifs", "funcs", "codereview"] as const;
+export const MODES = [...SPELLING_MODES, ...MATH_MODES, ...CODE_MODES] as const;
+export const SUBJECTS = ["spelling", "math", "code"] as const;
 export const subjectSchema = z.enum(SUBJECTS);
 export type Subject = z.infer<typeof subjectSchema>;
 export const modeSchema = z.enum(MODES);
@@ -126,12 +128,13 @@ export const sessionStartSchema = z.object({
 
 export const attemptSchema = z.object({
 	clientId: z.string().min(8).max(64),
-	/** Spelling: the word. Math: the problem key, e.g. `m:mul:7x8`. */
+	/** Spelling: the word. Math: the problem key, e.g. `m:mul:7x8`. Code: the puzzle key, e.g. `c:loops:square.3`. */
 	word: z.string().min(1).max(80),
-	/** Math only: the skill and level the problem was generated at (drives adaptive levels). */
+	/** Math and code: the skill and level the problem was made at (drives adaptive levels). */
 	skill: z.string().max(20).optional(),
 	level: z.number().int().min(1).max(5).optional(),
-	typed: z.string().max(60),
+	/** Spelling and math: the first answer. Code: the program on the first run. */
+	typed: z.string().max(2000),
 	correct: z.boolean(),
 	tries: z.number().int().min(1).max(5),
 	hintsUsed: z.number().int().min(0).max(20),
