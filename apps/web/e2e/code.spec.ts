@@ -24,11 +24,12 @@ const current = async (page: Page) => {
 async function typeCode(page: Page, src: string) {
 	const editor = page.getByRole("textbox", { name: /Your code/ });
 	await editor.click();
-	// Clear whatever's there.
+	// Clear what's there (a fix-it puzzle's starter): from the end of the last line, one Backspace a character.
+	const there = JSON.parse((await page.evaluate(() => localStorage.getItem("jade.coderound")))!).state.code as string;
+	for (let i = 0; i < there.split("\n").length; i++) await page.keyboard.press("ArrowDown");
 	await page.keyboard.press("End");
-	for (let i = 0; i < 400; i++) await page.keyboard.press("Backspace");
+	for (let i = 0; i < there.length; i++) await page.keyboard.press("Backspace");
 	let indent = 0;
-	src.split("\n").forEach(() => {});
 	const lines = src.split("\n").filter((l) => l.trim() !== "");
 	for (const [i, line] of lines.entries()) {
 		const want = (line.length - line.trimStart().length) / 4;
