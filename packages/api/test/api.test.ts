@@ -572,3 +572,79 @@ describe("admin", () => {
 		expect(again.status).toBe(403);
 	});
 });
+
+describe("code", () => {
+	async function codeSetup(mode = "loops") {
+		const cookie = await signUp();
+		const child = (await (await call("/api/children", { method: "POST", cookie, json: { name: "Max" } })).json()) as { id: string };
+		const id = crypto.randomUUID();
+		await call("/api/sessions", {
+			method: "POST",
+			cookie,
+			json: { id, childId: child.id, listId: null, subject: "code", mode, startedAt: Date.now() },
+		});
+		return { cookie, childId: child.id, sessionId: id };
+	}
+	const program = "for i in range(4):\n    forward(2)\n    right()";
+	const attempt = (word: string, correct: boolean, level: number, tries = correct ? 1 : 2) => ({
+		clientId: crypto.randomUUID(),
+		word,
+		typed: correct ? program : "for i in range(3):\n    forward(2)\n    right()",
+		correct,
+		tries,
+		hintsUsed: 0,
+		replays: 0,
+		ms: 30000,
+		skill: "loops",
+		level,
+	});
+
+	it("keeps whole programs, tracks every puzzle kind for review, and keeps code out of spelling and math", async () => {
+		const { cookie, childId, sessionId } = await codeSetup();
+		await call(`/api/sessions/${sessionId}/attempts`, {
+			method: "POST",
+			cookie,
+			json: { attempts: [attempt("c:loops:square.3", false, 3), attempt("c:loops:repeat.3", true, 3)], at: Date.now(), day: "2026-10-25" },
+		});
+		const p = (await (await call(`/api/children/${childId}/progress`, { cookie })).json()) as {
+			boxes: Record<string, number>;
+			reviewDue: string[];
+			math: { factBoxes: Record<string, number> };
+			code: { due: string[]; trouble: { word: string; programs: string[] }[] };
+		};
+		expect(p.boxes).toEqual({});
+		expect(p.reviewDue).toEqual([]);
+		expect(p.math.factBoxes).toEqual({});
+		expect(p.code.due).toEqual(["c:loops:square.3"]);
+		expect(p.code.trouble).toEqual([
+			expect.objectContaining({ word: "c:loops:square.3", programs: ["for i in range(3):\n    forward(2)\n    right()"] }),
+		]);
+		const row = await env.DB.prepare("select word, typed from attempts where word = 'c:loops:repeat.3'").first<{
+			word: string;
+			typed: string;
+		}>();
+		expect(row).toEqual({ word: "c:loops:repeat.3", typed: program });
+	});
+
+	it("moves a unit's level after a strong round, and a parent can open a unit by setting its level", async () => {
+		const { cookie, childId, sessionId } = await codeSetup();
+		const strong = Array.from({ length: 6 }, (_, i) => attempt(`c:loops:t${i}.1`, true, 1));
+		const res = (await (
+			await call(`/api/sessions/${sessionId}/finish`, {
+				method: "POST",
+				cookie,
+				json: { attempts: strong, finishedAt: Date.now(), day: "2026-10-25" },
+			})
+		).json()) as { levels: Record<string, number> };
+		expect(res.levels).toEqual({ loops: 2 });
+		await call(`/api/children/${childId}/math-level`, { method: "PUT", cookie, json: { skill: "funcs", level: 3 } });
+		const p = (await (await call(`/api/children/${childId}/progress`, { cookie })).json()) as {
+			math: { levels: Record<string, number> };
+			code: { levels: Record<string, number> };
+		};
+		expect(p.code.levels).toEqual({ loops: 2, funcs: 3 });
+		expect((await call(`/api/children/${childId}/math-level`, { method: "PUT", cookie, json: { skill: "nope", level: 3 } })).status).toBe(
+			400,
+		);
+	});
+});

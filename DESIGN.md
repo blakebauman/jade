@@ -262,7 +262,7 @@ components:
 
 **Creative North Star: "Console Home"**
 
-Jade's World is a games portal laid out as a console's home menu. A plain shell holds one shelf of big glossy square tiles: every game (Roxy, Roxy's town, Gobble Town, Jelly Blocks, Campfire Woods) and Spelling and Math among them, the one the kid pressed last first. One tile is lit at a time. The lit tile wears a thick select-blue ring standing off its corners, grows a touch on a quick spring, and shows its name above it in blue. Under the shelf sit one line about the lit tile and a row of round white action buttons. One brand red owns the wordmark sticker, the counts on tiles and the progress bars. Nothing else is on the shell. There is no texture, no paper and no decoration.
+Jade's World is a games portal laid out as a console's home menu. A plain shell holds one shelf of big glossy square tiles: every game (Roxy, Roxy's town, Gobble Town, Jelly Blocks, Campfire Woods) and Spelling, Math and Code among them, the one the kid pressed last first. One tile is lit at a time. The lit tile wears a thick select-blue ring standing off its corners, grows a touch on a quick spring, and shows its name above it in blue. Under the shelf sit one line about the lit tile and a row of round white action buttons. One brand red owns the wordmark sticker, the counts on tiles and the progress bars. Nothing else is on the shell. There is no texture, no paper and no decoration.
 
 The shell has two lights and one set of token names. **Night** (the CSS default) is neutral charcoal, lit a touch from above. **Day** is a pale cool grey, a touch brighter at the top. The parent picks Auto, Day or Night in Settings, and Auto follows the device live. The tiles carry the colour: real art captured from each game or round, edge to edge; Spelling and Math are their own rounds mid-answer, on the subject hue. Rounds are where the quiet craft lives: maple letter tiles judged by four law colours, unchanged from before the portal. Game screens are unchanged too: the scene fills the window, always daylit, with small glass chrome in the corners. What a kid earns keeps its material: badges are stickers, stars and streak are silver foil, tickets are berry stubs.
 
@@ -270,7 +270,7 @@ Density is low and scale is big. A tile is about 40% of the viewport tall, so a 
 
 **Key Characteristics:**
 - A plain shell in two lights: Night charcoal, Day pale cool grey. No texture, no paper.
-- One shelf of big square tiles (1.4rem corners, a top-corner gloss), each filled edge to edge with art from its game. Spelling and Math are two tiles among the games.
+- One shelf of big square tiles (1.4rem corners, a top-corner gloss), each filled edge to edge with art from its game. Spelling, Math and Code are tiles among the games.
 - One lit tile at a time: a 0.3rem select-blue ring 0.35rem off its corners, a 1.035 scale on a spring, and its name above in Fredoka.
 - One brand red for the wordmark sticker, the corner counts and the progress bars.
 - Round white action buttons with their word beneath (Quests, Badges, More time, Who's playing?).
@@ -299,6 +299,7 @@ Night values are the unsuffixed keys and the CSS default. The Day values (`-day`
 ### Tertiary (subject hues, maple and the four laws)
 - **Spelling Green** (spell): the Spelling tile's ground, Spelling badges and stickers.
 - **Math Grape** (math): the Math tile's ground, math topic stickers, the due-facts sticker and math badges.
+- **Code Teal** (code, #0e6b78; Sticker Ink on it is 5.9:1): the Code tile's ground, Code unit stickers and the due-puzzles sticker. Kept clear of select blue.
 - **Play Berry** (roxy): tickets and the ticket glyph in the home's top bar, finished quest stickers, Roxy-flavoured badges, the Roxy tile before her look loads, the joystick knob and the loading drop.
 - **Sticker Ink** (sticker-ink): all text and marks printed on a subject hue. A `.sticker[data-place]` re-points `page-ink`, `page-muted`, `page-deep` and `page-raised` to it, so its contents need no special casing.
 - **Maple** (maple, with maple-hi, maple-lo and the walnut maple-deep): every tile, key-tile, plaque and rack, always under a grain texture and a 172deg highlight gradient. It is never a flat fill.
@@ -321,6 +322,8 @@ Night values are the unsuffixed keys and the CSS default. The Day values (`-day`
 **The One Red Rule.** Brand red is the wordmark sticker, a count of what's waiting, and how far something has come. It never marks an error and never appears in a round or on a tile's letters, so it can't be read beside coral as "wrong".
 
 **The One Law Rule.** Each law colour means one thing everywhere: marigold is right, coral is a wrong letter, sky is a missing letter, stone is an extra letter. Test: if you can't finish "this colour here means ___" with its law, the colour is wrong.
+
+**Code under the laws.** In Code the laws judge lines of a program, with the same meanings: marigold a line that worked, coral a line that went wrong, sky something missing, stone something extra. The garden itself (grass, hedges, pond, lantern light) never uses a law colour or brand red.
 
 **The Edge-Only Rule.** Feedback colour lives on tile edges (the `--tile-edge` bevel), underlines and corner marks. It never goes on the letter or the tile face. Letter ink stays dark on every tile.
 
@@ -459,6 +462,7 @@ A round white vinyl disc with the kid's initial at 0.52 of its size, and their c
 - **AnswerRow:** typed tiles then squares, with a blinking ink caret bar when the speller taps back into the word, and Check or Next at its right end.
 - **ProblemRow:** only numbers and the answer are tiles. Operators are ink marks drawn on the shell at 0.6 of the edge.
 - **Keypad:** the only math input, a 3-column grid of maple keys (3.5rem) with a full-width Check below. It never uses a text field.
+- **Code rack** (`.code-rack`, `.code-line`): a Code round's program, one maple strip a line on a walnut rack, in the system monospace, line numbers in pale walnut ink beside it. A strip is pushed in as far as its line is indented, so blocks read as steps. The laws go on a strip's lower edge with the same corner marks as tiles (coral X for the line that went wrong, sky plus for something missing, stone minus for something extra) and an underline under the span when there's one; a solved program turns every edge marigold. The line running now on the board wears the active square's ink ring. The toolbox's snippets are maple keys in monospace; Run is the Check key.
 - **Plaque and rack:** maple for a spoken definition or a story, and a walnut shelf for bee questions and results scoreboards.
 - **Pips:** five 9px mastery dots, filled in ink with empty dots as Shell Muted rings.
 
@@ -486,6 +490,7 @@ The scene fills the window on the `--scene-top` to `--scene-ground` sky, always 
 Every shipping raster and its source:
 - **Game tiles** (`apps/web/public/tiles/town.webp`, `gobble.webp`, `jelly.webp`, `woods.webp`): 720×720 WebP at quality 82, captured 2026-10-18 with headless Playwright Chromium (SwiftShader WebGL) from the app's own dev server. The viewport was 1200×1200, with every DOM element but the canvas hidden. town is `/games/roxy/place/park` after 9s. gobble is `/games/gobble` with the test hooks `setSeed(7)` and `setState("late-game")`, paused. jelly is `/games/jelly` with `setSeed(3)` and `setState("late-game")`, paused. woods is `/games/woods` after Start, with `setState("dusk")`. Each was cropped and resized with ImageMagick: town 1000×1000+100+60, gobble 860×860+176+200, jelly 700×700+250+450 (recropped 2026-10-19 to the stack), woods 1000×1000+100+150. No generated imagery and no third-party assets.
 - **Spelling and Math tiles** (`spelling.webp`, `math.webp`): 720×720 WebP at quality 82, captured 2026-10-20 the same way from real rounds at 1000×800, DPR 2, with reduced motion: the page, `#root` and `main` painted the subject hue and the header and live regions hidden. spelling is a Tiles round after Start with its word's first three letters typed, clipped 600×600+170+124; math is a Times tables round after Start with "1" typed, clipped 600×600+200+122.
+- **Code tile** (`code.webp`): 720×720 WebP at quality 82, captured 2026-10-25 the same way from a real Steps round at 1100×640, DPR 2, with reduced motion: the page painted Code Teal, the header, live regions and toolbox hidden, and `forward()`, `right()`, `forward()` tapped in. Clipped 1300×700+140+300 (the 3D garden and the code rack), padded with Code Teal to a square, then resized with ImageMagick.
 - **Roxy's tile:** her live SVG look (`RoxyFigure`, viewBox `40 20 320 320`).
 - **Icons** (`public/favicon.svg`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`): authored in `apps/web/scripts/icon-mark.mjs`, the wordmark's j and its star as one die-cut sticker (red ink stroke 72 inside a white cut 140; the favicon is heavier at 84/156 with a larger star), turned -8deg with a soft shadow under it, on a rounded square a shade under brand red (gradient #bf2a25 → #8f1814), so the brand-red j reads as a letter, not a white outline. They are rendered by `scripts/icons.sh` with rsvg-convert. The favicon draws a larger star, the maskable icon scales the mark to 0.76 to stay inside the 80% circle, and the touch icon is full bleed on #a8201c.
 - **Launch screens** (`public/splash/*.png`): from `scripts/splash.mjs`, the red tile at 30% of the short side on the Night shell gradient (#28292c → #212224 → #18191b). They are rendered with rsvg-convert and quantised to 256 colours, undithered, with ImageMagick.

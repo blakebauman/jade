@@ -1,4 +1,5 @@
 import { BADGES, goalProgress, type Quest, questCollectable, questDone, questHave, type SPELLING_MODES, TIME_BLOCK } from "@jade/core";
+import { SKILL_LABEL } from "@jade/core/code";
 import { TOPIC_LABEL } from "@jade/core/math";
 import { characterName, FINDS, withName } from "@jade/core/roxy";
 import { KidTile } from "@jade/ui/components/kid-tile";
@@ -13,6 +14,7 @@ import { QuestBoard } from "#/components/play/QuestBoard.tsx";
 import { RoxyFigure } from "#/components/roxy/RoxyFigure.tsx";
 import { listIsFor, newestFirst, type Progress } from "#/lib/api.ts";
 import { useChild } from "#/lib/child.ts";
+import { resumableCode } from "#/lib/codeRound.ts";
 import { resumableMath } from "#/lib/mathRound.ts";
 import { type PlayStatus, playQuery } from "#/lib/play.ts";
 import { listsQuery, progressQuery } from "#/lib/queries.ts";
@@ -33,9 +35,9 @@ export const Route = createFileRoute("/_authed/play/$childId/")({
 });
 
 type SpellingMode = (typeof SPELLING_MODES)[number];
-type TileId = "roxy" | "town" | "gobble" | "jelly" | "woods" | "spelling" | "math";
+type TileId = "roxy" | "town" | "gobble" | "jelly" | "woods" | "spelling" | "math" | "code";
 // Roxy and their town sit side by side: one world, two ways in.
-const TILE_IDS: TileId[] = ["roxy", "town", "gobble", "jelly", "spelling", "woods", "math"];
+const TILE_IDS: TileId[] = ["roxy", "town", "gobble", "jelly", "spelling", "woods", "math", "code"];
 const GAMES = new Set<TileId>(["roxy", "town", "gobble", "jelly", "woods"]);
 
 /** The shelf leads with what the kid played last, as a console's home does; a new kid starts from the games. */
@@ -201,6 +203,8 @@ function Home() {
 	const { data: lists } = useQuery(listsQuery);
 	const spellingLeft = resumableRound(child.id);
 	const mathLeft = resumableMath(child.id);
+	const codeLeft = resumableCode(child.id);
+	const puzzlesDue = progress?.code?.due.length ?? 0;
 	const spellingDue = progress?.reviewDue.length ?? 0;
 	const factsDue = progress?.math.factsDue.length ?? 0;
 	const stars = progress?.stats.totalStars ?? 0;
@@ -322,6 +326,26 @@ function Home() {
 						})
 				: () => navigate({ to: "/play/$childId/math", params: { childId: child.id } }),
 		},
+		code: {
+			id: "code",
+			name: "Code",
+			line: codeLeft
+				? `Finish your ${codeLeft.mode === "codereview" ? "code review" : SKILL_LABEL[codeLeft.mode].toLowerCase()} puzzles: ${codeLeft.done} of ${codeLeft.total} done.`
+				: puzzlesDue > 0
+					? `${puzzlesDue} ${puzzlesDue === 1 ? "puzzle wants" : "puzzles want"} another go.`
+					: "Write real Python to steer Tuck the turtle round the garden.",
+			art: <Art src="/tiles/code.webp" />,
+			count: codeLeft ? undefined : puzzlesDue || undefined,
+			progress: codeLeft ? codeLeft.done / codeLeft.total : undefined,
+			go: codeLeft
+				? () =>
+						navigate({
+							to: "/play/$childId/code/$topic",
+							params: { childId: child.id, topic: codeLeft.mode },
+							search: { resume: true },
+						})
+				: () => navigate({ to: "/play/$childId/code", params: { childId: child.id } }),
+		},
 	};
 
 	// A round waiting to be finished leads the shelf (the most recent of the two), whatever was tapped last.
@@ -329,13 +353,14 @@ function Home() {
 		const waiting = [
 			spellingLeft && { id: "spelling" as const, at: spellingLeft.startedAt },
 			mathLeft && { id: "math" as const, at: mathLeft.startedAt },
+			codeLeft && { id: "code" as const, at: codeLeft.startedAt },
 		]
-			.filter((w): w is { id: "spelling" | "math"; at: number } => !!w)
+			.filter((w): w is { id: "spelling" | "math" | "code"; at: number } => !!w)
 			.sort((a, b) => b.at - a.at)
 			.map((w) => w.id);
 		return [...new Set<TileId>([...waiting, ...readOrder(child.id)])];
 	});
-	// While games are shut, Spelling and Math lead, so the shelf opens on what the kid can do, nothing cut off.
+	// While games are shut, Spelling, Math and Code lead, so the shelf opens on what the kid can do, nothing cut off.
 	const ordered = locked ? [...order.filter((id) => !GAMES.has(id)), ...order.filter((id) => GAMES.has(id))] : order;
 	const { quests: today, state: questState } = useQuests(child.id);
 	const questIn = new Map(today.filter((q) => !questDone(q, questState)).map((q) => [tileOf(q), q]));
@@ -562,7 +587,7 @@ function Home() {
 			<section aria-label="Your games" className="flex min-w-0 flex-col justify-center gap-4">
 				{/* The shelf: one row of big tiles, the one the kid played last first. One is lit at a time; the ring moves with
 				    arrows, hover and focus, and a press goes. */}
-				<ul ref={shelfRef} className="shelf" aria-label="Games, Spelling and Math">
+				<ul ref={shelfRef} className="shelf" aria-label="Games, Spelling, Math and Code">
 					{shelf.map((t, i) => (
 						<li key={t.id} className="shelf-slot">
 							<span className="shelf-name" aria-hidden data-lit={i === lit || undefined}>

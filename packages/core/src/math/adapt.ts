@@ -10,6 +10,13 @@ export const FLUENT_MS: Record<string, number> = {
 	fractions: 15000,
 	decimals: 15000,
 	problems: 30000,
+	// Code puzzles: time from the puzzle showing to the first Run.
+	seq: 60000,
+	args: 75000,
+	loops: 90000,
+	vars: 90000,
+	ifs: 120000,
+	funcs: 150000,
 };
 
 /**

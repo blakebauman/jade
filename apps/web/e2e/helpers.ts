@@ -63,5 +63,5 @@ export async function openLanding(page: Page) {
 /** A tile on the home shelf, by its name ("Roxy" doesn't match "Roxy’s town"). */
 export const shelfTile = (page: Page, name: string) =>
 	page
-		.getByRole("list", { name: "Games, Spelling and Math" })
+		.getByRole("list", { name: "Games, Spelling, Math and Code" })
 		.getByRole("button", { name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(,|$)`) });

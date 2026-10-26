@@ -180,10 +180,29 @@ export const practiceSessions = sqliteTable(
 			.notNull()
 			.references(() => children.id, { onDelete: "cascade" }),
 		listId: text("list_id").references(() => wordLists.id, { onDelete: "set null" }),
-		subject: text("subject", { enum: ["spelling", "math"] })
+		subject: text("subject", { enum: ["spelling", "math", "code"] })
 			.notNull()
 			.default("spelling"),
-		mode: text("mode", { enum: ["bee", "learn", "tiles", "review", "facts", "mental", "fractions", "problems", "mathreview"] }).notNull(),
+		mode: text("mode", {
+			enum: [
+				"bee",
+				"learn",
+				"tiles",
+				"review",
+				"facts",
+				"mental",
+				"fractions",
+				"problems",
+				"mathreview",
+				"seq",
+				"args",
+				"loops",
+				"vars",
+				"ifs",
+				"funcs",
+				"codereview",
+			],
+		}).notNull(),
 		startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
 		finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
 		correct: integer("correct").notNull().default(0),
@@ -200,12 +219,12 @@ export const attempts = sqliteTable(
 		sessionId: text("session_id")
 			.notNull()
 			.references(() => practiceSessions.id, { onDelete: "cascade" }),
-		/** Spelling: the word. Math: the problem key (`m:mul:7x8`). */
+		/** Spelling: the word. Math: the problem key (`m:mul:7x8`). Code: the puzzle key (`c:loops:square.3`). */
 		word: text("word").notNull(),
-		/** Spelling: the first try (before 2026-10-21, the right spelling when a second try got it). */
+		/** Spelling: the first try (before 2026-10-21, the right spelling when a second try got it). Code: the program's first run. */
 		typed: text("typed").notNull(),
 		correct: integer("correct", { mode: "boolean" }).notNull(),
-		/** Math only: the skill and level the problem was generated at. */
+		/** Math and code: the skill and level the problem was made at. */
 		skill: text("skill"),
 		level: integer("level"),
 		tries: integer("tries").notNull(),
@@ -233,7 +252,10 @@ export const wordProgress = sqliteTable(
 	(t) => [primaryKey({ columns: [t.childId, t.word] }), index("progress_due_idx").on(t.childId, t.dueAt)],
 );
 
-/** Adaptive math level (1–5) per child and skill (`mul`, `div`, `addsub`, `mixed`, `fractions`, `decimals`, `problems`). */
+/**
+ * Adaptive level (1–5) per child and skill: math (`mul`, `div`, `addsub`, `mixed`, `fractions`, `decimals`, `problems`)
+ * and code (`seq`, `args`, `loops`, `vars`, `ifs`, `funcs`).
+ */
 export const skillLevels = sqliteTable(
 	"skill_levels",
 	{

@@ -6,6 +6,7 @@ import { CloudOff, RotateCcw, Star, Volume2 } from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { BadgeIcon, badgeSticker } from "#/components/BadgeIcon.tsx";
 import { useChild } from "#/lib/child.ts";
+import type { CodeMode } from "#/lib/codeRound.ts";
 import { prefersReducedMotion } from "#/lib/hooks.ts";
 import { type MathMode, useMathRound } from "#/lib/mathRound.ts";
 import { progressQuery } from "#/lib/queries.ts";
@@ -72,17 +73,18 @@ function Results() {
 	const missed = round.attempts.filter((a) => !a.correct || a.tries > 1);
 	const perfect = round.attempts.length > 0 && perWord.every((s) => s === 3);
 	const isMath = round.subject === "math";
-	const unit = isMath ? "problems" : "words";
+	const isCode = round.subject === "code";
+	const unit = isMath ? "problems" : isCode ? "puzzles" : "words";
 	const mathMissed = (round.items ?? []).filter((it) => !it.firstTry);
 	const mathRetry = mathMissed.flatMap((it) => (it.problem ? [it.problem] : []));
 
 	const headline = useMemo(() => {
 		const pct = round.attempts.length ? correct / round.attempts.length : 0;
 		if (perfect) return "Perfect round!";
-		if (pct >= 0.8) return isMath ? "Great math!" : "Great spelling!";
+		if (pct >= 0.8) return isMath ? "Great math!" : isCode ? "Great coding!" : "Great spelling!";
 		if (pct >= 0.5) return "Good work. Let’s polish a few.";
-		return isMath ? "Every miss is something you’re learning." : "Every miss is a word you’re learning.";
-	}, [correct, perfect, round.attempts.length, isMath]);
+		return isMath || isCode ? "Every miss is something you’re learning." : "Every miss is a word you’re learning.";
+	}, [correct, perfect, round.attempts.length, isMath, isCode]);
 
 	// The celebration is the board's own motion: star tiles land (2+ stars); on a perfect round they then flip
 	// left to right and come up marigold, the colour of right. `lit` counts tiles whose edge has turned.
@@ -127,7 +129,7 @@ function Results() {
 				</div>
 				<h1 className="text-4xl font-semibold md:text-5xl">{headline}</h1>
 				<p className="font-display text-2xl tabular-nums">
-					{correct} of {round.attempts.length} {isMath ? "right" : "spelled right"}
+					{correct} of {round.attempts.length} {isMath ? "right" : isCode ? "solved" : "spelled right"}
 				</p>
 				{round.planned > round.attempts.length && (
 					<p className="text-page-muted">
@@ -186,7 +188,24 @@ function Results() {
 				</section>
 			)}
 
-			{!isMath && missed.length > 0 && (
+			{isCode && mathMissed.length > 0 && (
+				<section className="mt-14 space-y-5">
+					<h2 className="text-2xl font-semibold">Worth another look</h2>
+					<p className="text-page-muted">These come back in a new garden, until they stick.</p>
+					<ul className="rack space-y-5 !px-5 !pt-5 !pb-7 md:!px-7">
+						{mathMissed.map((it, i) => (
+							<li key={`${it.key}-${i}`} className="space-y-2.5 border-b border-maple-lo/40 pb-5 text-ink last:border-0 last:pb-0">
+								<p className="max-w-prose text-pretty">{it.prompt}</p>
+								<p className="text-sm">{it.correct ? "Solved after a few runs. One way that works:" : "One way that works:"}</p>
+								<pre className="plaque !block overflow-x-auto px-4 py-2.5 font-mono text-base">{it.answer}</pre>
+								<p className="max-w-prose text-sm text-pretty">{it.explain}</p>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
+
+			{!isMath && !isCode && missed.length > 0 && (
 				<section className="mt-14 space-y-5">
 					<h2 className="text-2xl font-semibold">Words to practice</h2>
 					<ul className="rack space-y-5 !px-5 !pt-5 !pb-7 md:!px-7">
@@ -240,13 +259,27 @@ function Results() {
 						{mathRetry.length === 0 && <RotateCcw className="size-5" aria-hidden />} Play again
 					</Link>
 				)}
-				{!isMath && missed.length > 0 && (
+				{isCode && (
+					<Link
+						to="/play/$childId/code/$topic"
+						params={{ childId: child.id, topic: (round.codeMode ?? "seq") as CodeMode }}
+						className="key"
+						data-variant="go"
+					>
+						<RotateCcw className="size-5" aria-hidden /> Play again
+					</Link>
+				)}
+				{!isMath && !isCode && missed.length > 0 && (
 					<button type="button" className="key" data-variant="go" onClick={practiceMissed}>
 						<RotateCcw className="size-5" aria-hidden />{" "}
 						{missed.length === 1 ? "Practice this word now" : `Practice these ${missed.length} now`}
 					</button>
 				)}
-				<Link to={isMath ? "/play/$childId/math" : "/play/$childId/spelling"} params={{ childId: child.id }} className="key">
+				<Link
+					to={isMath ? "/play/$childId/math" : isCode ? "/play/$childId/code" : "/play/$childId/spelling"}
+					params={{ childId: child.id }}
+					className="key"
+				>
 					Done
 				</Link>
 			</div>

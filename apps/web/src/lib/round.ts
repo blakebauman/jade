@@ -32,11 +32,14 @@ export type MathResultItem = {
 };
 
 export type FinishedRound = {
-	subject?: "spelling" | "math";
-	/** Math rounds: the problems as asked (attempt `word`s are problem keys, not displayable). */
+	subject?: "spelling" | "math" | "code";
+	/** Math and code rounds: the problems as asked (attempt `word`s are keys, not displayable). For code, `prompt` is the
+	 * goal, `answer` a program that solves it and `typed` the kid's first run. */
 	items?: MathResultItem[];
 	/** Math rounds: the topic, for "practice again". */
 	mathMode?: string;
+	/** Code rounds: the unit, for "play again". */
+	codeMode?: string;
 	sessionId: string;
 	childId: string;
 	listId: string | null;

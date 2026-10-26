@@ -8,6 +8,7 @@ import {
 	DEFAULT_SETTINGS,
 	normalizeWord,
 } from "@jade/core";
+import { CODE_SKILLS } from "@jade/core/code";
 import { MATH_SKILLS } from "@jade/core/math";
 import { type Db, schema } from "@jade/db";
 import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
@@ -42,6 +43,31 @@ async function misspellings(db: Db, childId: string, words: string[]) {
 		const seen = out.get(r.word) ?? [];
 		if (!typed || typed === r.word || seen.includes(typed) || seen.length >= 3) continue;
 		out.set(r.word, [...seen, typed]);
+	}
+	return out;
+}
+
+/** The latest distinct first-run programs that didn't solve each puzzle kind, at most three a kind. */
+async function firstRuns(db: Db, childId: string, keys: string[]) {
+	const out = new Map<string, string[]>();
+	if (keys.length === 0) return out;
+	const rows = await db
+		.select({ word: schema.attempts.word, typed: schema.attempts.typed })
+		.from(schema.attempts)
+		.innerJoin(schema.practiceSessions, eq(schema.attempts.sessionId, schema.practiceSessions.id))
+		.where(
+			and(
+				eq(schema.practiceSessions.childId, childId),
+				inArray(schema.attempts.word, keys),
+				sql`(${schema.attempts.correct} = 0 or ${schema.attempts.tries} > 1)`,
+			),
+		)
+		.orderBy(desc(schema.practiceSessions.startedAt))
+		.limit(200);
+	for (const r of rows) {
+		const seen = out.get(r.word) ?? [];
+		if (!r.typed.trim() || seen.includes(r.typed) || seen.length >= 3) continue;
+		out.set(r.word, [...seen, r.typed]);
 	}
 	return out;
 }
@@ -99,10 +125,13 @@ export const childrenRoutes = new Hono<AppEnv>()
 		await c.var.db.delete(schema.children).where(eq(schema.children.id, child.id));
 		return c.body(null, 204);
 	})
-	/** Parent override for a math skill's adaptive level (e.g. start a confident speller at level 3). */
+	/**
+	 * Parent override for a math or code skill's adaptive level (e.g. start a confident kid at level 3). Setting a code
+	 * unit's level also opens it, whatever the unit before it is at.
+	 */
 	.put(
 		"/:id/math-level",
-		zValidator("json", z.object({ skill: z.enum(MATH_SKILLS), level: z.number().int().min(1).max(5) })),
+		zValidator("json", z.object({ skill: z.enum([...MATH_SKILLS, ...CODE_SKILLS]), level: z.number().int().min(1).max(5) })),
 		async (c) => {
 			const child = await ownedChild(c.var.db, c.var.userId, c.req.param("id"));
 			const { skill, level } = c.req.valid("json");
@@ -126,9 +155,11 @@ export const childrenRoutes = new Hono<AppEnv>()
 			}),
 			getSkillLevels(c.var.db, child.id),
 		]);
-		// Progress rows hold both spelling words and math facts (`m:` keys); keep the two subjects apart.
-		const progress = allProgress.filter((p) => !p.word.startsWith("m:"));
+		// Progress rows hold spelling words, math facts (`m:` keys) and code puzzles (`c:` keys); keep the subjects apart.
+		const progress = allProgress.filter((p) => !p.word.startsWith("m:") && !p.word.startsWith("c:"));
 		const facts = allProgress.filter((p) => p.word.startsWith("m:"));
+		const puzzles = allProgress.filter((p) => p.word.startsWith("c:"));
+		const codeSet = new Set<string>(CODE_SKILLS);
 		const troubleOf = (rows: typeof allProgress) =>
 			rows
 				.filter((p) => p.misses > 0)
@@ -136,11 +167,19 @@ export const childrenRoutes = new Hono<AppEnv>()
 				.slice(0, 15)
 				.map((p) => ({ word: p.word, misses: p.misses, box: p.box }));
 		const trouble = troubleOf(progress);
-		const misspelt = await misspellings(
-			c.var.db,
-			child.id,
-			trouble.map((t) => t.word),
-		);
+		const codeTrouble = troubleOf(puzzles);
+		const [misspelt, programs] = await Promise.all([
+			misspellings(
+				c.var.db,
+				child.id,
+				trouble.map((t) => t.word),
+			),
+			firstRuns(
+				c.var.db,
+				child.id,
+				codeTrouble.map((t) => t.word),
+			),
+		]);
 		const earned = new Set<string>(JSON.parse(stats?.badgesJson ?? "[]"));
 		return c.json({
 			child: present(child),
@@ -168,6 +207,15 @@ export const childrenRoutes = new Hono<AppEnv>()
 				/** Leitner box per fact key (`m:mul:7x8`), for the times-table grid. */
 				factBoxes: Object.fromEntries(facts.map((p) => [p.word, p.box])),
 				trouble: troubleOf(facts),
+			},
+			code: {
+				/** Adaptive level (1–5) per unit; units never played are absent (level 1). */
+				levels: Object.fromEntries(Object.entries(levels).filter(([k]) => codeSet.has(k))),
+				due: buildReviewRound(puzzles, now, 20),
+				/** Puzzle kinds (`c:loops:square.3`) at Leitner box 4 or more. */
+				mastered: puzzles.filter((p) => p.box >= 4).length,
+				/** With the kid's last three programs that didn't work on the first run, newest first. */
+				trouble: codeTrouble.map((t) => ({ ...t, programs: programs.get(t.word) ?? [] })),
 			},
 			recent,
 		});

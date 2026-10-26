@@ -64,8 +64,9 @@ function checkBadges(stats: {
  */
 async function recordAttempts(db: Db, s: Session, attempts: AttemptInput[], at: number, day: string) {
 	const math = s.subject === "math";
-	// Math keys (`m:mul:7x8`) are identifiers, not words: never letter-normalize them.
-	const scored = attempts.map((a) => ({ ...a, word: math ? a.word : normalizeWord(a.word), stars: starsForWord(a) }));
+	const code = s.subject === "code";
+	// Math and code keys (`m:mul:7x8`, `c:loops:square.3`) are identifiers, not words: never letter-normalize them.
+	const scored = attempts.map((a) => ({ ...a, word: math || code ? a.word : normalizeWord(a.word), stars: starsForWord(a) }));
 	const inserted = new Set<string>();
 	// 12 columns per row; keep each insert under D1's 100-parameter limit.
 	for (let i = 0; i < scored.length; i += 8) {
@@ -95,10 +96,10 @@ async function recordAttempts(db: Db, s: Session, attempts: AttemptInput[], at: 
 	const before = await db.query.childStats.findFirst({ where: eq(schema.childStats.childId, s.childId) });
 	if (fresh.length === 0) return { recorded: 0, streak: before?.currentStreak ?? 0, newBadges: [] as BadgeOut[] };
 
-	// Leitner review: spelling words (except Learn mode, which is study, not a test) and repeatable math facts.
-	// One-off generated math problems never get progress rows.
+	// Leitner review: spelling words (except Learn mode, which is study, not a test), repeatable math facts, and code
+	// puzzles (keyed by template and level, so review serves a sibling). One-off generated math problems never get rows.
 	const progressWrites = [];
-	const tracked = fresh.filter((a) => (math ? isTrackedFact(a.word) : s.mode !== "learn"));
+	const tracked = fresh.filter((a) => (code ? a.word.startsWith("c:") : math ? isTrackedFact(a.word) : s.mode !== "learn"));
 	if (tracked.length > 0) {
 		const words = [...new Set(tracked.map((a) => a.word))];
 		const existing = await db.query.wordProgress.findMany({
@@ -226,8 +227,8 @@ export const sessionRoutes = new Hono<AppEnv>()
 		const stars = starsForRound(all.map((a) => a.stars));
 		const perfect = all.length > 0 && all.every((a) => a.stars === 3);
 
-		// Math: move each practiced skill's adaptive level from its recent answers, then check the math badges.
-		const levels = s.subject === "math" ? await updateSkillLevels(db, s.childId, all) : null;
+		// Math and code: move each practiced skill's adaptive level from its recent answers, then check the math badges.
+		const levels = s.subject === "math" || s.subject === "code" ? await updateSkillLevels(db, s.childId, all) : null;
 		const mathStats = s.subject === "math" ? await mathBadgeStats(db, s.childId) : {};
 
 		const stats = await db.query.childStats.findFirst({ where: eq(schema.childStats.childId, s.childId) });
