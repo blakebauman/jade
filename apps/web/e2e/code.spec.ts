@@ -90,7 +90,15 @@ test("a Steps round: toolbox taps, a bug marked on its line, typing, predict, re
 	// Clear it with the toolbox's delete (a whole command a tap), then tap the solution in.
 	for (let i = 0; i < 12; i++) await page.getByRole("button", { name: "Delete" }).click();
 	for (const line of steps) await page.getByRole("button", { name: `Add ${line.trim()}` }).click();
-	await page.getByRole("button", { name: "Run" }).click();
+	// Step through it: the run waits on each line as it lights, then plays on.
+	await page.getByRole("button", { name: "Step" }).click();
+	const lit = page.locator(".code-line[data-now]");
+	await expect(lit).toHaveCount(1);
+	await expect(page.locator(".code-line").nth(0)).toHaveAttribute("data-now", "");
+	await page.getByRole("button", { name: "Next line" }).click();
+	await expect(page.locator(".code-line").nth(1)).toHaveAttribute("data-now", "");
+	await shot("stepping");
+	await page.getByRole("button", { name: "Play" }).click();
 	await expect(page.locator(".code-line[data-law=right]")).toHaveCount(steps.length, { timeout: 15_000 });
 	await expect(page.getByText(/It works|Fixed it/)).toBeVisible();
 	await shot("solved");
