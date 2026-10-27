@@ -133,6 +133,25 @@ test("a Steps round: toolbox taps, a bug marked on its line, typing, predict, re
 	expect(progress.recent[0].total).toBe(6);
 });
 
+test("a kid with a saved shelf order finds Code first, until something is played", async ({ page }) => {
+	await stubVoice(page);
+	const { childId } = await setup(page, "Ada");
+	// The order saved before Code existed: Math played last.
+	await page.evaluate(
+		(id) => localStorage.setItem(`jade.shelf.${id}`, JSON.stringify(["math", "spelling", "roxy", "town", "gobble", "jelly", "woods"])),
+		childId,
+	);
+	await page.goto(`/play/${childId}`);
+	const tiles = page.getByRole("list", { name: "Games, Spelling, Math and Code" }).getByRole("button");
+	await expect(tiles.first()).toHaveAccessibleName(/^Code(,|$)/);
+	await expect(tiles.nth(1)).toHaveAccessibleName(/^Math(,|$)/);
+	// Playing something saves the whole order: Code settles in behind it.
+	await shelfTile(page, "Spelling").click();
+	await page.getByRole("link", { name: "Home" }).click();
+	await expect(tiles.first()).toHaveAccessibleName(/^Spelling(,|$)/);
+	await expect(tiles.nth(1)).toHaveAccessibleName(/^Code(,|$)/);
+});
+
 test("a round picks up where it was left", async ({ page }) => {
 	await stubVoice(page);
 	const { childId } = await setup(page, "Ana");
