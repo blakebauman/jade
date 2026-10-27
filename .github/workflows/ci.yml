@@ -75,7 +75,8 @@ jobs:
       - name: Local D1 migrations
         run: pnpm db:migrate:local
       # The browser download is cached by the lockfile (it pins Playwright's version); its system packages still
-      # install every time, since the runner starts clean.
+      # install every time, since the runner starts clean. Now and then apt stalls on the runner's mirror until the
+      # job's limit, so each try gets 5 minutes (timeout kills the whole process group, apt included) and 3 tries.
       - name: Cache Playwright browser
         id: pw-cache
         uses: actions/cache@v4
@@ -84,10 +85,20 @@ jobs:
           key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('pnpm-lock.yaml') }}
       - name: Playwright browser
         if: steps.pw-cache.outputs.cache-hit != 'true'
-        run: pnpm --filter @jade/web exec playwright install --with-deps ${{ matrix.browser }}
+        run: |
+          for try in 1 2 3; do
+            timeout -k 15 300 pnpm --filter @jade/web exec playwright install --with-deps ${{ matrix.browser }} && exit 0
+            echo "::warning::Playwright install try $try failed or stalled"
+          done
+          exit 1
       - name: Playwright system packages
         if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: pnpm --filter @jade/web exec playwright install-deps ${{ matrix.browser }}
+        run: |
+          for try in 1 2 3; do
+            timeout -k 15 300 pnpm --filter @jade/web exec playwright install-deps ${{ matrix.browser }} && exit 0
+            echo "::warning::Playwright install try $try failed or stalled"
+          done
+          exit 1
       - name: e2e
         run: pnpm --filter @jade/web exec playwright test ${{ matrix.projects }}
       - name: e2e offline (production build, service worker)
