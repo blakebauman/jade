@@ -26,8 +26,11 @@ import {
 	setCaret,
 	startGarden,
 	TEMPLATE_TITLE,
+	TURTLE,
 	textOf,
+	turtleName,
 	unitOpen,
+	withTurtle,
 } from "../code/index.ts";
 import { seeded } from "../math/rng.ts";
 
@@ -264,4 +267,21 @@ describe("the editor", () => {
 
 it("every puzzle kind has a title for parents", () => {
 	for (const t of ALL_TEMPLATES) expect(TEMPLATE_TITLE[t.id], t.id).toBeTruthy();
+});
+
+it("the kid's name for the turtle replaces Tuck in what the round says", () => {
+	expect(turtleName(undefined)).toBe(TURTLE);
+	expect(turtleName({ turtleName: "  " })).toBe(TURTLE);
+	expect(turtleName({ turtleName: " Shelly " })).toBe("Shelly");
+	expect(withTurtle("Tuck’s loops count with range. Make Tuck say hi.", "Shelly")).toBe(
+		"Shelly’s loops count with range. Make Shelly say hi.",
+	);
+	expect(withTurtle("Tucked in", "Shelly")).toBe("Tucked in");
+	// Every Tuck a kid can read or hear is swapped, so none is spelled any other way.
+	for (const t of ALL_TEMPLATES)
+		for (const kind of ["build", "fix", "predict"] as const) {
+			const p = makePuzzle(t, kind, seeded(7));
+			if (!p) continue;
+			expect(withTurtle(`${p.goal} ${p.hint}`, "Shelly"), t.id).not.toMatch(/tuck/i);
+		}
 });

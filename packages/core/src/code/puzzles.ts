@@ -637,7 +637,7 @@ export const TEMPLATES: Template[] = [
 				boards: [garden(ops, rng)],
 				solution: `def turn_around():\n    right()\n    right()\n\n${use}`,
 				starter: use,
-				goal: "Tuck doesn’t know turn_around() yet. Teach it with def, at the top.",
+				goal: "Teach Tuck to turn_around() with def, at the top.",
 				hint: "def turn_around(): then, pushed in under it, the lines that turn Tuck all the way round.",
 			};
 		},

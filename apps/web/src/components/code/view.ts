@@ -6,6 +6,8 @@ import { applyEvent, type Board, type Cell, type CodeEvent, type Garden, startGa
  */
 export type BoardViewProps = {
 	board: Board;
+	/** The kid's name for the turtle (unset: Tuck), for what screen readers hear. */
+	turtle?: string;
 	/** The garden after every event before `playing`. */
 	garden: Garden;
 	/** The event being shown now and how far through it (0–1): Tuck walks, turns, bumps or picks across it. */

@@ -1,9 +1,10 @@
-import { CODE_SKILLS, type CodeSkill, SKILL_HINT, SKILL_LABEL, unitOpen } from "@jade/core/code";
+import { CODE_SKILLS, type CodeSkill, SKILL_HINT, SKILL_LABEL, turtleName, unitOpen } from "@jade/core/code";
 import { KidTile } from "@jade/ui/components/kid-tile";
 import { Pips } from "@jade/ui/components/tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Footprints, Hash, Lock, Play, Repeat, RotateCcw, Signpost, Tag, Wand } from "lucide-react";
+import { TurtleName } from "#/components/code/TurtleName.tsx";
 import { useChild } from "#/lib/child.ts";
 import { progressQuery } from "#/lib/queries.ts";
 import { speaker } from "#/lib/speaker.ts";
@@ -55,10 +56,13 @@ function CodeHome() {
 				</section>
 			)}
 
+			<TurtleName child={child} />
+
 			<section className="mt-12 space-y-5">
 				<h2 className="text-3xl font-semibold">Code: pick a unit</h2>
 				<p className="max-w-[60ch] text-page-muted">
-					Write real Python to steer Tuck the turtle round the garden. Each unit opens when the one before reaches level 2.
+					Write real Python to steer {turtleName(child.settings)} the turtle round the garden. Each unit opens when the one before reaches
+					level 2.
 				</p>
 				<ul className="grid gap-5">
 					{CODE_SKILLS.map((skill, i) => {
