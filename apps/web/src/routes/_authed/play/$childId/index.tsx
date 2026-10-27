@@ -40,13 +40,18 @@ type TileId = "roxy" | "town" | "gobble" | "jelly" | "woods" | "spelling" | "mat
 const TILE_IDS: TileId[] = ["roxy", "town", "gobble", "jelly", "spelling", "woods", "math", "code"];
 const GAMES = new Set<TileId>(["roxy", "town", "gobble", "jelly", "woods"]);
 
-/** The shelf leads with what the kid played last, as a console's home does; a new kid starts from the games. */
+/**
+ * The shelf leads with what the kid played last, as a console's home does; a new kid starts from the games. A tile
+ * added since the order was saved goes first, so something new is seen, not left off the end; playing anything saves
+ * the whole order, and it settles in from there.
+ */
 const orderKey = (childId: string) => `jade.shelf.${childId}`;
 function readOrder(childId: string): TileId[] {
 	try {
 		const saved = JSON.parse(localStorage.getItem(orderKey(childId)) ?? "[]") as string[];
 		const known = saved.filter((id): id is TileId => TILE_IDS.includes(id as TileId));
-		return [...new Set([...known, ...TILE_IDS])];
+		if (known.length === 0) return TILE_IDS;
+		return [...TILE_IDS.filter((id) => !known.includes(id)), ...new Set(known)];
 	} catch {
 		return TILE_IDS;
 	}

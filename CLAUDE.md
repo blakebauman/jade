@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Jade's World is a kids' games portal with practice built in. Its home (`/play/$childId`) is one shelf of tiles, laid out like a console's home: every game (Roxy's studio, the town, Gobble Town, Jelly Blocks, Campfire Woods) plus **Spelling**, **Math** and **Code**, the one the kid played last first (`jade.shelf.{childId}`), one lit at a time. The old Play home (`games/`) redirects to it; quests, badges and more time are its buttons. Spelling, Math and Code share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
+Jade's World is a kids' games portal with practice built in. Its home (`/play/$childId`) is one shelf of tiles, laid out like a console's home: every game (Roxy's studio, the town, Gobble Town, Jelly Blocks, Campfire Woods) plus **Spelling**, **Math** and **Code**, the one the kid played last first (`jade.shelf.{childId}`; a tile added since that order was saved goes first, until the kid plays something), one lit at a time. The old Play home (`games/`) redirects to it; quests, badges and more time are its buttons. Spelling, Math and Code share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
 
 Jade's World is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
