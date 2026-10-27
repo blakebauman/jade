@@ -32,6 +32,10 @@ export type BadgeStats = {
 	/** Math: times-table/division facts at Leitner box 4+, and the fractions skill level. */
 	factsMastered?: number;
 	fractionsLevel?: number;
+	/** Code: puzzles at Leitner box 4+, and the Loops and Recipes levels. */
+	codeMastered?: number;
+	loopsLevel?: number;
+	recipesLevel?: number;
 };
 
 /** `hint` says how to earn it, in the kid's words, under its empty slot. */
@@ -62,5 +66,26 @@ export const BADGES: (Badge & { hint: string; earned: (s: BadgeStats) => boolean
 		icon: "pie",
 		hint: "Reach fractions level 3",
 		earned: (s) => (s.fractionsLevel ?? 0) >= 3,
+	},
+	{
+		id: "code-loops-3",
+		label: "Loop the loop",
+		icon: "repeat",
+		hint: "Reach Loops level 3 in Code",
+		earned: (s) => (s.loopsLevel ?? 0) >= 3,
+	},
+	{
+		id: "code-recipes-3",
+		label: "Recipe maker",
+		icon: "wand",
+		hint: "Reach Recipes level 3 in Code",
+		earned: (s) => (s.recipesLevel ?? 0) >= 3,
+	},
+	{
+		id: "code-10",
+		label: "Tuck's best friend",
+		icon: "turtle",
+		hint: "Master 10 code puzzles",
+		earned: (s) => (s.codeMastered ?? 0) >= 10,
 	},
 ];

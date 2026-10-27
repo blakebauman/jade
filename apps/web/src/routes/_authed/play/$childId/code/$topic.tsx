@@ -17,7 +17,7 @@ import { KidTile } from "@jade/ui/components/kid-tile";
 import { Tile } from "@jade/ui/components/tile";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, FastForward, LifeBuoy, Play, Sparkles, Volume2, X } from "lucide-react";
+import { ArrowRight, FastForward, LifeBuoy, Play, Sparkles, StepForward, Volume2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { Confirm } from "#/components/Confirm.tsx";
@@ -151,11 +151,13 @@ function CodeRound() {
 		r.begin();
 	}
 
-	function run() {
+	/** Run the program; `stepping` starts it waiting on its first line. */
+	function run(stepping = false) {
 		const r = useCodeRound.getState();
 		const before = r.attempts.length;
 		if (!r.run()) return;
 		speaker.stop();
+		if (stepping) replay.stepNext();
 		setToken((t) => t + 1);
 		saveLast(before);
 	}
@@ -423,7 +425,7 @@ function CodeRound() {
 								onChange={setDoc}
 								readOnly={predict || !coding}
 								marks={{ error, solved: s.phase === "solved" && !predict, now: replay.state.line }}
-								onRun={run}
+								onRun={() => run()}
 								compact={compact}
 							/>
 							<div className="min-h-7" aria-live="assertive">
@@ -478,8 +480,20 @@ function CodeRound() {
 									disabled={!coding}
 									compact={compact}
 								>
-									{running ? (
+									{running && replay.stepping ? (
 										<>
+											<button type="button" className="key !min-h-12" onClick={replay.step}>
+												<StepForward className="size-5" aria-hidden /> Next line
+											</button>
+											<button type="button" className="key !min-h-12" onClick={replay.play}>
+												<Play className="size-5" aria-hidden /> Play
+											</button>
+										</>
+									) : running ? (
+										<>
+											<button type="button" className="key !min-h-12" onClick={replay.step}>
+												<StepForward className="size-5" aria-hidden /> Step
+											</button>
 											<button
 												type="button"
 												className="key !min-h-12"
@@ -495,14 +509,25 @@ function CodeRound() {
 											</button>
 										</>
 									) : (
-										<HelpKey help={s.current.help} onClick={help} disabled={!coding} />
+										<>
+											<HelpKey help={s.current.help} onClick={help} disabled={!coding} />
+											<button
+												type="button"
+												className="key !min-h-12"
+												disabled={!coding || s.code.trim() === ""}
+												onClick={() => run(true)}
+												title="Run one line at a time"
+											>
+												<StepForward className="size-5" aria-hidden /> Step
+											</button>
+										</>
 									)}
 									<button
 										type="button"
 										className="key !min-h-12 !px-6 !text-lg"
 										data-variant="check"
 										disabled={!coding || s.code.trim() === ""}
-										onClick={run}
+										onClick={() => run()}
 									>
 										<Play className="size-5" aria-hidden /> Run
 									</button>

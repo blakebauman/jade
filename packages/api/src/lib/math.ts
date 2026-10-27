@@ -66,3 +66,15 @@ export async function mathBadgeStats(db: Db, childId: string) {
 	]);
 	return { factsMastered: mastered.length, fractionsLevel: levels.fractions ?? 1 };
 }
+
+/** Inputs for the code badges: puzzles mastered (Leitner box 4+) and the Loops and Recipes levels. */
+export async function codeBadgeStats(db: Db, childId: string) {
+	const [mastered, levels] = await Promise.all([
+		db
+			.select({ word: schema.wordProgress.word })
+			.from(schema.wordProgress)
+			.where(and(eq(schema.wordProgress.childId, childId), gte(schema.wordProgress.box, 4), like(schema.wordProgress.word, "c:%"))),
+		getSkillLevels(db, childId),
+	]);
+	return { codeMastered: mastered.length, loopsLevel: levels.loops ?? 1, recipesLevel: levels.funcs ?? 1 };
+}
