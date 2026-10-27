@@ -48,7 +48,7 @@ export function CodeBoard(props: BoardViewProps & { flat?: boolean }) {
 					</Suspense>
 					{said && (
 						<p className="pointer-events-none absolute top-2 left-1/2 -translate-x-1/2 rounded-2xl bg-white px-4 py-1.5 font-display text-lg text-[#24302a] shadow-md">
-							<span className="sr-only">{TURTLE} says </span>
+							<span className="sr-only">{props.turtle ?? TURTLE} says </span>
 							{said}
 						</p>
 					)}

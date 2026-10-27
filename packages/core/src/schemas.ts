@@ -38,6 +38,8 @@ export const childSettingsSchema = z.object({
 	/** Show one empty square per letter in Bee mode. Off by default: a real bee gives no length hint. */
 	showLength: z.boolean().default(false),
 	highContrast: z.boolean().default(false),
+	/** What the kid calls Code's turtle (unset: Tuck). The kid picks it on the Code screen. 16 = `TURTLE_NAME_MAX`. */
+	turtleName: z.string().trim().max(16).optional(),
 	math: z
 		.object({
 			topics: z
@@ -62,13 +64,25 @@ export const childInputSchema = z.object({
 	settings: childSettingsSchema.partial().optional(),
 });
 export type ChildInput = z.infer<typeof childInputSchema>;
+/**
+ * A change to a child's settings: only the settings sent. `.partial()` alone would still fill in every default, so
+ * changing the voice would put the rate, font and math back to theirs.
+ */
+const childSettingsPatchSchema = z.object(
+	Object.fromEntries(
+		Object.entries(childSettingsSchema.shape).map(([key, field]) => [
+			key,
+			(field instanceof z.ZodDefault ? field.unwrap() : field).optional(),
+		]),
+	),
+) as unknown as z.ZodType<Partial<ChildSettings>>;
 /** A change to a child: only the fields sent. (`childInputSchema.partial()` would still fill in its defaults.) */
 export const childPatchSchema = z
 	.object({
 		name: z.string().trim().min(1).max(40),
 		avatar: z.enum(AVATARS),
 		grade: z.number().int().min(0).max(8).nullable(),
-		settings: childSettingsSchema.partial(),
+		settings: childSettingsPatchSchema,
 	})
 	.partial();
 

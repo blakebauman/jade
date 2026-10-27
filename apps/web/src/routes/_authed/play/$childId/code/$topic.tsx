@@ -9,8 +9,9 @@ import {
 	newline,
 	outdent,
 	SKILL_LABEL,
-	TURTLE,
 	textOf,
+	turtleName,
+	withTurtle,
 } from "@jade/core/code";
 import { seeded } from "@jade/core/math";
 import { KidTile } from "@jade/ui/components/kid-tile";
@@ -52,6 +53,9 @@ function CodeRound() {
 	const { resume } = Route.useSearch();
 	const progress = Route.useLoaderData();
 	const child = useChild();
+	// Everything the round says about Tuck uses the kid's own name for the turtle.
+	const turtle = turtleName(child.settings);
+	const named = useCallback((text: string) => withTurtle(text, turtle), [turtle]);
 	const navigate = useNavigate();
 	const qc = useQueryClient();
 	const { compact } = useVisualViewport();
@@ -101,8 +105,8 @@ function CodeRound() {
 	const say = useCallback(() => {
 		if (!puzzle) return;
 		useCodeRound.getState().replay();
-		void speaker.say(puzzle.goal, { kind: "sentence" });
-	}, [puzzle]);
+		void speaker.say(named(puzzle.goal), { kind: "sentence" });
+	}, [puzzle, named]);
 
 	// A new puzzle: read the goal out, and put the caret at the end of the starter.
 	const lastIndex = useRef(-1);
@@ -110,10 +114,10 @@ function CodeRound() {
 		if (s.phase === "coding" && puzzle && lastIndex.current !== s.index) {
 			lastIndex.current = s.index;
 			setCaret(null);
-			void speaker.say(puzzle.goal, { kind: "sentence" });
+			void speaker.say(named(puzzle.goal), { kind: "sentence" });
 			editorRef.current?.querySelector<HTMLElement>("[role=textbox]")?.focus({ preventScroll: true });
 		}
-	}, [s.phase, s.index, puzzle]);
+	}, [s.phase, s.index, puzzle, named]);
 
 	const checks = s.verdict?.boards ?? null;
 	const replay = useReplay(puzzle?.boards ?? [{ rows: ["."], start: { x: 0, y: 0, dir: 1 } }], checks, token, speed, () => {
@@ -121,8 +125,8 @@ function CodeRound() {
 		const outcome = r.outcome;
 		r.settle();
 		if (outcome === "solved") sound.solved();
-		if (outcome === "solved") void speaker.say(PRAISE[Math.floor(Math.random() * PRAISE.length)]!, { kind: "sentence" });
-		else if (outcome === null && r.verdict?.error) void speaker.say(r.verdict.error.message, { kind: "sentence" });
+		if (outcome === "solved") void speaker.say(named(PRAISE[Math.floor(Math.random() * PRAISE.length)]!), { kind: "sentence" });
+		else if (outcome === null && r.verdict?.error) void speaker.say(named(r.verdict.error.message), { kind: "sentence" });
 	});
 
 	// Each event the board starts playing gets its sound.
@@ -188,7 +192,7 @@ function CodeRound() {
 			return;
 		}
 		const step = r.help();
-		if (step === 1 && puzzle) void speaker.say(puzzle.hint, { kind: "sentence" });
+		if (step === 1 && puzzle) void speaker.say(named(puzzle.hint), { kind: "sentence" });
 	}
 
 	async function closeRound() {
@@ -202,12 +206,12 @@ function CodeRound() {
 			const p = r.puzzles[i]!;
 			return {
 				key: p.key,
-				prompt: p.goal,
+				prompt: named(p.goal),
 				answer: p.kind === "predict" && p.answer ? `Row ${p.answer.y + 1}, square ${p.answer.x + 1}` : p.solution,
 				typed: a.typed,
 				correct: a.correct,
 				firstTry: a.correct && a.tries === 1,
-				explain: p.hint,
+				explain: named(p.hint),
 			};
 		});
 		r.close();
@@ -287,7 +291,7 @@ function CodeRound() {
 	const message = done
 		? s.phase === "shown"
 			? predict
-				? `${TURTLE} ends up here. Watch it again any time.`
+				? `${turtle} ends up here. Watch it again any time.`
 				: "Here’s one way. It comes back later for another go."
 			: s.verdict?.neat && puzzle.neat
 				? `It works, in ${s.verdict.lines} lines. Neat!`
@@ -297,7 +301,7 @@ function CodeRound() {
 						? "Fixed it! It works."
 						: "It works, first time!"
 		: error
-			? error.message
+			? named(error.message)
 			: predict && s.missed
 				? "Not there. Read it once more, one line at a time."
 				: null;
@@ -359,7 +363,7 @@ function CodeRound() {
 							{s.puzzles.length} {s.puzzles.length === 1 ? "puzzle" : "puzzles"}. Ready?
 						</h2>
 						<p className="max-w-[44ch] text-page-muted">
-							Write real Python to tell {TURTLE} the turtle what to do, then press Run and watch. No clock: take your time.
+							Write real Python to tell {turtle} the turtle what to do, then press Run and watch. No clock: take your time.
 						</p>
 						<button type="button" className="key !min-h-16 !px-10 !text-2xl" data-variant="go" onClick={begin}>
 							<Volume2 className="size-7" aria-hidden /> Start
@@ -384,7 +388,7 @@ function CodeRound() {
 						</button>
 						<div className="plaque !block flex-1 px-4 py-2.5">
 							<p className="font-display text-sm font-semibold tracking-wide opacity-80">{KIND_LABEL[puzzle.kind]}</p>
-							<p className="text-lg leading-snug text-pretty">{puzzle.goal}</p>
+							<p className="text-lg leading-snug text-pretty">{named(puzzle.goal)}</p>
 						</div>
 					</div>
 
@@ -412,7 +416,8 @@ function CodeRound() {
 								garden={replay.state.garden}
 								playing={replay.state.playing}
 								flat={predict}
-								label={`${puzzle.boards.length > 1 ? `Garden ${shownBoard + 1} of ${puzzle.boards.length}. ` : ""}${TURTLE}’s garden`}
+								turtle={turtle}
+								label={`${puzzle.boards.length > 1 ? `Garden ${shownBoard + 1} of ${puzzle.boards.length}. ` : ""}${turtle}’s garden`}
 								onCell={predict && coding ? (c) => s.choose(c) : undefined}
 								chosen={predict ? s.chosen : null}
 								answer={predict && done ? puzzle.answer : null}
@@ -435,7 +440,7 @@ function CodeRound() {
 										{message}
 									</p>
 								)}
-								{coding && s.current.help >= 1 && <p className="mt-1 text-page-muted">Hint: {puzzle.hint}</p>}
+								{coding && s.current.help >= 1 && <p className="mt-1 text-page-muted">Hint: {named(puzzle.hint)}</p>}
 								{coding && s.current.help >= 2 && !predict && (
 									<p className="mt-1 text-page-muted">
 										Start with: <code className="font-mono">{puzzle.solution.split("\n")[0]}</code>

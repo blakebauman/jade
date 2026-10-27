@@ -43,6 +43,13 @@ describe("children + lists", () => {
 		// A settings change leaves the tile number and grade alone.
 		expect(await patch({ settings: { rate: 1.1 } })).toMatchObject({ name: "Jade", avatar: "7", grade: 4, settings: { rate: 1.1 } });
 		expect(await patch({ name: "Jadey", grade: null })).toMatchObject({ name: "Jadey", avatar: "7", grade: null, settings: { rate: 1.1 } });
+		// The kid names Code's turtle the same way, and a name too long for it is refused.
+		expect(await patch({ settings: { turtleName: " Pebble " } })).toMatchObject({ settings: { rate: 1.1, turtleName: "Pebble" } });
+		expect(
+			(await call(`/api/children/${id}`, { method: "PATCH", cookie, json: { settings: { turtleName: "x".repeat(17) } } })).status,
+		).toBe(400);
+		// One setting changed leaves every other one as it was, not back at its default.
+		expect(await patch({ settings: { voice: "orion" } })).toMatchObject({ settings: { voice: "orion", rate: 1.1, turtleName: "Pebble" } });
 	});
 
 	it("keeps lists for chosen kids, and moves them to past lists and back", async () => {

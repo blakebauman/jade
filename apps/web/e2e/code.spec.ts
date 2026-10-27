@@ -152,6 +152,23 @@ test("a kid with a saved shelf order finds Code first, until something is played
 	await expect(tiles.nth(1)).toHaveAccessibleName(/^Code(,|$)/);
 });
 
+test("the kid names the turtle, and the round calls it that", async ({ page }) => {
+	await stubVoice(page);
+	const { childId } = await setup(page, "Ida");
+	await page.goto(`/play/${childId}/code`);
+	await expect(page.getByRole("heading", { name: "Your turtle is called Tuck" })).toBeVisible();
+	await page.getByRole("button", { name: "Rename" }).click();
+	await page.getByRole("button", { name: "Pebble" }).click();
+	await expect(page.getByRole("heading", { name: "Your turtle is called Pebble" })).toBeVisible();
+	await expect.poll(async () => (await (await page.request.get("/api/children")).json())[0].settings.turtleName).toBe("Pebble");
+	await page.reload();
+	await expect(page.getByRole("heading", { name: "Your turtle is called Pebble" })).toBeVisible();
+	await page.getByRole("link", { name: "Play" }).first().click();
+	await expect(page.getByText(/tell Pebble the turtle what to do/)).toBeVisible();
+	await page.getByRole("button", { name: "Start" }).click();
+	await expect(page.getByText(/Tuck/)).toHaveCount(0);
+});
+
 test("a round picks up where it was left", async ({ page }) => {
 	await stubVoice(page);
 	const { childId } = await setup(page, "Ana");

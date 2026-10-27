@@ -20,8 +20,13 @@ export const SKILL_HINT: Record<CodeSkill, string> = {
 	funcs: "Make your own commands with def",
 };
 
-/** The turtle's name. Tuck is the code's own character, never Roxy. */
+/** The turtle's name until the kid picks one. Tuck is the code's own character, never Roxy. */
 export const TURTLE = "Tuck";
+export const TURTLE_NAME_MAX = 16;
+/** What the kid calls the turtle: their own name for it (`settings.turtleName`), else Tuck. */
+export const turtleName = (settings: { turtleName?: string } | undefined) => settings?.turtleName?.trim() || TURTLE;
+/** `text` (written about Tuck: goals, hints, errors) with the kid's own name for the turtle in it. */
+export const withTurtle = (text: string, name: string) => (name === TURTLE ? text : text.replace(/\bTuck\b/g, name));
 
 /** 0 = up (north), 1 = right (east), 2 = down (south), 3 = left (west). `right()` adds one. */
 export type Dir = 0 | 1 | 2 | 3;

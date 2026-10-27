@@ -1,5 +1,5 @@
 import { BADGES, goalProgress, type Quest, questCollectable, questDone, questHave, type SPELLING_MODES, TIME_BLOCK } from "@jade/core";
-import { SKILL_LABEL } from "@jade/core/code";
+import { SKILL_LABEL, turtleName } from "@jade/core/code";
 import { TOPIC_LABEL } from "@jade/core/math";
 import { characterName, FINDS, withName } from "@jade/core/roxy";
 import { KidTile } from "@jade/ui/components/kid-tile";
@@ -338,7 +338,7 @@ function Home() {
 				? `Finish your ${codeLeft.mode === "codereview" ? "code review" : SKILL_LABEL[codeLeft.mode].toLowerCase()} puzzles: ${codeLeft.done} of ${codeLeft.total} done.`
 				: puzzlesDue > 0
 					? `${puzzlesDue} ${puzzlesDue === 1 ? "puzzle wants" : "puzzles want"} another go.`
-					: "Write real Python to steer Tuck the turtle round the garden.",
+					: `Write real Python to steer ${turtleName(child.settings)} the turtle round the garden.`,
 			art: <Art src="/tiles/code.webp" />,
 			count: codeLeft ? undefined : puzzlesDue || undefined,
 			progress: codeLeft ? codeLeft.done / codeLeft.total : undefined,

@@ -26,7 +26,7 @@ const C = {
 };
 
 /** The garden from above, in SVG. It takes the same props as the 3D board and stands in for it. */
-export function FlatBoard({ board, garden, playing, onCell, chosen, answer, label }: BoardViewProps) {
+export function FlatBoard({ board, garden, playing, onCell, chosen, answer, label, turtle = TURTLE }: BoardViewProps) {
 	const { w, h } = sizeOf(board);
 	const tuck = tuckAt(garden, playing);
 	const said = playing?.ev.t === "say" ? playing.ev.text : (garden.said.at(-1) ?? null);
@@ -161,7 +161,7 @@ export function FlatBoard({ board, garden, playing, onCell, chosen, answer, labe
 					className="pointer-events-none absolute -translate-x-1/2 -translate-y-full rounded-2xl bg-white px-3 py-1.5 font-display text-lg text-[#24302a] shadow-md"
 					style={{ left: `${((tuck.x + 0.5) / w) * 100}%`, top: `${(tuck.y / h) * 100}%` }}
 				>
-					<span className="sr-only">{TURTLE} says </span>
+					<span className="sr-only">{turtle} says </span>
 					{said}
 				</p>
 			)}
