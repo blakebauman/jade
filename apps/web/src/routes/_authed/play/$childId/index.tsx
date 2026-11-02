@@ -35,10 +35,10 @@ export const Route = createFileRoute("/_authed/play/$childId/")({
 });
 
 type SpellingMode = (typeof SPELLING_MODES)[number];
-type TileId = "roxy" | "town" | "gobble" | "jelly" | "woods" | "spelling" | "math" | "code";
+type TileId = "roxy" | "town" | "gobble" | "jelly" | "woods" | "phoenix" | "spelling" | "math" | "code";
 // Roxy and their town sit side by side: one world, two ways in.
-const TILE_IDS: TileId[] = ["roxy", "town", "gobble", "jelly", "spelling", "woods", "math", "code"];
-const GAMES = new Set<TileId>(["roxy", "town", "gobble", "jelly", "woods"]);
+const TILE_IDS: TileId[] = ["roxy", "town", "gobble", "jelly", "spelling", "woods", "phoenix", "math", "code"];
+const GAMES = new Set<TileId>(["roxy", "town", "gobble", "jelly", "woods", "phoenix"]);
 
 /**
  * The shelf leads with what the kid played last, as a console's home does; a new kid starts from the games. A tile
@@ -223,6 +223,7 @@ function Home() {
 		gobble: readNumber(`jade.gobble.best.${child.id}`),
 		jelly: readNumber(`jade.jelly.best.${child.id}`),
 		nights: readNumber(`jade.woods.nights.${child.id}`),
+		phoenix: readNumber(`jade.phoenix.best.${child.id}`),
 	}));
 	const game =
 		(
@@ -231,7 +232,8 @@ function Home() {
 				| "/play/$childId/games/roxy/town"
 				| "/play/$childId/games/gobble"
 				| "/play/$childId/games/jelly"
-				| "/play/$childId/games/woods",
+				| "/play/$childId/games/woods"
+				| "/play/$childId/games/phoenix",
 		) =>
 		() =>
 			navigate({ to, params: { childId: child.id } });
@@ -284,6 +286,14 @@ function Home() {
 			stat: best.nights > 0 && `${best.nights} ${best.nights === 1 ? "night" : "nights"} by the fire`,
 			art: <Art src="/tiles/woods.webp" />,
 			go: game("/play/$childId/games/woods"),
+		},
+		phoenix: {
+			id: "phoenix",
+			name: "Phoenix DJ Party",
+			line: "DJ the rooftop party! Tap to the beat to get everyone dancing, and make the Phoenix rise.",
+			stat: best.phoenix > 0 && `Your best: ${best.phoenix.toLocaleString()}`,
+			art: <Art src="/tiles/phoenix.webp" />,
+			go: game("/play/$childId/games/phoenix"),
 		},
 		spelling: {
 			id: "spelling",
