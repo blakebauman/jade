@@ -55,7 +55,7 @@ Success means the child spells the week's list correctly and without help. Misse
 
 **Code** has the child write real Python to steer Tuck the turtle round a small garden: to the flag, picking seeds, lighting lanterns, drawing with a chalk pen. Each puzzle's goal is read aloud; the child builds the program from a toolbox of maple keys (or types it on a keyboard), presses Run and watches Tuck act it out line by line. A run that goes wrong stops on the line that did it and says why in plain words; there's no failing, only another run. Puzzles ask the child to write, fix a bug, read code and predict where Tuck ends up, draw, and make code shorter with a loop. Six units open in order (Steps, Numbers, Loops, Names, Choices, Recipes), each with levels that adjust on their own, and tricky puzzles come back in a new garden through spaced review. Every program is valid Python.
 
-**Play** is pure play, never built on the kid's lists, facts or practice: Roxy's dress-up studio, home and town; Gobble Town; Jelly Blocks; and Campfire Woods, a block island the family plays on live, with linked friends. Three daily quests run across the games. Games pay their own tickets; how play meets practice is the parent's choice.
+**Play** is pure play, never built on the kid's lists, facts or practice: Roxy's dress-up studio, home and town; Gobble Town; Jelly Blocks; Phoenix DJ Party, a rooftop rhythm game; and Campfire Woods, a block island the family plays on live, with linked friends. Three daily quests run across the games. Games pay their own tickets; how play meets practice is the parent's choice.
 
 ## Positioning
 
@@ -99,6 +99,7 @@ Success means the child spells the week's list correctly and without help. Misse
 - **Gobble Town:** steer a hole through a toy town, swallow what fits and grow, against computer players, two minutes a go.
 - **Jelly Blocks:** falling blocks in a jar, made of wobbling jelly, at a slow, medium or fast start.
 - **Campfire Woods:** a first-person block island per family: dig, build and keep the campfire fed through the night, live with family and linked friends (no chat, four emotes).
+- **Phoenix DJ Party:** DJ a sunset rooftop party, three songs a set: pick the record a guest asks for, then hit notes on the beat in four lanes to fill the dance floor, and make the Phoenix rise for a Fire Drop. Chill, Party or Wild.
 - **Daily quests:** three a day, one from each of three games.
 - **Parent settings per kid:** Free, tickets only, stars that pay too, games that open after today's practice goal, or play time bought with stars.
 

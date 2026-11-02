@@ -71,6 +71,7 @@ test("a quest still to do takes the kid straight to its game", async ({ page }) 
 		town: /\/games\/roxy\/town$/,
 		studio: /\/games\/roxy$/,
 		woods: /\/games\/woods$/,
+		phoenix: /\/games\/phoenix$/,
 	};
 	await expect(page).toHaveURL(where[game]);
 });

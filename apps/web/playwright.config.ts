@@ -4,7 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
  * The 3D games' specs. Drawn without a GPU on CI they're heavy, so CI runs them in their own job, one at a time
  * (`E2E_GROUP=games`), and everything else beside them in another (`E2E_GROUP=other`). Unset, everything runs.
  */
-const GAMES = /(gobble|jelly|woods|roxy|tickets)\.spec\.ts$/;
+const GAMES = /(gobble|jelly|woods|roxy|phoenix|tickets)\.spec\.ts$/;
 const group = process.env.E2E_GROUP;
 /** Another checkout's dev server can hold 5190; `E2E_PORT=5191` points the run at this one's. */
 const origin = `http://localhost:${process.env.E2E_PORT ?? 5190}`;

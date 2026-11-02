@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Jade's World is a kids' games portal with practice built in. Its home (`/play/$childId`) is one shelf of tiles, laid out like a console's home: every game (Roxy's studio, the town, Gobble Town, Jelly Blocks, Campfire Woods) plus **Spelling**, **Math** and **Code**, the one the kid played last first (`jade.shelf.{childId}`; a tile added since that order was saved goes first, until the kid plays something), one lit at a time. The old Play home (`games/`) redirects to it; quests, badges and more time are its buttons. Spelling, Math and Code share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
+Jade's World is a kids' games portal with practice built in. Its home (`/play/$childId`) is one shelf of tiles, laid out like a console's home: every game (Roxy's studio, the town, Gobble Town, Jelly Blocks, Campfire Woods, Phoenix DJ Party) plus **Spelling**, **Math** and **Code**, the one the kid played last first (`jade.shelf.{childId}`; a tile added since that order was saved goes first, until the kid plays something), one lit at a time. The old Play home (`games/`) redirects to it; quests, badges and more time are its buttons. Spelling, Math and Code share sessions, per-answer saving, the offline queue, resume, Leitner review, stars/streaks/badges and the voice. Games pay their own **tickets**; practice stars stay apart unless a parent links them (see Learn and Play).
 
 Jade's World is a spelling bee and math practice app for 8–11 year olds. Spelling leads; the lines below describe it.
 - **Who uses it:** a parent loads word lists; a child plays on a laptop or an iPad.
@@ -258,6 +258,36 @@ Secrets:
   - **Quests:** woods is one of the daily-quest games (`QuestEvent` `{ game: "woods", did, n }`): the screen reports each dig and build the island confirms, each feeding, rescue and thing made.
   - **HUD:** the status (a little day/night dial and minutes, the fire meter, animals home) sits bottom right, or under the title on a phone; at night a hint points to the nearest lost animal; a gentle nudge when the fire runs low.
   - **Test hooks** (dev): `peek`, `block`, `lookAt`, `mine`, `place`, `select`, `setState` (`active-play`, `day`, `dusk`, `night`, `low-fire`, `deer`, `lost-animal`, `torches` (a real ring of torches round the camp), `rain` (the middle of the next shower): into play at that time of day, this screen only; `world.fuelShown` holds the fire for a capture) and `setPausedForScreenshot`. `e2e/woods.spec.ts` covers two kids on one island, two linked families, and real CDP touch.
+
+**Phoenix DJ Party (Play, `/play/$childId/games/phoenix`):** the kid DJs a sunset rooftop party. Notes fall in four lanes and are hit on the beat; a hot floor fills with dancers, and when the party's hype is full the Phoenix rises for a Fire Drop.
+- **Rules** (`components/phoenix/sim.ts`, pure and seeded, `sim.test.ts` plays whole sets):
+  - **A set** is 3 songs of 24 bars. Before each one a guest asks for a mood (chill, funky, bouncy, big, jungle) and the kid pulls a record from the crate (`crate`: four a song, seeded, one answering the request and three of other moods); the one asked for adds hype (`requestsMet`). The next request is never the mood just played.
+  - **The chart** (`chart`): one-bar patterns from pools that thicken through a song, a 2-bar count-in, a one-note breather every 8 bars, and lanes walked rather than jumped. Chill, Party or Wild (`jade.phoenix.speed`); Wild adds two-lane chords.
+  - **Judging:** ±75ms Perfect, ±160ms Good, past that a miss; a tap with no note is extra and costs a little hype, so mashing never pays. The multiplier steps up every 10 in a row (to ×4).
+  - **The Phoenix** rises when hype reaches 100, at most once a song (it's the song's peak): 8 bars of Fire Drop, everything worth double, then hype settles to 60.
+  - **The end:** a set is rated 1–5 flames by accuracy. It pays `flames·3 + rises·3 + requests·2` tickets, at most 30, as `phoenix:<seed>`. Best score is on the device (`jade.phoenix.best.{childId}`).
+- **The clock is the music** (`sound.ts`). `songTime()` is the AudioContext's time since the song's first beat, less the output latency, so what's heard and what's judged never drift. Pause suspends the context, so the song and its clock stop together; without a running context it falls back to page time. A press is judged at its event's own `timeStamp` (`onPress`, at most 0.25s back), so a slow frame doesn't turn a hit into a miss.
+- **Recordings** (ElevenLabs, `audio/*.mp3`, prompts in `audio/prompts.tsv`):
+  - **Songs:** seven 16-bar loops (`tracks.ts`: Sunset Glow 100, Feather Funk 110, Ember Pop 120, Firebird Drop 126 BPM, and the jungle/drum and bass records Amen Firestorm, Ember Roller and Rinse Out Rooftop at 172), cut on the bar lines. `loopStart` is a downbeat at 0.1s, and every kick is within 8ms of the grid (for drum and bass, the kicks and snares within ~10ms). Drum and bass is `half`: charted and danced in half time (`spb` is two of the record's beats), so its notes come no faster than an 86 BPM song's; the stand-in beat is a two-step for it.
+  - **One-shots:** a hit per lane (`pad1`–`pad4`), cheers, aww, the Phoenix's cry, fireworks, scratch, needle drop and set end. They decode with about 25ms of encoder delay, skipped on play (`ONE_SHOT_LEAD_S`). There's also a crowd bed louder with the hype.
+  - **Before a recording loads:** picking a record waits up to 4s for its song (`trackReady`). Offline before it was ever heard, a synthesised beat on the same grid stands in, so a set can always be played. Muting is remembered (`jade.phoenix.muted`).
+- **The highway** (`Highway.tsx`): a 2D canvas over the scene, drawn each frame from the game and the clock (never through React).
+  - **Lanes:** each has its own colour (pink, violet, green, teal: none of the law colours) and its own shape (flame, star, heart, diamond).
+  - **Feedback** keeps the colour laws: a hit flashes marigold, a missed note sky, a tap with no note stone.
+  - **Input:** keys D F J K or the arrows. Pads take a finger on `touchstart` (every finger, both thumbs) and a mouse on `pointerdown`, never on click.
+- **Scene** (`PhoenixScene.tsx`, perspective camera framed per aspect, drawn every frame during a set). Everything moving to the music reads `Beat` from `live.ts`, worked out once a frame by the conductor from the game and the clock; between songs a slow idle groove keeps it breathing.
+  - **`set.tsx`:** a shader sunset sky and an instanced city. The deck, stage, booth, speakers, light arch, railings, plants, beanbags and snack table are baked in `Static`. Platters, speaker cones, level bars, string lights and an LED wall shader move.
+  - **`floor.tsx`:** an instanced 7×5 light-up floor that changes pattern each bar, and six swinging additive beams with pools where they land. Both turn fire colours in a Fire Drop.
+  - **`crowd.tsx`:** the kid's own look at the decks on a riser, and 8 guests from seeded starter looks (no pets) who dance on the floor as hype allows and drift to the snacks when it drops. A bubble in the mood's colour is over whoever's asking.
+  - **`fx.tsx`:** one pooled additive point cloud for fireworks, embers and confetti.
+  - **Budget:** about 117 calls and 345k triangles on a laptop, 100 and 290k on an iPhone.
+- **The Phoenix** (`bird.tsx`) is a generated model (Gemini concept → Tripo image-to-3D, task `ecd188d9-e0bd-4797-99b8-4322ae917617`; `public/models/phoenix/phoenix.glb`, 14k triangles, one 512px WebP map, meshopt).
+  - **Its pose:** beak to +z, wings along ±x from |x| 0.2, belly at y 0.
+  - **Flapping:** it has no rig, so a vertex-shader bend turns everything past the shoulder about it (`uFlap`), normals too.
+  - **What it does:** it perches on the arch, breathing and glowing to the beat. In a Fire Drop it loops over the floor trailing embers, with fireworks over the city. With reduced motion it glows and spreads its wings where it is.
+  - **Fallback:** a small code-built bird stands in while it loads, or if it can't.
+- **Quests:** `{ game: "phoenix", rises, streak, requests, flames }` at the end of a set.
+- **Test hooks** (dev): `setSeed`, `setState` (`ready`, `crate`, `active-play`, `fire-drop`, `results`), `setAutopilot`, `peek`, `setPausedForScreenshot`, and `setSceneDrawing(false)`. The last stops drawing the 3D while the song and highway run, so timing tests aren't held up by software WebGL. `e2e/phoenix.spec.ts` covers real keys and taps on notes, pause holding the clock, the recorded song playing, and two CDP fingers with negative ids.
 
 **Admin (Better Auth admin plugin):**
 - Endpoints live under `/api/auth/admin/*` (list, ban, set role, impersonate); the client has `adminClient()` on `authClient.admin`.
