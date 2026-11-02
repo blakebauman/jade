@@ -5,7 +5,9 @@ import {
 	advance,
 	beatAt,
 	COUNT_IN_BARS,
+	CRATE_SIZE,
 	chart,
+	crate,
 	dancers,
 	flames,
 	type Game,
@@ -15,6 +17,7 @@ import {
 	LANES,
 	LEVELS,
 	type Level,
+	MOODS,
 	newGame,
 	PERFECT_S,
 	pick,
@@ -29,8 +32,25 @@ import {
 } from "./sim.ts";
 import type { Track } from "./tracks.ts";
 
-const T = (id: Track["id"], mood: Track["mood"], bpm: number): Track => ({ id, name: id, mood, bpm, bars: 16, loopStart: 0.1, loopEnd: 0 });
-const TRACKS: Track[] = [T("sunset", "chill", 100), T("funk", "funky", 110), T("pop", "bouncy", 120), T("drop", "big", 126)];
+const T = (id: Track["id"], mood: Track["mood"], bpm: number, half = false): Track => ({
+	id,
+	name: id,
+	mood,
+	bpm,
+	half,
+	bars: 16,
+	loopStart: 0.1,
+	loopEnd: 0,
+});
+const TRACKS: Track[] = [
+	T("sunset", "chill", 100),
+	T("funk", "funky", 110),
+	T("pop", "bouncy", 120),
+	T("drop", "big", 126),
+	T("amen", "jungle", 172, true),
+	T("roller", "jungle", 172, true),
+	T("rinse", "jungle", 172, true),
+];
 
 /** Plays a whole set: picks what's asked for when `listen`, else the first record, and plays every song at `skill`. */
 function playSet(seed: number, level: Level, skill: number, listen = true) {
@@ -85,6 +105,48 @@ describe("the chart", () => {
 				for (let i = 1; i < beats.length; i++) expect(beats[i]! - beats[i - 1]!).toBeGreaterThanOrEqual(0.5);
 			}
 		}
+	});
+});
+
+describe("drum and bass", () => {
+	it("is charted in half time: its notes come no faster than an 86 BPM record's", () => {
+		const dnb = TRACKS[4]!;
+		expect(spb(dnb)).toBeCloseTo(60 / 86, 9);
+		expect(songSeconds(dnb)).toBeCloseTo(songSeconds(T("x" as Track["id"], "chill", 86)), 9);
+		for (const level of LEVELS) {
+			const notes = chart(dnb, level, 4);
+			for (let lane = 0; lane < LANES; lane++) {
+				const ts = notes.filter((n) => n.lane === lane).map((n) => n.t);
+				for (let i = 1; i < ts.length; i++) expect(ts[i]! - ts[i - 1]!).toBeGreaterThanOrEqual((0.5 * 60) / 86 - 1e-9);
+			}
+		}
+	});
+});
+
+describe("the crate", () => {
+	it("deals four records, one answering the request and each of the others a different mood, the same every time", () => {
+		for (let seed = 1; seed < 40; seed++) {
+			const g = newGame(seed, "party");
+			for (let song = 0; song < 3; song++) {
+				g.song = song;
+				g.request = MOODS[(seed + song) % MOODS.length]!;
+				const dealt = crate(g, TRACKS);
+				expect(dealt).toHaveLength(CRATE_SIZE);
+				expect(dealt.filter((t) => t.mood === g.request)).toHaveLength(1);
+				expect(new Set(dealt.map((t) => t.mood)).size).toBe(CRATE_SIZE);
+				expect(crate(g, TRACKS)).toEqual(dealt);
+			}
+		}
+	});
+
+	it("brings every jungle record out over enough sets", () => {
+		const seen = new Set<string>();
+		for (let seed = 1; seed < 60; seed++) {
+			const g = newGame(seed, "party");
+			g.request = "jungle";
+			for (const t of crate(g, TRACKS)) seen.add(t.id);
+		}
+		for (const id of ["amen", "roller", "rinse"]) expect(seen.has(id), id).toBe(true);
 	});
 });
 

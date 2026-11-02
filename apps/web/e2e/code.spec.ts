@@ -143,13 +143,16 @@ test("a kid with a saved shelf order finds Code first, until something is played
 	);
 	await page.goto(`/play/${childId}`);
 	const tiles = page.getByRole("list", { name: "Games, Spelling, Math and Code" }).getByRole("button");
-	await expect(tiles.first()).toHaveAccessibleName(/^Code(,|$)/);
-	await expect(tiles.nth(1)).toHaveAccessibleName(/^Math(,|$)/);
-	// Playing something saves the whole order: Code settles in behind it.
+	// Every tile new since then leads (Phoenix DJ Party came after Code), in the shelf's own order.
+	await expect(tiles.first()).toHaveAccessibleName(/^Phoenix DJ Party(,|$)/);
+	await expect(tiles.nth(1)).toHaveAccessibleName(/^Code(,|$)/);
+	await expect(tiles.nth(2)).toHaveAccessibleName(/^Math(,|$)/);
+	// Playing something saves the whole order: the new tiles settle in behind it.
 	await shelfTile(page, "Spelling").click();
 	await page.getByRole("link", { name: "Home" }).click();
 	await expect(tiles.first()).toHaveAccessibleName(/^Spelling(,|$)/);
-	await expect(tiles.nth(1)).toHaveAccessibleName(/^Code(,|$)/);
+	await expect(tiles.nth(1)).toHaveAccessibleName(/^Phoenix DJ Party(,|$)/);
+	await expect(tiles.nth(2)).toHaveAccessibleName(/^Code(,|$)/);
 });
 
 test("the kid names the turtle, and the round calls it that", async ({ page }) => {

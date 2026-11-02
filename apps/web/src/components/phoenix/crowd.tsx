@@ -21,7 +21,13 @@ export const SCALE = 0.55;
 const DJ_RISER = 0.35;
 export const GUEST_NAMES = ["Mia", "Leo", "Ava", "Sam", "Zoe", "Kai", "Ivy", "Max"] as const;
 
-export const MOOD_COLOUR: Record<Mood, string> = { chill: "#22c5b5", funky: "#8a5cff", bouncy: "#ff4f9a", big: "#ff8a3d" };
+export const MOOD_COLOUR: Record<Mood, string> = {
+	chill: "#22c5b5",
+	funky: "#8a5cff",
+	bouncy: "#ff4f9a",
+	big: "#ff8a3d",
+	jungle: "#4cbf3a",
+};
 
 /** Where each guest dances, and where they go when they're not. */
 const FLOOR: [number, number][] = [

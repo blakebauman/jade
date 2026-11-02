@@ -11,6 +11,7 @@ import {
 	accuracy,
 	advance,
 	autoplay,
+	crate,
 	flames,
 	type Game,
 	type GameEvent,
@@ -59,8 +60,9 @@ const MOOD_ASK: Record<Mood, string> = {
 	funky: "Make it funky!",
 	bouncy: "Something bouncy!",
 	big: "Play the big one!",
+	jungle: "Play some jungle!",
 };
-const MOOD_LABEL: Record<Mood, string> = { chill: "Chill", funky: "Funky", bouncy: "Bouncy", big: "Big" };
+const MOOD_LABEL: Record<Mood, string> = { chill: "Chill", funky: "Funky", bouncy: "Bouncy", big: "Big", jungle: "Jungle" };
 /** How long after its window a note is given up as missed, for presses held up by a slow frame. */
 const MISS_GRACE_S = 0.12;
 /** How far back a press is dated to the moment it happened, at most (beyond that a timestamp isn't trusted). */
@@ -586,7 +588,7 @@ function PhoenixScreen() {
 								{asker} asks: “{MOOD_ASK[g.request]}”
 							</p>
 							<ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="The record crate">
-								{TRACKS.map((t) => (
+								{crate(g, TRACKS).map((t) => (
 									<li key={t.id}>
 										<button
 											type="button"

@@ -237,6 +237,13 @@ export function keep() {
 function synthBeat(t: number, beat: number, step: number) {
 	if (!ctx || !musicBus) return;
 	const c = ctx;
+	const half = !!song?.track.half;
+	// Half-time records (drum and bass) get a two-step: the kick on 1 and 3, the snare on 2 and 4, a bar of the record each.
+	if (half && beat % 2 === 1) {
+		noise(t, 0.14, 1600, 0.45, musicBus);
+		noise(t + step / 2, 0.04, 7000, 0.12, musicBus);
+		return;
+	}
 	const kick = c.createOscillator();
 	const kg = c.createGain();
 	kick.frequency.setValueAtTime(130, t);

@@ -1,5 +1,5 @@
 import { createContext, type RefObject, useContext } from "react";
-import { beatAt, dancers, type Game, HYPE_MAX, inRise } from "./sim.ts";
+import { beatAt, dancers, type Game, HYPE_MAX, inRise, spb } from "./sim.ts";
 
 /**
  * What the scene reads each frame: the game (mutated in place by the screen), the song clock, and moments the screen
@@ -63,7 +63,7 @@ export function conduct(b: Beat, live: Live, t: number, dt: number, reduced: boo
 	b.playing = g.phase === "song" && !!g.track;
 	if (b.playing) {
 		const now = live.time();
-		b.spb = 60 / g.track!.bpm;
+		b.spb = spb(g.track!);
 		b.beat = Math.max(0, beatAt(g, now));
 	} else {
 		b.spb = 60 / 96;

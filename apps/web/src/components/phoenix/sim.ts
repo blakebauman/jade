@@ -1,5 +1,5 @@
 import { seeded } from "@jade/core/math";
-import type { Mood, Track, TrackId } from "./tracks.ts";
+import { type Mood, spb, type Track, type TrackId } from "./tracks.ts";
 
 /**
  * Phoenix DJ Party's rules, pure and seeded. The kid DJs a set of three songs at a rooftop party. Before each song a
@@ -39,7 +39,9 @@ const HYPE_GAIN: Record<Level, { perfect: number; good: number }> = {
 	wild: { perfect: 3, good: 1.5 },
 };
 export const STREAKS = [10, 25, 50, 100] as const;
-export const MOODS: readonly Mood[] = ["chill", "funky", "bouncy", "big"];
+export const MOODS: readonly Mood[] = ["chill", "funky", "bouncy", "big", "jungle"];
+/** How many records the crate holds for a song. */
+export const CRATE_SIZE = 4;
 
 export type Grade = "perfect" | "good" | "miss";
 export type Note = { beat: number; t: number; lane: number; grade: Grade | null };
@@ -92,7 +94,7 @@ export type Game = {
 
 export const GUESTS = 8;
 
-export const spb = (track: Track) => 60 / track.bpm;
+export { spb };
 export const songSeconds = (track: Track) => SONG_BARS * 4 * spb(track);
 
 export function newGame(seed: number, level: Level): Game {
@@ -228,6 +230,26 @@ export function chart(track: Track, level: Level, seed: number): Note[] {
 }
 
 // ── Playing ──
+
+/**
+ * The records in the crate for this song: one that answers the request, and the rest each a different other mood, in a
+ * shuffled order. The same for the same game and song, so it can be read on every render.
+ */
+export function crate(g: Game, tracks: readonly Track[]): Track[] {
+	const rng = seeded((g.seed * 31 + g.song * 104729 + 17) >>> 0);
+	const one = (list: readonly Track[]) => list[Math.floor(rng() * list.length)]!;
+	const shuffle = <T>(list: T[]) => {
+		for (let i = list.length - 1; i > 0; i--) {
+			const j = Math.floor(rng() * (i + 1));
+			[list[i], list[j]] = [list[j]!, list[i]!];
+		}
+		return list;
+	};
+	const asked = tracks.filter((t) => t.mood === g.request);
+	const others = shuffle([...new Set(tracks.map((t) => t.mood))].filter((m) => m !== g.request)).slice(0, CRATE_SIZE - 1);
+	const picked = others.map((m) => one(tracks.filter((t) => t.mood === m)));
+	return shuffle(asked.length ? [one(asked), ...picked] : picked);
+}
 
 /** The crate: put a record on. Starts the song at its clock's 0. */
 export function pick(g: Game, track: Track) {

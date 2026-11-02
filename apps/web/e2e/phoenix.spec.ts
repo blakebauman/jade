@@ -30,6 +30,8 @@ const ANSWER: [RegExp, string][] = [
 	[/funky/, "Feather Funk"],
 	[/bouncy/, "Ember Pop"],
 	[/big one/, "Firebird Drop"],
+	// The crate deals one of the three jungle records for a jungle request.
+	[/jungle/, "Amen Firestorm|Ember Roller|Rinse Out Rooftop"],
 ];
 const KEYS = ["KeyD", "KeyF", "KeyJ", "KeyK"];
 const PADS = ["Flame", "Star", "Heart", "Diamond"];
@@ -63,12 +65,21 @@ test("DJ a set: pick the record asked for, hit notes on the beat, pause, and see
 	// for this (the song and the highway carry on): drawn without a graphics chip, a frame can hold the page a second.
 	await page.evaluate(() => (window as unknown as { __THREE_GAME_TEST_HOOKS__: Hooks }).__THREE_GAME_TEST_HOOKS__.setSceneDrawing(false));
 	const touch = info.project.name !== "laptop";
-	for (let k = 0; k < 4; k++) {
+	const pads = touch
+		? await Promise.all(PADS.map((name) => page.getByRole("button", { name: new RegExp(`^${name} pad`) }).boundingBox()))
+		: [];
+	for (let k = 0; k < 10; k++) {
+		// A round trip to the page is slow on a runner without a graphics chip: time one, then send the press that much
+		// early (half for the peek being stale, half for the press reaching the page).
+		const asked = Date.now();
 		const p = await peek(page);
+		const trip = Date.now() - asked;
 		if (!p.next) break;
+		if (p.counts.perfect + p.counts.good >= 2) break;
 		// Timed off the song clock, not the page's frames (a runner without a graphics chip draws few of them).
-		await page.waitForTimeout(Math.max(0, (p.next.t - p.now) * 1000 - 15));
-		if (touch) await page.getByRole("button", { name: new RegExp(`^${PADS[p.next.lane]} pad`) }).tap();
+		await page.waitForTimeout(Math.max(0, (p.next.t - p.now) * 1000 - trip - 15));
+		const box = pads[p.next.lane];
+		if (box) await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
 		else await page.keyboard.press(KEYS[p.next.lane]!);
 	}
 	const played = await peek(page);
